@@ -1,0 +1,500 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<incidents format="6" by="lint 8.2.2" type="incidents">
+
+    <incident
+        id="HardcodedText"
+        severity="warning"
+        message="Hardcoded string &quot;Add Stock Pair&quot;, should use `@string` resource">
+        <location
+            file="${:app*debug*MAIN*sourceProvider*0*resDir*0}/layout/activity_main.xml"
+            line="40"
+            column="9"
+            startOffset="1613"
+            endLine="40"
+            endColumn="38"
+            endOffset="1642"/>
+    </incident>
+
+    <incident
+        id="HardcodedText"
+        severity="warning"
+        message="Hardcoded string &quot;First Stock Ticker&quot;, should use `@string` resource">
+        <location
+            file="${:app*debug*MAIN*sourceProvider*0*resDir*0}/layout/dialog_add_stock_pair.xml"
+            line="11"
+            column="9"
+            startOffset="413"
+            endLine="11"
+            endColumn="42"
+            endOffset="446"/>
+    </incident>
+
+    <incident
+        id="HardcodedText"
+        severity="warning"
+        message="Hardcoded string &quot;Second Stock Ticker&quot;, should use `@string` resource">
+        <location
+            file="${:app*debug*MAIN*sourceProvider*0*resDir*0}/layout/dialog_add_stock_pair.xml"
+            line="25"
+            column="9"
+            startOffset="998"
+            endLine="25"
+            endColumn="43"
+            endOffset="1032"/>
+    </incident>
+
+    <incident
+        id="HardcodedText"
+        severity="warning"
+        message="Hardcoded string &quot;Price Difference (SEK)&quot;, should use `@string` resource">
+        <location
+            file="${:app*debug*MAIN*sourceProvider*0*resDir*0}/layout/dialog_add_stock_pair.xml"
+            line="39"
+            column="9"
+            startOffset="1584"
+            endLine="39"
+            endColumn="46"
+            endOffset="1621"/>
+    </incident>
+
+    <incident
+        id="HardcodedText"
+        severity="warning"
+        message="Hardcoded string &quot;Notify when prices are equal&quot;, should use `@string` resource">
+        <location
+            file="${:app*debug*MAIN*sourceProvider*0*resDir*0}/layout/dialog_add_stock_pair.xml"
+            line="54"
+            column="9"
+            startOffset="2227"
+            endLine="54"
+            endColumn="52"
+            endOffset="2270"/>
+    </incident>
+
+    <incident
+        id="ObsoleteSdkInt"
+        severity="warning"
+        message="This folder configuration (`v26`) is unnecessary; `minSdkVersion` is 26. Merge all the resources in this folder into `mipmap-anydpi`.">
+        <fix-data file="${:app*debug*MAIN*sourceProvider*0*resDir*0}/mipmap-anydpi-v26" folderName="mipmap-anydpi" requiresApi="26"/>
+        <location
+            file="${:app*debug*MAIN*sourceProvider*0*resDir*0}/mipmap-anydpi-v26"/>
+    </incident>
+
+    <incident
+        id="MonochromeLauncherIcon"
+        severity="warning"
+        message="The application adaptive icon is missing a monochrome tag">
+        <location
+            file="${:app*debug*MAIN*sourceProvider*0*resDir*0}/mipmap-anydpi-v26/ic_launcher.xml"
+            line="2"
+            column="1"
+            startOffset="39"
+            endLine="5"
+            endColumn="17"
+            endOffset="267"/>
+    </incident>
+
+    <incident
+        id="MonochromeLauncherIcon"
+        severity="warning"
+        message="The application adaptive roundIcon is missing a monochrome tag">
+        <location
+            file="${:app*debug*MAIN*sourceProvider*0*resDir*0}/mipmap-anydpi-v26/ic_launcher_round.xml"
+            line="2"
+            column="1"
+            startOffset="39"
+            endLine="5"
+            endColumn="17"
+            endOffset="267"/>
+    </incident>
+
+    <incident
+        id="SetTextI18n"
+        severity="warning"
+        message="Do not concatenate text displayed with `setText`. Use resource string with placeholders.">
+        <location
+            file="${:app*debug*MAIN*sourceProvider*0*javaDir*0}/com/stockflip/MainActivity.kt"
+            line="128"
+            column="39"
+            startOffset="4752"
+            endLine="128"
+            endColumn="67"
+            endOffset="4780"/>
+    </incident>
+
+    <incident
+        id="SetTextI18n"
+        severity="warning"
+        message="String literal in `setText` can not be translated. Use Android resources instead.">
+        <location
+            file="${:app*debug*MAIN*sourceProvider*0*javaDir*0}/com/stockflip/MainActivity.kt"
+            line="128"
+            column="40"
+            startOffset="4753"
+            endLine="128"
+            endColumn="54"
+            endOffset="4767"/>
+    </incident>
+
+    <incident
+        id="ObsoleteSdkInt"
+        severity="warning"
+        message="Unnecessary; SDK_INT is always >= 26">
+        <fix-data conditional="true"/>
+        <location
+            file="${:app*debug*MAIN*sourceProvider*0*javaDir*0}/com/stockflip/StockPriceAlarmManager.kt"
+            line="63"
+            column="13"
+            startOffset="2146"
+            endLine="63"
+            endColumn="59"
+            endOffset="2192"/>
+    </incident>
+
+    <incident
+        id="ObsoleteSdkInt"
+        severity="warning"
+        message="Unnecessary; SDK_INT is always >= 26">
+        <fix-data conditional="true"/>
+        <location
+            file="${:app*debug*MAIN*sourceProvider*0*javaDir*0}/com/stockflip/StockPriceUpdateWorker.kt"
+            line="88"
+            column="13"
+            startOffset="3503"
+            endLine="88"
+            endColumn="59"
+            endOffset="3549"/>
+    </incident>
+
+    <incident
+        id="ObsoleteSdkInt"
+        severity="warning"
+        message="Unnecessary; SDK_INT is always >= 26">
+        <fix-data conditional="true"/>
+        <location
+            file="${:app*debug*MAIN*sourceProvider*0*javaDir*0}/com/stockflip/StockPriceUpdater.kt"
+            line="69"
+            column="13"
+            startOffset="2169"
+            endLine="69"
+            endColumn="59"
+            endOffset="2215"/>
+    </incident>
+
+    <incident
+        id="ObsoleteSdkInt"
+        severity="warning"
+        message="Unnecessary; SDK_INT is always >= 26">
+        <fix-data conditional="true"/>
+        <location
+            file="${:app*debug*MAIN*sourceProvider*0*javaDir*0}/com/stockflip/StockPriceUpdater.kt"
+            line="86"
+            column="13"
+            startOffset="2966"
+            endLine="86"
+            endColumn="59"
+            endOffset="3012"/>
+    </incident>
+
+    <incident
+        id="OldTargetApi"
+        severity="warning"
+        message="Not targeting the latest versions of Android; compatibility modes apply. Consider testing and updating this version. Consult the android.os.Build.VERSION_CODES javadoc for details.">
+        <fix-replace
+            description="Update targetSdkVersion to 35"
+            oldString="34"
+            replacement="35"/>
+        <location
+            file="${:app*projectDir}/build.gradle"
+            line="14"
+            column="9"
+            startOffset="234"
+            endLine="14"
+            endColumn="21"
+            endOffset="246"/>
+    </incident>
+
+    <incident
+        id="KaptUsageInsteadOfKsp"
+        severity="warning"
+        message="This library supports using KSP instead of kapt, which greatly improves performance. Learn more: https://developer.android.com/studio/build/migrate-to-ksp">
+        <show-url
+            description="Learn about how to enable KSP and use the KSP processor for this dependency instead"
+            url="https://developer.android.com/studio/build/migrate-to-ksp"/>
+        <location
+            file="${:app*projectDir}/build.gradle"
+            line="69"
+            column="5"
+            startOffset="1923"
+            endLine="69"
+            endColumn="53"
+            endOffset="1971"/>
+    </incident>
+
+    <incident
+        id="GradleDependency"
+        severity="warning"
+        message="A newer version of androidx.core:core-ktx than 1.12.0 is available: 1.15.0">
+        <fix-replace
+            description="Change to 1.15.0"
+            family="Update versions"
+            oldString="1.12.0"
+            replacement="1.15.0"/>
+        <location
+            file="${:app*projectDir}/build.gradle"
+            line="54"
+            column="20"
+            startOffset="1200"
+            endLine="54"
+            endColumn="51"
+            endOffset="1231"/>
+    </incident>
+
+    <incident
+        id="GradleDependency"
+        severity="warning"
+        message="A newer version of androidx.appcompat:appcompat than 1.6.1 is available: 1.7.0">
+        <fix-replace
+            description="Change to 1.7.0"
+            family="Update versions"
+            oldString="1.6.1"
+            replacement="1.7.0"/>
+        <location
+            file="${:app*projectDir}/build.gradle"
+            line="55"
+            column="20"
+            startOffset="1251"
+            endLine="55"
+            endColumn="56"
+            endOffset="1287"/>
+    </incident>
+
+    <incident
+        id="GradleDependency"
+        severity="warning"
+        message="A newer version of com.google.android.material:material than 1.11.0 is available: 1.12.0">
+        <fix-replace
+            description="Change to 1.12.0"
+            family="Update versions"
+            oldString="1.11.0"
+            replacement="1.12.0"/>
+        <location
+            file="${:app*projectDir}/build.gradle"
+            line="56"
+            column="20"
+            startOffset="1307"
+            endLine="56"
+            endColumn="65"
+            endOffset="1352"/>
+    </incident>
+
+    <incident
+        id="GradleDependency"
+        severity="warning"
+        message="A newer version of androidx.constraintlayout:constraintlayout than 2.1.4 is available: 2.2.0">
+        <fix-replace
+            description="Change to 2.2.0"
+            family="Update versions"
+            oldString="2.1.4"
+            replacement="2.2.0"/>
+        <location
+            file="${:app*projectDir}/build.gradle"
+            line="57"
+            column="20"
+            startOffset="1372"
+            endLine="57"
+            endColumn="70"
+            endOffset="1422"/>
+    </incident>
+
+    <incident
+        id="GradleDependency"
+        severity="warning"
+        message="A newer version of androidx.lifecycle:lifecycle-runtime-ktx than 2.7.0 is available: 2.8.7">
+        <fix-replace
+            description="Change to 2.8.7"
+            family="Update versions"
+            oldString="2.7.0"
+            replacement="2.8.7"/>
+        <location
+            file="${:app*projectDir}/build.gradle"
+            line="58"
+            column="20"
+            startOffset="1442"
+            endLine="58"
+            endColumn="68"
+            endOffset="1490"/>
+    </incident>
+
+    <incident
+        id="GradleDependency"
+        severity="warning"
+        message="A newer version of com.squareup.okhttp3:logging-interceptor than 4.9.0 is available: 4.12.0">
+        <fix-replace
+            description="Change to 4.12.0"
+            family="Update versions"
+            oldString="4.9.0"
+            replacement="4.12.0"/>
+        <location
+            file="${:app*projectDir}/build.gradle"
+            line="64"
+            column="20"
+            startOffset="1747"
+            endLine="64"
+            endColumn="68"
+            endOffset="1795"/>
+    </incident>
+
+    <incident
+        id="GradleDependency"
+        severity="warning"
+        message="A newer version of androidx.lifecycle:lifecycle-viewmodel-ktx than 2.7.0 is available: 2.8.7">
+        <fix-replace
+            description="Change to 2.8.7"
+            family="Update versions"
+            oldString="2.7.0"
+            replacement="2.8.7"/>
+        <location
+            file="${:app*projectDir}/build.gradle"
+            line="73"
+            column="20"
+            startOffset="2084"
+            endLine="73"
+            endColumn="70"
+            endOffset="2134"/>
+    </incident>
+
+    <incident
+        id="GradleDependency"
+        severity="warning"
+        message="A newer version of androidx.lifecycle:lifecycle-runtime-ktx than 2.7.0 is available: 2.8.7">
+        <fix-replace
+            description="Change to 2.8.7"
+            family="Update versions"
+            oldString="2.7.0"
+            replacement="2.8.7"/>
+        <location
+            file="${:app*projectDir}/build.gradle"
+            line="74"
+            column="20"
+            startOffset="2154"
+            endLine="74"
+            endColumn="68"
+            endOffset="2202"/>
+    </incident>
+
+    <incident
+        id="GradleDependency"
+        severity="warning"
+        message="A newer version of androidx.activity:activity-ktx than 1.8.2 is available: 1.10.0">
+        <fix-replace
+            description="Change to 1.10.0"
+            family="Update versions"
+            oldString="1.8.2"
+            replacement="1.10.0"/>
+        <location
+            file="${:app*projectDir}/build.gradle"
+            line="75"
+            column="20"
+            startOffset="2222"
+            endLine="75"
+            endColumn="58"
+            endOffset="2260"/>
+    </incident>
+
+    <incident
+        id="GradleDependency"
+        severity="warning"
+        message="A newer version of androidx.work:work-runtime-ktx than 2.9.0 is available: 2.10.0">
+        <fix-replace
+            description="Change to 2.10.0"
+            family="Update versions"
+            oldString="2.9.0"
+            replacement="2.10.0"/>
+        <location
+            file="${:app*projectDir}/build.gradle"
+            line="78"
+            column="20"
+            startOffset="2300"
+            endLine="78"
+            endColumn="58"
+            endOffset="2338"/>
+    </incident>
+
+    <incident
+        id="GradleDependency"
+        severity="warning"
+        message="A newer version of androidx.test.ext:junit than 1.1.5 is available: 1.2.1">
+        <fix-replace
+            description="Change to 1.2.1"
+            family="Update versions"
+            oldString="1.1.5"
+            replacement="1.2.1"/>
+        <location
+            file="${:app*projectDir}/build.gradle"
+            line="82"
+            column="31"
+            startOffset="2433"
+            endLine="82"
+            endColumn="62"
+            endOffset="2464"/>
+    </incident>
+
+    <incident
+        id="GradleDependency"
+        severity="warning"
+        message="A newer version of androidx.test.espresso:espresso-core than 3.5.1 is available: 3.6.1">
+        <fix-replace
+            description="Change to 3.6.1"
+            family="Update versions"
+            oldString="3.5.1"
+            replacement="3.6.1"/>
+        <location
+            file="${:app*projectDir}/build.gradle"
+            line="83"
+            column="31"
+            startOffset="2495"
+            endLine="83"
+            endColumn="75"
+            endOffset="2539"/>
+    </incident>
+
+    <incident
+        id="GradleDependency"
+        severity="warning"
+        message="A newer version of androidx.work:work-testing than 2.9.0 is available: 2.10.0">
+        <fix-replace
+            description="Change to 2.10.0"
+            family="Update versions"
+            oldString="2.9.0"
+            replacement="2.10.0"/>
+        <location
+            file="${:app*projectDir}/build.gradle"
+            line="84"
+            column="31"
+            startOffset="2570"
+            endLine="84"
+            endColumn="65"
+            endOffset="2604"/>
+    </incident>
+
+    <incident
+        id="GradleDependency"
+        severity="warning"
+        message="A newer version of org.jetbrains.kotlinx:kotlinx-coroutines-test than 1.7.1 is available: 1.7.3">
+        <fix-replace
+            description="Change to 1.7.3"
+            family="Update versions"
+            oldString="1.7.1"
+            replacement="1.7.3"/>
+        <location
+            file="${:app*projectDir}/build.gradle"
+            line="86"
+            column="31"
+            startOffset="2705"
+            endLine="86"
+            endColumn="84"
+            endOffset="2758"/>
+    </incident>
+
+</incidents>

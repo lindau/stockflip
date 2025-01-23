@@ -1,0 +1,33 @@
+R_DEF: Internal format may change without notice
+local
+color black
+color ic_launcher_background
+color purple_200
+color purple_500
+color purple_700
+color teal_200
+color teal_700
+color white
+drawable ic_launcher_foreground
+id addPairButton
+id lastUpdateText
+id notificationInfo
+id notifyWhenEqualCheckbox
+id priceDifferenceInput
+id priceInfo
+id progressBar
+id stockNames
+id stockPairsList
+id stockSymbols
+id swipeRefreshLayout
+id ticker1Input
+id ticker2Input
+layout activity_main
+layout dialog_add_stock_pair
+layout item_stock_pair
+mipmap ic_launcher
+mipmap ic_launcher_round
+string app_name
+style Theme.StockFlip
+xml backup_rules
+xml data_extraction_rules

@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<incidents format="6" by="lint 8.2.2" type="conditional_incidents">
+
+    <incident
+        id="UnusedAttribute"
+        severity="warning"
+        message="">
+        <fix-data minSdk="fffffffffe000000" requiresApi="ffffffffc0000000"/>
+        <location
+            file="${:app*debug*MAIN*sourceProvider*0*manifest*0}"
+            line="15"
+            column="9"
+            startOffset="738"
+            endLine="15"
+            endColumn="65"
+            endOffset="794"/>
+        <map>
+            <api-levels id="minSdk"
+                value="fffffffffe000000"/>
+            <api-levels id="requiresApi"
+                value="ffffffffc0000000"/>
+            <entry
+                name="message"
+                string="Attribute `dataExtractionRules` is only used in API level 31 and higher (current min is %1$s)"/>
+        </map>
+    </incident>
+
+    <incident
+        id="InlinedApi"
+        severity="warning"
+        message="">
+        <fix-data minSdk="fffffffffe000000" requiresApi="ffffffff00000000"/>
+        <location
+            file="${:app*debug*MAIN*sourceProvider*0*javaDir*0}/com/stockflip/MainActivity.kt"
+            line="70"
+            column="17"
+            startOffset="2542"
+            endLine="70"
+            endColumn="38"
+            endOffset="2563"/>
+        <map>
+            <api-levels id="minSdk"
+                value="fffffffffe000000"/>
+            <api-levels id="requiresApi"
+                value="ffffffff00000000"/>
+            <entry
+                name="message"
+                string="Field requires API level 33 (current min is %1$s): `android.content.Context#RECEIVER_NOT_EXPORTED`"/>
+        </map>
+    </incident>
+
+    <incident
+        id="NotificationPermission"
+        severity="error"
+        message="When targeting Android 13 or higher, posting a permission requires holding the `POST_NOTIFICATIONS` permission">
+        <fix-data missing="android.permission.POST_NOTIFICATIONS"/>
+        <location
+            file="${:app*debug*MAIN*sourceProvider*0*javaDir*0}/com/stockflip/StockPriceAlarmManager.kt"
+            line="59"
+            column="9"
+            startOffset="2023"
+            endLine="59"
+            endColumn="66"
+            endOffset="2080"/>
+    </incident>
+
+    <incident
+        id="NotificationPermission"
+        severity="error"
+        message="When targeting Android 13 or higher, posting a permission requires holding the `POST_NOTIFICATIONS` permission">
+        <fix-data missing="android.permission.POST_NOTIFICATIONS"/>
+        <location
+            file="${:app*debug*MAIN*sourceProvider*0*javaDir*0}/com/stockflip/StockPriceUpdateWorker.kt"
+            line="84"
+            column="9"
+            startOffset="3361"
+            endLine="84"
+            endColumn="85"
+            endOffset="3437"/>
+    </incident>
+
+    <incident
+        id="BatteryLife"
+        severity="warning"
+        message="Use of `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS` violates the Play Store Content Policy regarding acceptable use cases, as described in https://developer.android.com/training/monitoring-device-state/doze-standby.html">
+        <location
+            file="${:app*debug*MAIN*sourceProvider*0*javaDir*0}/com/stockflip/StockPriceUpdater.kt"
+            line="74"
+            column="50"
+            startOffset="2514"
+            endLine="74"
+            endColumn="93"
+            endOffset="2557"/>
+        <map>
+            <condition targetGE="23"/>
+        </map>
+    </incident>
+
+</incidents>

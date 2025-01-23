@@ -1,0 +1,58 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 4,
+    "identityHash": "ac377f807830e75ee85693a87e2b04a3",
+    "entities": [
+      {
+        "tableName": "stock_pairs",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `stockName1` TEXT NOT NULL, `stockName2` TEXT NOT NULL, `priceDifference` REAL NOT NULL, `notifyWhenEqual` INTEGER NOT NULL)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "stockName1",
+            "columnName": "stockName1",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "stockName2",
+            "columnName": "stockName2",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "priceDifference",
+            "columnName": "priceDifference",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "notifyWhenEqual",
+            "columnName": "notifyWhenEqual",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      }
+    ],
+    "views": [],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'ac377f807830e75ee85693a87e2b04a3')"
+    ]
+  }
+}

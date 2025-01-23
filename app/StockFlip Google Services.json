@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "665086789456",
+    "project_id": "stockflip-df971",
+    "storage_bucket": "stockflip-df971.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:665086789456:android:287c690ff03d4c7b3a4e55",
+        "android_client_info": {
+          "package_name": "com.stockflip"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBpRIuwJ-4ZC1B6LHafLKS10aPhAp_ij24"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

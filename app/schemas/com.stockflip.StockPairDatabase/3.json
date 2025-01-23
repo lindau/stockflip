@@ -1,0 +1,70 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 3,
+    "identityHash": "6b96da5a5c12e51f50c0b51808ecc2c6",
+    "entities": [
+      {
+        "tableName": "stock_pairs",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `stock1` TEXT NOT NULL, `stock2` TEXT NOT NULL, `stockName1` TEXT NOT NULL, `stockName2` TEXT NOT NULL, `priceDifference` REAL NOT NULL, `notifyWhenEqual` INTEGER NOT NULL)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "stock1",
+            "columnName": "stock1",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "stock2",
+            "columnName": "stock2",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "stockName1",
+            "columnName": "stockName1",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "stockName2",
+            "columnName": "stockName2",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "priceDifference",
+            "columnName": "priceDifference",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "notifyWhenEqual",
+            "columnName": "notifyWhenEqual",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      }
+    ],
+    "views": [],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '6b96da5a5c12e51f50c0b51808ecc2c6')"
+    ]
+  }
+}
