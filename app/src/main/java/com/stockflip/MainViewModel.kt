@@ -44,19 +44,24 @@ class MainViewModel(
             Log.d(TAG, "Found ${pairs.size} pairs to refresh")
             
             val updatedPairs = pairs.map { pair ->
-                Log.d(TAG, "Fetching prices for pair: ${pair.companyName1} - ${pair.companyName2}")
+                Log.d(TAG, "Fetching prices for pair: ${pair.companyName1} (${pair.ticker1}) - ${pair.companyName2} (${pair.ticker2})")
                 val price1 = yahooFinanceService.getStockPrice(pair.ticker1)
                 val price2 = yahooFinanceService.getStockPrice(pair.ticker2)
-                Log.d(TAG, "Fetched prices for ${pair.companyName1}: $price1, ${pair.companyName2}: $price2")
+                Log.d(TAG, "Fetched prices: ${pair.ticker1}=$price1, ${pair.ticker2}=$price2")
                 
-                val updatedPair = pair.withCurrentPrices(price1, price2)
-                Log.d(TAG, "Updated pair prices: ${updatedPair.currentPrice1}, ${updatedPair.currentPrice2}")
-                updatedPair
+                if (price1 != null && price2 != null) {
+                    val updatedPair = pair.withCurrentPrices(price1, price2)
+                    Log.d(TAG, "Updating database with new prices for ${pair.companyName1}: $price1, ${pair.companyName2}: $price2")
+                    stockPairDao.update(updatedPair)
+                    updatedPair
+                } else {
+                    Log.w(TAG, "Failed to fetch prices for ${pair.ticker1} or ${pair.ticker2}, keeping existing prices")
+                    pair
+                }
             }
             
             Log.d(TAG, "Updating UI with ${updatedPairs.size} refreshed pairs")
             _uiState.value = UiState.Success(updatedPairs)
-            Log.d(TAG, "Stock pairs refresh completed successfully")
         } catch (e: Exception) {
             Log.e(TAG, "Failed to refresh stock pairs", e)
             _uiState.value = UiState.Error("Failed to refresh: ${e.message}")
