@@ -59,26 +59,18 @@ public final class StockPairAdapter extends androidx.recyclerview.widget.ListAda
         }
     }
     
-    @kotlin.Metadata(mv = {1, 9, 0}, k = 1, xi = 48, d1 = {"\u00002\n\u0002\u0018\u0002\n\u0002\u0018\u0002\n\u0000\n\u0002\u0018\u0002\n\u0002\b\u0002\n\u0002\u0018\u0002\n\u0002\b\u0003\n\u0002\u0010\u0002\n\u0000\n\u0002\u0018\u0002\n\u0000\n\u0002\u0010\u000e\n\u0000\n\u0002\u0010\u0006\n\u0000\b\u0086\u0004\u0018\u00002\u00020\u0001B\r\u0012\u0006\u0010\u0002\u001a\u00020\u0003\u00a2\u0006\u0002\u0010\u0004J\u000e\u0010\t\u001a\u00020\n2\u0006\u0010\u000b\u001a\u00020\fJ\u0010\u0010\r\u001a\u00020\u000e2\u0006\u0010\u000f\u001a\u00020\u0010H\u0002R\u000e\u0010\u0005\u001a\u00020\u0006X\u0082\u0004\u00a2\u0006\u0002\n\u0000R\u000e\u0010\u0007\u001a\u00020\u0006X\u0082\u0004\u00a2\u0006\u0002\n\u0000R\u000e\u0010\b\u001a\u00020\u0006X\u0082\u0004\u00a2\u0006\u0002\n\u0000\u00a8\u0006\u0011"}, d2 = {"Lcom/stockflip/StockPairAdapter$ViewHolder;", "Landroidx/recyclerview/widget/RecyclerView$ViewHolder;", "itemView", "Landroid/view/View;", "(Lcom/stockflip/StockPairAdapter;Landroid/view/View;)V", "notificationInfo", "Landroid/widget/TextView;", "priceInfo", "stockNames", "bind", "", "pair", "Lcom/stockflip/StockPair;", "getFormattedPrice", "", "price", "", "app_debug"})
+    @kotlin.Metadata(mv = {1, 9, 0}, k = 1, xi = 48, d1 = {"\u0000\u001e\n\u0002\u0018\u0002\n\u0002\u0018\u0002\n\u0000\n\u0002\u0018\u0002\n\u0002\b\u0002\n\u0002\u0010\u0002\n\u0000\n\u0002\u0018\u0002\n\u0000\b\u0086\u0004\u0018\u00002\u00020\u0001B\r\u0012\u0006\u0010\u0002\u001a\u00020\u0003\u00a2\u0006\u0002\u0010\u0004J\u000e\u0010\u0005\u001a\u00020\u00062\u0006\u0010\u0007\u001a\u00020\bR\u000e\u0010\u0002\u001a\u00020\u0003X\u0082\u0004\u00a2\u0006\u0002\n\u0000\u00a8\u0006\t"}, d2 = {"Lcom/stockflip/StockPairAdapter$ViewHolder;", "Landroidx/recyclerview/widget/RecyclerView$ViewHolder;", "binding", "Lcom/stockflip/databinding/ItemStockPairBinding;", "(Lcom/stockflip/StockPairAdapter;Lcom/stockflip/databinding/ItemStockPairBinding;)V", "bind", "", "pair", "Lcom/stockflip/StockPair;", "app_debug"})
     public final class ViewHolder extends androidx.recyclerview.widget.RecyclerView.ViewHolder {
         @org.jetbrains.annotations.NotNull()
-        private final android.widget.TextView stockNames = null;
-        @org.jetbrains.annotations.NotNull()
-        private final android.widget.TextView priceInfo = null;
-        @org.jetbrains.annotations.NotNull()
-        private final android.widget.TextView notificationInfo = null;
+        private final com.stockflip.databinding.ItemStockPairBinding binding = null;
         
         public ViewHolder(@org.jetbrains.annotations.NotNull()
-        android.view.View itemView) {
+        com.stockflip.databinding.ItemStockPairBinding binding) {
             super(null);
         }
         
         public final void bind(@org.jetbrains.annotations.NotNull()
         com.stockflip.StockPair pair) {
-        }
-        
-        private final java.lang.String getFormattedPrice(double price) {
-            return null;
         }
     }
 }

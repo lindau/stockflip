@@ -126,7 +126,7 @@ public final class StockPairDao_Impl implements StockPairDao {
   }
 
   @Override
-  public Object insertStockPair(final StockPair stockPair,
+  public Object insertStockPair(final StockPair pair,
       final Continuation<? super Unit> $completion) {
     return CoroutinesRoom.execute(__db, true, new Callable<Unit>() {
       @Override
@@ -134,7 +134,7 @@ public final class StockPairDao_Impl implements StockPairDao {
       public Unit call() throws Exception {
         __db.beginTransaction();
         try {
-          __insertionAdapterOfStockPair.insert(stockPair);
+          __insertionAdapterOfStockPair.insert(pair);
           __db.setTransactionSuccessful();
           return Unit.INSTANCE;
         } finally {
@@ -145,7 +145,7 @@ public final class StockPairDao_Impl implements StockPairDao {
   }
 
   @Override
-  public Object deleteStockPair(final StockPair stockPair,
+  public Object deleteStockPair(final StockPair pair,
       final Continuation<? super Unit> $completion) {
     return CoroutinesRoom.execute(__db, true, new Callable<Unit>() {
       @Override
@@ -153,7 +153,7 @@ public final class StockPairDao_Impl implements StockPairDao {
       public Unit call() throws Exception {
         __db.beginTransaction();
         try {
-          __deletionAdapterOfStockPair.handle(stockPair);
+          __deletionAdapterOfStockPair.handle(pair);
           __db.setTransactionSuccessful();
           return Unit.INSTANCE;
         } finally {
@@ -164,15 +164,14 @@ public final class StockPairDao_Impl implements StockPairDao {
   }
 
   @Override
-  public Object updateStockPair(final StockPair stockPair,
-      final Continuation<? super Unit> $completion) {
+  public Object update(final StockPair pair, final Continuation<? super Unit> $completion) {
     return CoroutinesRoom.execute(__db, true, new Callable<Unit>() {
       @Override
       @NonNull
       public Unit call() throws Exception {
         __db.beginTransaction();
         try {
-          __updateAdapterOfStockPair.handle(stockPair);
+          __updateAdapterOfStockPair.handle(pair);
           __db.setTransactionSuccessful();
           return Unit.INSTANCE;
         } finally {

@@ -17,52 +17,56 @@ object StockPriceUpdater {
     private const val TAG = "StockPriceUpdater"
     const val WORK_NAME_PERIODIC = "StockPriceUpdatePeriodic"
     const val WORK_NAME_IMMEDIATE = "StockPriceUpdateImmediate"
+    private const val PRICE_EQUALITY_THRESHOLD = 0.01
 
     fun startPeriodicUpdate(context: Context) {
-        Log.d(TAG, "Setting up periodic price updates")
-        
-        createNotificationChannel(context)
-        
+        Log.d(TAG, "Starting periodic price updates")
+        val workManager = WorkManager.getInstance(context)
+
+        // Set up constraints
         val constraints = Constraints.Builder()
             .setRequiredNetworkType(NetworkType.CONNECTED)
             .build()
 
+        // Create immediate work request for first update
         val initialWork = OneTimeWorkRequestBuilder<StockPriceUpdateWorker>()
-            .setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
             .setConstraints(constraints)
             .build()
 
+        // Create periodic work request for subsequent updates
         val periodicWork = PeriodicWorkRequestBuilder<StockPriceUpdateWorker>(
-            15, TimeUnit.MINUTES
+            1, TimeUnit.MINUTES,  // Repeat interval
+            1, TimeUnit.MINUTES   // Flex interval (minimum allowed by WorkManager)
         )
             .setConstraints(constraints)
-            .setBackoffCriteria(
-                BackoffPolicy.LINEAR,
-                10, TimeUnit.SECONDS
-            )
             .build()
 
-        WorkManager.getInstance(context).also { workManager ->
-            workManager.cancelAllWork()
-            
-            workManager
-                .enqueueUniqueWork(
-                    WORK_NAME_IMMEDIATE,
-                    ExistingWorkPolicy.KEEP,
-                    initialWork
-                )
+        // Schedule both immediate and periodic work
+        workManager.apply {
+            // Schedule immediate work
+            enqueueUniqueWork(
+                WORK_NAME_IMMEDIATE,
+                ExistingWorkPolicy.KEEP,
+                initialWork
+            )
 
-            workManager
-                .enqueueUniquePeriodicWork(
-                    WORK_NAME_PERIODIC,
-                    ExistingPeriodicWorkPolicy.KEEP,
-                    periodicWork
-                )
-            
-            monitorWorkStatus(workManager)
+            // Schedule periodic work
+            enqueueUniquePeriodicWork(
+                WORK_NAME_PERIODIC,
+                ExistingPeriodicWorkPolicy.KEEP,
+                periodicWork
+            )
         }
-        
-        Log.d(TAG, "Price updates scheduled (both immediate and periodic)")
+
+        // Monitor work status for debugging
+        workManager.getWorkInfosForUniqueWorkLiveData(WORK_NAME_PERIODIC)
+            .observeForever { workInfos ->
+                workInfos?.forEach { workInfo ->
+                    Log.d(TAG, "Periodic work status: ${workInfo.state}")
+                }
+            }
+
+        Log.d(TAG, "Price updates scheduled successfully")
     }
 
     fun requestBatteryOptimizationExemption(activity: Activity) {

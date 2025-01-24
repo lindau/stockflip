@@ -13,8 +13,8 @@ data class StockPair(
     val ticker2: String,
     val companyName1: String,
     val companyName2: String,
-    val priceDifference: Double,
-    val notifyWhenEqual: Boolean
+    val priceDifference: Double = 0.0,
+    val notifyWhenEqual: Boolean = false
 ) {
     @Ignore
     var currentPrice1: Double = 0.0
@@ -25,30 +25,41 @@ data class StockPair(
         private set
 
     fun withCurrentPrices(price1: Double?, price2: Double?): StockPair {
+        Log.d(TAG, "Updating prices for $ticker1-$ticker2: $price1, $price2")
         if (price1 == null || price2 == null) {
-            Log.w("StockPair", "Received null prices for $companyName1 or $companyName2")
+            Log.w(TAG, "Received null prices for $ticker1-$ticker2")
             return this
         }
-        
-        return copy(
-            id = id,
-            ticker1 = ticker1,
-            ticker2 = ticker2,
-            companyName1 = companyName1,
-            companyName2 = companyName2,
-            priceDifference = priceDifference,
-            notifyWhenEqual = notifyWhenEqual
-        ).also {
+        return copy().also {
             it.currentPrice1 = price1
             it.currentPrice2 = price2
-            Log.d("StockPair", "Updated prices for $companyName1: $price1, $companyName2: $price2")
+            Log.d(TAG, "Updated prices for $ticker1-$ticker2: ${it.currentPrice1}, ${it.currentPrice2}")
         }
     }
 
+    fun getFormattedPrice1(): String {
+        return if (currentPrice1 > 0.0) {
+            String.format("%.2f SEK", currentPrice1)
+        } else {
+            "Loading..."
+        }
+    }
+
+    fun getFormattedPrice2(): String {
+        return if (currentPrice2 > 0.0) {
+            String.format("%.2f SEK", currentPrice2)
+        } else {
+            "Loading..."
+        }
+    }
+
+    fun getFormattedPriceDifference(): String {
+        return String.format("%.2f", priceDifference)
+    }
+
     fun getDisplayPair(): String = "$companyName1 - $companyName2"
-    
-    fun getFormattedPrice1() = String.format("%.2f SEK", currentPrice1)
-    fun getFormattedPrice2() = String.format("%.2f SEK", currentPrice2)
-    
-    fun getFormattedPriceDifference() = String.format("%.2f", priceDifference)
+
+    companion object {
+        private const val TAG = "StockPair"
+    }
 } 

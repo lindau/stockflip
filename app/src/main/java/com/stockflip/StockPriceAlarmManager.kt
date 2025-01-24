@@ -9,7 +9,6 @@ import android.content.Intent
 import android.os.Build
 import android.util.Log
 import androidx.core.app.NotificationCompat
-import java.util.concurrent.TimeUnit
 
 class StockPriceAlarmManager(private val context: Context) {
     private val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
@@ -19,9 +18,10 @@ class StockPriceAlarmManager(private val context: Context) {
         createNotificationChannel()
     }
 
-    fun scheduleStockPriceCheck(intervalMinutes: Long = 15) {
+    fun scheduleStockPriceCheck(intervalMinutes: Int) {
+        Log.d(TAG, "Scheduling stock price check every $intervalMinutes minutes")
         val intent = Intent(context, PriceUpdateReceiver::class.java).apply {
-            action = PriceUpdateReceiver.ACTION_PRICE_UPDATE
+            action = PriceUpdateReceiver.ACTION_PRICES_UPDATED
         }
 
         val pendingIntent = PendingIntent.getBroadcast(
@@ -31,20 +31,18 @@ class StockPriceAlarmManager(private val context: Context) {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        val intervalMillis = TimeUnit.MINUTES.toMillis(intervalMinutes)
-        val startTime = System.currentTimeMillis()
+        // Cancel any existing alarms
+        alarmManager.cancel(pendingIntent)
 
-        try {
-            alarmManager.setRepeating(
-                AlarmManager.RTC_WAKEUP,
-                startTime,
-                intervalMillis,
-                pendingIntent
-            )
-            Log.d(TAG, "Scheduled stock price check every $intervalMinutes minutes")
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to schedule stock price check: ${e.message}")
-        }
+        // Schedule new alarm
+        val intervalMillis = intervalMinutes * 60 * 1000L
+        alarmManager.setRepeating(
+            AlarmManager.RTC_WAKEUP,
+            System.currentTimeMillis(),
+            intervalMillis,
+            pendingIntent
+        )
+        Log.d(TAG, "Stock price check scheduled successfully")
     }
 
     fun showNotification(title: String, message: String) {
@@ -56,17 +54,16 @@ class StockPriceAlarmManager(private val context: Context) {
             .setAutoCancel(true)
             .build()
 
-        notificationManager.notify(NOTIFICATION_ID, notification)
+        notificationManager.notify(System.currentTimeMillis().toInt(), notification)
     }
 
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                CHANNEL_ID,
-                "Stock Price Alerts",
-                NotificationManager.IMPORTANCE_DEFAULT
-            ).apply {
-                description = "Notifications for stock price alerts"
+            val name = "Stock Price Alerts"
+            val descriptionText = "Notifications for stock price alerts"
+            val importance = NotificationManager.IMPORTANCE_DEFAULT
+            val channel = NotificationChannel(CHANNEL_ID, name, importance).apply {
+                description = descriptionText
             }
             notificationManager.createNotificationChannel(channel)
         }
@@ -75,6 +72,5 @@ class StockPriceAlarmManager(private val context: Context) {
     companion object {
         private const val TAG = "StockPriceAlarmManager"
         private const val CHANNEL_ID = "stock_price_alerts"
-        private const val NOTIFICATION_ID = 1
     }
 } 

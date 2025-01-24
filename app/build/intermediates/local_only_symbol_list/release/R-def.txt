@@ -10,7 +10,9 @@ color teal_700
 color white
 drawable ic_launcher_foreground
 id addPairButton
-id lastUpdateText
+id deleteButton
+id editButton
+id lastUpdateTime
 id notificationInfo
 id notifyWhenEqualCheckbox
 id priceDifferenceInput

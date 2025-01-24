@@ -3320,7 +3320,7 @@ id item_touch_helper_previous_elevation
 id jumpToEnd
 id jumpToStart
 id labeled
-id lastUpdateText
+id lastUpdateTime
 id layout
 id left
 id leftToRight

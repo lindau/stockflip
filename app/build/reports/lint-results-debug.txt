@@ -1,6 +1,6 @@
-/Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/src/main/java/com/stockflip/MainActivity.kt:70: Warning: Field requires API level 33 (current min is 26): android.content.Context#RECEIVER_NOT_EXPORTED [InlinedApi]
-                RECEIVER_NOT_EXPORTED
-                ~~~~~~~~~~~~~~~~~~~~~
+/Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/src/main/java/com/stockflip/MainActivity.kt:67: Warning: Field requires API level 33 (current min is 26): android.content.Context#RECEIVER_NOT_EXPORTED [InlinedApi]
+                Context.RECEIVER_NOT_EXPORTED
+                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
    Explanation for issues of type "InlinedApi":
    This check scans through all the Android API field references in the
@@ -67,7 +67,7 @@
    can be unused too, such as the new <tag> element in layouts introduced in
    API 21.
 
-/Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/src/main/java/com/stockflip/StockPriceUpdater.kt:74: Warning: Use of REQUEST_IGNORE_BATTERY_OPTIMIZATIONS violates the Play Store Content Policy regarding acceptable use cases, as described in https://developer.android.com/training/monitoring-device-state/doze-standby.html [BatteryLife]
+/Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/src/main/java/com/stockflip/StockPriceUpdater.kt:78: Warning: Use of REQUEST_IGNORE_BATTERY_OPTIMIZATIONS violates the Play Store Content Policy regarding acceptable use cases, as described in https://developer.android.com/training/monitoring-device-state/doze-standby.html [BatteryLife]
                     val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
                                                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -133,16 +133,16 @@
    However, you may simply not be aware that a more recent version is
    available, and that is what this lint check helps find.
 
-/Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/src/main/java/com/stockflip/StockPriceAlarmManager.kt:63: Warning: Unnecessary; SDK_INT is always >= 26 [ObsoleteSdkInt]
+/Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/src/main/java/com/stockflip/StockPriceAlarmManager.kt:61: Warning: Unnecessary; SDK_INT is always >= 26 [ObsoleteSdkInt]
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-/Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/src/main/java/com/stockflip/StockPriceUpdateWorker.kt:88: Warning: Unnecessary; SDK_INT is always >= 26 [ObsoleteSdkInt]
+/Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/src/main/java/com/stockflip/StockPriceUpdateWorker.kt:116: Warning: Unnecessary; SDK_INT is always >= 26 [ObsoleteSdkInt]
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-/Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/src/main/java/com/stockflip/StockPriceUpdater.kt:69: Warning: Unnecessary; SDK_INT is always >= 26 [ObsoleteSdkInt]
+/Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/src/main/java/com/stockflip/StockPriceUpdater.kt:73: Warning: Unnecessary; SDK_INT is always >= 26 [ObsoleteSdkInt]
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-/Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/src/main/java/com/stockflip/StockPriceUpdater.kt:86: Warning: Unnecessary; SDK_INT is always >= 26 [ObsoleteSdkInt]
+/Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/src/main/java/com/stockflip/StockPriceUpdater.kt:90: Warning: Unnecessary; SDK_INT is always >= 26 [ObsoleteSdkInt]
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 /Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/src/main/res/mipmap-anydpi-v26: Warning: This folder configuration (v26) is unnecessary; minSdkVersion is 26. Merge all the resources in this folder into mipmap-anydpi. [ObsoleteSdkInt]
@@ -185,12 +185,15 @@
    application iconwill not show if your monochrome attribute is not also
    specified in android:roundIcon.
 
-/Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/src/main/java/com/stockflip/MainActivity.kt:128: Warning: Do not concatenate text displayed with setText. Use resource string with placeholders. [SetTextI18n]
-        binding.lastUpdateText.text = "Last updated: $currentTime"
+/Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/src/main/java/com/stockflip/MainActivity.kt:95: Warning: Do not concatenate text displayed with setText. Use resource string with placeholders. [SetTextI18n]
+        binding.lastUpdateTime.text = "Last updated: $currentTime"
                                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-/Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/src/main/java/com/stockflip/MainActivity.kt:128: Warning: String literal in setText can not be translated. Use Android resources instead. [SetTextI18n]
-        binding.lastUpdateText.text = "Last updated: $currentTime"
+/Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/src/main/java/com/stockflip/MainActivity.kt:95: Warning: String literal in setText can not be translated. Use Android resources instead. [SetTextI18n]
+        binding.lastUpdateTime.text = "Last updated: $currentTime"
                                        ~~~~~~~~~~~~~~
+/Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/src/main/java/com/stockflip/StockPairAdapter.kt:38: Warning: Do not concatenate text displayed with setText. Use resource string with placeholders. [SetTextI18n]
+            binding.stockNames.text = "${pair.companyName1} (${pair.ticker1}) - ${pair.companyName2} (${pair.ticker2})"
+                                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
    Explanation for issues of type "SetTextI18n":
    When calling TextView#setText
@@ -205,6 +208,9 @@
 
    https://developer.android.com/guide/topics/resources/localization.html
 
+/Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/src/main/res/layout/activity_main.xml:29: Warning: Hardcoded string "Last updated: Never", should use @string resource [HardcodedText]
+        android:text="Last updated: Never"
+        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 /Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/src/main/res/layout/activity_main.xml:40: Warning: Hardcoded string "Add Stock Pair", should use @string resource [HardcodedText]
         android:text="Add Stock Pair"
         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -220,6 +226,12 @@
 /Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/src/main/res/layout/dialog_add_stock_pair.xml:54: Warning: Hardcoded string "Notify when prices are equal", should use @string resource [HardcodedText]
         android:text="Notify when prices are equal" />
         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/src/main/res/layout/item_stock_pair.xml:54: Warning: Hardcoded string "Edit", should use @string resource [HardcodedText]
+                android:text="Edit"
+                ~~~~~~~~~~~~~~~~~~~
+/Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/src/main/res/layout/item_stock_pair.xml:61: Warning: Hardcoded string "Delete", should use @string resource [HardcodedText]
+                android:text="Delete"
+                ~~~~~~~~~~~~~~~~~~~~~
 
    Explanation for issues of type "HardcodedText":
    Hardcoding text attributes directly in layout files is bad for several
@@ -235,4 +247,4 @@
    There are quickfixes to automatically extract this hardcoded string into a
    resource lookup.
 
-0 errors, 33 warnings
+0 errors, 37 warnings

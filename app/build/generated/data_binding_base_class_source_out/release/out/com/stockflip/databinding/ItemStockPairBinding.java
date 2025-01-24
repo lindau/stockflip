@@ -4,6 +4,7 @@ package com.stockflip.databinding;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -20,6 +21,12 @@ public final class ItemStockPairBinding implements ViewBinding {
   private final CardView rootView;
 
   @NonNull
+  public final Button deleteButton;
+
+  @NonNull
+  public final Button editButton;
+
+  @NonNull
   public final TextView notificationInfo;
 
   @NonNull
@@ -31,9 +38,12 @@ public final class ItemStockPairBinding implements ViewBinding {
   @NonNull
   public final TextView stockSymbols;
 
-  private ItemStockPairBinding(@NonNull CardView rootView, @NonNull TextView notificationInfo,
-      @NonNull TextView priceInfo, @NonNull TextView stockNames, @NonNull TextView stockSymbols) {
+  private ItemStockPairBinding(@NonNull CardView rootView, @NonNull Button deleteButton,
+      @NonNull Button editButton, @NonNull TextView notificationInfo, @NonNull TextView priceInfo,
+      @NonNull TextView stockNames, @NonNull TextView stockSymbols) {
     this.rootView = rootView;
+    this.deleteButton = deleteButton;
+    this.editButton = editButton;
     this.notificationInfo = notificationInfo;
     this.priceInfo = priceInfo;
     this.stockNames = stockNames;
@@ -67,6 +77,18 @@ public final class ItemStockPairBinding implements ViewBinding {
     // This is done to optimize the compiled bytecode for size and performance.
     int id;
     missingId: {
+      id = R.id.deleteButton;
+      Button deleteButton = ViewBindings.findChildViewById(rootView, id);
+      if (deleteButton == null) {
+        break missingId;
+      }
+
+      id = R.id.editButton;
+      Button editButton = ViewBindings.findChildViewById(rootView, id);
+      if (editButton == null) {
+        break missingId;
+      }
+
       id = R.id.notificationInfo;
       TextView notificationInfo = ViewBindings.findChildViewById(rootView, id);
       if (notificationInfo == null) {
@@ -91,8 +113,8 @@ public final class ItemStockPairBinding implements ViewBinding {
         break missingId;
       }
 
-      return new ItemStockPairBinding((CardView) rootView, notificationInfo, priceInfo, stockNames,
-          stockSymbols);
+      return new ItemStockPairBinding((CardView) rootView, deleteButton, editButton,
+          notificationInfo, priceInfo, stockNames, stockSymbols);
     }
     String missingId = rootView.getResources().getResourceName(id);
     throw new NullPointerException("Missing required view with ID: ".concat(missingId));

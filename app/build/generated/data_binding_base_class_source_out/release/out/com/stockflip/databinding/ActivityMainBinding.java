@@ -27,7 +27,7 @@ public final class ActivityMainBinding implements ViewBinding {
   public final Button addPairButton;
 
   @NonNull
-  public final TextView lastUpdateText;
+  public final TextView lastUpdateTime;
 
   @NonNull
   public final ProgressBar progressBar;
@@ -39,11 +39,11 @@ public final class ActivityMainBinding implements ViewBinding {
   public final SwipeRefreshLayout swipeRefreshLayout;
 
   private ActivityMainBinding(@NonNull ConstraintLayout rootView, @NonNull Button addPairButton,
-      @NonNull TextView lastUpdateText, @NonNull ProgressBar progressBar,
+      @NonNull TextView lastUpdateTime, @NonNull ProgressBar progressBar,
       @NonNull RecyclerView stockPairsList, @NonNull SwipeRefreshLayout swipeRefreshLayout) {
     this.rootView = rootView;
     this.addPairButton = addPairButton;
-    this.lastUpdateText = lastUpdateText;
+    this.lastUpdateTime = lastUpdateTime;
     this.progressBar = progressBar;
     this.stockPairsList = stockPairsList;
     this.swipeRefreshLayout = swipeRefreshLayout;
@@ -82,9 +82,9 @@ public final class ActivityMainBinding implements ViewBinding {
         break missingId;
       }
 
-      id = R.id.lastUpdateText;
-      TextView lastUpdateText = ViewBindings.findChildViewById(rootView, id);
-      if (lastUpdateText == null) {
+      id = R.id.lastUpdateTime;
+      TextView lastUpdateTime = ViewBindings.findChildViewById(rootView, id);
+      if (lastUpdateTime == null) {
         break missingId;
       }
 
@@ -106,7 +106,7 @@ public final class ActivityMainBinding implements ViewBinding {
         break missingId;
       }
 
-      return new ActivityMainBinding((ConstraintLayout) rootView, addPairButton, lastUpdateText,
+      return new ActivityMainBinding((ConstraintLayout) rootView, addPairButton, lastUpdateTime,
           progressBar, stockPairsList, swipeRefreshLayout);
     }
     String missingId = rootView.getResources().getResourceName(id);

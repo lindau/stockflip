@@ -8,69 +8,85 @@ import android.widget.TextView
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
+import com.stockflip.databinding.ItemStockPairBinding
+import kotlin.math.abs
 
 class StockPairAdapter(
     private val onDeleteClick: (StockPair) -> Unit,
     private val onEditClick: (StockPair) -> Unit
 ) : ListAdapter<StockPair, StockPairAdapter.ViewHolder>(StockPairDiffCallback()) {
 
-    companion object {
-        private const val TAG = "StockPairAdapter"
-    }
-
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
-        val view = LayoutInflater.from(parent.context)
-            .inflate(R.layout.item_stock_pair, parent, false)
-        return ViewHolder(view)
+        val binding = ItemStockPairBinding.inflate(
+            LayoutInflater.from(parent.context),
+            parent,
+            false
+        )
+        return ViewHolder(binding)
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        holder.bind(getItem(position))
+        val pair = getItem(position)
+        holder.bind(pair)
     }
 
-    inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        private val stockNames: TextView = itemView.findViewById(R.id.stockNames)
-        private val priceInfo: TextView = itemView.findViewById(R.id.priceInfo)
-        private val notificationInfo: TextView = itemView.findViewById(R.id.notificationInfo)
-
+    inner class ViewHolder(private val binding: ItemStockPairBinding) : RecyclerView.ViewHolder(binding.root) {
         fun bind(pair: StockPair) {
-            // Set stock names and prices
-            stockNames.text = "${pair.companyName1} (${pair.ticker1}): ${getFormattedPrice(pair.currentPrice1)}"
-            priceInfo.text = "${pair.companyName2} (${pair.ticker2}): ${getFormattedPrice(pair.currentPrice2)}"
+            Log.d(TAG, "Binding stock pair: ${pair.companyName1} - ${pair.companyName2}")
+            Log.d(TAG, "Current prices: ${pair.currentPrice1}, ${pair.currentPrice2}")
 
-            // Set notification info
-            if (pair.priceDifference > 0 || pair.notifyWhenEqual) {
-                notificationInfo.visibility = View.VISIBLE
-                notificationInfo.text = buildString {
-                    if (pair.priceDifference > 0) {
-                        appendLine("Notify when price difference ≥ %.2f SEK".format(pair.priceDifference))
-                    }
-                    if (pair.notifyWhenEqual) {
-                        appendLine("Will notify when prices are equal")
-                    }
-                    if (pair.currentPrice1 > 0.0 && pair.currentPrice2 > 0.0) {
-                        append("Current difference: %.2f SEK".format(kotlin.math.abs(pair.currentPrice1 - pair.currentPrice2)))
-                    }
-                }
-            } else {
-                notificationInfo.visibility = View.GONE
+            // Set company names and prices on separate lines
+            binding.stockNames.text = "${pair.companyName1} (${pair.ticker1}): ${pair.getFormattedPrice1()}"
+            binding.priceInfo.text = "${pair.companyName2} (${pair.ticker2}): ${pair.getFormattedPrice2()}"
+
+            // Calculate and show current price difference
+            val currentDiff = if (pair.currentPrice1 > 0 && pair.currentPrice2 > 0) {
+                abs(pair.currentPrice1 - pair.currentPrice2)
+            } else null
+
+            // Check if notification criteria are met
+            val shouldHighlight = when {
+                currentDiff == null -> false
+                pair.notifyWhenEqual && abs(currentDiff) <= 0.01 -> true  // Prices are effectively equal
+                pair.priceDifference > 0 && currentDiff >= pair.priceDifference -> true  // Difference threshold reached
+                else -> false
             }
 
-            // Set click listeners
-            notificationInfo.setOnClickListener { onEditClick(pair) }
+            // Update card background color
+            binding.root.setCardBackgroundColor(
+                if (shouldHighlight) {
+                    android.graphics.Color.RED
+                } else {
+                    android.graphics.Color.WHITE
+                }
+            )
+
+            binding.notificationInfo.text = buildString {
+                if (currentDiff != null) {
+                    appendLine("Current price difference: ${String.format("%.2f", currentDiff)} SEK")
+                }
+                if (pair.priceDifference > 0) {
+                    append("Notify when price difference ≥ ${pair.getFormattedPriceDifference()} SEK")
+                }
+                if (pair.notifyWhenEqual) {
+                    if (pair.priceDifference > 0) appendLine()
+                    append("Will notify when prices are equal")
+                }
+            }
+
+            // Set up click listeners
+            binding.notificationInfo.setOnClickListener {
+                onEditClick(pair)
+            }
             itemView.setOnLongClickListener { 
                 onDeleteClick(pair)
                 true
             }
         }
+    }
 
-        private fun getFormattedPrice(price: Double): String {
-            return if (price > 0.0) {
-                String.format("%.2f SEK", price)
-            } else {
-                "Loading..."
-            }
-        }
+    companion object {
+        private const val TAG = "StockPairAdapter"
     }
 
     private class StockPairDiffCallback : DiffUtil.ItemCallback<StockPair>() {
@@ -79,7 +95,9 @@ class StockPairAdapter(
         }
 
         override fun areContentsTheSame(oldItem: StockPair, newItem: StockPair): Boolean {
-            return oldItem == newItem
+            return oldItem == newItem &&
+                   oldItem.currentPrice1 == newItem.currentPrice1 &&
+                   oldItem.currentPrice2 == newItem.currentPrice2
         }
     }
 } 

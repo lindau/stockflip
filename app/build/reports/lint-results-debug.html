@@ -177,9 +177,9 @@ document.getElementById(id).style.display = 'none';
 <div class="mdl-layout mdl-js-layout mdl-layout--fixed-header">
   <header class="mdl-layout__header">
     <div class="mdl-layout__header-row">
-      <span class="mdl-layout-title">Lint Report: 33 warnings</span>
+      <span class="mdl-layout-title">Lint Report: 37 warnings</span>
       <div class="mdl-layout-spacer"></div>
-      <nav class="mdl-navigation mdl-layout--large-screen-only">Check performed at Thu Jan 23 14:01:12 CET 2025 by AGP (8.2.2)</nav>
+      <nav class="mdl-navigation mdl-layout--large-screen-only">Check performed at Fri Jan 24 09:11:31 CET 2025 by AGP (8.2.2)</nav>
     </div>
   </header>
   <div class="mdl-layout__drawer">
@@ -194,8 +194,8 @@ document.getElementById(id).style.display = 'none';
       <a class="mdl-navigation__link" href="#ObsoleteSdkInt"><i class="material-icons warning-icon">warning</i>Obsolete SDK_INT Version Check (5)</a>
       <a class="mdl-navigation__link" href="#KaptUsageInsteadOfKsp"><i class="material-icons warning-icon">warning</i>Kapt usage should be replaced with KSP (1)</a>
       <a class="mdl-navigation__link" href="#MonochromeLauncherIcon"><i class="material-icons warning-icon">warning</i>Monochrome icon is not defined (2)</a>
-      <a class="mdl-navigation__link" href="#SetTextI18n"><i class="material-icons warning-icon">warning</i>TextView Internationalization (2)</a>
-      <a class="mdl-navigation__link" href="#HardcodedText"><i class="material-icons warning-icon">warning</i>Hardcoded text (5)</a>
+      <a class="mdl-navigation__link" href="#SetTextI18n"><i class="material-icons warning-icon">warning</i>TextView Internationalization (3)</a>
+      <a class="mdl-navigation__link" href="#HardcodedText"><i class="material-icons warning-icon">warning</i>Hardcoded text (8)</a>
     </nav>
   </div>
   <main class="mdl-layout__content">
@@ -241,10 +241,10 @@ document.getElementById(id).style.display = 'none';
 <tr><td class="countColumn"></td><td class="categoryColumn"><a href="#Internationalization">Internationalization</a>
 </td></tr>
 <tr>
-<td class="countColumn">2</td><td class="issueColumn"><i class="material-icons warning-icon">warning</i>
+<td class="countColumn">3</td><td class="issueColumn"><i class="material-icons warning-icon">warning</i>
 <a href="#SetTextI18n">SetTextI18n</a>: TextView Internationalization</td></tr>
 <tr>
-<td class="countColumn">5</td><td class="issueColumn"><i class="material-icons warning-icon">warning</i>
+<td class="countColumn">8</td><td class="issueColumn"><i class="material-icons warning-icon">warning</i>
 <a href="#HardcodedText">HardcodedText</a>: Hardcoded text</td></tr>
 <tr><td></td><td class="categoryColumn"><a href="#ExtraIssues">Included Additional Checks (32)</a>
 </td></tr>
@@ -267,14 +267,14 @@ Dismiss</button>            </div>
               <div class="mdl-card__supporting-text">
 <div class="issue">
 <div class="warningslist">
-<span class="location"><a href="../../src/main/java/com/stockflip/MainActivity.kt">../../src/main/java/com/stockflip/MainActivity.kt</a>:70</span>: <span class="message">Field requires API level 33 (current min is 26): <code>android.content.Context#RECEIVER_NOT_EXPORTED</code></span><br /><pre class="errorlines">
-<span class="lineno">  67 </span>            registerReceiver(
-<span class="lineno">  68 </span>                priceUpdateReceiver,
-<span class="lineno">  69 </span>                PriceUpdateReceiver.createIntentFilter(),
-<span class="caretline"><span class="lineno">  70 </span>                <span class="warning">RECEIVER_NOT_EXPORTED</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
-<span class="lineno">  71 </span>            )
-<span class="lineno">  72 </span>        } catch (e: Exception) {
-<span class="lineno">  73 </span>            Log.e(TAG, <span class="string">"Failed to register price update receiver: ${</span>e.message<span class="string">}"</span>)
+<span class="location"><a href="../../src/main/java/com/stockflip/MainActivity.kt">../../src/main/java/com/stockflip/MainActivity.kt</a>:67</span>: <span class="message">Field requires API level 33 (current min is 26): <code>android.content.Context#RECEIVER_NOT_EXPORTED</code></span><br /><pre class="errorlines">
+<span class="lineno">  64 </span>            registerReceiver(
+<span class="lineno">  65 </span>                priceUpdateReceiver,
+<span class="lineno">  66 </span>                PriceUpdateReceiver.createIntentFilter(),
+<span class="caretline"><span class="lineno">  67 </span>                <span class="warning">Context.RECEIVER_NOT_EXPORTED</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
+<span class="lineno">  68 </span>            )
+<span class="lineno">  69 </span>            Log.d(TAG, <span class="string">"Successfully registered price update receiver"</span>)
+<span class="lineno">  70 </span>        } catch (e: Exception) {
 </pre>
 
 </div>
@@ -416,14 +416,14 @@ Dismiss</button>            </div>
               <div class="mdl-card__supporting-text">
 <div class="issue">
 <div class="warningslist">
-<span class="location"><a href="../../src/main/java/com/stockflip/StockPriceUpdater.kt">../../src/main/java/com/stockflip/StockPriceUpdater.kt</a>:74</span>: <span class="message">Use of <code>REQUEST_IGNORE_BATTERY_OPTIMIZATIONS</code> violates the Play Store Content Policy regarding acceptable use cases, as described in <a href="https://developer.android.com/training/monitoring-device-state/doze-standby.html">https://developer.android.com/training/monitoring-device-state/doze-standby.html</a></span><br /><pre class="errorlines">
-<span class="lineno">  71 </span>  <span class="keyword">val</span> powerManager = activity.getSystemService(Context.POWER_SERVICE) <span class="keyword">as</span> PowerManager
-<span class="lineno">  72 </span>  <span class="keyword">if</span> (!powerManager.isIgnoringBatteryOptimizations(packageName)) {
-<span class="lineno">  73 </span>      <span class="keyword">try</span> {
-<span class="caretline"><span class="lineno">  74 </span>          <span class="keyword">val</span> intent = Intent(Settings.<span class="warning">ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS</span>).apply {</span>
-<span class="lineno">  75 </span>              data = Uri.parse(<span class="string">"package:$packageName"</span>)
-<span class="lineno">  76 </span>          }
-<span class="lineno">  77 </span>          activity.startActivity(intent)
+<span class="location"><a href="../../src/main/java/com/stockflip/StockPriceUpdater.kt">../../src/main/java/com/stockflip/StockPriceUpdater.kt</a>:78</span>: <span class="message">Use of <code>REQUEST_IGNORE_BATTERY_OPTIMIZATIONS</code> violates the Play Store Content Policy regarding acceptable use cases, as described in <a href="https://developer.android.com/training/monitoring-device-state/doze-standby.html">https://developer.android.com/training/monitoring-device-state/doze-standby.html</a></span><br /><pre class="errorlines">
+<span class="lineno">  75 </span>  <span class="keyword">val</span> powerManager = activity.getSystemService(Context.POWER_SERVICE) <span class="keyword">as</span> PowerManager
+<span class="lineno">  76 </span>  <span class="keyword">if</span> (!powerManager.isIgnoringBatteryOptimizations(packageName)) {
+<span class="lineno">  77 </span>      <span class="keyword">try</span> {
+<span class="caretline"><span class="lineno">  78 </span>          <span class="keyword">val</span> intent = Intent(Settings.<span class="warning">ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS</span>).apply {</span>
+<span class="lineno">  79 </span>              data = Uri.parse(<span class="string">"package:$packageName"</span>)
+<span class="lineno">  80 </span>          }
+<span class="lineno">  81 </span>          activity.startActivity(intent)
 </pre>
 
 </div>
@@ -636,44 +636,44 @@ Dismiss</button>            </div>
               <div class="mdl-card__supporting-text">
 <div class="issue">
 <div class="warningslist">
-<span class="location"><a href="../../src/main/java/com/stockflip/StockPriceAlarmManager.kt">../../src/main/java/com/stockflip/StockPriceAlarmManager.kt</a>:63</span>: <span class="message">Unnecessary; SDK_INT is always >= 26</span><br /><pre class="errorlines">
-<span class="lineno"> 60 </span>    }
-<span class="lineno"> 61 </span>
-<span class="lineno"> 62 </span>    private <span class="keyword">fun</span> createNotificationChannel() {
-<span class="caretline"><span class="lineno"> 63 </span>        <span class="keyword">if</span> (<span class="warning">Build.VERSION.SDK_INT >= Build.VERSION_CODES.O</span>) {&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
-<span class="lineno"> 64 </span>            <span class="keyword">val</span> channel = NotificationChannel(
-<span class="lineno"> 65 </span>                CHANNEL_ID,
-<span class="lineno"> 66 </span>                <span class="string">"Stock Price Alerts"</span>,
+<span class="location"><a href="../../src/main/java/com/stockflip/StockPriceAlarmManager.kt">../../src/main/java/com/stockflip/StockPriceAlarmManager.kt</a>:61</span>: <span class="message">Unnecessary; SDK_INT is always >= 26</span><br /><pre class="errorlines">
+<span class="lineno"> 58 </span>    }
+<span class="lineno"> 59 </span>
+<span class="lineno"> 60 </span>    private <span class="keyword">fun</span> createNotificationChannel() {
+<span class="caretline"><span class="lineno"> 61 </span>        <span class="keyword">if</span> (<span class="warning">Build.VERSION.SDK_INT >= Build.VERSION_CODES.O</span>) {&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
+<span class="lineno"> 62 </span>            <span class="keyword">val</span> name = <span class="string">"Stock Price Alerts"</span>
+<span class="lineno"> 63 </span>            <span class="keyword">val</span> descriptionText = <span class="string">"Notifications for stock price alerts"</span>
+<span class="lineno"> 64 </span>            <span class="keyword">val</span> importance = NotificationManager.IMPORTANCE_DEFAULT
 </pre>
 
-<span class="location"><a href="../../src/main/java/com/stockflip/StockPriceUpdateWorker.kt">../../src/main/java/com/stockflip/StockPriceUpdateWorker.kt</a>:88</span>: <span class="message">Unnecessary; SDK_INT is always >= 26</span><br /><pre class="errorlines">
-<span class="lineno">  85 </span>    }
-<span class="lineno">  86 </span>
-<span class="lineno">  87 </span>    private <span class="keyword">fun</span> createNotificationChannel() {
-<span class="caretline"><span class="lineno">  88 </span>        <span class="keyword">if</span> (<span class="warning">Build.VERSION.SDK_INT >= Build.VERSION_CODES.O</span>) {&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
-<span class="lineno">  89 </span>            <span class="keyword">val</span> channel = NotificationChannel(
-<span class="lineno">  90 </span>                CHANNEL_ID,
-<span class="lineno">  91 </span>                <span class="string">"Stock Price Alerts"</span>,
+<span class="location"><a href="../../src/main/java/com/stockflip/StockPriceUpdateWorker.kt">../../src/main/java/com/stockflip/StockPriceUpdateWorker.kt</a>:116</span>: <span class="message">Unnecessary; SDK_INT is always >= 26</span><br /><pre class="errorlines">
+<span class="lineno"> 113 </span>    }
+<span class="lineno"> 114 </span>
+<span class="lineno"> 115 </span>    private <span class="keyword">fun</span> createNotificationChannel() {
+<span class="caretline"><span class="lineno"> 116 </span>        <span class="keyword">if</span> (<span class="warning">Build.VERSION.SDK_INT >= Build.VERSION_CODES.O</span>) {&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
+<span class="lineno"> 117 </span>            <span class="keyword">val</span> name = <span class="string">"Stock Price Alerts"</span>
+<span class="lineno"> 118 </span>            <span class="keyword">val</span> descriptionText = <span class="string">"Notifications for stock price alerts"</span>
+<span class="lineno"> 119 </span>            <span class="keyword">val</span> importance = NotificationManager.IMPORTANCE_DEFAULT
 </pre>
 
-<span class="location"><a href="../../src/main/java/com/stockflip/StockPriceUpdater.kt">../../src/main/java/com/stockflip/StockPriceUpdater.kt</a>:69</span>: <span class="message">Unnecessary; SDK_INT is always >= 26</span><br /><pre class="errorlines">
-<span class="lineno">  66 </span>   }
-<span class="lineno">  67 </span>
-<span class="lineno">  68 </span>   <span class="keyword">fun</span> requestBatteryOptimizationExemption(activity: Activity) {
-<span class="caretline"><span class="lineno">  69 </span>       <span class="keyword">if</span> (<span class="warning">Build.VERSION.SDK_INT >= Build.VERSION_CODES.M</span>) {&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
-<span class="lineno">  70 </span>           <span class="keyword">val</span> packageName = activity.packageName
-<span class="lineno">  71 </span>           <span class="keyword">val</span> powerManager = activity.getSystemService(Context.POWER_SERVICE) <span class="keyword">as</span> PowerManager
-<span class="lineno">  72 </span>           <span class="keyword">if</span> (!powerManager.isIgnoringBatteryOptimizations(packageName)) {
+<span class="location"><a href="../../src/main/java/com/stockflip/StockPriceUpdater.kt">../../src/main/java/com/stockflip/StockPriceUpdater.kt</a>:73</span>: <span class="message">Unnecessary; SDK_INT is always >= 26</span><br /><pre class="errorlines">
+<span class="lineno">  70 </span>   }
+<span class="lineno">  71 </span>
+<span class="lineno">  72 </span>   <span class="keyword">fun</span> requestBatteryOptimizationExemption(activity: Activity) {
+<span class="caretline"><span class="lineno">  73 </span>       <span class="keyword">if</span> (<span class="warning">Build.VERSION.SDK_INT >= Build.VERSION_CODES.M</span>) {&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
+<span class="lineno">  74 </span>           <span class="keyword">val</span> packageName = activity.packageName
+<span class="lineno">  75 </span>           <span class="keyword">val</span> powerManager = activity.getSystemService(Context.POWER_SERVICE) <span class="keyword">as</span> PowerManager
+<span class="lineno">  76 </span>           <span class="keyword">if</span> (!powerManager.isIgnoringBatteryOptimizations(packageName)) {
 </pre>
 
-<span class="location"><a href="../../src/main/java/com/stockflip/StockPriceUpdater.kt">../../src/main/java/com/stockflip/StockPriceUpdater.kt</a>:86</span>: <span class="message">Unnecessary; SDK_INT is always >= 26</span><br /><pre class="errorlines">
-<span class="lineno">  83 </span>    }
-<span class="lineno">  84 </span>
-<span class="lineno">  85 </span>    private <span class="keyword">fun</span> createNotificationChannel(context: Context) {
-<span class="caretline"><span class="lineno">  86 </span>        <span class="keyword">if</span> (<span class="warning">Build.VERSION.SDK_INT >= Build.VERSION_CODES.O</span>) {&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
-<span class="lineno">  87 </span>            <span class="keyword">val</span> channel = NotificationChannel(
-<span class="lineno">  88 </span>                <span class="string">"StockFlipChannel"</span>,
-<span class="lineno">  89 </span>                <span class="string">"Stock Price Updates"</span>,
+<span class="location"><a href="../../src/main/java/com/stockflip/StockPriceUpdater.kt">../../src/main/java/com/stockflip/StockPriceUpdater.kt</a>:90</span>: <span class="message">Unnecessary; SDK_INT is always >= 26</span><br /><pre class="errorlines">
+<span class="lineno">  87 </span>    }
+<span class="lineno">  88 </span>
+<span class="lineno">  89 </span>    private <span class="keyword">fun</span> createNotificationChannel(context: Context) {
+<span class="caretline"><span class="lineno">  90 </span>        <span class="keyword">if</span> (<span class="warning">Build.VERSION.SDK_INT >= Build.VERSION_CODES.O</span>) {&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
+<span class="lineno">  91 </span>            <span class="keyword">val</span> channel = NotificationChannel(
+<span class="lineno">  92 </span>                <span class="string">"StockFlipChannel"</span>,
+<span class="lineno">  93 </span>                <span class="string">"Stock Price Updates"</span>,
 </pre>
 
 <span class="location"><a href="../../src/main/res/mipmap-anydpi-v26">../../src/main/res/mipmap-anydpi-v26</a></span>: <span class="message">This folder configuration (<code>v26</code>) is unnecessary; <code>minSdkVersion</code> is 26. Merge all the resources in this folder into <code>mipmap-anydpi</code>.</span><br />
@@ -818,24 +818,32 @@ Dismiss</button>            </div>
               <div class="mdl-card__supporting-text">
 <div class="issue">
 <div class="warningslist">
-<span class="location"><a href="../../src/main/java/com/stockflip/MainActivity.kt">../../src/main/java/com/stockflip/MainActivity.kt</a>:128</span>: <span class="message">Do not concatenate text displayed with <code>setText</code>. Use resource string with placeholders.</span><br /><pre class="errorlines">
-<span class="lineno"> 125 </span>
-<span class="lineno"> 126 </span>    private <span class="keyword">fun</span> updateLastUpdateTime() {
-<span class="lineno"> 127 </span>        <span class="keyword">val</span> currentTime = SimpleDateFormat(<span class="string">"HH:mm:ss"</span>, Locale.getDefault()).format(Date())
-<span class="caretline"><span class="lineno"> 128 </span>        binding.lastUpdateText.text = <span class="warning"><span class="string">"Last updated: $currentTime"</span></span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
-<span class="lineno"> 129 </span>    }
-<span class="lineno"> 130 </span>
-<span class="lineno"> 131 </span>    private <span class="keyword">fun</span> setupFab() {
+<span class="location"><a href="../../src/main/java/com/stockflip/MainActivity.kt">../../src/main/java/com/stockflip/MainActivity.kt</a>:95</span>: <span class="message">Do not concatenate text displayed with <code>setText</code>. Use resource string with placeholders.</span><br /><pre class="errorlines">
+<span class="lineno">  92 </span>
+<span class="lineno">  93 </span>    <span class="keyword">fun</span> updateLastUpdateTime() {
+<span class="lineno">  94 </span>        <span class="keyword">val</span> currentTime = SimpleDateFormat(<span class="string">"HH:mm:ss"</span>, Locale.getDefault()).format(Date())
+<span class="caretline"><span class="lineno">  95 </span>        binding.lastUpdateTime.text = <span class="warning"><span class="string">"Last updated: $currentTime"</span></span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
+<span class="lineno">  96 </span>        Log.d(TAG, <span class="string">"Updated last update time to $currentTime"</span>)
+<span class="lineno">  97 </span>    }
 </pre>
 
-<span class="location"><a href="../../src/main/java/com/stockflip/MainActivity.kt">../../src/main/java/com/stockflip/MainActivity.kt</a>:128</span>: <span class="message">String literal in <code>setText</code> can not be translated. Use Android resources instead.</span><br /><pre class="errorlines">
-<span class="lineno"> 125 </span>
-<span class="lineno"> 126 </span>    private <span class="keyword">fun</span> updateLastUpdateTime() {
-<span class="lineno"> 127 </span>        <span class="keyword">val</span> currentTime = SimpleDateFormat(<span class="string">"HH:mm:ss"</span>, Locale.getDefault()).format(Date())
-<span class="caretline"><span class="lineno"> 128 </span>        binding.lastUpdateText.text = <span class="string">"</span><span class="warning"><span class="string">Last updated: </span></span><span class="string">$currentTime"</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
-<span class="lineno"> 129 </span>    }
-<span class="lineno"> 130 </span>
-<span class="lineno"> 131 </span>    private <span class="keyword">fun</span> setupFab() {
+<span class="location"><a href="../../src/main/java/com/stockflip/MainActivity.kt">../../src/main/java/com/stockflip/MainActivity.kt</a>:95</span>: <span class="message">String literal in <code>setText</code> can not be translated. Use Android resources instead.</span><br /><pre class="errorlines">
+<span class="lineno">  92 </span>
+<span class="lineno">  93 </span>    <span class="keyword">fun</span> updateLastUpdateTime() {
+<span class="lineno">  94 </span>        <span class="keyword">val</span> currentTime = SimpleDateFormat(<span class="string">"HH:mm:ss"</span>, Locale.getDefault()).format(Date())
+<span class="caretline"><span class="lineno">  95 </span>        binding.lastUpdateTime.text = <span class="string">"</span><span class="warning"><span class="string">Last updated: </span></span><span class="string">$currentTime"</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
+<span class="lineno">  96 </span>        Log.d(TAG, <span class="string">"Updated last update time to $currentTime"</span>)
+<span class="lineno">  97 </span>    }
+</pre>
+
+<span class="location"><a href="../../src/main/java/com/stockflip/StockPairAdapter.kt">../../src/main/java/com/stockflip/StockPairAdapter.kt</a>:38</span>: <span class="message">Do not concatenate text displayed with <code>setText</code>. Use resource string with placeholders.</span><br /><pre class="errorlines">
+<span class="lineno"> 35 </span>  Log.d(TAG, <span class="string">"Current prices: ${</span>pair.currentPrice1<span class="string">}, ${</span>pair.currentPrice2<span class="string">}"</span>)
+<span class="lineno"> 36 </span>
+<span class="lineno"> 37 </span>  <span class="comment">// Set company names and tickers</span>
+<span class="caretline"><span class="lineno"> 38 </span>  binding.stockNames.text = <span class="warning"><span class="string">"${</span>pair.companyName1<span class="string">} (${</span>pair.ticker1<span class="string">}) - ${</span>pair.companyName2<span class="string">} (${</span>pair.ticker2<span class="string">})"</span></span></span>
+<span class="lineno"> 39 </span>  
+<span class="lineno"> 40 </span>  <span class="comment">// Set current prices</span>
+<span class="lineno"> 41 </span>  binding.priceInfo.text = buildString {
 </pre>
 
 </div>
@@ -877,6 +885,15 @@ Dismiss</button>            </div>
               <div class="mdl-card__supporting-text">
 <div class="issue">
 <div class="warningslist">
+<span class="location"><a href="../../src/main/res/layout/activity_main.xml">../../src/main/res/layout/activity_main.xml</a>:29</span>: <span class="message">Hardcoded string "Last updated: Never", should use <code>@string</code> resource</span><br /><pre class="errorlines">
+<span class="lineno"> 26 </span>        <span class="prefix">android:</span><span class="attribute">layout_width</span>=<span class="value">"wrap_content"</span>
+<span class="lineno"> 27 </span>        <span class="prefix">android:</span><span class="attribute">layout_height</span>=<span class="value">"wrap_content"</span>
+<span class="lineno"> 28 </span>        <span class="prefix">android:</span><span class="attribute">layout_marginBottom</span>=<span class="value">"16dp"</span>
+<span class="caretline"><span class="lineno"> 29 </span>        <span class="warning"><span class="prefix">android:</span><span class="attribute">text</span>=<span class="value">"Last updated: Never"</span></span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
+<span class="lineno"> 30 </span>        <span class="prefix">android:</span><span class="attribute">textSize</span>=<span class="value">"12sp"</span>
+<span class="lineno"> 31 </span>        <span class="prefix">app:</span><span class="attribute">layout_constraintBottom_toBottomOf</span>=<span class="value">"parent"</span>
+<span class="lineno"> 32 </span>        <span class="prefix">app:</span><span class="attribute">layout_constraintStart_toStartOf</span>=<span class="value">"parent"</span></pre>
+
 <span class="location"><a href="../../src/main/res/layout/activity_main.xml">../../src/main/res/layout/activity_main.xml</a>:40</span>: <span class="message">Hardcoded string "Add Stock Pair", should use <code>@string</code> resource</span><br /><pre class="errorlines">
 <span class="lineno"> 37 </span>        <span class="prefix">android:</span><span class="attribute">layout_width</span>=<span class="value">"wrap_content"</span>
 <span class="lineno"> 38 </span>        <span class="prefix">android:</span><span class="attribute">layout_height</span>=<span class="value">"wrap_content"</span>
@@ -921,6 +938,24 @@ Dismiss</button>            </div>
 <span class="caretline"><span class="lineno"> 54 </span>        <span class="warning"><span class="prefix">android:</span><span class="attribute">text</span>=<span class="value">"Notify when prices are equal"</span></span> />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
 <span class="lineno"> 55 </span>
 <span class="lineno"> 56 </span><span class="tag">&lt;/LinearLayout></span> </pre>
+
+<span class="location"><a href="../../src/main/res/layout/item_stock_pair.xml">../../src/main/res/layout/item_stock_pair.xml</a>:54</span>: <span class="message">Hardcoded string "Edit", should use <code>@string</code> resource</span><br /><pre class="errorlines">
+<span class="lineno"> 51 </span><span class="attribute">                </span><span class="prefix">android:</span><span class="attribute">id</span>=<span class="value">"@+id/editButton"</span>
+<span class="lineno"> 52 </span>                <span class="prefix">android:</span><span class="attribute">layout_width</span>=<span class="value">"wrap_content"</span>
+<span class="lineno"> 53 </span>                <span class="prefix">android:</span><span class="attribute">layout_height</span>=<span class="value">"wrap_content"</span>
+<span class="caretline"><span class="lineno"> 54 </span>                <span class="warning"><span class="prefix">android:</span><span class="attribute">text</span>=<span class="value">"Edit"</span></span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
+<span class="lineno"> 55 </span>                <span class="attribute">style</span>=<span class="value">"@style/Widget.MaterialComponents.Button.TextButton"</span> />
+<span class="lineno"> 56 </span>
+<span class="lineno"> 57 </span>            <span class="tag">&lt;Button</span></pre>
+
+<span class="location"><a href="../../src/main/res/layout/item_stock_pair.xml">../../src/main/res/layout/item_stock_pair.xml</a>:61</span>: <span class="message">Hardcoded string "Delete", should use <code>@string</code> resource</span><br /><pre class="errorlines">
+<span class="lineno"> 58 </span><span class="attribute">                </span><span class="prefix">android:</span><span class="attribute">id</span>=<span class="value">"@+id/deleteButton"</span>
+<span class="lineno"> 59 </span>                <span class="prefix">android:</span><span class="attribute">layout_width</span>=<span class="value">"wrap_content"</span>
+<span class="lineno"> 60 </span>                <span class="prefix">android:</span><span class="attribute">layout_height</span>=<span class="value">"wrap_content"</span>
+<span class="caretline"><span class="lineno"> 61 </span>                <span class="warning"><span class="prefix">android:</span><span class="attribute">text</span>=<span class="value">"Delete"</span></span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
+<span class="lineno"> 62 </span>                <span class="attribute">style</span>=<span class="value">"@style/Widget.MaterialComponents.Button.TextButton"</span>
+<span class="lineno"> 63 </span>                <span class="prefix">android:</span><span class="attribute">textColor</span>=<span class="value">"@android:color/holo_red_dark"</span> />
+<span class="lineno"> 64 </span>        <span class="tag">&lt;/LinearLayout></span></pre>
 
 </div>
 <div class="metadata"><div class="explanation" id="explanationHardcodedText" style="display: none;">

@@ -9,11 +9,11 @@
         priority="6"
         summary="Using inlined constants on older versions"
         explanation="This check scans through all the Android API field references in the application and flags certain constants, such as static final integers and Strings, which were introduced in later versions. These will actually be copied into the class files rather than being referenced, which means that the value is available even when running on older devices. In some cases that&apos;s fine, and in other cases it can result in a runtime crash or incorrect behavior. It depends on the context, so consider the code carefully and decide whether it&apos;s safe and can be suppressed or whether the code needs to be guarded.&#xA;&#xA;If you really want to use this API and don&apos;t need to support older devices just set the `minSdkVersion` in your `build.gradle` or `AndroidManifest.xml` files.&#xA;&#xA;If your code is **deliberately** accessing newer APIs, and you have ensured (e.g. with conditional execution) that this code will only ever be called on a supported platform, then you can annotate your class or method with the `@TargetApi` annotation specifying the local minimum SDK to apply, such as `@TargetApi(11)`, such that this check considers 11 rather than your manifest file&apos;s minimum SDK as the required API level."
-        errorLine1="                RECEIVER_NOT_EXPORTED"
-        errorLine2="                ~~~~~~~~~~~~~~~~~~~~~">
+        errorLine1="                Context.RECEIVER_NOT_EXPORTED"
+        errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="/Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/src/main/java/com/stockflip/MainActivity.kt"
-            line="70"
+            line="67"
             column="17"/>
     </issue>
 
@@ -65,7 +65,7 @@
         errorLine2="                                                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="/Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/src/main/java/com/stockflip/StockPriceUpdater.kt"
-            line="74"
+            line="78"
             column="50"/>
     </issue>
 
@@ -305,7 +305,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="/Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/src/main/java/com/stockflip/StockPriceAlarmManager.kt"
-            line="63"
+            line="61"
             column="13"/>
     </issue>
 
@@ -321,7 +321,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="/Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/src/main/java/com/stockflip/StockPriceUpdateWorker.kt"
-            line="88"
+            line="116"
             column="13"/>
     </issue>
 
@@ -337,7 +337,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="/Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/src/main/java/com/stockflip/StockPriceUpdater.kt"
-            line="69"
+            line="73"
             column="13"/>
     </issue>
 
@@ -353,7 +353,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="/Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/src/main/java/com/stockflip/StockPriceUpdater.kt"
-            line="86"
+            line="90"
             column="13"/>
     </issue>
 
@@ -429,11 +429,11 @@
         explanation="When calling `TextView#setText`&#xA;* Never call `Number#toString()` to format numbers; it will not handle fraction separators and locale-specific digits properly. Consider using `String#format` with proper format specifications (`%d` or `%f`) instead.&#xA;* Do not pass a string literal (e.g. &quot;Hello&quot;) to display text. Hardcoded text can not be properly translated to other languages. Consider using Android resource strings instead.&#xA;* Do not build messages by concatenating text chunks. Such messages can not be properly translated."
         url="https://developer.android.com/guide/topics/resources/localization.html"
         urls="https://developer.android.com/guide/topics/resources/localization.html"
-        errorLine1="        binding.lastUpdateText.text = &quot;Last updated: $currentTime&quot;"
+        errorLine1="        binding.lastUpdateTime.text = &quot;Last updated: $currentTime&quot;"
         errorLine2="                                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="/Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/src/main/java/com/stockflip/MainActivity.kt"
-            line="128"
+            line="95"
             column="39"/>
     </issue>
 
@@ -447,12 +447,46 @@
         explanation="When calling `TextView#setText`&#xA;* Never call `Number#toString()` to format numbers; it will not handle fraction separators and locale-specific digits properly. Consider using `String#format` with proper format specifications (`%d` or `%f`) instead.&#xA;* Do not pass a string literal (e.g. &quot;Hello&quot;) to display text. Hardcoded text can not be properly translated to other languages. Consider using Android resource strings instead.&#xA;* Do not build messages by concatenating text chunks. Such messages can not be properly translated."
         url="https://developer.android.com/guide/topics/resources/localization.html"
         urls="https://developer.android.com/guide/topics/resources/localization.html"
-        errorLine1="        binding.lastUpdateText.text = &quot;Last updated: $currentTime&quot;"
+        errorLine1="        binding.lastUpdateTime.text = &quot;Last updated: $currentTime&quot;"
         errorLine2="                                       ~~~~~~~~~~~~~~">
         <location
             file="/Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/src/main/java/com/stockflip/MainActivity.kt"
-            line="128"
+            line="95"
             column="40"/>
+    </issue>
+
+    <issue
+        id="SetTextI18n"
+        severity="Warning"
+        message="Do not concatenate text displayed with `setText`. Use resource string with placeholders."
+        category="Internationalization"
+        priority="6"
+        summary="TextView Internationalization"
+        explanation="When calling `TextView#setText`&#xA;* Never call `Number#toString()` to format numbers; it will not handle fraction separators and locale-specific digits properly. Consider using `String#format` with proper format specifications (`%d` or `%f`) instead.&#xA;* Do not pass a string literal (e.g. &quot;Hello&quot;) to display text. Hardcoded text can not be properly translated to other languages. Consider using Android resource strings instead.&#xA;* Do not build messages by concatenating text chunks. Such messages can not be properly translated."
+        url="https://developer.android.com/guide/topics/resources/localization.html"
+        urls="https://developer.android.com/guide/topics/resources/localization.html"
+        errorLine1="            binding.stockNames.text = &quot;${pair.companyName1} (${pair.ticker1}) - ${pair.companyName2} (${pair.ticker2})&quot;"
+        errorLine2="                                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="/Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/src/main/java/com/stockflip/StockPairAdapter.kt"
+            line="38"
+            column="39"/>
+    </issue>
+
+    <issue
+        id="HardcodedText"
+        severity="Warning"
+        message="Hardcoded string &quot;Last updated: Never&quot;, should use `@string` resource"
+        category="Internationalization"
+        priority="5"
+        summary="Hardcoded text"
+        explanation="Hardcoding text attributes directly in layout files is bad for several reasons:&#xA;&#xA;* When creating configuration variations (for example for landscape or portrait) you have to repeat the actual text (and keep it up to date when making changes)&#xA;&#xA;* The application cannot be translated to other languages by just adding new translations for existing string resources.&#xA;&#xA;There are quickfixes to automatically extract this hardcoded string into a resource lookup."
+        errorLine1="        android:text=&quot;Last updated: Never&quot;"
+        errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="/Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/src/main/res/layout/activity_main.xml"
+            line="29"
+            column="9"/>
     </issue>
 
     <issue
@@ -533,6 +567,38 @@
             file="/Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/src/main/res/layout/dialog_add_stock_pair.xml"
             line="54"
             column="9"/>
+    </issue>
+
+    <issue
+        id="HardcodedText"
+        severity="Warning"
+        message="Hardcoded string &quot;Edit&quot;, should use `@string` resource"
+        category="Internationalization"
+        priority="5"
+        summary="Hardcoded text"
+        explanation="Hardcoding text attributes directly in layout files is bad for several reasons:&#xA;&#xA;* When creating configuration variations (for example for landscape or portrait) you have to repeat the actual text (and keep it up to date when making changes)&#xA;&#xA;* The application cannot be translated to other languages by just adding new translations for existing string resources.&#xA;&#xA;There are quickfixes to automatically extract this hardcoded string into a resource lookup."
+        errorLine1="                android:text=&quot;Edit&quot;"
+        errorLine2="                ~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="/Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/src/main/res/layout/item_stock_pair.xml"
+            line="54"
+            column="17"/>
+    </issue>
+
+    <issue
+        id="HardcodedText"
+        severity="Warning"
+        message="Hardcoded string &quot;Delete&quot;, should use `@string` resource"
+        category="Internationalization"
+        priority="5"
+        summary="Hardcoded text"
+        explanation="Hardcoding text attributes directly in layout files is bad for several reasons:&#xA;&#xA;* When creating configuration variations (for example for landscape or portrait) you have to repeat the actual text (and keep it up to date when making changes)&#xA;&#xA;* The application cannot be translated to other languages by just adding new translations for existing string resources.&#xA;&#xA;There are quickfixes to automatically extract this hardcoded string into a resource lookup."
+        errorLine1="                android:text=&quot;Delete&quot;"
+        errorLine2="                ~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="/Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/src/main/res/layout/item_stock_pair.xml"
+            line="61"
+            column="17"/>
     </issue>
 
 </issues>

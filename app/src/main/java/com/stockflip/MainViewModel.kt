@@ -14,102 +14,96 @@ class MainViewModel(
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<UiState<List<StockPair>>>(UiState.Loading)
-    val uiState: StateFlow<UiState<List<StockPair>>> = _uiState.asStateFlow()
+    val uiState: StateFlow<UiState<List<StockPair>>> = _uiState
 
     init {
-        Log.d(TAG, "Initializing MainViewModel")
-        loadStockPairs()
+        Log.d(TAG, "MainViewModel initialized")
+        viewModelScope.launch {
+            loadStockPairs()
+        }
     }
 
-    private fun loadStockPairs() {
-        viewModelScope.launch {
+    suspend fun loadStockPairs() {
+        try {
             Log.d(TAG, "Loading stock pairs from database")
             _uiState.value = UiState.Loading
-            try {
-                val pairs = stockPairDao.getAllStockPairs()
-                Log.d(TAG, "Loaded ${pairs.size} stock pairs")
-                _uiState.value = UiState.Success(pairs)
-            } catch (e: Exception) {
-                Log.e(TAG, "Failed to load stock pairs", e)
-                _uiState.value = UiState.Error("Failed to load stock pairs: ${e.message}")
-            }
+            val pairs = stockPairDao.getAllStockPairs()
+            Log.d(TAG, "Loaded ${pairs.size} stock pairs")
+            _uiState.value = UiState.Success(pairs)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error loading stock pairs: ${e.message}")
+            _uiState.value = UiState.Error("Failed to load stock pairs: ${e.message}")
         }
     }
 
     suspend fun refreshStockPairs() {
-        Log.d(TAG, "Starting stock pairs refresh")
-        _uiState.value = UiState.Loading
         try {
+            Log.d(TAG, "Refreshing stock pairs")
+            _uiState.value = UiState.Loading
+            
             val pairs = stockPairDao.getAllStockPairs()
             Log.d(TAG, "Found ${pairs.size} pairs to refresh")
             
             val updatedPairs = pairs.map { pair ->
-                Log.d(TAG, "Fetching prices for pair: ${pair.companyName1} (${pair.ticker1}) - ${pair.companyName2} (${pair.ticker2})")
-                val price1 = yahooFinanceService.getStockPrice(pair.ticker1)
-                val price2 = yahooFinanceService.getStockPrice(pair.ticker2)
-                Log.d(TAG, "Fetched prices: ${pair.ticker1}=$price1, ${pair.ticker2}=$price2")
-                
-                if (price1 != null && price2 != null) {
-                    val updatedPair = pair.withCurrentPrices(price1, price2)
-                    Log.d(TAG, "Updating database with new prices for ${pair.companyName1}: $price1, ${pair.companyName2}: $price2")
-                    stockPairDao.update(updatedPair)
-                    updatedPair
-                } else {
-                    Log.w(TAG, "Failed to fetch prices for ${pair.ticker1} or ${pair.ticker2}, keeping existing prices")
+                try {
+                    Log.d(TAG, "Fetching prices for ${pair.ticker1} and ${pair.ticker2}")
+                    val price1 = yahooFinanceService.getStockPrice(pair.ticker1)
+                    val price2 = yahooFinanceService.getStockPrice(pair.ticker2)
+                    
+                    if (price1 != null && price2 != null) {
+                        Log.d(TAG, "Got prices for ${pair.ticker1}: $price1, ${pair.ticker2}: $price2")
+                        val updatedPair = pair.withCurrentPrices(price1, price2)
+                        stockPairDao.update(updatedPair)
+                        Log.d(TAG, "Updated database with new prices for ${pair.ticker1}-${pair.ticker2}")
+                        updatedPair
+                    } else {
+                        Log.w(TAG, "Could not get prices for ${pair.ticker1} or ${pair.ticker2}, keeping existing prices")
+                        pair
+                    }
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error fetching prices for ${pair.ticker1}-${pair.ticker2}: ${e.message}")
                     pair
                 }
             }
             
-            Log.d(TAG, "Updating UI with ${updatedPairs.size} refreshed pairs")
             _uiState.value = UiState.Success(updatedPairs)
+            Log.d(TAG, "Successfully refreshed ${updatedPairs.size} stock pairs")
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to refresh stock pairs", e)
-            _uiState.value = UiState.Error("Failed to refresh: ${e.message}")
+            Log.e(TAG, "Error refreshing stock pairs: ${e.message}")
+            _uiState.value = UiState.Error("Failed to refresh stock pairs: ${e.message}")
         }
     }
 
-    fun addStockPair(stockPair: StockPair) {
-        viewModelScope.launch {
+    suspend fun addStockPair(stockPair: StockPair) {
+        try {
             Log.d(TAG, "Adding new stock pair: ${stockPair.companyName1} - ${stockPair.companyName2}")
-            try {
-                _uiState.value = UiState.Loading
-                stockPairDao.insertStockPair(stockPair)
-                Log.d(TAG, "Stock pair added successfully, refreshing list")
-                refreshStockPairs()
-            } catch (e: Exception) {
-                Log.e(TAG, "Failed to add stock pair", e)
-                _uiState.value = UiState.Error("Failed to add stock pair: ${e.message}")
-            }
+            stockPairDao.insertStockPair(stockPair)
+            loadStockPairs() // Reload the list after adding
+        } catch (e: Exception) {
+            Log.e(TAG, "Error adding stock pair: ${e.message}")
+            _uiState.value = UiState.Error("Failed to add stock pair: ${e.message}")
         }
     }
 
-    fun deleteStockPair(stockPair: StockPair) {
-        viewModelScope.launch {
+    suspend fun deleteStockPair(stockPair: StockPair) {
+        try {
             Log.d(TAG, "Deleting stock pair: ${stockPair.companyName1} - ${stockPair.companyName2}")
-            try {
-                _uiState.value = UiState.Loading
-                stockPairDao.deleteStockPair(stockPair)
-                Log.d(TAG, "Stock pair deleted successfully, refreshing list")
-                refreshStockPairs()
-            } catch (e: Exception) {
-                Log.e(TAG, "Failed to delete stock pair", e)
-                _uiState.value = UiState.Error("Failed to delete stock pair: ${e.message}")
-            }
+            stockPairDao.deleteStockPair(stockPair)
+            loadStockPairs() // Reload the list after deleting
+        } catch (e: Exception) {
+            Log.e(TAG, "Error deleting stock pair: ${e.message}")
+            _uiState.value = UiState.Error("Failed to delete stock pair: ${e.message}")
         }
     }
 
-    fun updateStockPair(stockPair: StockPair) {
-        viewModelScope.launch {
+    suspend fun updateStockPair(stockPair: StockPair) {
+        try {
             Log.d(TAG, "Updating stock pair: ${stockPair.companyName1} - ${stockPair.companyName2}")
-            try {
-                _uiState.value = UiState.Loading
-                stockPairDao.update(stockPair)
-                Log.d(TAG, "Stock pair updated successfully, refreshing list")
-                refreshStockPairs()
-            } catch (e: Exception) {
-                Log.e(TAG, "Failed to update stock pair", e)
-                _uiState.value = UiState.Error("Failed to update stock pair: ${e.message}")
-            }
+            stockPairDao.update(stockPair)
+            loadStockPairs() // Reload the list after updating
+        } catch (e: Exception) {
+            Log.e(TAG, "Error updating stock pair: ${e.message}")
+            _uiState.value = UiState.Error("Failed to update stock pair: ${e.message}")
         }
     }
 

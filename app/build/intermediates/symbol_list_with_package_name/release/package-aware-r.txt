@@ -3231,6 +3231,7 @@ id decelerate
 id decelerateAndComplete
 id decor_content_parent
 id default_activity_button
+id deleteButton
 id deltaRelative
 id dependency_ordering
 id design_bottom_sheet
@@ -3260,6 +3261,7 @@ id easeInOut
 id easeOut
 id east
 id edge
+id editButton
 id edit_query
 id edit_text_id
 id elastic
@@ -3320,7 +3322,7 @@ id item_touch_helper_previous_elevation
 id jumpToEnd
 id jumpToStart
 id labeled
-id lastUpdateText
+id lastUpdateTime
 id layout
 id left
 id leftToRight

@@ -30,9 +30,10 @@ import com.stockflip.databinding.ActivityMainBinding
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.isActive
 
 class MainActivity : AppCompatActivity() {
-    private val viewModel: MainViewModel by viewModels {
+    val viewModel: MainViewModel by viewModels {
         object : ViewModelProvider.Factory {
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
                 val database = StockPairDatabase.getDatabase(applicationContext)
@@ -45,57 +46,87 @@ class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
     private lateinit var stockPriceAlarmManager: StockPriceAlarmManager
     private val priceUpdateReceiver = PriceUpdateReceiver()
+    private var refreshJob: Job? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
-
-        stockPriceAlarmManager = StockPriceAlarmManager(this)
-
+        
         setupRecyclerView()
         setupObservers()
         setupSwipeRefresh()
-        setupFab()
+        setupAddButton()
         
-        // Schedule periodic price checks
-        stockPriceAlarmManager.scheduleStockPriceCheck(15) // Check every 15 minutes
-    }
-
-    override fun onResume() {
-        super.onResume()
+        // Start price updates
+        StockPriceUpdater.startPeriodicUpdate(this)
         
-        // Register broadcast receiver
+        // Register broadcast receiver for price updates
         try {
             registerReceiver(
                 priceUpdateReceiver,
                 PriceUpdateReceiver.createIntentFilter(),
-                RECEIVER_NOT_EXPORTED
+                Context.RECEIVER_NOT_EXPORTED
             )
+            Log.d(TAG, "Successfully registered price update receiver")
         } catch (e: Exception) {
             Log.e(TAG, "Failed to register price update receiver: ${e.message}")
         }
         
-        // Refresh stock prices
+        // Request battery optimization exemption for reliable updates
+        StockPriceUpdater.requestBatteryOptimizationExemption(this)
+
+        // Initial load of stock pairs
         lifecycleScope.launch {
-            try {
-                Log.d(TAG, "Refreshing stock prices on app open")
-                viewModel.refreshStockPairs()
-                updateLastUpdateTime()
-            } catch (e: Exception) {
-                Log.e(TAG, "Failed to refresh stock prices on app open", e)
-                Toast.makeText(this@MainActivity, "Failed to refresh prices: ${e.message}", Toast.LENGTH_LONG).show()
-            }
+            viewModel.loadStockPairs()
         }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        try {
+            unregisterReceiver(priceUpdateReceiver)
+            Log.d(TAG, "Successfully unregistered price update receiver")
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to unregister price update receiver: ${e.message}")
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        startAutoRefresh()
     }
 
     override fun onPause() {
         super.onPause()
-        try {
-            unregisterReceiver(priceUpdateReceiver)
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to unregister price update receiver: ${e.message}")
+        stopAutoRefresh()
+    }
+
+    private fun startAutoRefresh() {
+        refreshJob?.cancel()
+        refreshJob = lifecycleScope.launch {
+            while (isActive) {
+                try {
+                    Log.d(TAG, "Auto-refreshing stock prices")
+                    viewModel.refreshStockPairs()
+                    updateLastUpdateTime()
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error during auto-refresh: ${e.message}")
+                }
+                delay(60000) // Wait for 1 minute
+            }
         }
+    }
+
+    private fun stopAutoRefresh() {
+        refreshJob?.cancel()
+        refreshJob = null
+    }
+
+    fun updateLastUpdateTime() {
+        val currentTime = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date())
+        binding.lastUpdateTime.text = "Last updated: $currentTime"
+        Log.d(TAG, "Updated last update time to $currentTime")
     }
 
     private fun setupObservers() {
@@ -120,18 +151,6 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
-
-        // Register broadcast receiver for price updates
-        try {
-            registerReceiver(
-                priceUpdateReceiver,
-                PriceUpdateReceiver.createIntentFilter(),
-                RECEIVER_NOT_EXPORTED
-            )
-            Log.d(TAG, "Successfully registered price update receiver")
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to register price update receiver: ${e.message}")
-        }
     }
 
     private fun setupRecyclerView() {
@@ -149,27 +168,7 @@ class MainActivity : AppCompatActivity() {
         )
     }
 
-    private fun setupSwipeRefresh() {
-        binding.swipeRefreshLayout.setOnRefreshListener {
-            lifecycleScope.launch {
-                try {
-                    viewModel.refreshStockPairs()
-                    updateLastUpdateTime()
-                } catch (e: Exception) {
-                    Toast.makeText(this@MainActivity, "Failed to refresh: ${e.message}", Toast.LENGTH_LONG).show()
-                } finally {
-                    binding.swipeRefreshLayout.isRefreshing = false
-                }
-            }
-        }
-    }
-
-    private fun updateLastUpdateTime() {
-        val currentTime = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date())
-        binding.lastUpdateText.text = "Last updated: $currentTime"
-    }
-
-    private fun setupFab() {
+    private fun setupAddButton() {
         binding.addPairButton.setOnClickListener {
             showAddStockPairDialog()
         }
@@ -319,6 +318,21 @@ class MainActivity : AppCompatActivity() {
             }
             .setNegativeButton("Cancel", null)
             .show()
+    }
+
+    private fun setupSwipeRefresh() {
+        binding.swipeRefreshLayout.setOnRefreshListener {
+            lifecycleScope.launch {
+                try {
+                    viewModel.refreshStockPairs()
+                    updateLastUpdateTime()
+                } catch (e: Exception) {
+                    Toast.makeText(this@MainActivity, "Failed to refresh: ${e.message}", Toast.LENGTH_LONG).show()
+                } finally {
+                    binding.swipeRefreshLayout.isRefreshing = false
+                }
+            }
+        }
     }
 
     companion object {
