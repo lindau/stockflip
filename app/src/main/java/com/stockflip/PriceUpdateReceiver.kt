@@ -24,15 +24,8 @@ class PriceUpdateReceiver : BroadcastReceiver() {
         Log.d(TAG, "Handling prices updated notification")
         if (context is MainActivity) {
             Log.d(TAG, "Context is MainActivity, refreshing prices")
-            CoroutineScope(Dispatchers.Main).launch {
-                try {
-                    context.viewModel.refreshStockPairs()
-                    context.updateLastUpdateTime()
-                    Log.d(TAG, "Successfully refreshed prices in UI")
-                } catch (e: Exception) {
-                    Log.e(TAG, "Failed to refresh prices in UI", e)
-                }
-            }
+            context.refreshPrices()
+            Log.d(TAG, "Successfully triggered price refresh in UI")
         } else {
             Log.w(TAG, "Context is not MainActivity, cannot refresh UI")
         }

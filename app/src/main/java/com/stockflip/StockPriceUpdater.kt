@@ -22,48 +22,32 @@ object StockPriceUpdater {
 
     fun startPeriodicUpdate(context: Context) {
         Log.d(TAG, "Starting periodic price updates")
-        
-        // Create notification channel first
         createNotificationChannel(context)
-        
         val workManager = WorkManager.getInstance(context)
-
-        // Set up constraints
         val constraints = Constraints.Builder()
             .setRequiredNetworkType(NetworkType.CONNECTED)
             .build()
-
-        // Create immediate work request for first update
         val initialWork = OneTimeWorkRequestBuilder<StockPriceUpdateWorker>()
             .setConstraints(constraints)
             .build()
-
-        // Create periodic work request for subsequent updates
         val periodicWork = PeriodicWorkRequestBuilder<StockPriceUpdateWorker>(
-            1, TimeUnit.MINUTES,  // Repeat interval
-            1, TimeUnit.MINUTES   // Flex interval
+            1, TimeUnit.MINUTES,
+            1, TimeUnit.MINUTES
         )
             .setConstraints(constraints)
             .build()
-
-        // Schedule both immediate and periodic work
         workManager.apply {
-            // Schedule immediate work
             enqueueUniqueWork(
                 WORK_NAME_IMMEDIATE,
                 ExistingWorkPolicy.KEEP,
                 initialWork
             )
-
-            // Schedule periodic work
             enqueueUniquePeriodicWork(
                 WORK_NAME_PERIODIC,
                 ExistingPeriodicWorkPolicy.KEEP,
                 periodicWork
             )
         }
-
-        // Monitor work status for debugging
         monitorWorkStatus(workManager)
         Log.d(TAG, "Price updates scheduled successfully")
     }
@@ -97,7 +81,6 @@ object StockPriceUpdater {
                 enableVibration(true)
                 setShowBadge(true)
             }
-            
             val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             notificationManager.createNotificationChannel(channel)
             Log.d(TAG, "Created notification channel: ${channel.id}")
@@ -111,7 +94,6 @@ object StockPriceUpdater {
                     Log.d(TAG, "Periodic work status: ${workInfo.state}")
                 }
             }
-
         workManager.getWorkInfosForUniqueWorkLiveData(WORK_NAME_IMMEDIATE)
             .observeForever { workInfos ->
                 workInfos?.forEach { workInfo ->

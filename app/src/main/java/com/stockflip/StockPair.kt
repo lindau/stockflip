@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import androidx.room.Ignore
+import java.text.DecimalFormat
 
 @Entity(tableName = "stock_pairs")
 data class StockPair(
@@ -37,29 +38,19 @@ data class StockPair(
         }
     }
 
-    fun getFormattedPrice1(): String {
-        return if (currentPrice1 > 0.0) {
-            String.format("%.2f SEK", currentPrice1)
-        } else {
-            "Loading..."
-        }
-    }
+    fun formatPrice1(): String = formatPrice(currentPrice1)
 
-    fun getFormattedPrice2(): String {
-        return if (currentPrice2 > 0.0) {
-            String.format("%.2f SEK", currentPrice2)
-        } else {
-            "Loading..."
-        }
-    }
+    fun formatPrice2(): String = formatPrice(currentPrice2)
 
-    fun getFormattedPriceDifference(): String {
-        return String.format("%.2f", priceDifference)
-    }
+    fun formatPriceDifference(): String = priceFormat.format(priceDifference)
 
-    fun getDisplayPair(): String = "$companyName1 - $companyName2"
+    fun getDisplayName(): String = "$companyName1 - $companyName2"
+
+    private fun formatPrice(price: Double): String = 
+        if (price > 0.0) "${priceFormat.format(price)} SEK" else "Loading..."
 
     companion object {
         private const val TAG = "StockPair"
+        private val priceFormat = DecimalFormat("#,##0.00")
     }
 } 

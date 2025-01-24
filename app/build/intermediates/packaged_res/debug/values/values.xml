@@ -10,6 +10,7 @@
     <color name="teal_700">#FF018786</color>
     <color name="white">#FFFFFFFF</color>
     <string name="app_name">StockFlip</string>
+    <string name="last_updated">Last updated: %1$s</string>
     <style name="TextAppearance.StockFlip.BodyLarge" parent="TextAppearance.Material3.BodyLarge">
         <item name="android:textColor">@color/black</item>
     </style>

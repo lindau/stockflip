@@ -36,6 +36,7 @@ layout item_stock_pair
 mipmap ic_launcher
 mipmap ic_launcher_round
 string app_name
+string last_updated
 style TextAppearance.StockFlip.BodyLarge
 style TextAppearance.StockFlip.BodyMedium
 style TextAppearance.StockFlip.TitleMedium

@@ -1,46 +1,31 @@
 package com.stockflip
 
-import android.os.Bundle
-import android.view.View
-import android.view.inputmethod.InputMethodManager
-import android.widget.Button
-import android.widget.EditText
-import android.widget.ProgressBar
-import android.widget.Toast
-import androidx.appcompat.app.AppCompatActivity
-import androidx.activity.viewModels
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
-import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
-import android.view.LayoutInflater
-import android.widget.CheckBox
-import android.content.Context
-import androidx.lifecycle.lifecycleScope
-import kotlinx.coroutines.launch
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
-import android.widget.TextView
-import java.text.SimpleDateFormat
-import java.util.*
-import android.util.Log
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.activity.result.ActivityResultLauncher
-import com.stockflip.databinding.ActivityMainBinding
-import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.isActive
 import android.Manifest
+import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
-import kotlinx.coroutines.async
-import kotlinx.coroutines.coroutineScope
+import android.os.Bundle
+import android.util.Log
+import android.view.LayoutInflater
+import android.view.View
+import android.widget.CheckBox
+import android.widget.EditText
+import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.viewModels
+import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
+import androidx.recyclerview.widget.LinearLayoutManager
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.stockflip.databinding.ActivityMainBinding
+import kotlinx.coroutines.*
+import java.text.SimpleDateFormat
+import java.util.*
 
 class MainActivity : AppCompatActivity() {
-    val viewModel: MainViewModel by viewModels {
+    private val viewModel: MainViewModel by viewModels {
         object : ViewModelProvider.Factory {
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
                 val database = StockPairDatabase.getDatabase(applicationContext)
@@ -49,59 +34,30 @@ class MainActivity : AppCompatActivity() {
             }
         }
     }
-    
     private lateinit var binding: ActivityMainBinding
-    private lateinit var stockPriceAlarmManager: StockPriceAlarmManager
     private val priceUpdateReceiver = PriceUpdateReceiver()
     private var refreshJob: Job? = null
+    private val notificationPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (!isGranted) {
+            Toast.makeText(this, "Notification permission is required for alerts", Toast.LENGTH_LONG).show()
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        
-        setupRecyclerView()
-        setupObservers()
-        setupSwipeRefresh()
-        setupAddButton()
-        
-        // Start price updates
-        StockPriceUpdater.startPeriodicUpdate(this)
-        
-        // Register broadcast receiver for price updates
-        try {
-            registerReceiver(
-                priceUpdateReceiver,
-                PriceUpdateReceiver.createIntentFilter(),
-                Context.RECEIVER_NOT_EXPORTED
-            )
-            Log.d(TAG, "Successfully registered price update receiver")
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to register price update receiver: ${e.message}")
-        }
-        
-        // Request battery optimization exemption for reliable updates
-        StockPriceUpdater.requestBatteryOptimizationExemption(this)
-
-        // Request notification permission for Android 13+
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            requestNotificationPermission()
-        }
-
-        // Initial load of stock pairs
-        lifecycleScope.launch {
-            viewModel.loadStockPairs()
-        }
+        initializeUI()
+        initializeUpdates()
+        requestPermissions()
+        loadInitialData()
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        try {
-            unregisterReceiver(priceUpdateReceiver)
-            Log.d(TAG, "Successfully unregistered price update receiver")
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to unregister price update receiver: ${e.message}")
-        }
+        unregisterPriceUpdateReceiver()
     }
 
     override fun onResume() {
@@ -112,6 +68,53 @@ class MainActivity : AppCompatActivity() {
     override fun onPause() {
         super.onPause()
         stopAutoRefresh()
+    }
+
+    private fun initializeUI() {
+        setupRecyclerView()
+        setupObservers()
+        setupSwipeRefresh()
+        setupAddButton()
+    }
+
+    private fun initializeUpdates() {
+        StockPriceUpdater.startPeriodicUpdate(this)
+        registerPriceUpdateReceiver()
+        StockPriceUpdater.requestBatteryOptimizationExemption(this)
+    }
+
+    private fun requestPermissions() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            requestNotificationPermission()
+        }
+    }
+
+    private fun loadInitialData() {
+        lifecycleScope.launch {
+            viewModel.loadStockPairs()
+        }
+    }
+
+    private fun registerPriceUpdateReceiver() {
+        try {
+            registerReceiver(
+                priceUpdateReceiver,
+                PriceUpdateReceiver.createIntentFilter(),
+                Context.RECEIVER_NOT_EXPORTED
+            )
+            Log.d(TAG, "Successfully registered price update receiver")
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to register price update receiver: ${e.message}")
+        }
+    }
+
+    private fun unregisterPriceUpdateReceiver() {
+        try {
+            unregisterReceiver(priceUpdateReceiver)
+            Log.d(TAG, "Successfully unregistered price update receiver")
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to unregister price update receiver: ${e.message}")
+        }
     }
 
     private fun startAutoRefresh() {
@@ -125,7 +128,7 @@ class MainActivity : AppCompatActivity() {
                 } catch (e: Exception) {
                     Log.e(TAG, "Error during auto-refresh: ${e.message}")
                 }
-                delay(60000) // Wait for 1 minute
+                delay(AUTO_REFRESH_INTERVAL)
             }
         }
     }
@@ -136,8 +139,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     fun updateLastUpdateTime() {
-        val currentTime = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date())
-        binding.lastUpdateTime.text = "Last updated: $currentTime"
+        val currentTime = SimpleDateFormat(TIME_FORMAT, Locale.getDefault()).format(Date())
+        binding.lastUpdateTime.text = getString(R.string.last_updated, currentTime)
         Log.d(TAG, "Updated last update time to $currentTime")
     }
 
@@ -145,39 +148,53 @@ class MainActivity : AppCompatActivity() {
         lifecycleScope.launch {
             viewModel.uiState.collect { state ->
                 Log.d(TAG, "Received UI state update: $state")
-                when (state) {
-                    is UiState.Loading -> {
-                        Log.d(TAG, "Showing loading state")
-                        binding.progressBar.visibility = View.VISIBLE
-                    }
-                    is UiState.Success -> {
-                        Log.d(TAG, "Received ${state.data.size} stock pairs")
-                        binding.progressBar.visibility = View.GONE
-                        (binding.stockPairsList.adapter as StockPairAdapter).submitList(state.data)
-                    }
-                    is UiState.Error -> {
-                        Log.e(TAG, "Error state: ${state.message}")
-                        binding.progressBar.visibility = View.GONE
-                        Toast.makeText(this@MainActivity, state.message, Toast.LENGTH_LONG).show()
-                    }
-                }
+                handleUiState(state)
             }
         }
+    }
+
+    private fun handleUiState(state: UiState<List<StockPair>>) {
+        when (state) {
+            is UiState.Loading -> showLoading()
+            is UiState.Success -> showSuccess(state.data)
+            is UiState.Error -> showError(state.message)
+        }
+    }
+
+    private fun showLoading() {
+        Log.d(TAG, "Showing loading state")
+        binding.progressBar.visibility = View.VISIBLE
+    }
+
+    private fun showSuccess(data: List<StockPair>) {
+        Log.d(TAG, "Received ${data.size} stock pairs")
+        binding.progressBar.visibility = View.GONE
+        (binding.stockPairsList.adapter as StockPairAdapter).submitList(data)
+    }
+
+    private fun showError(message: String) {
+        Log.e(TAG, "Error state: $message")
+        binding.progressBar.visibility = View.GONE
+        Toast.makeText(this, message, Toast.LENGTH_LONG).show()
     }
 
     private fun setupRecyclerView() {
         Log.d(TAG, "Setting up RecyclerView")
         binding.stockPairsList.layoutManager = LinearLayoutManager(this)
         binding.stockPairsList.adapter = StockPairAdapter(
-            onDeleteClick = { pair -> 
-                Log.d(TAG, "Delete clicked for pair: ${pair.companyName1} - ${pair.companyName2}")
-                showDeleteConfirmationDialog(pair) 
-            },
-            onEditClick = { pair -> 
-                Log.d(TAG, "Edit clicked for pair: ${pair.companyName1} - ${pair.companyName2}")
-                showEditStockPairDialog(pair) 
-            }
+            onDeleteClick = { pair -> handleDeleteClick(pair) },
+            onEditClick = { pair -> handleEditClick(pair) }
         )
+    }
+
+    private fun handleDeleteClick(pair: StockPair) {
+        Log.d(TAG, "Delete clicked for pair: ${pair.companyName1} - ${pair.companyName2}")
+        showDeleteConfirmationDialog(pair)
+    }
+
+    private fun handleEditClick(pair: StockPair) {
+        Log.d(TAG, "Edit clicked for pair: ${pair.companyName1} - ${pair.companyName2}")
+        showEditStockPairDialog(pair)
     }
 
     private fun setupAddButton() {
@@ -248,7 +265,7 @@ class MainActivity : AppCompatActivity() {
     private fun showDeleteConfirmationDialog(pair: StockPair) {
         MaterialAlertDialogBuilder(this)
             .setTitle("Delete Stock Pair")
-            .setMessage("Are you sure you want to delete the pair ${pair.getDisplayPair()}?")
+            .setMessage("Are you sure you want to delete the pair ${pair.getDisplayName()}?")
             .setPositiveButton("Delete") { _, _ ->
                 lifecycleScope.launch {
                     try {
@@ -356,52 +373,32 @@ class MainActivity : AppCompatActivity() {
 
     private fun setupSwipeRefresh() {
         binding.swipeRefreshLayout.setOnRefreshListener {
-            lifecycleScope.launch {
-                try {
-                    viewModel.refreshStockPairs()
-                    updateLastUpdateTime()
-                } catch (e: Exception) {
-                    Toast.makeText(this@MainActivity, "Failed to refresh: ${e.message}", Toast.LENGTH_LONG).show()
-                } finally {
-                    binding.swipeRefreshLayout.isRefreshing = false
-                }
+            refreshPrices()
+        }
+    }
+
+    fun refreshPrices() {
+        lifecycleScope.launch {
+            try {
+                viewModel.refreshStockPairs()
+                updateLastUpdateTime()
+            } catch (e: Exception) {
+                Toast.makeText(this@MainActivity, "Failed to refresh: ${e.message}", Toast.LENGTH_LONG).show()
+            } finally {
+                binding.swipeRefreshLayout.isRefreshing = false
             }
         }
     }
 
     private fun requestNotificationPermission() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != 
-                PackageManager.PERMISSION_GRANTED) {
-                
-                requestPermissions(
-                    arrayOf(Manifest.permission.POST_NOTIFICATIONS),
-                    NOTIFICATION_PERMISSION_REQUEST_CODE
-                )
-            }
-        }
-    }
-
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<out String>,
-        grantResults: IntArray
-    ) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        when (requestCode) {
-            NOTIFICATION_PERMISSION_REQUEST_CODE -> {
-                if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    Log.d(TAG, "Notification permission granted")
-                } else {
-                    Log.w(TAG, "Notification permission denied")
-                    // Optionally show a message to the user explaining why notifications are important
-                }
-            }
+        if (checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+            notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
         }
     }
 
     companion object {
         private const val TAG = "MainActivity"
-        private const val NOTIFICATION_PERMISSION_REQUEST_CODE = 123
+        private const val AUTO_REFRESH_INTERVAL = 60000L // 1 minute
+        private const val TIME_FORMAT = "HH:mm:ss"
     }
 } 
