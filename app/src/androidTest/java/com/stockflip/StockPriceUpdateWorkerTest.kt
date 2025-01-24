@@ -76,9 +76,7 @@ class StockPriceUpdateWorkerTest {
         var broadcastReceived = false
         
         // Register test broadcast receiver
-        val receiver = PriceUpdateReceiver {
-            broadcastReceived = true
-        }
+        val receiver = PriceUpdateReceiver()
         context.registerReceiver(
             receiver,
             PriceUpdateReceiver.createIntentFilter(),

@@ -2,6 +2,7 @@ package com.stockflip
 
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.os.Build
@@ -98,9 +99,20 @@ class StockPriceUpdateWorker(
     }
 
     private fun showNotification(title: String, message: String) {
-        createNotificationChannel()
+        // Create an Intent to open MainActivity
+        val intent = applicationContext.packageManager.getLaunchIntentForPackage(applicationContext.packageName)?.apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        
+        // Create PendingIntent
+        val pendingIntent = PendingIntent.getActivity(
+            applicationContext,
+            0,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
 
-        val notification = NotificationCompat.Builder(applicationContext, CHANNEL_ID)
+        val notification = NotificationCompat.Builder(applicationContext, StockPriceUpdater.CHANNEL_ID)
             .setContentTitle(title)
             .setContentText(message)
             .setSmallIcon(android.R.drawable.ic_dialog_info)
@@ -108,33 +120,18 @@ class StockPriceUpdateWorker(
             .setAutoCancel(true)
             .setDefaults(NotificationCompat.DEFAULT_ALL)
             .setCategory(NotificationCompat.CATEGORY_ALARM)
+            .setContentIntent(pendingIntent)  // Add the PendingIntent
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)  // Show on lock screen
             .build()
 
         val notificationManager = applicationContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        notificationManager.notify(System.currentTimeMillis().toInt(), notification)
+        val notificationId = System.currentTimeMillis().toInt()
+        notificationManager.notify(notificationId, notification)
         Log.d(TAG, "Sent notification: $title - $message")
-    }
-
-    private fun createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val name = "Stock Price Alerts"
-            val descriptionText = "Notifications for stock price alerts"
-            val importance = NotificationManager.IMPORTANCE_HIGH
-            val channel = NotificationChannel(CHANNEL_ID, name, importance).apply {
-                description = descriptionText
-                enableLights(true)
-                enableVibration(true)
-                setShowBadge(true)
-            }
-            
-            val notificationManager = applicationContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            notificationManager.createNotificationChannel(channel)
-        }
     }
 
     companion object {
         private const val TAG = "StockPriceUpdateWorker"
-        private const val CHANNEL_ID = "stock_price_alerts"
         private const val PRICE_EQUALITY_THRESHOLD = 0.01
         const val ACTION_PRICES_UPDATED = "com.stockflip.ACTION_PRICES_UPDATED"
     }

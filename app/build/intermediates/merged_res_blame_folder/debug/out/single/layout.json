@@ -12,7 +12,7 @@
         "source": "/Users/johanlindau/.gradle/daemon/8.5/com.stockflip.app-main-46:/layout/item_stock_pair.xml"
     },
     {
-        "merged": "com.stockflip.app-mergeDebugResources-43:/layout/activity_main.xml",
-        "source": "com.stockflip.app-main-46:/layout/activity_main.xml"
+        "merged": "com.stockflip.app-mergeDebugResources-43:/layout/item_stock_pair.xml",
+        "source": "com.stockflip.app-main-46:/layout/item_stock_pair.xml"
     }
 ]

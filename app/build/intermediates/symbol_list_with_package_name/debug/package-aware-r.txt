@@ -2075,6 +2075,7 @@ color mtrl_textinput_filled_box_default_background_color
 color mtrl_textinput_focused_box_stroke_color
 color mtrl_textinput_hovered_box_stroke_color
 color notification_action_color_filter
+color notification_highlight
 color notification_icon_bg_color
 color primary_dark_material_dark
 color primary_dark_material_light
@@ -2995,6 +2996,8 @@ drawable design_ic_visibility_off
 drawable design_password_eye
 drawable design_snackbar_background
 drawable ic_arrow_back_black_24
+drawable ic_arrow_downward
+drawable ic_arrow_upward
 drawable ic_call_answer
 drawable ic_call_answer_low
 drawable ic_call_answer_video
@@ -3012,6 +3015,7 @@ drawable ic_mtrl_checked_circle
 drawable ic_mtrl_chip_checked_black
 drawable ic_mtrl_chip_checked_circle
 drawable ic_mtrl_chip_close_circle
+drawable ic_notifications
 drawable ic_search_black_24
 drawable m3_avd_hide_password
 drawable m3_avd_show_password
@@ -3445,8 +3449,12 @@ id pin
 id position
 id postLayout
 id pressed
+id priceDifference
 id priceDifferenceInput
+id priceIndicator1
+id priceIndicator2
 id priceInfo
+id priceInfo2
 id progressBar
 id progress_circular
 id progress_horizontal
@@ -3518,8 +3526,8 @@ id startVertical
 id staticLayout
 id staticPostLayout
 id stockNames
+id stockNames2
 id stockPairsList
-id stockSymbols
 id stop
 id stretch
 id submenuarrow
@@ -4483,6 +4491,9 @@ style TextAppearance_MaterialComponents_Subtitle1
 style TextAppearance_MaterialComponents_Subtitle2
 style TextAppearance_MaterialComponents_TimePicker_Title
 style TextAppearance_MaterialComponents_Tooltip
+style TextAppearance_StockFlip_BodyLarge
+style TextAppearance_StockFlip_BodyMedium
+style TextAppearance_StockFlip_TitleMedium
 style TextAppearance_Widget_AppCompat_ExpandedMenu_Item
 style TextAppearance_Widget_AppCompat_Toolbar_Subtitle
 style TextAppearance_Widget_AppCompat_Toolbar_Title
@@ -5079,6 +5090,8 @@ style Widget_MaterialComponents_Toolbar_Primary
 style Widget_MaterialComponents_Toolbar_PrimarySurface
 style Widget_MaterialComponents_Toolbar_Surface
 style Widget_MaterialComponents_Tooltip
+style Widget_StockFlip_CardView
+style Widget_StockFlip_CardView_Dark
 style Widget_Support_CoordinatorLayout
 styleable ActionBar background backgroundSplit backgroundStacked contentInsetEnd contentInsetEndWithActions contentInsetLeft contentInsetRight contentInsetStart contentInsetStartWithNavigation customNavigationLayout displayOptions divider elevation height hideOnContentScroll homeAsUpIndicator homeLayout icon indeterminateProgressStyle itemPadding logo navigationMode popupTheme progressBarPadding progressBarStyle subtitle subtitleTextStyle title titleTextStyle
 styleable ActionBarLayout android_layout_gravity

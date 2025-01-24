@@ -18,9 +18,14 @@ object StockPriceUpdater {
     const val WORK_NAME_PERIODIC = "StockPriceUpdatePeriodic"
     const val WORK_NAME_IMMEDIATE = "StockPriceUpdateImmediate"
     private const val PRICE_EQUALITY_THRESHOLD = 0.01
+    const val CHANNEL_ID = "stock_price_alerts"
 
     fun startPeriodicUpdate(context: Context) {
         Log.d(TAG, "Starting periodic price updates")
+        
+        // Create notification channel first
+        createNotificationChannel(context)
+        
         val workManager = WorkManager.getInstance(context)
 
         // Set up constraints
@@ -36,7 +41,7 @@ object StockPriceUpdater {
         // Create periodic work request for subsequent updates
         val periodicWork = PeriodicWorkRequestBuilder<StockPriceUpdateWorker>(
             1, TimeUnit.MINUTES,  // Repeat interval
-            1, TimeUnit.MINUTES   // Flex interval (minimum allowed by WorkManager)
+            1, TimeUnit.MINUTES   // Flex interval
         )
             .setConstraints(constraints)
             .build()
@@ -59,13 +64,7 @@ object StockPriceUpdater {
         }
 
         // Monitor work status for debugging
-        workManager.getWorkInfosForUniqueWorkLiveData(WORK_NAME_PERIODIC)
-            .observeForever { workInfos ->
-                workInfos?.forEach { workInfo ->
-                    Log.d(TAG, "Periodic work status: ${workInfo.state}")
-                }
-            }
-
+        monitorWorkStatus(workManager)
         Log.d(TAG, "Price updates scheduled successfully")
     }
 
@@ -89,15 +88,19 @@ object StockPriceUpdater {
     private fun createNotificationChannel(context: Context) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
-                "StockFlipChannel",
-                "Stock Price Updates",
-                NotificationManager.IMPORTANCE_LOW
+                CHANNEL_ID,
+                "Stock Price Alerts",
+                NotificationManager.IMPORTANCE_HIGH
             ).apply {
-                description = "Shows when stock prices are being updated"
+                description = "Notifications for stock price alerts"
+                enableLights(true)
+                enableVibration(true)
+                setShowBadge(true)
             }
             
             val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             notificationManager.createNotificationChannel(channel)
+            Log.d(TAG, "Created notification channel: ${channel.id}")
         }
     }
 
@@ -106,9 +109,6 @@ object StockPriceUpdater {
             .observeForever { workInfos ->
                 workInfos?.forEach { workInfo ->
                     Log.d(TAG, "Periodic work status: ${workInfo.state}")
-                    if (workInfo.state == WorkInfo.State.SUCCEEDED) {
-                        Log.d(TAG, "Periodic work completed successfully")
-                    }
                 }
             }
 
@@ -116,9 +116,6 @@ object StockPriceUpdater {
             .observeForever { workInfos ->
                 workInfos?.forEach { workInfo ->
                     Log.d(TAG, "Immediate work status: ${workInfo.state}")
-                    if (workInfo.state == WorkInfo.State.SUCCEEDED) {
-                        Log.d(TAG, "Immediate work completed successfully")
-                    }
                 }
             }
     }

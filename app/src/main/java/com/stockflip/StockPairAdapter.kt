@@ -1,20 +1,27 @@
 package com.stockflip
 
+import android.app.NotificationManager
+import android.app.PendingIntent
+import android.content.Context
+import android.content.Intent
 import android.util.Log
 import android.view.LayoutInflater
-import android.view.View
 import android.view.ViewGroup
-import android.widget.TextView
+import androidx.core.app.NotificationCompat
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.stockflip.databinding.ItemStockPairBinding
+import java.text.DecimalFormat
 import kotlin.math.abs
 
 class StockPairAdapter(
     private val onDeleteClick: (StockPair) -> Unit,
     private val onEditClick: (StockPair) -> Unit
 ) : ListAdapter<StockPair, StockPairAdapter.ViewHolder>(StockPairDiffCallback()) {
+
+    private val priceFormat = DecimalFormat("#,##0.00")
+    private val highlightedPairs = mutableSetOf<Int>() // Track which pairs are highlighted
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val binding = ItemStockPairBinding.inflate(
@@ -26,70 +33,132 @@ class StockPairAdapter(
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        val pair = getItem(position)
-        holder.bind(pair)
+        holder.bind(getItem(position))
     }
 
     inner class ViewHolder(private val binding: ItemStockPairBinding) : RecyclerView.ViewHolder(binding.root) {
-        fun bind(pair: StockPair) {
-            Log.d(TAG, "Binding stock pair: ${pair.companyName1} - ${pair.companyName2}")
-            Log.d(TAG, "Current prices: ${pair.currentPrice1}, ${pair.currentPrice2}")
-
-            // Set company names and prices on separate lines
-            binding.stockNames.text = "${pair.companyName1} (${pair.ticker1}): ${pair.getFormattedPrice1()}"
-            binding.priceInfo.text = "${pair.companyName2} (${pair.ticker2}): ${pair.getFormattedPrice2()}"
-
-            // Calculate and show current price difference
-            val currentDiff = if (pair.currentPrice1 > 0 && pair.currentPrice2 > 0) {
-                abs(pair.currentPrice1 - pair.currentPrice2)
-            } else null
-
-            // Check if notification criteria are met
-            val shouldHighlight = when {
-                currentDiff == null -> false
-                pair.notifyWhenEqual && abs(currentDiff) <= 0.01 -> true  // Prices are effectively equal
-                pair.priceDifference > 0 && currentDiff >= pair.priceDifference -> true  // Difference threshold reached
-                else -> false
-            }
-
-            // Update card background color
-            binding.root.setCardBackgroundColor(
-                if (shouldHighlight) {
-                    android.graphics.Color.RED
-                } else {
-                    android.graphics.Color.WHITE
-                }
-            )
-
-            binding.notificationInfo.text = buildString {
-                if (currentDiff != null) {
-                    appendLine("Current price difference: ${String.format("%.2f", currentDiff)} SEK")
-                }
-                if (pair.priceDifference > 0) {
-                    append("Notify when price difference ≥ ${pair.getFormattedPriceDifference()} SEK")
-                }
-                if (pair.notifyWhenEqual) {
-                    if (pair.priceDifference > 0) appendLine()
-                    append("Will notify when prices are equal")
-                }
-            }
-
-            // Set up click listeners
-            binding.notificationInfo.setOnClickListener {
-                onEditClick(pair)
-            }
-            itemView.setOnLongClickListener { 
-                onDeleteClick(pair)
+        init {
+            binding.root.setOnLongClickListener {
+                onDeleteClick(getItem(adapterPosition))
                 true
             }
+            binding.notificationInfo.setOnClickListener {
+                onEditClick(getItem(adapterPosition))
+            }
+        }
+
+        fun bind(pair: StockPair) {
+            Log.d(TAG, "Binding stock pair: ${pair.companyName1} - ${pair.companyName2}")
+            
+            // First stock
+            binding.stockNames.text = "${pair.companyName1} (${pair.ticker1})"
+            binding.priceInfo.text = "${priceFormat.format(pair.currentPrice1)} SEK"
+            binding.priceIndicator1.setImageResource(
+                if (pair.currentPrice1 > 0) R.drawable.ic_arrow_upward else R.drawable.ic_arrow_downward
+            )
+            binding.priceIndicator1.setColorFilter(
+                binding.root.context.getColor(
+                    if (pair.currentPrice1 > 0) android.R.color.holo_green_dark 
+                    else android.R.color.holo_red_dark
+                )
+            )
+
+            // Second stock
+            binding.stockNames2.text = "${pair.companyName2} (${pair.ticker2})"
+            binding.priceInfo2.text = "${priceFormat.format(pair.currentPrice2)} SEK"
+            binding.priceIndicator2.setImageResource(
+                if (pair.currentPrice2 > 0) R.drawable.ic_arrow_upward else R.drawable.ic_arrow_downward
+            )
+            binding.priceIndicator2.setColorFilter(
+                binding.root.context.getColor(
+                    if (pair.currentPrice2 > 0) android.R.color.holo_green_dark 
+                    else android.R.color.holo_red_dark
+                )
+            )
+
+            // Price difference and notification info
+            val actualPriceDiff = abs(pair.currentPrice1 - pair.currentPrice2)
+            binding.priceDifference.text = "Diff: ${priceFormat.format(actualPriceDiff)} SEK"
+            
+            // Set up notification chip
+            binding.notificationInfo.apply {
+                text = when {
+                    pair.priceDifference > 0 -> "Notify when ≥ ${priceFormat.format(pair.priceDifference)} SEK"
+                    pair.notifyWhenEqual -> "Notify when prices are equal"
+                    else -> "No notifications set"
+                }
+                isCheckable = false
+                isClickable = true
+            }
+
+            // Check if notification criteria are met
+            val shouldHighlight = (pair.notifyWhenEqual && actualPriceDiff <= 0.01) ||
+                    (pair.priceDifference > 0 && actualPriceDiff >= pair.priceDifference)
+
+            // Check if highlight state changed
+            val wasHighlighted = highlightedPairs.contains(pair.id)
+            if (shouldHighlight && !wasHighlighted) {
+                // Card just turned red, send notification
+                showNotification(
+                    binding.root.context,
+                    "Price Alert",
+                    buildNotificationMessage(pair, actualPriceDiff)
+                )
+                highlightedPairs.add(pair.id)
+            } else if (!shouldHighlight && wasHighlighted) {
+                // Card is no longer highlighted
+                highlightedPairs.remove(pair.id)
+            }
+
+            // Set background color based on notification criteria
+            binding.root.setCardBackgroundColor(binding.root.context.getColor(
+                if (shouldHighlight) R.color.notification_highlight else android.R.color.white
+            ))
+        }
+
+        private fun buildNotificationMessage(pair: StockPair, priceDiff: Double): String {
+            return when {
+                pair.notifyWhenEqual && priceDiff <= 0.01 ->
+                    "${pair.companyName1} and ${pair.companyName2} prices are now equal at ${priceFormat.format(pair.currentPrice1)} SEK"
+                priceDiff >= pair.priceDifference ->
+                    "Price difference between ${pair.companyName1} and ${pair.companyName2} has reached ${priceFormat.format(priceDiff)} SEK"
+                else -> ""
+            }
+        }
+
+        private fun showNotification(context: Context, title: String, message: String) {
+            // Create an Intent to open MainActivity
+            val intent = context.packageManager.getLaunchIntentForPackage(context.packageName)?.apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            }
+            
+            // Create PendingIntent
+            val pendingIntent = PendingIntent.getActivity(
+                context,
+                0,
+                intent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+
+            val notification = NotificationCompat.Builder(context, StockPriceUpdater.CHANNEL_ID)
+                .setContentTitle(title)
+                .setContentText(message)
+                .setSmallIcon(android.R.drawable.ic_dialog_info)
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setAutoCancel(true)
+                .setDefaults(NotificationCompat.DEFAULT_ALL)
+                .setCategory(NotificationCompat.CATEGORY_ALARM)
+                .setContentIntent(pendingIntent)  // Add the PendingIntent
+                .build()
+
+            val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            val notificationId = System.currentTimeMillis().toInt()
+            notificationManager.notify(notificationId, notification)
+            Log.d(TAG, "Sent notification: $title - $message")
         }
     }
 
-    companion object {
-        private const val TAG = "StockPairAdapter"
-    }
-
-    private class StockPairDiffCallback : DiffUtil.ItemCallback<StockPair>() {
+    class StockPairDiffCallback : DiffUtil.ItemCallback<StockPair>() {
         override fun areItemsTheSame(oldItem: StockPair, newItem: StockPair): Boolean {
             return oldItem.id == newItem.id
         }
@@ -99,5 +168,9 @@ class StockPairAdapter(
                    oldItem.currentPrice1 == newItem.currentPrice1 &&
                    oldItem.currentPrice2 == newItem.currentPrice2
         }
+    }
+
+    companion object {
+        private const val TAG = "StockPairAdapter"
     }
 } 
