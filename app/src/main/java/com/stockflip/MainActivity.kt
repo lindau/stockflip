@@ -31,6 +31,13 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.isActive
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 
 class MainActivity : AppCompatActivity() {
     val viewModel: MainViewModel by viewModels {
@@ -75,6 +82,11 @@ class MainActivity : AppCompatActivity() {
         
         // Request battery optimization exemption for reliable updates
         StockPriceUpdater.requestBatteryOptimizationExemption(this)
+
+        // Request notification permission for Android 13+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            requestNotificationPermission()
+        }
 
         // Initial load of stock pairs
         lifecycleScope.launch {
@@ -253,16 +265,10 @@ class MainActivity : AppCompatActivity() {
 
     private fun showEditStockPairDialog(pair: StockPair) {
         val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_add_stock_pair, null)
-        val ticker1Input = dialogView.findViewById<EditText>(R.id.ticker1Input)
-        val ticker2Input = dialogView.findViewById<EditText>(R.id.ticker2Input)
-        val priceDifferenceInput = dialogView.findViewById<EditText>(R.id.priceDifferenceInput)
-        val notifyWhenEqualCheckbox = dialogView.findViewById<CheckBox>(R.id.notifyWhenEqualCheckbox)
-
-        // Populate fields with current data
-        ticker1Input.setText(pair.ticker1)
-        ticker2Input.setText(pair.ticker2)
-        priceDifferenceInput.setText(pair.priceDifference.toString())
-        notifyWhenEqualCheckbox.isChecked = pair.notifyWhenEqual
+        val ticker1Input = dialogView.findViewById<EditText>(R.id.ticker1Input).apply { setText(pair.ticker1) }
+        val ticker2Input = dialogView.findViewById<EditText>(R.id.ticker2Input).apply { setText(pair.ticker2) }
+        val priceDifferenceInput = dialogView.findViewById<EditText>(R.id.priceDifferenceInput).apply { setText(pair.priceDifference.toString()) }
+        val notifyWhenEqualCheckbox = dialogView.findViewById<CheckBox>(R.id.notifyWhenEqualCheckbox).apply { isChecked = pair.notifyWhenEqual }
 
         MaterialAlertDialogBuilder(this)
             .setTitle("Edit Stock Pair")
@@ -279,20 +285,43 @@ class MainActivity : AppCompatActivity() {
                         try {
                             binding.progressBar.visibility = View.VISIBLE
                             
-                            // Only fetch new company names if tickers changed
-                            val companyName1 = if (ticker1 != pair.ticker1) {
-                                YahooFinanceService.getCompanyName(ticker1)
-                                    ?: throw Exception("Could not fetch company name for $ticker1")
-                            } else pair.companyName1
-                            
-                            val companyName2 = if (ticker2 != pair.ticker2) {
-                                YahooFinanceService.getCompanyName(ticker2)
-                                    ?: throw Exception("Could not fetch company name for $ticker2")
-                            } else pair.companyName2
+                            // Parallel fetch of company names and prices if tickers changed
+                            val (companyName1, companyName2, price1, price2) = withContext(Dispatchers.IO) {
+                                coroutineScope {
+                                    val ticker1Changed = ticker1 != pair.ticker1
+                                    val ticker2Changed = ticker2 != pair.ticker2
+                                    
+                                    val companyName1Deferred = if (ticker1Changed) {
+                                        async { YahooFinanceService.getCompanyName(ticker1) }
+                                    } else null
+                                    
+                                    val companyName2Deferred = if (ticker2Changed) {
+                                        async { YahooFinanceService.getCompanyName(ticker2) }
+                                    } else null
+                                    
+                                    val price1Deferred = if (ticker1Changed) {
+                                        async { YahooFinanceService.getStockPrice(ticker1) }
+                                    } else null
+                                    
+                                    val price2Deferred = if (ticker2Changed) {
+                                        async { YahooFinanceService.getStockPrice(ticker2) }
+                                    } else null
 
-                            // Get current prices
-                            val price1 = YahooFinanceService.getStockPrice(ticker1)
-                            val price2 = YahooFinanceService.getStockPrice(ticker2)
+                                    val companyName1Result = companyName1Deferred?.await() ?: pair.companyName1
+                                    val companyName2Result = companyName2Deferred?.await() ?: pair.companyName2
+                                    val price1Result = price1Deferred?.await() ?: pair.currentPrice1
+                                    val price2Result = price2Deferred?.await() ?: pair.currentPrice2
+
+                                    if (ticker1Changed && companyName1Result == null) {
+                                        throw Exception("Could not fetch company name for $ticker1")
+                                    }
+                                    if (ticker2Changed && companyName2Result == null) {
+                                        throw Exception("Could not fetch company name for $ticker2")
+                                    }
+
+                                    Quadruple(companyName1Result, companyName2Result, price1Result, price2Result)
+                                }
+                            }
                             
                             // Create updated pair with current prices
                             val updatedPair = pair.copy(
@@ -305,6 +334,9 @@ class MainActivity : AppCompatActivity() {
                             ).withCurrentPrices(price1, price2)
                             
                             viewModel.updateStockPair(updatedPair)
+                            // Immediately refresh all prices after update
+                            viewModel.refreshStockPairs()
+                            updateLastUpdateTime()
                             binding.progressBar.visibility = View.GONE
                             Toast.makeText(this@MainActivity, "Stock pair updated successfully", Toast.LENGTH_SHORT).show()
                         } catch (e: Exception) {
@@ -319,6 +351,8 @@ class MainActivity : AppCompatActivity() {
             .setNegativeButton("Cancel", null)
             .show()
     }
+
+    private data class Quadruple<A, B, C, D>(val first: A, val second: B, val third: C, val fourth: D)
 
     private fun setupSwipeRefresh() {
         binding.swipeRefreshLayout.setOnRefreshListener {
@@ -335,7 +369,39 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun requestNotificationPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != 
+                PackageManager.PERMISSION_GRANTED) {
+                
+                requestPermissions(
+                    arrayOf(Manifest.permission.POST_NOTIFICATIONS),
+                    NOTIFICATION_PERMISSION_REQUEST_CODE
+                )
+            }
+        }
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        when (requestCode) {
+            NOTIFICATION_PERMISSION_REQUEST_CODE -> {
+                if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    Log.d(TAG, "Notification permission granted")
+                } else {
+                    Log.w(TAG, "Notification permission denied")
+                    // Optionally show a message to the user explaining why notifications are important
+                }
+            }
+        }
+    }
+
     companion object {
         private const val TAG = "MainActivity"
+        private const val NOTIFICATION_PERMISSION_REQUEST_CODE = 123
     }
 } 
