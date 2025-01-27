@@ -7,6 +7,12 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.GET
 import retrofit2.http.Path
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import java.net.URL
+import java.net.URLEncoder
+import org.json.JSONObject
+import java.util.concurrent.TimeUnit
 
 interface YahooFinanceApi {
     @GET("v8/finance/chart/{symbol}")
@@ -59,6 +65,7 @@ data class Quote(
 object YahooFinanceService {
     private const val TAG = "YahooFinanceService"
     private const val BASE_URL = "https://query1.finance.yahoo.com/"
+    private const val SEARCH_URL = "https://query1.finance.yahoo.com/v1/finance/search"
     
     private val loggingInterceptor = HttpLoggingInterceptor().apply {
         level = HttpLoggingInterceptor.Level.BODY
@@ -143,6 +150,105 @@ object YahooFinanceService {
         } catch (e: Exception) {
             Log.e(TAG, "Error fetching company info for $symbol: ${e.message}", e)
             null
+        }
+    }
+
+    @JvmStatic
+    suspend fun searchStocks(query: String): List<StockSearchResult> = withContext(Dispatchers.IO) {
+        try {
+            if (query.length < 2) return@withContext emptyList()
+            
+            val encodedQuery = URLEncoder.encode(query, "UTF-8")
+            val url = "$SEARCH_URL?q=$encodedQuery&quotesCount=50&lang=en&region=SE&enableFuzzyQuery=true&type=equity&newsCount=0&enableEnhancedTrivialQuery=true&exchange=STO"
+            Log.d(TAG, "Searching stocks with URL: $url")
+            
+            val client = OkHttpClient.Builder()
+                .connectTimeout(10, TimeUnit.SECONDS)
+                .readTimeout(10, TimeUnit.SECONDS)
+                .build()
+                
+            val request = okhttp3.Request.Builder()
+                .url(url)
+                .addHeader("User-Agent", "Mozilla/5.0")
+                .build()
+                
+            val response = client.newCall(request).execute()
+            
+            if (!response.isSuccessful) {
+                Log.e(TAG, "API Error: ${response.code} - ${response.message}")
+                return@withContext emptyList()
+            }
+            
+            val responseBody = response.body?.string()
+            if (responseBody == null) {
+                Log.e(TAG, "Empty response body")
+                return@withContext emptyList()
+            }
+            
+            Log.d(TAG, "Received response: $responseBody")
+            
+            val jsonObject = JSONObject(responseBody)
+            val quotes = jsonObject.optJSONArray("quotes") ?: return@withContext emptyList()
+            
+            val results = mutableListOf<StockSearchResult>()
+            for (i in 0 until quotes.length()) {
+                val quote = quotes.getJSONObject(i)
+                if (quote.has("symbol") && quote.has("shortname")) {
+                    val quoteType = quote.optString("quoteType", "")
+                    val symbol = quote.getString("symbol")
+                    val name = quote.getString("shortname")
+                    val exchange = quote.optString("exchange", "")
+                    val typeDisp = quote.optString("typeDisp", "")
+                    val market = quote.optString("market", "")
+                    
+                    // Only include stocks and filter out unwanted types
+                    if (isValidStock(quoteType, symbol, name, typeDisp)) {
+                        val displayName = buildDisplayName(name, exchange, market)
+                        results.add(
+                            StockSearchResult(
+                                symbol = symbol,
+                                name = displayName,
+                                isSwedish = symbol.endsWith(".ST") || exchange == "STO"
+                            )
+                        )
+                    }
+                }
+            }
+            
+            // Improved sorting with better prioritization of Swedish stocks
+            results.sortWith(
+                compareBy<StockSearchResult> { !it.isSwedish }  // Swedish stocks first
+                .thenBy { !it.name.contains(query, ignoreCase = true) }  // Name matches next
+                .thenBy { !it.symbol.contains(query, ignoreCase = true) }  // Symbol matches next
+                .thenBy { it.name }  // Finally alphabetically
+            )
+            
+            Log.d(TAG, "Found ${results.size} stocks matching query: $query")
+            results
+            
+        } catch (e: Exception) {
+            Log.e(TAG, "Error searching stocks: ${e.message}", e)
+            emptyList()
+        }
+    }
+
+    private fun isValidStock(quoteType: String, symbol: String, name: String, typeDisp: String): Boolean {
+        // Filter out unwanted types
+        if (quoteType !in setOf("EQUITY", "")) return false
+        if (symbol.contains("^") || symbol.contains("=")) return false
+        if (name.contains("Fund", ignoreCase = true)) return false
+        if (typeDisp.contains("Fund", ignoreCase = true)) return false
+        if (typeDisp.contains("ETF", ignoreCase = true)) return false
+        
+        return true
+    }
+
+    private fun buildDisplayName(name: String, exchange: String, market: String): String {
+        return when {
+            exchange == "STO" || market.contains("se_market", ignoreCase = true) -> 
+                "$name (Stockholmsbörsen)"
+            exchange.isNotEmpty() -> "$name ($exchange)"
+            else -> name
         }
     }
 } 

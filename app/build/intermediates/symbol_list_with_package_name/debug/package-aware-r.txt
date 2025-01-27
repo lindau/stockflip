@@ -3744,6 +3744,8 @@ layout design_navigation_menu_item
 layout design_text_input_end_icon
 layout design_text_input_start_icon
 layout dialog_add_stock_pair
+layout dropdown_item
+layout dropdown_menu_item
 layout ime_base_split_test_activity
 layout ime_secondary_split_test_activity
 layout item_stock_pair

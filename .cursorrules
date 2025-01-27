@@ -156,6 +156,235 @@ When implementing a new feature, follow these guidelines:
 - Ensure there are no unresolved references in the code
 - Ensure build.gradle is up to date with all necessary dependencies
 
+## Android Dependencies
+
+### Required Dependencies
+```gradle
+dependencies {
+    // Android core dependencies
+    implementation 'androidx.core:core-ktx:1.12.0'
+    implementation 'androidx.appcompat:appcompat:1.6.1'
+    
+    // Material Design
+    implementation 'com.google.android.material:material:1.11.0'
+    
+    // Layout and UI components
+    implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
+    implementation 'androidx.recyclerview:recyclerview:1.3.2'
+    
+    // Lifecycle and ViewModel
+    implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.7.0'
+    implementation 'androidx.lifecycle:lifecycle-viewmodel-ktx:2.7.0'
+    implementation 'androidx.lifecycle:lifecycle-livedata-ktx:2.7.0'
+    
+    // WorkManager for background tasks
+    implementation 'androidx.work:work-runtime-ktx:2.9.0'
+}
+```
+
+## Material Design Guidelines
+
+### Component Usage
+
+1. Use Material Design 3 components instead of basic Android widgets:
+   - `MaterialButton` instead of `Button`
+   - `MaterialCheckBox` instead of `CheckBox`
+   - `MaterialTextView` instead of `TextView`
+   - `TextInputLayout` with `TextInputEditText` instead of `EditText`
+   - `MaterialCardView` instead of `CardView`
+   - `MaterialToolbar` instead of `Toolbar`
+
+2. Use Material Design themes:
+   ```xml
+   <style name="Theme.App" parent="Theme.Material3.DayNight">
+       <!-- Theme customization -->
+   </style>
+   ```
+
+3. Follow Material Design layout patterns:
+   - Use `TextInputLayout` for text input fields
+   - Use `MaterialCardView` for cards
+   - Use `BottomNavigationView` for bottom navigation
+   - Use `MaterialToolbar` for top app bars
+
+### XML Layout Guidelines
+
+1. Use Material Design styles:
+   ```xml
+   style="@style/Widget.Material3.Button"
+   style="@style/Widget.Material3.CompoundButton.CheckBox"
+   style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+   ```
+
+2. Use Material Design attributes:
+   ```xml
+   android:theme="@style/ThemeOverlay.Material3"
+   app:materialThemeOverlay="@style/ThemeOverlay.Material3"
+   ```
+
+### Kotlin Code Guidelines
+
+1. Import Material Design components:
+   ```kotlin
+   import com.google.android.material.button.MaterialButton
+   import com.google.android.material.checkbox.MaterialCheckBox
+   import com.google.android.material.textfield.TextInputLayout
+   import com.google.android.material.textfield.TextInputEditText
+   import com.google.android.material.card.MaterialCardView
+   ```
+
+2. Use Material Design dialogs:
+   ```kotlin
+   MaterialAlertDialogBuilder(context)
+       .setTitle()
+       .setMessage()
+       .setPositiveButton()
+       .setNegativeButton()
+       .show()
+   ```
+
+3. Use Material Design themes in code:
+   ```kotlin
+   setTheme(R.style.Theme_Material3_DayNight)
+   ```
+
+### Import Management and Reference Resolution
+
+1. Required imports for common Android components:
+   ```kotlin
+   // Basic Android components
+   import android.content.Context
+   import android.os.Bundle
+   import android.view.View
+   import android.view.LayoutInflater
+   import android.view.ViewGroup
+
+   // AndroidX components
+   import androidx.appcompat.app.AppCompatActivity
+   import androidx.fragment.app.Fragment
+   import androidx.lifecycle.ViewModel
+   import androidx.lifecycle.ViewModelProvider
+   import androidx.lifecycle.lifecycleScope
+
+   // Material Design components
+   import com.google.android.material.button.MaterialButton
+   import com.google.android.material.checkbox.MaterialCheckBox
+   import com.google.android.material.textfield.TextInputLayout
+   import com.google.android.material.textfield.TextInputEditText
+   import com.google.android.material.card.MaterialCardView
+   import com.google.android.material.dialog.MaterialAlertDialogBuilder
+   import com.google.android.material.chip.Chip
+   import com.google.android.material.floatingactionbutton.FloatingActionButton
+
+   // RecyclerView components
+   import androidx.recyclerview.widget.RecyclerView
+   import androidx.recyclerview.widget.LinearLayoutManager
+   import androidx.recyclerview.widget.DiffUtil
+   import androidx.recyclerview.widget.ListAdapter
+
+   // Coroutines
+   import kotlinx.coroutines.launch
+   import kotlinx.coroutines.Dispatchers
+   import kotlinx.coroutines.withContext
+   import kotlinx.coroutines.Job
+
+   // ViewBinding
+   import androidx.viewbinding.ViewBinding
+   ```
+
+2. View reference guidelines:
+   - Always use ViewBinding instead of findViewById
+   - When ViewBinding is not possible, use proper view casting:
+     ```kotlin
+     val button = view.findViewById<MaterialButton>(R.id.button)
+     val checkbox = view.findViewById<MaterialCheckBox>(R.id.checkbox)
+     val textInput = view.findViewById<TextInputLayout>(R.id.textInput)
+     ```
+
+3. Component version matching:
+   - Ensure all Material Design components use the same version
+   - Match AndroidX component versions with the app's minSdkVersion
+   - Keep related components on the same version (e.g., all lifecycle components)
+
+4. Common component replacements:
+   | Basic Widget | Material 3 Component |
+   |--------------|---------------------|
+   | Button | MaterialButton |
+   | CheckBox | MaterialCheckBox |
+   | EditText | TextInputEditText |
+   | TextView | MaterialTextView |
+   | CardView | MaterialCardView |
+   | Toolbar | MaterialToolbar |
+   | Switch | MaterialSwitch |
+   | RadioButton | MaterialRadioButton |
+   | ProgressBar | CircularProgressIndicator |
+   | AlertDialog | MaterialAlertDialogBuilder |
+
+5. Layout component imports:
+   Always include in layout files:
+   ```xml
+   xmlns:android="http://schemas.android.com/apk/res/android"
+   xmlns:app="http://schemas.android.com/apk/res-auto"
+   xmlns:tools="http://schemas.android.com/tools"
+   ```
+
+6. Dependency verification:
+   Before using any component, ensure its dependency is included in build.gradle:
+   ```gradle
+   // Material Design
+   implementation 'com.google.android.material:material:1.11.0'
+   
+   // AndroidX Core
+   implementation 'androidx.core:core-ktx:1.12.0'
+   
+   // UI Components
+   implementation 'androidx.appcompat:appcompat:1.6.1'
+   implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
+   implementation 'androidx.recyclerview:recyclerview:1.3.2'
+   
+   // Lifecycle
+   implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.7.0'
+   implementation 'androidx.lifecycle:lifecycle-viewmodel-ktx:2.7.0'
+   implementation 'androidx.lifecycle:lifecycle-livedata-ktx:2.7.0'
+   ```
+
+### Companion Objects and Static Methods
+
+1. Companion object access:
+   ```kotlin
+   // Define companion object
+   companion object {
+       fun staticMethod() { }
+   }
+   
+   // Access methods:
+   ClassName.Companion.staticMethod()  // Explicit way
+   ClassName.staticMethod()            // If @JvmStatic is used
+   ```
+
+2. Best practices:
+   - Use @JvmStatic for methods that need Java interop
+   - Keep companion object methods focused on class-level operations
+   - Document companion object methods clearly
+   - Consider moving utility functions to top-level functions
+   - Use sealed classes for type-safe enums and constants
+
+3. Common patterns:
+   ```kotlin
+   class MyClass {
+       companion object {
+           private const val TAG = "MyClass"
+           
+           @JvmStatic
+           fun create(): MyClass = MyClass()
+           
+           fun fromJson(json: String): MyClass {
+               // Factory method implementation
+           }
+       }
+   }
+   ```
+
 
 
 

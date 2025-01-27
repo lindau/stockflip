@@ -4,7 +4,6 @@ package com.stockflip.databinding;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
@@ -14,6 +13,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 import androidx.viewbinding.ViewBinding;
 import androidx.viewbinding.ViewBindings;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.stockflip.R;
 import java.lang.NullPointerException;
 import java.lang.Override;
@@ -24,7 +24,7 @@ public final class ActivityMainBinding implements ViewBinding {
   private final ConstraintLayout rootView;
 
   @NonNull
-  public final Button addPairButton;
+  public final FloatingActionButton addPairButton;
 
   @NonNull
   public final TextView lastUpdateTime;
@@ -38,9 +38,10 @@ public final class ActivityMainBinding implements ViewBinding {
   @NonNull
   public final SwipeRefreshLayout swipeRefreshLayout;
 
-  private ActivityMainBinding(@NonNull ConstraintLayout rootView, @NonNull Button addPairButton,
-      @NonNull TextView lastUpdateTime, @NonNull ProgressBar progressBar,
-      @NonNull RecyclerView stockPairsList, @NonNull SwipeRefreshLayout swipeRefreshLayout) {
+  private ActivityMainBinding(@NonNull ConstraintLayout rootView,
+      @NonNull FloatingActionButton addPairButton, @NonNull TextView lastUpdateTime,
+      @NonNull ProgressBar progressBar, @NonNull RecyclerView stockPairsList,
+      @NonNull SwipeRefreshLayout swipeRefreshLayout) {
     this.rootView = rootView;
     this.addPairButton = addPairButton;
     this.lastUpdateTime = lastUpdateTime;
@@ -77,7 +78,7 @@ public final class ActivityMainBinding implements ViewBinding {
     int id;
     missingId: {
       id = R.id.addPairButton;
-      Button addPairButton = ViewBindings.findChildViewById(rootView, id);
+      FloatingActionButton addPairButton = ViewBindings.findChildViewById(rootView, id);
       if (addPairButton == null) {
         break missingId;
       }

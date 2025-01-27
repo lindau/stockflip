@@ -2075,7 +2075,12 @@ color mtrl_textinput_filled_box_default_background_color
 color mtrl_textinput_focused_box_stroke_color
 color mtrl_textinput_hovered_box_stroke_color
 color notification_action_color_filter
+color notification_active
+color notification_highlight
 color notification_icon_bg_color
+color notification_inactive
+color price_down
+color price_up
 color primary_dark_material_dark
 color primary_dark_material_light
 color primary_material_dark
@@ -2995,6 +3000,8 @@ drawable design_ic_visibility_off
 drawable design_password_eye
 drawable design_snackbar_background
 drawable ic_arrow_back_black_24
+drawable ic_arrow_downward
+drawable ic_arrow_upward
 drawable ic_call_answer
 drawable ic_call_answer_low
 drawable ic_call_answer_video
@@ -3003,6 +3010,7 @@ drawable ic_call_decline
 drawable ic_call_decline_low
 drawable ic_clear_black_24
 drawable ic_clock_black_24dp
+drawable ic_compare_arrows
 drawable ic_keyboard_black_24dp
 drawable ic_launcher_foreground
 drawable ic_m3_chip_check
@@ -3012,6 +3020,9 @@ drawable ic_mtrl_checked_circle
 drawable ic_mtrl_chip_checked_black
 drawable ic_mtrl_chip_checked_circle
 drawable ic_mtrl_chip_close_circle
+drawable ic_notifications
+drawable ic_notifications_off
+drawable ic_paid
 drawable ic_search_black_24
 drawable m3_avd_hide_password
 drawable m3_avd_show_password
@@ -3231,7 +3242,6 @@ id decelerate
 id decelerateAndComplete
 id decor_content_parent
 id default_activity_button
-id deleteButton
 id deltaRelative
 id dependency_ordering
 id design_bottom_sheet
@@ -3261,7 +3271,6 @@ id easeInOut
 id easeOut
 id east
 id edge
-id editButton
 id edit_query
 id edit_text_id
 id elastic
@@ -3447,8 +3456,12 @@ id pin
 id position
 id postLayout
 id pressed
+id priceDifference
 id priceDifferenceInput
+id priceIndicator1
+id priceIndicator2
 id priceInfo
+id priceInfo2
 id progressBar
 id progress_circular
 id progress_horizontal
@@ -3520,8 +3533,8 @@ id startVertical
 id staticLayout
 id staticPostLayout
 id stockNames
+id stockNames2
 id stockPairsList
-id stockSymbols
 id stop
 id stretch
 id submenuarrow
@@ -3731,6 +3744,8 @@ layout design_navigation_menu_item
 layout design_text_input_end_icon
 layout design_text_input_start_icon
 layout dialog_add_stock_pair
+layout dropdown_item
+layout dropdown_menu_item
 layout ime_base_split_test_activity
 layout ime_secondary_split_test_activity
 layout item_stock_pair
@@ -3853,6 +3868,7 @@ string fab_transformation_sheet_behavior
 string hide_bottom_view_on_scroll_behavior
 string icon_content_description
 string item_view_role_description
+string last_updated
 string m3_exceed_max_badge_text_suffix
 string m3_ref_typeface_brand_medium
 string m3_ref_typeface_brand_regular
@@ -4485,6 +4501,9 @@ style TextAppearance_MaterialComponents_Subtitle1
 style TextAppearance_MaterialComponents_Subtitle2
 style TextAppearance_MaterialComponents_TimePicker_Title
 style TextAppearance_MaterialComponents_Tooltip
+style TextAppearance_StockFlip_BodyLarge
+style TextAppearance_StockFlip_BodyMedium
+style TextAppearance_StockFlip_TitleMedium
 style TextAppearance_Widget_AppCompat_ExpandedMenu_Item
 style TextAppearance_Widget_AppCompat_Toolbar_Subtitle
 style TextAppearance_Widget_AppCompat_Toolbar_Title
@@ -5081,6 +5100,8 @@ style Widget_MaterialComponents_Toolbar_Primary
 style Widget_MaterialComponents_Toolbar_PrimarySurface
 style Widget_MaterialComponents_Toolbar_Surface
 style Widget_MaterialComponents_Tooltip
+style Widget_StockFlip_CardView
+style Widget_StockFlip_CardView_Dark
 style Widget_Support_CoordinatorLayout
 styleable ActionBar background backgroundSplit backgroundStacked contentInsetEnd contentInsetEndWithActions contentInsetLeft contentInsetRight contentInsetStart contentInsetStartWithNavigation customNavigationLayout displayOptions divider elevation height hideOnContentScroll homeAsUpIndicator homeLayout icon indeterminateProgressStyle itemPadding logo navigationMode popupTheme progressBarPadding progressBarStyle subtitle subtitleTextStyle title titleTextStyle
 styleable ActionBarLayout android_layout_gravity

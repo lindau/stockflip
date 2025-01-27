@@ -39,6 +39,8 @@ id ticker1Input
 id ticker2Input
 layout activity_main
 layout dialog_add_stock_pair
+layout dropdown_item
+layout dropdown_menu_item
 layout item_stock_pair
 mipmap ic_launcher
 mipmap ic_launcher_round

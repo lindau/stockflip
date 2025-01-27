@@ -10,6 +10,7 @@ import androidx.annotation.Nullable;
 import androidx.viewbinding.ViewBinding;
 import androidx.viewbinding.ViewBindings;
 import com.google.android.material.checkbox.MaterialCheckBox;
+import com.google.android.material.textfield.MaterialAutoCompleteTextView;
 import com.google.android.material.textfield.TextInputEditText;
 import com.stockflip.R;
 import java.lang.NullPointerException;
@@ -27,15 +28,16 @@ public final class DialogAddStockPairBinding implements ViewBinding {
   public final TextInputEditText priceDifferenceInput;
 
   @NonNull
-  public final TextInputEditText ticker1Input;
+  public final MaterialAutoCompleteTextView ticker1Input;
 
   @NonNull
-  public final TextInputEditText ticker2Input;
+  public final MaterialAutoCompleteTextView ticker2Input;
 
   private DialogAddStockPairBinding(@NonNull LinearLayout rootView,
       @NonNull MaterialCheckBox notifyWhenEqualCheckbox,
-      @NonNull TextInputEditText priceDifferenceInput, @NonNull TextInputEditText ticker1Input,
-      @NonNull TextInputEditText ticker2Input) {
+      @NonNull TextInputEditText priceDifferenceInput,
+      @NonNull MaterialAutoCompleteTextView ticker1Input,
+      @NonNull MaterialAutoCompleteTextView ticker2Input) {
     this.rootView = rootView;
     this.notifyWhenEqualCheckbox = notifyWhenEqualCheckbox;
     this.priceDifferenceInput = priceDifferenceInput;
@@ -83,13 +85,13 @@ public final class DialogAddStockPairBinding implements ViewBinding {
       }
 
       id = R.id.ticker1Input;
-      TextInputEditText ticker1Input = ViewBindings.findChildViewById(rootView, id);
+      MaterialAutoCompleteTextView ticker1Input = ViewBindings.findChildViewById(rootView, id);
       if (ticker1Input == null) {
         break missingId;
       }
 
       id = R.id.ticker2Input;
-      TextInputEditText ticker2Input = ViewBindings.findChildViewById(rootView, id);
+      MaterialAutoCompleteTextView ticker2Input = ViewBindings.findChildViewById(rootView, id);
       if (ticker2Input == null) {
         break missingId;
       }

@@ -4,13 +4,14 @@ package com.stockflip.databinding;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.cardview.widget.CardView;
 import androidx.viewbinding.ViewBinding;
 import androidx.viewbinding.ViewBindings;
+import com.google.android.material.card.MaterialCardView;
+import com.google.android.material.chip.Chip;
 import com.stockflip.R;
 import java.lang.NullPointerException;
 import java.lang.Override;
@@ -18,41 +19,50 @@ import java.lang.String;
 
 public final class ItemStockPairBinding implements ViewBinding {
   @NonNull
-  private final CardView rootView;
+  private final MaterialCardView rootView;
 
   @NonNull
-  public final Button deleteButton;
+  public final Chip notificationInfo;
 
   @NonNull
-  public final Button editButton;
+  public final TextView priceDifference;
 
   @NonNull
-  public final TextView notificationInfo;
+  public final ImageView priceIndicator1;
+
+  @NonNull
+  public final ImageView priceIndicator2;
 
   @NonNull
   public final TextView priceInfo;
 
   @NonNull
+  public final TextView priceInfo2;
+
+  @NonNull
   public final TextView stockNames;
 
   @NonNull
-  public final TextView stockSymbols;
+  public final TextView stockNames2;
 
-  private ItemStockPairBinding(@NonNull CardView rootView, @NonNull Button deleteButton,
-      @NonNull Button editButton, @NonNull TextView notificationInfo, @NonNull TextView priceInfo,
-      @NonNull TextView stockNames, @NonNull TextView stockSymbols) {
+  private ItemStockPairBinding(@NonNull MaterialCardView rootView, @NonNull Chip notificationInfo,
+      @NonNull TextView priceDifference, @NonNull ImageView priceIndicator1,
+      @NonNull ImageView priceIndicator2, @NonNull TextView priceInfo, @NonNull TextView priceInfo2,
+      @NonNull TextView stockNames, @NonNull TextView stockNames2) {
     this.rootView = rootView;
-    this.deleteButton = deleteButton;
-    this.editButton = editButton;
     this.notificationInfo = notificationInfo;
+    this.priceDifference = priceDifference;
+    this.priceIndicator1 = priceIndicator1;
+    this.priceIndicator2 = priceIndicator2;
     this.priceInfo = priceInfo;
+    this.priceInfo2 = priceInfo2;
     this.stockNames = stockNames;
-    this.stockSymbols = stockSymbols;
+    this.stockNames2 = stockNames2;
   }
 
   @Override
   @NonNull
-  public CardView getRoot() {
+  public MaterialCardView getRoot() {
     return rootView;
   }
 
@@ -77,21 +87,27 @@ public final class ItemStockPairBinding implements ViewBinding {
     // This is done to optimize the compiled bytecode for size and performance.
     int id;
     missingId: {
-      id = R.id.deleteButton;
-      Button deleteButton = ViewBindings.findChildViewById(rootView, id);
-      if (deleteButton == null) {
-        break missingId;
-      }
-
-      id = R.id.editButton;
-      Button editButton = ViewBindings.findChildViewById(rootView, id);
-      if (editButton == null) {
-        break missingId;
-      }
-
       id = R.id.notificationInfo;
-      TextView notificationInfo = ViewBindings.findChildViewById(rootView, id);
+      Chip notificationInfo = ViewBindings.findChildViewById(rootView, id);
       if (notificationInfo == null) {
+        break missingId;
+      }
+
+      id = R.id.priceDifference;
+      TextView priceDifference = ViewBindings.findChildViewById(rootView, id);
+      if (priceDifference == null) {
+        break missingId;
+      }
+
+      id = R.id.priceIndicator1;
+      ImageView priceIndicator1 = ViewBindings.findChildViewById(rootView, id);
+      if (priceIndicator1 == null) {
+        break missingId;
+      }
+
+      id = R.id.priceIndicator2;
+      ImageView priceIndicator2 = ViewBindings.findChildViewById(rootView, id);
+      if (priceIndicator2 == null) {
         break missingId;
       }
 
@@ -101,20 +117,27 @@ public final class ItemStockPairBinding implements ViewBinding {
         break missingId;
       }
 
+      id = R.id.priceInfo2;
+      TextView priceInfo2 = ViewBindings.findChildViewById(rootView, id);
+      if (priceInfo2 == null) {
+        break missingId;
+      }
+
       id = R.id.stockNames;
       TextView stockNames = ViewBindings.findChildViewById(rootView, id);
       if (stockNames == null) {
         break missingId;
       }
 
-      id = R.id.stockSymbols;
-      TextView stockSymbols = ViewBindings.findChildViewById(rootView, id);
-      if (stockSymbols == null) {
+      id = R.id.stockNames2;
+      TextView stockNames2 = ViewBindings.findChildViewById(rootView, id);
+      if (stockNames2 == null) {
         break missingId;
       }
 
-      return new ItemStockPairBinding((CardView) rootView, deleteButton, editButton,
-          notificationInfo, priceInfo, stockNames, stockSymbols);
+      return new ItemStockPairBinding((MaterialCardView) rootView, notificationInfo,
+          priceDifference, priceIndicator1, priceIndicator2, priceInfo, priceInfo2, stockNames,
+          stockNames2);
     }
     String missingId = rootView.getResources().getResourceName(id);
     throw new NullPointerException("Missing required view with ID: ".concat(missingId));

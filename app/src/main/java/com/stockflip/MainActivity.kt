@@ -8,17 +8,25 @@ import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
+import android.view.ViewGroup
+import android.widget.ArrayAdapter
+import android.widget.AutoCompleteTextView
 import android.widget.CheckBox
 import android.widget.EditText
+import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.widget.doAfterTextChanged
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.google.android.material.checkbox.MaterialCheckBox
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.android.material.textfield.MaterialAutoCompleteTextView
+import com.google.android.material.textfield.TextInputEditText
 import com.stockflip.databinding.ActivityMainBinding
 import kotlinx.coroutines.*
 import java.text.SimpleDateFormat
@@ -205,46 +213,263 @@ class MainActivity : AppCompatActivity() {
 
     private fun showAddStockPairDialog() {
         val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_add_stock_pair, null)
-        val ticker1Input = dialogView.findViewById<EditText>(R.id.ticker1Input)
-        val ticker2Input = dialogView.findViewById<EditText>(R.id.ticker2Input)
-        val priceDifferenceInput = dialogView.findViewById<EditText>(R.id.priceDifferenceInput)
-        val notifyWhenEqualCheckbox = dialogView.findViewById<CheckBox>(R.id.notifyWhenEqualCheckbox)
+        val originalTicker1Input = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.ticker1Input)
+        val ticker2Input = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.ticker2Input)
+        val priceDifferenceInput = dialogView.findViewById<TextInputEditText>(R.id.priceDifferenceInput)
+        val notifyWhenEqualCheckbox = dialogView.findViewById<MaterialCheckBox>(R.id.notifyWhenEqualCheckbox)
+
+        Log.d(TAG, "Setting up autocomplete for stock search")
+
+        // Set up autocomplete adapters with custom layout
+        val adapter1 = object : ArrayAdapter<StockSearchResult>(
+            this,
+            R.layout.dropdown_item,
+            mutableListOf()
+        ) {
+            override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
+                Log.d(TAG, "Adapter1 getView called for position: $position")
+                val view = convertView ?: LayoutInflater.from(context)
+                    .inflate(R.layout.dropdown_item, parent, false)
+                
+                val item = getItem(position)
+                if (item != null) {
+                    Log.d(TAG, "Adapter1 binding item: ${item.symbol}: ${item.name}")
+                    (view as TextView).text = "${item.name} (${item.symbol})"
+                }
+                
+                return view
+            }
+
+            override fun clear() {
+                Log.d(TAG, "Adapter1 clear called")
+                super.clear()
+                notifyDataSetChanged()
+            }
+
+            override fun addAll(collection: Collection<StockSearchResult>) {
+                Log.d(TAG, "Adapter1 addAll called with ${collection.size} items")
+                super.addAll(collection)
+                notifyDataSetChanged()
+            }
+        }
+        
+        val adapter2 = object : ArrayAdapter<StockSearchResult>(
+            this,
+            R.layout.dropdown_item,
+            mutableListOf()
+        ) {
+            override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
+                val view = convertView ?: LayoutInflater.from(context)
+                    .inflate(R.layout.dropdown_item, parent, false)
+                
+                val item = getItem(position)
+                if (item != null) {
+                    (view as TextView).text = "${item.name} (${item.symbol})"
+                }
+                
+                return view
+            }
+        }.apply {
+            setNotifyOnChange(true)
+        }
+
+        // Override showDropDown and dismissDropDown for better tracking
+        class TrackedAutoCompleteTextView(context: Context) : MaterialAutoCompleteTextView(context) {
+            override fun showDropDown() {
+                if (adapter?.count ?: 0 > 0) {
+                    Log.d(TAG, "About to show dropdown with ${adapter?.count} items")
+                    super.showDropDown()
+                    Log.d(TAG, "Dropdown shown with ${adapter?.count} items")
+                } else {
+                    Log.d(TAG, "Not showing dropdown - no items")
+                }
+            }
+
+            override fun dismissDropDown() {
+                if (isPopupShowing) {
+                    Log.d(TAG, "About to dismiss dropdown")
+                    super.dismissDropDown()
+                    Log.d(TAG, "Dropdown dismissed")
+                }
+            }
+        }
+
+        // Create custom AutoCompleteTextView instance
+        val ticker1Input = TrackedAutoCompleteTextView(this).apply {
+            id = originalTicker1Input.id
+            layoutParams = originalTicker1Input.layoutParams
+            setAdapter(adapter1)
+            threshold = 2
+            dropDownHeight = (resources.displayMetrics.density * 300).toInt()
+            dropDownVerticalOffset = (resources.displayMetrics.density * 8).toInt()
+            setDropDownBackgroundResource(android.R.color.white)
+            hint = originalTicker1Input.hint
+        }
+
+        // Replace the original AutoCompleteTextView with our tracked version
+        (originalTicker1Input.parent as ViewGroup).apply {
+            val index = indexOfChild(originalTicker1Input)
+            removeView(originalTicker1Input)
+            addView(ticker1Input, index)
+        }
+        
+        ticker2Input.apply {
+            setAdapter(adapter2)
+            threshold = 2
+            dropDownHeight = (resources.displayMetrics.density * 300).toInt() // 300dp
+            dropDownVerticalOffset = (resources.displayMetrics.density * 8).toInt() // 8dp
+            setDropDownBackgroundResource(android.R.color.white)
+        }
+
+        // Store selected results
+        var selectedStock1: StockSearchResult? = null
+        var selectedStock2: StockSearchResult? = null
+
+        // Set up search listeners with debounce
+        var searchJob1: Job? = null
+        ticker1Input.doAfterTextChanged { text ->
+            val query = text?.toString()?.trim() ?: ""
+            Log.d(TAG, "Ticker1 text changed: '$query', length: ${query.length}")
+            searchJob1?.cancel()
+            selectedStock1 = null  // Reset selection when text changes
+            
+            if (query.length >= 2) {
+                ticker1Input.setCompoundDrawablesWithIntrinsicBounds(0, 0, android.R.drawable.ic_popup_sync, 0)
+                searchJob1 = lifecycleScope.launch(Dispatchers.Main + SupervisorJob()) {
+                    try {
+                        Log.d(TAG, "Starting search for: '$query'")
+                        delay(100) // Reduced debounce delay further
+                        
+                        val results = withContext(Dispatchers.IO) {
+                            YahooFinanceService.searchStocks(query)
+                        }
+                        Log.d(TAG, "Found ${results.size} results for query: '$query'")
+                        ticker1Input.setCompoundDrawablesWithIntrinsicBounds(0, 0, 0, 0)
+                        
+                        if (results.isNotEmpty() && ticker1Input.text.toString().trim().equals(query, ignoreCase = true)) {
+                            withContext(Dispatchers.Main) {
+                                adapter1.clear()
+                                adapter1.addAll(results)
+                                if (ticker1Input.hasFocus()) {
+                                    ticker1Input.post {
+                                        if (adapter1.count > 0) {
+                                            ticker1Input.showDropDown()
+                                        }
+                                    }
+                                }
+                            }
+                        } else {
+                            withContext(Dispatchers.Main) {
+                                adapter1.clear()
+                                ticker1Input.dismissDropDown()
+                            }
+                        }
+                    } catch (e: Exception) {
+                        ticker1Input.setCompoundDrawablesWithIntrinsicBounds(0, 0, 0, 0)
+                        if (e is CancellationException) {
+                            Log.d(TAG, "Search cancelled for: '$query'")
+                        } else {
+                            Log.e(TAG, "Error searching stocks: ${e.message}", e)
+                            withContext(Dispatchers.Main) {
+                                Toast.makeText(this@MainActivity, "Error searching stocks", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    }
+                }
+            } else {
+                Log.d(TAG, "Query too short, dismissing dropdown")
+                ticker1Input.setCompoundDrawablesWithIntrinsicBounds(0, 0, 0, 0)
+                ticker1Input.dismissDropDown()
+            }
+        }
+
+        var searchJob2: Job? = null
+        ticker2Input.doAfterTextChanged { text ->
+            val query = text?.toString()?.trim() ?: ""
+            Log.d(TAG, "Ticker2 text changed: $query")
+            searchJob2?.cancel()
+            selectedStock2 = null  // Reset selection when text changes
+            
+            if (query.length >= 2) {
+                ticker2Input.setCompoundDrawablesWithIntrinsicBounds(0, 0, android.R.drawable.ic_popup_sync, 0)
+                searchJob2 = lifecycleScope.launch(Dispatchers.Main + SupervisorJob()) {
+                    try {
+                        Log.d(TAG, "Starting search for: $query")
+                        delay(100) // Reduced debounce delay further
+                        
+                        val results = withContext(Dispatchers.IO) {
+                            YahooFinanceService.searchStocks(query)
+                        }
+                        Log.d(TAG, "Found ${results.size} results for query: $query")
+                        ticker2Input.setCompoundDrawablesWithIntrinsicBounds(0, 0, 0, 0)
+                        
+                        withContext(Dispatchers.Main) {
+                            adapter2.clear()
+                            // Only show results if the query hasn't changed
+                            if (ticker2Input.text.toString().trim().equals(query, ignoreCase = true)) {
+                                if (results.isNotEmpty()) {
+                                    adapter2.addAll(results)
+                                    if (ticker2Input.hasFocus()) {
+                                        ticker2Input.post {
+                                            ticker2Input.showDropDown()
+                                        }
+                                    }
+                                } else {
+                                    ticker2Input.dismissDropDown()
+                                }
+                            }
+                        }
+                    } catch (e: Exception) {
+                        ticker2Input.setCompoundDrawablesWithIntrinsicBounds(0, 0, 0, 0)
+                        if (e is CancellationException) {
+                            Log.d(TAG, "Search cancelled for: $query")
+                        } else {
+                            Log.e(TAG, "Error searching stocks: ${e.message}", e)
+                            withContext(Dispatchers.Main) {
+                                Toast.makeText(this@MainActivity, "Error searching stocks", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    }
+                }
+            } else {
+                ticker2Input.setCompoundDrawablesWithIntrinsicBounds(0, 0, 0, 0)
+                ticker2Input.dismissDropDown()
+            }
+        }
+
+        // Set up item click listeners
+        ticker1Input.setOnItemClickListener { _, _, position, _ ->
+            selectedStock1 = adapter1.getItem(position)
+            Log.d(TAG, "Selected stock 1: $selectedStock1")
+        }
+
+        ticker2Input.setOnItemClickListener { _, _, position, _ ->
+            selectedStock2 = adapter2.getItem(position)
+            Log.d(TAG, "Selected stock 2: $selectedStock2")
+        }
 
         MaterialAlertDialogBuilder(this)
             .setTitle("Add Stock Pair")
             .setView(dialogView)
             .setPositiveButton("Add") { _, _ ->
-                val ticker1 = ticker1Input.text.toString().trim().uppercase()
-                val ticker2 = ticker2Input.text.toString().trim().uppercase()
                 val priceDifferenceStr = priceDifferenceInput.text.toString()
                 val notifyWhenEqual = notifyWhenEqualCheckbox.isChecked
 
-                if (ticker1.isNotEmpty() && ticker2.isNotEmpty() && priceDifferenceStr.isNotEmpty()) {
+                if (selectedStock1 != null && selectedStock2 != null && priceDifferenceStr.isNotEmpty()) {
                     val priceDifference = priceDifferenceStr.toDoubleOrNull() ?: 0.0
                     lifecycleScope.launch {
                         try {
                             binding.progressBar.visibility = View.VISIBLE
                             
-                            // Fetch company names
-                            val companyName1 = YahooFinanceService.getCompanyName(ticker1)
-                                ?: throw Exception("Could not fetch company name for $ticker1")
-                            val companyName2 = YahooFinanceService.getCompanyName(ticker2)
-                                ?: throw Exception("Could not fetch company name for $ticker2")
-                            
-                            // Fetch initial prices
-                            val price1 = YahooFinanceService.getStockPrice(ticker1)
-                            val price2 = YahooFinanceService.getStockPrice(ticker2)
-                            
-                            // Create stock pair with initial prices
+                            // Create stock pair with company names from search results
                             val stockPair = StockPair(
-                                id = 0,
-                                ticker1 = ticker1,
-                                ticker2 = ticker2,
-                                companyName1 = companyName1,
-                                companyName2 = companyName2,
+                                ticker1 = selectedStock1!!.symbol,
+                                ticker2 = selectedStock2!!.symbol,
+                                companyName1 = selectedStock1!!.name,
+                                companyName2 = selectedStock2!!.name,
                                 priceDifference = priceDifference,
                                 notifyWhenEqual = notifyWhenEqual
-                            ).withCurrentPrices(price1, price2)
+                            )
                             
                             viewModel.addStockPair(stockPair)
                             binding.progressBar.visibility = View.GONE
@@ -255,7 +480,7 @@ class MainActivity : AppCompatActivity() {
                         }
                     }
                 } else {
-                    Toast.makeText(this, "Please fill in all fields", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, "Please select both stocks and enter price difference", Toast.LENGTH_SHORT).show()
                 }
             }
             .setNegativeButton("Cancel", null)

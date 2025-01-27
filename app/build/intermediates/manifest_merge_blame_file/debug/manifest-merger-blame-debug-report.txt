@@ -30,8 +30,8 @@
 17-->/Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/src/main/AndroidManifest.xml:11:5-66
 17-->/Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/src/main/AndroidManifest.xml:11:22-63
 18    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-18-->[androidx.work:work-runtime:2.9.0] /Users/johanlindau/.gradle/caches/transforms-3/e5e29cca67edb31bb00a5bb3e3eded63/transformed/work-runtime-2.9.0/AndroidManifest.xml:24:5-79
-18-->[androidx.work:work-runtime:2.9.0] /Users/johanlindau/.gradle/caches/transforms-3/e5e29cca67edb31bb00a5bb3e3eded63/transformed/work-runtime-2.9.0/AndroidManifest.xml:24:22-76
+18-->/Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/src/main/AndroidManifest.xml:12:5-79
+18-->/Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/src/main/AndroidManifest.xml:12:22-76
 19    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 19-->[androidx.work:work-runtime:2.9.0] /Users/johanlindau/.gradle/caches/transforms-3/e5e29cca67edb31bb00a5bb3e3eded63/transformed/work-runtime-2.9.0/AndroidManifest.xml:25:5-81
 19-->[androidx.work:work-runtime:2.9.0] /Users/johanlindau/.gradle/caches/transforms-3/e5e29cca67edb31bb00a5bb3e3eded63/transformed/work-runtime-2.9.0/AndroidManifest.xml:25:22-78
@@ -48,55 +48,55 @@
 25-->[androidx.core:core:1.12.0] /Users/johanlindau/.gradle/caches/transforms-3/4dde0fce54f6341b6da19770f76a2130/transformed/core-1.12.0/AndroidManifest.xml:26:22-94
 26
 27    <application
-27-->/Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/src/main/AndroidManifest.xml:13:5-46:19
+27-->/Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/src/main/AndroidManifest.xml:14:5-47:19
 28        android:name="com.stockflip.StockFlipApplication"
-28-->/Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/src/main/AndroidManifest.xml:14:9-45
+28-->/Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/src/main/AndroidManifest.xml:15:9-45
 29        android:allowBackup="true"
-29-->/Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/src/main/AndroidManifest.xml:15:9-35
+29-->/Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/src/main/AndroidManifest.xml:16:9-35
 30        android:appComponentFactory="androidx.core.app.CoreComponentFactory"
 30-->[androidx.core:core:1.12.0] /Users/johanlindau/.gradle/caches/transforms-3/4dde0fce54f6341b6da19770f76a2130/transformed/core-1.12.0/AndroidManifest.xml:28:18-86
 31        android:dataExtractionRules="@xml/data_extraction_rules"
-31-->/Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/src/main/AndroidManifest.xml:16:9-65
+31-->/Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/src/main/AndroidManifest.xml:17:9-65
 32        android:debuggable="true"
 33        android:extractNativeLibs="false"
 34        android:fullBackupContent="@xml/backup_rules"
-34-->/Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/src/main/AndroidManifest.xml:17:9-54
+34-->/Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/src/main/AndroidManifest.xml:18:9-54
 35        android:icon="@mipmap/ic_launcher"
-35-->/Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/src/main/AndroidManifest.xml:18:9-43
+35-->/Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/src/main/AndroidManifest.xml:19:9-43
 36        android:label="@string/app_name"
-36-->/Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/src/main/AndroidManifest.xml:19:9-41
+36-->/Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/src/main/AndroidManifest.xml:20:9-41
 37        android:roundIcon="@mipmap/ic_launcher_round"
-37-->/Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/src/main/AndroidManifest.xml:20:9-54
+37-->/Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/src/main/AndroidManifest.xml:21:9-54
 38        android:supportsRtl="true"
-38-->/Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/src/main/AndroidManifest.xml:21:9-35
+38-->/Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/src/main/AndroidManifest.xml:22:9-35
 39        android:testOnly="true"
 40        android:theme="@style/Theme.StockFlip" >
-40-->/Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/src/main/AndroidManifest.xml:22:9-47
+40-->/Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/src/main/AndroidManifest.xml:23:9-47
 41        <activity
-41-->/Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/src/main/AndroidManifest.xml:23:9-30:20
+41-->/Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/src/main/AndroidManifest.xml:24:9-31:20
 42            android:name="com.stockflip.MainActivity"
-42-->/Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/src/main/AndroidManifest.xml:24:13-41
+42-->/Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/src/main/AndroidManifest.xml:25:13-41
 43            android:exported="true" >
-43-->/Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/src/main/AndroidManifest.xml:25:13-36
+43-->/Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/src/main/AndroidManifest.xml:26:13-36
 44            <intent-filter>
-44-->/Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/src/main/AndroidManifest.xml:26:13-29:29
+44-->/Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/src/main/AndroidManifest.xml:27:13-30:29
 45                <action android:name="android.intent.action.MAIN" />
-45-->/Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/src/main/AndroidManifest.xml:27:17-69
-45-->/Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/src/main/AndroidManifest.xml:27:25-66
+45-->/Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/src/main/AndroidManifest.xml:28:17-69
+45-->/Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/src/main/AndroidManifest.xml:28:25-66
 46
 47                <category android:name="android.intent.category.LAUNCHER" />
-47-->/Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/src/main/AndroidManifest.xml:28:17-77
-47-->/Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/src/main/AndroidManifest.xml:28:27-74
+47-->/Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/src/main/AndroidManifest.xml:29:17-77
+47-->/Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/src/main/AndroidManifest.xml:29:27-74
 48            </intent-filter>
 49        </activity>
 50
 51        <provider
 52            android:name="androidx.startup.InitializationProvider"
-52-->/Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/src/main/AndroidManifest.xml:33:13-67
+52-->/Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/src/main/AndroidManifest.xml:34:13-67
 53            android:authorities="com.stockflip.androidx-startup"
-53-->/Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/src/main/AndroidManifest.xml:34:13-68
+53-->/Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/src/main/AndroidManifest.xml:35:13-68
 54            android:exported="false" >
-54-->/Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/src/main/AndroidManifest.xml:35:13-37
+54-->/Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/src/main/AndroidManifest.xml:36:13-37
 55            <meta-data
 55-->[androidx.emoji2:emoji2:1.2.0] /Users/johanlindau/.gradle/caches/transforms-3/505b7080d3326db31ccc54c35d672fae/transformed/jetified-emoji2-1.2.0/AndroidManifest.xml:29:13-31:52
 56                android:name="androidx.emoji2.text.EmojiCompatInitializer"
@@ -118,11 +118,11 @@
 64        </provider>
 65
 66        <receiver
-66-->/Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/src/main/AndroidManifest.xml:43:9-45:40
+66-->/Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/src/main/AndroidManifest.xml:44:9-46:40
 67            android:name="com.stockflip.PriceUpdateReceiver"
-67-->/Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/src/main/AndroidManifest.xml:44:13-48
+67-->/Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/src/main/AndroidManifest.xml:45:13-48
 68            android:exported="false" />
-68-->/Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/src/main/AndroidManifest.xml:45:13-37
+68-->/Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/src/main/AndroidManifest.xml:46:13-37
 69
 70        <service
 70-->[androidx.work:work-runtime:2.9.0] /Users/johanlindau/.gradle/caches/transforms-3/e5e29cca67edb31bb00a5bb3e3eded63/transformed/work-runtime-2.9.0/AndroidManifest.xml:39:9-45:35
