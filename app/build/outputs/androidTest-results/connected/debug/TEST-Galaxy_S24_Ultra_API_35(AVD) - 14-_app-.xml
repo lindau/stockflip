@@ -1,0 +1,73 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<testsuite name="com.stockflip.NotificationTest" tests="8" failures="5" errors="0" skipped="0" time="4.756" timestamp="2025-01-27T09:45:54" hostname="localhost">
+  <properties>
+    <property name="device" value="Galaxy_S24_Ultra_API_35(AVD) - 14" />
+    <property name="flavor" value="" />
+    <property name="project" value=":app" />
+  </properties>
+  <testcase name="testWorkerSendsNotificationWhenPriceDifferenceReached" classname="com.stockflip.NotificationTest" time="1.176">
+    <failure>java.lang.AssertionError: Should have at least one notification
+at org.junit.Assert.fail(Assert.java:89)
+at org.junit.Assert.assertTrue(Assert.java:42)
+at com.stockflip.NotificationTest$testWorkerSendsNotificationWhenPriceDifferenceReached$1.invokeSuspend(NotificationTest.kt:154)
+at kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:33)
+at kotlinx.coroutines.DispatchedTask.run(DispatchedTask.kt:106)
+at kotlinx.coroutines.EventLoopImplBase.processNextEvent(EventLoop.common.kt:280)
+at kotlinx.coroutines.BlockingCoroutine.joinBlocking(Builders.kt:85)
+at kotlinx.coroutines.BuildersKt__BuildersKt.runBlocking(Builders.kt:59)
+at kotlinx.coroutines.BuildersKt.runBlocking(Unknown Source:1)
+at kotlinx.coroutines.BuildersKt__BuildersKt.runBlocking$default(Builders.kt:38)
+at kotlinx.coroutines.BuildersKt.runBlocking$default(Unknown Source:1)
+at com.stockflip.NotificationTest.testWorkerSendsNotificationWhenPriceDifferenceReached(NotificationTest.kt:128)</failure>
+  </testcase>
+  <testcase name="testWorkerSendsNotificationWhenPricesEqual" classname="com.stockflip.NotificationTest" time="0.945">
+    <failure>java.lang.AssertionError: Should have at least one notification
+at org.junit.Assert.fail(Assert.java:89)
+at org.junit.Assert.assertTrue(Assert.java:42)
+at com.stockflip.NotificationTest$testWorkerSendsNotificationWhenPricesEqual$1.invokeSuspend(NotificationTest.kt:116)
+at kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:33)
+at kotlinx.coroutines.DispatchedTask.run(DispatchedTask.kt:106)
+at kotlinx.coroutines.EventLoopImplBase.processNextEvent(EventLoop.common.kt:280)
+at kotlinx.coroutines.BlockingCoroutine.joinBlocking(Builders.kt:85)
+at kotlinx.coroutines.BuildersKt__BuildersKt.runBlocking(Builders.kt:59)
+at kotlinx.coroutines.BuildersKt.runBlocking(Unknown Source:1)
+at kotlinx.coroutines.BuildersKt__BuildersKt.runBlocking$default(Builders.kt:38)
+at kotlinx.coroutines.BuildersKt.runBlocking$default(Unknown Source:1)
+at com.stockflip.NotificationTest.testWorkerSendsNotificationWhenPricesEqual(NotificationTest.kt:90)</failure>
+  </testcase>
+  <testcase name="testNoNotificationWhenConditionsNotMet" classname="com.stockflip.NotificationTest" time="0.975" />
+  <testcase name="testNotificationChannelCreation" classname="com.stockflip.NotificationTest" time="0.056" />
+  <testcase name="testImmediateWorkIsScheduled" classname="com.stockflip.StockPriceUpdateWorkerTest" time="0.086">
+    <failure>java.lang.IllegalStateException: Cannot invoke observeForever on a background thread
+at androidx.lifecycle.LiveData.assertMainThread(LiveData.java:502)
+at androidx.lifecycle.LiveData.observeForever(LiveData.java:224)
+at com.stockflip.StockPriceUpdater.monitorWorkStatus(StockPriceUpdater.kt:92)
+at com.stockflip.StockPriceUpdater.startPeriodicUpdate(StockPriceUpdater.kt:51)
+at com.stockflip.StockPriceUpdateWorkerTest.testImmediateWorkIsScheduled(StockPriceUpdateWorkerTest.kt:62)</failure>
+  </testcase>
+  <testcase name="testWorkerExecutes" classname="com.stockflip.StockPriceUpdateWorkerTest" time="0.029" />
+  <testcase name="testPeriodicWorkIsScheduled" classname="com.stockflip.StockPriceUpdateWorkerTest" time="0.106">
+    <failure>java.lang.IllegalStateException: Cannot invoke observeForever on a background thread
+at androidx.lifecycle.LiveData.assertMainThread(LiveData.java:502)
+at androidx.lifecycle.LiveData.observeForever(LiveData.java:224)
+at com.stockflip.StockPriceUpdater.monitorWorkStatus(StockPriceUpdater.kt:92)
+at com.stockflip.StockPriceUpdater.startPeriodicUpdate(StockPriceUpdater.kt:51)
+at com.stockflip.StockPriceUpdateWorkerTest.testPeriodicWorkIsScheduled(StockPriceUpdateWorkerTest.kt:47)</failure>
+  </testcase>
+  <testcase name="testWorkerSendsBroadcast" classname="com.stockflip.StockPriceUpdateWorkerTest" time="0.208">
+    <failure>java.lang.AssertionError
+at org.junit.Assert.fail(Assert.java:87)
+at org.junit.Assert.assertTrue(Assert.java:42)
+at org.junit.Assert.assertTrue(Assert.java:53)
+at com.stockflip.StockPriceUpdateWorkerTest$testWorkerSendsBroadcast$1.invokeSuspend(StockPriceUpdateWorkerTest.kt:91)
+at kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:33)
+at kotlinx.coroutines.DispatchedTask.run(DispatchedTask.kt:106)
+at kotlinx.coroutines.EventLoopImplBase.processNextEvent(EventLoop.common.kt:280)
+at kotlinx.coroutines.BlockingCoroutine.joinBlocking(Builders.kt:85)
+at kotlinx.coroutines.BuildersKt__BuildersKt.runBlocking(Builders.kt:59)
+at kotlinx.coroutines.BuildersKt.runBlocking(Unknown Source:1)
+at kotlinx.coroutines.BuildersKt__BuildersKt.runBlocking$default(Builders.kt:38)
+at kotlinx.coroutines.BuildersKt.runBlocking$default(Unknown Source:1)
+at com.stockflip.StockPriceUpdateWorkerTest.testWorkerSendsBroadcast(StockPriceUpdateWorkerTest.kt:75)</failure>
+  </testcase>
+</testsuite>

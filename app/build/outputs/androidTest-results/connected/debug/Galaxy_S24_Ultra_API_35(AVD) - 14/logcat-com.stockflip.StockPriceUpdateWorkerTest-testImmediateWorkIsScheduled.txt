@@ -1,0 +1,55 @@
+01-27 10:45:11.701  8588  8610 I TestRunner: started: testImmediateWorkIsScheduled(com.stockflip.StockPriceUpdateWorkerTest)
+01-27 10:45:11.704  8588  8610 D WM-ForceStopRunnable: The default process name was not specified.
+01-27 10:45:11.705  8588  8610 D WM-ForceStopRunnable: Performing cleanup operations.
+01-27 10:45:11.710  3269  7963 I NetworkScheduler.Stats: Task com.google.android.gms/com.google.android.gms.phenotype.service.sync.PhenotypeConfigurator started execution. cause:2 exec_start_elapsed_seconds: 359213 [CONTEXT service_id=218 ]
+01-27 10:45:11.710  8588  8610 D StockPriceUpdater: Starting periodic price updates
+01-27 10:45:11.711  8588  8610 D StockPriceUpdater: Created notification channel: stock_price_alerts
+01-27 10:45:11.712  8588  8610 W WM-WorkSpec: Interval duration lesser than minimum allowed value; Changed to 900000
+01-27 10:45:11.712  8588  8610 W WM-WorkSpec: Flex duration lesser than minimum allowed value; Changed to 300000
+01-27 10:45:11.716  8588  8610 D WM-PackageManagerHelper: androidx.work.impl.background.systemalarm.RescheduleReceiver enabled
+01-27 10:45:11.718  1184  1211 I m.android.phone: Background young concurrent copying GC freed 92344(3763KB) AllocSpace objects, 0(0B) LOS objects, 49% free, 3947KB/7805KB, paused 11.334ms,9us total 41.959ms
+01-27 10:45:11.720  8588  8610 D WM-PackageManagerHelper: Skipping component enablement for androidx.work.impl.background.systemalarm.RescheduleReceiver
+01-27 10:45:11.722  8588  8610 E TestRunner: failed: testImmediateWorkIsScheduled(com.stockflip.StockPriceUpdateWorkerTest)
+01-27 10:45:11.722  8588  8610 E TestRunner: ----- begin exception -----
+01-27 10:45:11.724  8588  8610 E TestRunner: java.lang.IllegalStateException: Cannot invoke observeForever on a background thread
+01-27 10:45:11.724  8588  8610 E TestRunner: 	at androidx.lifecycle.LiveData.assertMainThread(LiveData.java:502)
+01-27 10:45:11.724  8588  8610 E TestRunner: 	at androidx.lifecycle.LiveData.observeForever(LiveData.java:224)
+01-27 10:45:11.724  8588  8610 E TestRunner: 	at com.stockflip.StockPriceUpdater.monitorWorkStatus(StockPriceUpdater.kt:92)
+01-27 10:45:11.724  8588  8610 E TestRunner: 	at com.stockflip.StockPriceUpdater.startPeriodicUpdate(StockPriceUpdater.kt:51)
+01-27 10:45:11.724  8588  8610 E TestRunner: 	at com.stockflip.StockPriceUpdateWorkerTest.testImmediateWorkIsScheduled(StockPriceUpdateWorkerTest.kt:62)
+01-27 10:45:11.724  8588  8610 E TestRunner: 	at java.lang.reflect.Method.invoke(Native Method)
+01-27 10:45:11.724  8588  8610 E TestRunner: 	at org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:59)
+01-27 10:45:11.724  8588  8610 E TestRunner: 	at org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)
+01-27 10:45:11.724  8588  8610 E TestRunner: 	at org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:56)
+01-27 10:45:11.724  8588  8610 E TestRunner: 	at org.junit.internal.runners.statements.InvokeMethod.evaluate(InvokeMethod.java:17)
+01-27 10:45:11.724  8588  8610 E TestRunner: 	at androidx.test.internal.runner.junit4.statement.RunBefores.evaluate(RunBefores.java:80)
+01-27 10:45:11.724  8588  8610 E TestRunner: 	at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+01-27 10:45:11.724  8588  8610 E TestRunner: 	at org.junit.runners.BlockJUnit4ClassRunner$1.evaluate(BlockJUnit4ClassRunner.java:100)
+01-27 10:45:11.724  8588  8610 E TestRunner: 	at org.junit.runners.ParentRunner.runLeaf(ParentRunner.java:366)
+01-27 10:45:11.724  8588  8610 E TestRunner: 	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:103)
+01-27 10:45:11.724  8588  8610 E TestRunner: 	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:63)
+01-27 10:45:11.724  8588  8610 E TestRunner: 	at org.junit.runners.ParentRunner$4.run(ParentRunner.java:331)
+01-27 10:45:11.724  8588  8610 E TestRunner: 	at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:79)
+01-27 10:45:11.724  8588  8610 E TestRunner: 	at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:329)
+01-27 10:45:11.724  8588  8610 E TestRunner: 	at org.junit.runners.ParentRunner.access$100(ParentRunner.java:66)
+01-27 10:45:11.724  8588  8610 E TestRunner: 	at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:293)
+01-27 10:45:11.724  8588  8610 E TestRunner: 	at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+01-27 10:45:11.724  8588  8610 E TestRunner: 	at org.junit.runners.ParentRunner.run(ParentRunner.java:413)
+01-27 10:45:11.724  8588  8610 E TestRunner: 	at androidx.test.ext.junit.runners.AndroidJUnit4.run(AndroidJUnit4.java:162)
+01-27 10:45:11.724  8588  8610 E TestRunner: 	at org.junit.runners.Suite.runChild(Suite.java:128)
+01-27 10:45:11.724  8588  8610 E TestRunner: 	at org.junit.runners.Suite.runChild(Suite.java:27)
+01-27 10:45:11.724  8588  8610 E TestRunner: 	at org.junit.runners.ParentRunner$4.run(ParentRunner.java:331)
+01-27 10:45:11.724  8588  8610 E TestRunner: 	at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:79)
+01-27 10:45:11.724  8588  8610 E TestRunner: 	at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:329)
+01-27 10:45:11.724  8588  8610 E TestRunner: 	at org.junit.runners.ParentRunner.access$100(ParentRunner.java:66)
+01-27 10:45:11.724  8588  8610 E TestRunner: 	at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:293)
+01-27 10:45:11.724  8588  8610 E TestRunner: 	at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+01-27 10:45:11.724  8588  8610 E TestRunner: 	at org.junit.runners.ParentRunner.run(ParentRunner.java:413)
+01-27 10:45:11.724  8588  8610 E TestRunner: 	at org.junit.runner.JUnitCore.run(JUnitCore.java:137)
+01-27 10:45:11.724  8588  8610 E TestRunner: 	at org.junit.runner.JUnitCore.run(JUnitCore.java:115)
+01-27 10:45:11.724  8588  8610 E TestRunner: 	at androidx.test.internal.runner.TestExecutor.execute(TestExecutor.java:67)
+01-27 10:45:11.724  8588  8610 E TestRunner: 	at androidx.test.internal.runner.TestExecutor.execute(TestExecutor.java:58)
+01-27 10:45:11.724  8588  8610 E TestRunner: 	at androidx.test.runner.AndroidJUnitRunner.onStart(AndroidJUnitRunner.java:446)
+01-27 10:45:11.724  8588  8610 E TestRunner: 	at android.app.Instrumentation$InstrumentationThread.run(Instrumentation.java:2402)
+01-27 10:45:11.724  8588  8610 E TestRunner: ----- end exception -----
+01-27 10:45:11.725  8588  8610 I TestRunner: finished: testImmediateWorkIsScheduled(com.stockflip.StockPriceUpdateWorkerTest)

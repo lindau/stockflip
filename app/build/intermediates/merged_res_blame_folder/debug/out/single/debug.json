@@ -1,5 +1,9 @@
 [
     {
+        "merged": "/Users/johanlindau/.gradle/daemon/8.5/com.stockflip.app-merged_res-44:/drawable_ic_compare_arrows.xml.flat",
+        "source": "/Users/johanlindau/.gradle/daemon/8.5/com.stockflip.app-main-46:/drawable/ic_compare_arrows.xml"
+    },
+    {
         "merged": "/Users/johanlindau/.gradle/daemon/8.5/com.stockflip.app-merged_res-44:/mipmap-anydpi-v26_ic_launcher_round.xml.flat",
         "source": "/Users/johanlindau/.gradle/daemon/8.5/com.stockflip.app-main-46:/mipmap-anydpi-v26/ic_launcher_round.xml"
     },
@@ -28,8 +32,12 @@
         "source": "/Users/johanlindau/.gradle/daemon/8.5/com.stockflip.app-main-46:/layout/item_stock_pair.xml"
     },
     {
-        "merged": "com.stockflip.app-merged_res-44:/layout_item_stock_pair.xml.flat",
-        "source": "com.stockflip.app-main-46:/layout/item_stock_pair.xml"
+        "merged": "com.stockflip.app-merged_res-44:/drawable_ic_paid.xml.flat",
+        "source": "com.stockflip.app-main-46:/drawable/ic_paid.xml"
+    },
+    {
+        "merged": "/Users/johanlindau/.gradle/daemon/8.5/com.stockflip.app-merged_res-44:/drawable_ic_paid.xml.flat",
+        "source": "/Users/johanlindau/.gradle/daemon/8.5/com.stockflip.app-main-46:/drawable/ic_paid.xml"
     },
     {
         "merged": "/Users/johanlindau/.gradle/daemon/8.5/com.stockflip.app-merged_res-44:/mipmap-anydpi-v26_ic_launcher.xml.flat",
@@ -46,5 +54,9 @@
     {
         "merged": "/Users/johanlindau/.gradle/daemon/8.5/com.stockflip.app-merged_res-44:/xml_backup_rules.xml.flat",
         "source": "/Users/johanlindau/.gradle/daemon/8.5/com.stockflip.app-main-46:/xml/backup_rules.xml"
+    },
+    {
+        "merged": "/Users/johanlindau/.gradle/daemon/8.5/com.stockflip.app-merged_res-44:/drawable_ic_notifications_off.xml.flat",
+        "source": "/Users/johanlindau/.gradle/daemon/8.5/com.stockflip.app-main-46:/drawable/ic_notifications_off.xml"
     }
 ]

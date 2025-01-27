@@ -22,6 +22,7 @@ class StockPairAdapter(
 
     private val priceFormat = DecimalFormat("#,##0.00")
     private val highlightedPairs = mutableSetOf<Int>() // Track which pairs are highlighted
+    private val PRICE_EQUALITY_THRESHOLD = 0.01
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val binding = ItemStockPairBinding.inflate(
@@ -58,8 +59,8 @@ class StockPairAdapter(
             )
             binding.priceIndicator1.setColorFilter(
                 binding.root.context.getColor(
-                    if (pair.currentPrice1 > 0) android.R.color.holo_green_dark 
-                    else android.R.color.holo_red_dark
+                    if (pair.currentPrice1 > 0) R.color.price_up 
+                    else R.color.price_down
                 )
             )
 
@@ -71,8 +72,8 @@ class StockPairAdapter(
             )
             binding.priceIndicator2.setColorFilter(
                 binding.root.context.getColor(
-                    if (pair.currentPrice2 > 0) android.R.color.holo_green_dark 
-                    else android.R.color.holo_red_dark
+                    if (pair.currentPrice2 > 0) R.color.price_up 
+                    else R.color.price_down
                 )
             )
 
@@ -80,20 +81,40 @@ class StockPairAdapter(
             val actualPriceDiff = abs(pair.currentPrice1 - pair.currentPrice2)
             binding.priceDifference.text = "Diff: ${priceFormat.format(actualPriceDiff)} SEK"
             
-            // Set up notification chip
+            // Set up notification chip with improved visualization
             binding.notificationInfo.apply {
-                text = when {
-                    pair.priceDifference > 0 -> "Notify when ≥ ${priceFormat.format(pair.priceDifference)} SEK"
-                    pair.notifyWhenEqual -> "Notify when prices are equal"
-                    else -> "No notifications set"
+                val notificationText = buildString {
+                    if (pair.notifyWhenEqual) {
+                        append("=")  // Enkelt likhetstecken
+                    }
+                    if (pair.priceDifference > 0) {
+                        if (pair.notifyWhenEqual) append("  ")  // Extra mellanrum för separation
+                        append("∆ ${priceFormat.format(pair.priceDifference)}")  // Delta-symbol för skillnad
+                    }
                 }
+                
+                text = when {
+                    notificationText.isNotEmpty() -> notificationText
+                    else -> "Inga notifieringar"
+                }
+                
+                // Set chip colors
+                setChipBackgroundColorResource(when {
+                    pair.notifyWhenEqual || pair.priceDifference > 0 -> R.color.notification_active
+                    else -> R.color.notification_inactive
+                })
+                
                 isCheckable = false
                 isClickable = true
+                chipIcon = null
+                textSize = 20f  // Större textstorlek för tydligare symboler
             }
 
-            // Check if notification criteria are met
-            val shouldHighlight = (pair.notifyWhenEqual && actualPriceDiff <= 0.01) ||
-                    (pair.priceDifference > 0 && actualPriceDiff >= pair.priceDifference)
+            // Check if notification criteria are met and prices are not zero
+            val shouldHighlight = pair.currentPrice1 != 0.0 && pair.currentPrice2 != 0.0 && (
+                (pair.notifyWhenEqual && actualPriceDiff <= 0.01) ||
+                (pair.priceDifference > 0 && actualPriceDiff >= pair.priceDifference)
+            )
 
             // Check if highlight state changed
             val wasHighlighted = highlightedPairs.contains(pair.id)
@@ -143,7 +164,7 @@ class StockPairAdapter(
             val notification = NotificationCompat.Builder(context, StockPriceUpdater.CHANNEL_ID)
                 .setContentTitle(title)
                 .setContentText(message)
-                .setSmallIcon(android.R.drawable.ic_dialog_info)
+                .setSmallIcon(R.drawable.ic_paid)
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
                 .setAutoCancel(true)
                 .setDefaults(NotificationCompat.DEFAULT_ALL)

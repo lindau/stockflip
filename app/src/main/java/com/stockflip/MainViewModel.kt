@@ -78,7 +78,7 @@ class MainViewModel(
         try {
             Log.d(TAG, "Adding new stock pair: ${stockPair.companyName1} - ${stockPair.companyName2}")
             stockPairDao.insertStockPair(stockPair)
-            loadStockPairs() // Reload the list after adding
+            refreshStockPairs() // Immediately refresh prices after adding
         } catch (e: Exception) {
             Log.e(TAG, "Error adding stock pair: ${e.message}")
             _uiState.value = UiState.Error("Failed to add stock pair: ${e.message}")

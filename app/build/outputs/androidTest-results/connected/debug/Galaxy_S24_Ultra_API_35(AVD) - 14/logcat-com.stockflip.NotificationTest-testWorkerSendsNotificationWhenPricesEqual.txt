@@ -1,0 +1,120 @@
+01-27 10:45:09.548  8588  8610 I TestRunner: started: testWorkerSendsNotificationWhenPricesEqual(com.stockflip.NotificationTest)
+01-27 10:45:09.552  8588  8610 D WM-ForceStopRunnable: The default process name was not specified.
+01-27 10:45:09.552  8588  8610 D WM-ForceStopRunnable: Performing cleanup operations.
+01-27 10:45:09.562  8588  8610 D StockPair: Updating prices for TEST1-TEST2: 100.0, 100.0
+01-27 10:45:09.562  8588  8610 D StockPair: Updated prices for TEST1-TEST2: 100.0, 100.0
+01-27 10:45:09.568  8588  8610 D WM-PackageManagerHelper: androidx.work.impl.background.systemalarm.RescheduleReceiver enabled
+01-27 10:45:09.575  8588  8610 D WM-Processor: Processor: processing WorkGenerationalId(workSpecId=69abf62c-067d-45a4-a98c-7c8ac483c11a, generation=0)
+01-27 10:45:09.577  8588  8610 D WM-WorkerWrapper: Starting work for com.stockflip.TestStockPriceUpdateWorker
+01-27 10:45:09.587   942  1039 D EGL_emulation: app_time_stats: avg=7757.47ms min=7757.47ms max=7757.47ms count=1
+01-27 10:45:09.631  8588  8618 D WM-WorkerWrapper: com.stockflip.TestStockPriceUpdateWorker returned a Success {mOutputData=Data {}}.
+01-27 10:45:09.633  8588  8618 I WM-WorkerWrapper: Worker result SUCCESS for Work [ id=69abf62c-067d-45a4-a98c-7c8ac483c11a, tags={ com.stockflip.TestStockPriceUpdateWorker } ]
+01-27 10:45:09.638  8588  8618 D WM-PackageManagerHelper: androidx.work.impl.background.systemalarm.RescheduleReceiver disabled
+01-27 10:45:09.638  8588  8618 D WM-Processor: Processor 69abf62c-067d-45a4-a98c-7c8ac483c11a executed; reschedule = false
+01-27 10:45:09.642  8588  8618 D WM-StopWorkRunnable: StopWorkRunnable for 69abf62c-067d-45a4-a98c-7c8ac483c11a; Processor.stopWork = false
+01-27 10:45:09.879  1851  2336 W A       : Failed to notify listeners
+01-27 10:45:09.879  1851  2336 W A       : java.util.concurrent.CancellationException
+01-27 10:45:09.879  1851  2336 W A       : 	at java.util.concurrent.FutureTask.report(FutureTask.java:121)
+01-27 10:45:09.879  1851  2336 W A       : 	at java.util.concurrent.FutureTask.get(FutureTask.java:191)
+01-27 10:45:09.879  1851  2336 W A       : 	at com.google.common.w.a.bv.get(PG:1)
+01-27 10:45:09.879  1851  2336 W A       : 	at com.google.common.w.a.ee.a(PG:1)
+01-27 10:45:09.879  1851  2336 W A       : 	at com.google.common.w.a.cj.r(PG:2)
+01-27 10:45:09.879  1851  2336 W A       : 	at com.google.common.w.a.cc.run(PG:4)
+01-27 10:45:09.879  1851  2336 W A       : 	at com.google.common.w.a.bg.execute(PG:1)
+01-27 10:45:09.879  1851  2336 W A       : 	at com.google.common.w.a.bj.c(PG:1)
+01-27 10:45:09.879  1851  2336 W A       : 	at com.google.common.w.a.bj.b(PG:3)
+01-27 10:45:09.879  1851  2336 W A       : 	at com.google.common.w.a.cy.done(PG:1)
+01-27 10:45:09.879  1851  2336 W A       : 	at java.util.concurrent.FutureTask.finishCompletion(FutureTask.java:381)
+01-27 10:45:09.879  1851  2336 W A       : 	at java.util.concurrent.FutureTask.cancel(FutureTask.java:179)
+01-27 10:45:09.879  1851  2336 W A       : 	at com.google.common.w.a.bv.cancel(PG:1)
+01-27 10:45:09.879  1851  2336 W A       : 	at com.google.android.libraries.search.assistant.fulfillment.server.l.o.run(PG:1)
+01-27 10:45:09.879  1851  2336 W A       : 	at com.google.apps.tiktok.tracing.er.run(PG:1)
+01-27 10:45:09.879  1851  2336 W A       : 	at java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:487)
+01-27 10:45:09.879  1851  2336 W A       : 	at com.google.common.w.a.eb.a(PG:1)
+01-27 10:45:09.879  1851  2336 W A       : 	at com.google.common.w.a.cw.run(PG:4)
+01-27 10:45:09.879  1851  2336 W A       : 	at com.google.common.w.a.ec.run(PG:1)
+01-27 10:45:09.879  1851  2336 W A       : 	at com.google.android.libraries.i.z.run(PG:1)
+01-27 10:45:09.879  1851  2336 W A       : 	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1145)
+01-27 10:45:09.879  1851  2336 W A       : 	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:644)
+01-27 10:45:09.879  1851  2336 W A       : 	at com.google.android.libraries.i.h.run(PG:2)
+01-27 10:45:09.879  1851  2336 W A       : 	at java.lang.Thread.run(Thread.java:1012)
+01-27 10:45:09.879  1851  2336 W A       : 	at com.google.android.libraries.i.ai.run(PG:5)
+01-27 10:45:09.893  3269  8513 I Fitness : OnPackageChangedOperation got intent: Intent { act=android.intent.action.PACKAGE_CHANGED dat=package: flg=0x45000010 pkg=com.google.android.gms cmp=com.google.android.gms/.chimera.PersistentIntentOperationService (has extras) } [CONTEXT service_id=17 ]
+01-27 10:45:09.896  3269  8516 I Fitness : FitCleanupIntentOperation received Intent android.intent.action.PACKAGE_CHANGED [CONTEXT service_id=17 ]
+01-27 10:45:09.917  3269  3301 W ChimeraUtils: Module com.google.android.gms.nearby_en missing resource null(0)
+01-27 10:45:09.919  2068 23276 I Icing   : Indexing com.google.android.gms-apps from com.google.android.gms
+01-27 10:45:09.919  3269  3301 W ChimeraUtils: Module com.google.android.gms.nearby_en missing resource null(0)
+01-27 10:45:09.939  2068 23276 I Icing   : Indexing done com.google.android.gms-apps
+01-27 10:45:10.004  1851  2310 W native  : W0000 00:00:1737971110.004559    2310 input-utils.cc:142] Failed to get value for update inducing feature |latitude| due to INVALID_ARGUMENT: No feature generators for feature "latitude"
+01-27 10:45:10.004  1851  2310 W native  : === Source Location Trace: ===
+01-27 10:45:10.004  1851  2310 W native  : ./speech/service/context/features/feature-dictionary-provider.h:99
+01-27 10:45:10.004  1851  2310 W native  :  Subgraphs depending on this feature will not have a new revision.
+01-27 10:45:10.004  1851  2310 W native  : W0000 00:00:1737971110.004801    2310 input-utils.cc:142] Failed to get value for update inducing feature |longitude| due to INVALID_ARGUMENT: No feature generators for feature "longitude"
+01-27 10:45:10.004  1851  2310 W native  : === Source Location Trace: ===
+01-27 10:45:10.004  1851  2310 W native  : ./speech/service/context/features/feature-dictionary-provider.h:99
+01-27 10:45:10.004  1851  2310 W native  :  Subgraphs depending on this feature will not have a new revision.
+01-27 10:45:10.005  1851  2310 W native  : W0000 00:00:1737971110.005107    2310 input-utils.cc:142] Failed to get value for update inducing feature |latitude| due to INVALID_ARGUMENT: No feature generators for feature "latitude"
+01-27 10:45:10.005  1851  2310 W native  : === Source Location Trace: ===
+01-27 10:45:10.005  1851  2310 W native  : ./speech/service/context/features/feature-dictionary-provider.h:99
+01-27 10:45:10.005  1851  2310 W native  :  Subgraphs depending on this feature will not have a new revision.
+01-27 10:45:10.005  1851  2310 W native  : W0000 00:00:1737971110.005136    2310 input-utils.cc:142] Failed to get value for update inducing feature |longitude| due to INVALID_ARGUMENT: No feature generators for feature "longitude"
+01-27 10:45:10.005  1851  2310 W native  : === Source Location Trace: ===
+01-27 10:45:10.005  1851  2310 W native  : ./speech/service/context/features/feature-dictionary-provider.h:99
+01-27 10:45:10.005  1851  2310 W native  :  Subgraphs depending on this feature will not have a new revision.
+01-27 10:45:10.581  8588  8610 E TestRunner: failed: testWorkerSendsNotificationWhenPricesEqual(com.stockflip.NotificationTest)
+01-27 10:45:10.586  8588  8610 E TestRunner: ----- begin exception -----
+01-27 10:45:10.589  4202  6704 I PermissionControllerServiceImpl: Updating user sensitive for uid 10214
+01-27 10:45:10.590   561   673 I InputReader: Reconfiguring input devices, changes=KEYBOARD_LAYOUTS
+01-27 10:45:10.594  8588  8610 E TestRunner: java.lang.AssertionError: Should have at least one notification
+01-27 10:45:10.594  8588  8610 E TestRunner: 	at org.junit.Assert.fail(Assert.java:89)
+01-27 10:45:10.594  8588  8610 E TestRunner: 	at org.junit.Assert.assertTrue(Assert.java:42)
+01-27 10:45:10.594  8588  8610 E TestRunner: 	at com.stockflip.NotificationTest$testWorkerSendsNotificationWhenPricesEqual$1.invokeSuspend(NotificationTest.kt:116)
+01-27 10:45:10.594  8588  8610 E TestRunner: 	at kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:33)
+01-27 10:45:10.594  8588  8610 E TestRunner: 	at kotlinx.coroutines.DispatchedTask.run(DispatchedTask.kt:106)
+01-27 10:45:10.594  8588  8610 E TestRunner: 	at kotlinx.coroutines.EventLoopImplBase.processNextEvent(EventLoop.common.kt:280)
+01-27 10:45:10.594  8588  8610 E TestRunner: 	at kotlinx.coroutines.BlockingCoroutine.joinBlocking(Builders.kt:85)
+01-27 10:45:10.594  8588  8610 E TestRunner: 	at kotlinx.coroutines.BuildersKt__BuildersKt.runBlocking(Builders.kt:59)
+01-27 10:45:10.594  8588  8610 E TestRunner: 	at kotlinx.coroutines.BuildersKt.runBlocking(Unknown Source:1)
+01-27 10:45:10.594  8588  8610 E TestRunner: 	at kotlinx.coroutines.BuildersKt__BuildersKt.runBlocking$default(Builders.kt:38)
+01-27 10:45:10.594  8588  8610 E TestRunner: 	at kotlinx.coroutines.BuildersKt.runBlocking$default(Unknown Source:1)
+01-27 10:45:10.594  8588  8610 E TestRunner: 	at com.stockflip.NotificationTest.testWorkerSendsNotificationWhenPricesEqual(NotificationTest.kt:90)
+01-27 10:45:10.594  8588  8610 E TestRunner: 	at java.lang.reflect.Method.invoke(Native Method)
+01-27 10:45:10.594  8588  8610 E TestRunner: 	at org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:59)
+01-27 10:45:10.594  8588  8610 E TestRunner: 	at org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)
+01-27 10:45:10.594  8588  8610 E TestRunner: 	at org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:56)
+01-27 10:45:10.594  8588  8610 E TestRunner: 	at org.junit.internal.runners.statements.InvokeMethod.evaluate(InvokeMethod.java:17)
+01-27 10:45:10.594  8588  8610 E TestRunner: 	at androidx.test.internal.runner.junit4.statement.RunBefores.evaluate(RunBefores.java:80)
+01-27 10:45:10.594  8588  8610 E TestRunner: 	at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+01-27 10:45:10.594  8588  8610 E TestRunner: 	at org.junit.runners.BlockJUnit4ClassRunner$1.evaluate(BlockJUnit4ClassRunner.java:100)
+01-27 10:45:10.594  8588  8610 E TestRunner: 	at org.junit.runners.ParentRunner.runLeaf(ParentRunner.java:366)
+01-27 10:45:10.594  8588  8610 E TestRunner: 	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:103)
+01-27 10:45:10.594  8588  8610 E TestRunner: 	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:63)
+01-27 10:45:10.594  8588  8610 E TestRunner: 	at org.junit.runners.ParentRunner$4.run(ParentRunner.java:331)
+01-27 10:45:10.594  8588  8610 E TestRunner: 	at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:79)
+01-27 10:45:10.594  8588  8610 E TestRunner: 	at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:329)
+01-27 10:45:10.594  8588  8610 E TestRunner: 	at org.junit.runners.ParentRunner.access$100(ParentRunner.java:66)
+01-27 10:45:10.594  8588  8610 E TestRunner: 	at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:293)
+01-27 10:45:10.594  8588  8610 E TestRunner: 	at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+01-27 10:45:10.594  8588  8610 E TestRunner: 	at org.junit.runners.ParentRunner.run(ParentRunner.java:413)
+01-27 10:45:10.594  8588  8610 E TestRunner: 	at androidx.test.ext.junit.runners.AndroidJUnit4.run(AndroidJUnit4.java:162)
+01-27 10:45:10.594  8588  8610 E TestRunner: 	at org.junit.runners.Suite.runChild(Suite.java:128)
+01-27 10:45:10.594  8588  8610 E TestRunner: 	at org.junit.runners.Suite.runChild(Suite.java:27)
+01-27 10:45:10.594  8588  8610 E TestRunner: 	at org.junit.runners.ParentRunner$4.run(ParentRunner.java:331)
+01-27 10:45:10.594  8588  8610 E TestRunner: 	at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:79)
+01-27 10:45:10.594  8588  8610 E TestRunner: 	at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:329)
+01-27 10:45:10.594  8588  8610 E TestRunner: 	at org.junit.runners.ParentRunner.access$100(ParentRunner.java:66)
+01-27 10:45:10.594  8588  8610 E TestRunner: 	at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:293)
+01-27 10:45:10.594  8588  8610 E TestRunner: 	at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+01-27 10:45:10.594  8588  8610 E TestRunner: 	at org.junit.runners.ParentRunner.run(ParentRunner.java:413)
+01-27 10:45:10.594  8588  8610 E TestRunner: 	at org.junit.runner.JUnitCore.run(JUnitCore.java:137)
+01-27 10:45:10.594  8588  8610 E TestRunner: 	at org.junit.runner.JUnitCore.run(JUnitCore.java:115)
+01-27 10:45:10.594  8588  8610 E TestRunner: 	at androidx.test.internal.runner.TestExecutor.execute(TestExecutor.java:67)
+01-27 10:45:10.594  8588  8610 E TestRunner: 	at androidx.test.internal.runner.TestExecutor.execute(TestExecutor.java:58)
+01-27 10:45:10.594  8588  8610 E TestRunner: 	at androidx.test.runner.AndroidJUnitRunner.onStart(AndroidJUnitRunner.java:446)
+01-27 10:45:10.594  8588  8610 E TestRunner: 	at android.app.Instrumentation$InstrumentationThread.run(Instrumentation.java:2402)
+01-27 10:45:10.596  1184  1184 D CarrierSvcBindHelper: onPackageModified: com.stockflip
+01-27 10:45:10.597  1184  1184 D CarrierSvcBindHelper: No carrier app for: 0
+01-27 10:45:10.594  1155  1155 V MediaPlayerList: mPackageChangedBroadcastReceiver: action: android.intent.action.PACKAGE_CHANGED
+01-27 10:45:10.598  8588  8610 E TestRunner: ----- end exception -----
+01-27 10:45:10.602  1155  1155 V MediaPlayerList: mPackageChangedBroadcastReceiver: action: android.intent.action.PACKAGE_CHANGED
+01-27 10:45:10.607  8588  8610 I TestRunner: finished: testWorkerSendsNotificationWhenPricesEqual(com.stockflip.NotificationTest)

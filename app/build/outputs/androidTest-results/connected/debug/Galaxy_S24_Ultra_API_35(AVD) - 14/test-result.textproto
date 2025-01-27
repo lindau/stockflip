@@ -1,0 +1,457 @@
+# 2025-01-27T09:45:54.775Z:
+test_suite_meta_data {
+  scheduled_test_case_count: 8
+}
+test_status: FAILED
+test_result {
+  test_case {
+    test_class: "NotificationTest"
+    test_package: "com.stockflip"
+    test_method: "testWorkerSendsNotificationWhenPriceDifferenceReached"
+    start_time {
+      seconds: 1737971149
+      nanos: 896000000
+    }
+    end_time {
+      seconds: 1737971151
+      nanos: 117000000
+    }
+  }
+  test_status: FAILED
+  error {
+    error_message: "java.lang.AssertionError: Should have at least one notification\nat org.junit.Assert.fail(Assert.java:89)\nat org.junit.Assert.assertTrue(Assert.java:42)\nat com.stockflip.NotificationTest$testWorkerSendsNotificationWhenPriceDifferenceReached$1.invokeSuspend(NotificationTest.kt:154)\nat kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:33)\nat kotlinx.coroutines.DispatchedTask.run(DispatchedTask.kt:106)\nat kotlinx.coroutines.EventLoopImplBase.processNextEvent(EventLoop.common.kt:280)\nat kotlinx.coroutines.BlockingCoroutine.joinBlocking(Builders.kt:85)\nat kotlinx.coroutines.BuildersKt__BuildersKt.runBlocking(Builders.kt:59)\nat kotlinx.coroutines.BuildersKt.runBlocking(Unknown Source:1)\nat kotlinx.coroutines.BuildersKt__BuildersKt.runBlocking$default(Builders.kt:38)\nat kotlinx.coroutines.BuildersKt.runBlocking$default(Unknown Source:1)\nat com.stockflip.NotificationTest.testWorkerSendsNotificationWhenPriceDifferenceReached(NotificationTest.kt:128)"
+    error_type: "java.lang.AssertionError"
+    stack_trace: "java.lang.AssertionError: Should have at least one notification\nat org.junit.Assert.fail(Assert.java:89)\nat org.junit.Assert.assertTrue(Assert.java:42)\nat com.stockflip.NotificationTest$testWorkerSendsNotificationWhenPriceDifferenceReached$1.invokeSuspend(NotificationTest.kt:154)\nat kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:33)\nat kotlinx.coroutines.DispatchedTask.run(DispatchedTask.kt:106)\nat kotlinx.coroutines.EventLoopImplBase.processNextEvent(EventLoop.common.kt:280)\nat kotlinx.coroutines.BlockingCoroutine.joinBlocking(Builders.kt:85)\nat kotlinx.coroutines.BuildersKt__BuildersKt.runBlocking(Builders.kt:59)\nat kotlinx.coroutines.BuildersKt.runBlocking(Unknown Source:1)\nat kotlinx.coroutines.BuildersKt__BuildersKt.runBlocking$default(Builders.kt:38)\nat kotlinx.coroutines.BuildersKt.runBlocking$default(Unknown Source:1)\nat com.stockflip.NotificationTest.testWorkerSendsNotificationWhenPriceDifferenceReached(NotificationTest.kt:128)"
+  }
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "/Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/build/outputs/androidTest-results/connected/debug/Galaxy_S24_Ultra_API_35(AVD) - 14/logcat-com.stockflip.NotificationTest-testWorkerSendsNotificationWhenPriceDifferenceReached.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "/Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/build/outputs/androidTest-results/connected/debug/Galaxy_S24_Ultra_API_35(AVD) - 14/device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/build/outputs/androidTest-results/connected/debug/Galaxy_S24_Ultra_API_35(AVD) - 14/meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/build/outputs/androidTest-results/connected/debug/Galaxy_S24_Ultra_API_35(AVD) - 14/cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "NotificationTest"
+    test_package: "com.stockflip"
+    test_method: "testWorkerSendsNotificationWhenPricesEqual"
+    start_time {
+      seconds: 1737971151
+      nanos: 139000000
+    }
+    end_time {
+      seconds: 1737971152
+      nanos: 93000000
+    }
+  }
+  test_status: FAILED
+  error {
+    error_message: "java.lang.AssertionError: Should have at least one notification\nat org.junit.Assert.fail(Assert.java:89)\nat org.junit.Assert.assertTrue(Assert.java:42)\nat com.stockflip.NotificationTest$testWorkerSendsNotificationWhenPricesEqual$1.invokeSuspend(NotificationTest.kt:116)\nat kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:33)\nat kotlinx.coroutines.DispatchedTask.run(DispatchedTask.kt:106)\nat kotlinx.coroutines.EventLoopImplBase.processNextEvent(EventLoop.common.kt:280)\nat kotlinx.coroutines.BlockingCoroutine.joinBlocking(Builders.kt:85)\nat kotlinx.coroutines.BuildersKt__BuildersKt.runBlocking(Builders.kt:59)\nat kotlinx.coroutines.BuildersKt.runBlocking(Unknown Source:1)\nat kotlinx.coroutines.BuildersKt__BuildersKt.runBlocking$default(Builders.kt:38)\nat kotlinx.coroutines.BuildersKt.runBlocking$default(Unknown Source:1)\nat com.stockflip.NotificationTest.testWorkerSendsNotificationWhenPricesEqual(NotificationTest.kt:90)"
+    error_type: "java.lang.AssertionError"
+    stack_trace: "java.lang.AssertionError: Should have at least one notification\nat org.junit.Assert.fail(Assert.java:89)\nat org.junit.Assert.assertTrue(Assert.java:42)\nat com.stockflip.NotificationTest$testWorkerSendsNotificationWhenPricesEqual$1.invokeSuspend(NotificationTest.kt:116)\nat kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:33)\nat kotlinx.coroutines.DispatchedTask.run(DispatchedTask.kt:106)\nat kotlinx.coroutines.EventLoopImplBase.processNextEvent(EventLoop.common.kt:280)\nat kotlinx.coroutines.BlockingCoroutine.joinBlocking(Builders.kt:85)\nat kotlinx.coroutines.BuildersKt__BuildersKt.runBlocking(Builders.kt:59)\nat kotlinx.coroutines.BuildersKt.runBlocking(Unknown Source:1)\nat kotlinx.coroutines.BuildersKt__BuildersKt.runBlocking$default(Builders.kt:38)\nat kotlinx.coroutines.BuildersKt.runBlocking$default(Unknown Source:1)\nat com.stockflip.NotificationTest.testWorkerSendsNotificationWhenPricesEqual(NotificationTest.kt:90)"
+  }
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "/Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/build/outputs/androidTest-results/connected/debug/Galaxy_S24_Ultra_API_35(AVD) - 14/logcat-com.stockflip.NotificationTest-testWorkerSendsNotificationWhenPricesEqual.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "/Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/build/outputs/androidTest-results/connected/debug/Galaxy_S24_Ultra_API_35(AVD) - 14/device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/build/outputs/androidTest-results/connected/debug/Galaxy_S24_Ultra_API_35(AVD) - 14/meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/build/outputs/androidTest-results/connected/debug/Galaxy_S24_Ultra_API_35(AVD) - 14/cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "NotificationTest"
+    test_package: "com.stockflip"
+    test_method: "testNoNotificationWhenConditionsNotMet"
+    start_time {
+      seconds: 1737971152
+      nanos: 97000000
+    }
+    end_time {
+      seconds: 1737971153
+      nanos: 79000000
+    }
+  }
+  test_status: PASSED
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "/Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/build/outputs/androidTest-results/connected/debug/Galaxy_S24_Ultra_API_35(AVD) - 14/logcat-com.stockflip.NotificationTest-testNoNotificationWhenConditionsNotMet.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "/Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/build/outputs/androidTest-results/connected/debug/Galaxy_S24_Ultra_API_35(AVD) - 14/device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/build/outputs/androidTest-results/connected/debug/Galaxy_S24_Ultra_API_35(AVD) - 14/meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/build/outputs/androidTest-results/connected/debug/Galaxy_S24_Ultra_API_35(AVD) - 14/cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "NotificationTest"
+    test_package: "com.stockflip"
+    test_method: "testNotificationChannelCreation"
+    start_time {
+      seconds: 1737971153
+      nanos: 92000000
+    }
+    end_time {
+      seconds: 1737971153
+      nanos: 172000000
+    }
+  }
+  test_status: PASSED
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "/Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/build/outputs/androidTest-results/connected/debug/Galaxy_S24_Ultra_API_35(AVD) - 14/logcat-com.stockflip.NotificationTest-testNotificationChannelCreation.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "/Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/build/outputs/androidTest-results/connected/debug/Galaxy_S24_Ultra_API_35(AVD) - 14/device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/build/outputs/androidTest-results/connected/debug/Galaxy_S24_Ultra_API_35(AVD) - 14/meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/build/outputs/androidTest-results/connected/debug/Galaxy_S24_Ultra_API_35(AVD) - 14/cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "StockPriceUpdateWorkerTest"
+    test_package: "com.stockflip"
+    test_method: "testImmediateWorkIsScheduled"
+    start_time {
+      seconds: 1737971153
+      nanos: 192000000
+    }
+    end_time {
+      seconds: 1737971153
+      nanos: 286000000
+    }
+  }
+  test_status: FAILED
+  error {
+    error_message: "java.lang.IllegalStateException: Cannot invoke observeForever on a background thread\nat androidx.lifecycle.LiveData.assertMainThread(LiveData.java:502)\nat androidx.lifecycle.LiveData.observeForever(LiveData.java:224)\nat com.stockflip.StockPriceUpdater.monitorWorkStatus(StockPriceUpdater.kt:92)\nat com.stockflip.StockPriceUpdater.startPeriodicUpdate(StockPriceUpdater.kt:51)\nat com.stockflip.StockPriceUpdateWorkerTest.testImmediateWorkIsScheduled(StockPriceUpdateWorkerTest.kt:62)"
+    error_type: "java.lang.IllegalStateException"
+    stack_trace: "java.lang.IllegalStateException: Cannot invoke observeForever on a background thread\nat androidx.lifecycle.LiveData.assertMainThread(LiveData.java:502)\nat androidx.lifecycle.LiveData.observeForever(LiveData.java:224)\nat com.stockflip.StockPriceUpdater.monitorWorkStatus(StockPriceUpdater.kt:92)\nat com.stockflip.StockPriceUpdater.startPeriodicUpdate(StockPriceUpdater.kt:51)\nat com.stockflip.StockPriceUpdateWorkerTest.testImmediateWorkIsScheduled(StockPriceUpdateWorkerTest.kt:62)"
+  }
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "/Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/build/outputs/androidTest-results/connected/debug/Galaxy_S24_Ultra_API_35(AVD) - 14/logcat-com.stockflip.StockPriceUpdateWorkerTest-testImmediateWorkIsScheduled.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "/Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/build/outputs/androidTest-results/connected/debug/Galaxy_S24_Ultra_API_35(AVD) - 14/device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/build/outputs/androidTest-results/connected/debug/Galaxy_S24_Ultra_API_35(AVD) - 14/meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/build/outputs/androidTest-results/connected/debug/Galaxy_S24_Ultra_API_35(AVD) - 14/cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "StockPriceUpdateWorkerTest"
+    test_package: "com.stockflip"
+    test_method: "testWorkerExecutes"
+    start_time {
+      seconds: 1737971153
+      nanos: 290000000
+    }
+    end_time {
+      seconds: 1737971153
+      nanos: 325000000
+    }
+  }
+  test_status: PASSED
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "/Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/build/outputs/androidTest-results/connected/debug/Galaxy_S24_Ultra_API_35(AVD) - 14/logcat-com.stockflip.StockPriceUpdateWorkerTest-testWorkerExecutes.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "/Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/build/outputs/androidTest-results/connected/debug/Galaxy_S24_Ultra_API_35(AVD) - 14/device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/build/outputs/androidTest-results/connected/debug/Galaxy_S24_Ultra_API_35(AVD) - 14/meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/build/outputs/androidTest-results/connected/debug/Galaxy_S24_Ultra_API_35(AVD) - 14/cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "StockPriceUpdateWorkerTest"
+    test_package: "com.stockflip"
+    test_method: "testPeriodicWorkIsScheduled"
+    start_time {
+      seconds: 1737971153
+      nanos: 338000000
+    }
+    end_time {
+      seconds: 1737971153
+      nanos: 474000000
+    }
+  }
+  test_status: FAILED
+  error {
+    error_message: "java.lang.IllegalStateException: Cannot invoke observeForever on a background thread\nat androidx.lifecycle.LiveData.assertMainThread(LiveData.java:502)\nat androidx.lifecycle.LiveData.observeForever(LiveData.java:224)\nat com.stockflip.StockPriceUpdater.monitorWorkStatus(StockPriceUpdater.kt:92)\nat com.stockflip.StockPriceUpdater.startPeriodicUpdate(StockPriceUpdater.kt:51)\nat com.stockflip.StockPriceUpdateWorkerTest.testPeriodicWorkIsScheduled(StockPriceUpdateWorkerTest.kt:47)"
+    error_type: "java.lang.IllegalStateException"
+    stack_trace: "java.lang.IllegalStateException: Cannot invoke observeForever on a background thread\nat androidx.lifecycle.LiveData.assertMainThread(LiveData.java:502)\nat androidx.lifecycle.LiveData.observeForever(LiveData.java:224)\nat com.stockflip.StockPriceUpdater.monitorWorkStatus(StockPriceUpdater.kt:92)\nat com.stockflip.StockPriceUpdater.startPeriodicUpdate(StockPriceUpdater.kt:51)\nat com.stockflip.StockPriceUpdateWorkerTest.testPeriodicWorkIsScheduled(StockPriceUpdateWorkerTest.kt:47)"
+  }
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "/Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/build/outputs/androidTest-results/connected/debug/Galaxy_S24_Ultra_API_35(AVD) - 14/logcat-com.stockflip.StockPriceUpdateWorkerTest-testPeriodicWorkIsScheduled.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "/Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/build/outputs/androidTest-results/connected/debug/Galaxy_S24_Ultra_API_35(AVD) - 14/device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/build/outputs/androidTest-results/connected/debug/Galaxy_S24_Ultra_API_35(AVD) - 14/meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/build/outputs/androidTest-results/connected/debug/Galaxy_S24_Ultra_API_35(AVD) - 14/cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "StockPriceUpdateWorkerTest"
+    test_package: "com.stockflip"
+    test_method: "testWorkerSendsBroadcast"
+    start_time {
+      seconds: 1737971153
+      nanos: 492000000
+    }
+    end_time {
+      seconds: 1737971153
+      nanos: 708000000
+    }
+  }
+  test_status: FAILED
+  error {
+    error_message: "java.lang.AssertionError\nat org.junit.Assert.fail(Assert.java:87)\nat org.junit.Assert.assertTrue(Assert.java:42)\nat org.junit.Assert.assertTrue(Assert.java:53)\nat com.stockflip.StockPriceUpdateWorkerTest$testWorkerSendsBroadcast$1.invokeSuspend(StockPriceUpdateWorkerTest.kt:91)\nat kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:33)\nat kotlinx.coroutines.DispatchedTask.run(DispatchedTask.kt:106)\nat kotlinx.coroutines.EventLoopImplBase.processNextEvent(EventLoop.common.kt:280)\nat kotlinx.coroutines.BlockingCoroutine.joinBlocking(Builders.kt:85)\nat kotlinx.coroutines.BuildersKt__BuildersKt.runBlocking(Builders.kt:59)\nat kotlinx.coroutines.BuildersKt.runBlocking(Unknown Source:1)\nat kotlinx.coroutines.BuildersKt__BuildersKt.runBlocking$default(Builders.kt:38)\nat kotlinx.coroutines.BuildersKt.runBlocking$default(Unknown Source:1)\nat com.stockflip.StockPriceUpdateWorkerTest.testWorkerSendsBroadcast(StockPriceUpdateWorkerTest.kt:75)"
+    error_type: "java.lang.AssertionError\nat org.junit.Assert.fail(Assert.java"
+    stack_trace: "java.lang.AssertionError\nat org.junit.Assert.fail(Assert.java:87)\nat org.junit.Assert.assertTrue(Assert.java:42)\nat org.junit.Assert.assertTrue(Assert.java:53)\nat com.stockflip.StockPriceUpdateWorkerTest$testWorkerSendsBroadcast$1.invokeSuspend(StockPriceUpdateWorkerTest.kt:91)\nat kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:33)\nat kotlinx.coroutines.DispatchedTask.run(DispatchedTask.kt:106)\nat kotlinx.coroutines.EventLoopImplBase.processNextEvent(EventLoop.common.kt:280)\nat kotlinx.coroutines.BlockingCoroutine.joinBlocking(Builders.kt:85)\nat kotlinx.coroutines.BuildersKt__BuildersKt.runBlocking(Builders.kt:59)\nat kotlinx.coroutines.BuildersKt.runBlocking(Unknown Source:1)\nat kotlinx.coroutines.BuildersKt__BuildersKt.runBlocking$default(Builders.kt:38)\nat kotlinx.coroutines.BuildersKt.runBlocking$default(Unknown Source:1)\nat com.stockflip.StockPriceUpdateWorkerTest.testWorkerSendsBroadcast(StockPriceUpdateWorkerTest.kt:75)"
+  }
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "/Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/build/outputs/androidTest-results/connected/debug/Galaxy_S24_Ultra_API_35(AVD) - 14/logcat-com.stockflip.StockPriceUpdateWorkerTest-testWorkerSendsBroadcast.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "/Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/build/outputs/androidTest-results/connected/debug/Galaxy_S24_Ultra_API_35(AVD) - 14/device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/build/outputs/androidTest-results/connected/debug/Galaxy_S24_Ultra_API_35(AVD) - 14/meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/build/outputs/androidTest-results/connected/debug/Galaxy_S24_Ultra_API_35(AVD) - 14/cpuinfo"
+    }
+  }
+}
+output_artifact {
+  label {
+    label: "test-results.log"
+    namespace: "com.google.testing.platform.runtime.android.driver.AndroidInstrumentationDriver"
+  }
+  source_path {
+    path: "/Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/build/outputs/androidTest-results/connected/debug/Galaxy_S24_Ultra_API_35(AVD) - 14/testlog/test-results.log"
+  }
+  type: TEST_DATA
+  mime_type: "text/plain"
+}

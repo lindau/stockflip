@@ -13,67 +13,92 @@ import androidx.work.WorkerParameters
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlin.math.abs
+import kotlinx.coroutines.delay
+import androidx.work.PeriodicWorkRequestBuilder
+import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.WorkManager
+import java.util.concurrent.TimeUnit
 
 class StockPriceUpdateWorker(
     private val context: Context,
     workerParams: WorkerParameters
 ) : CoroutineWorker(context, workerParams) {
 
-    override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
-        try {
-            Log.d(TAG, "Starting price update check")
-            val database = StockPairDatabase.getDatabase(applicationContext)
-            val stockPairDao = database.stockPairDao()
-            val stockPairs = stockPairDao.getAllStockPairs()
-            
-            Log.d(TAG, "Found ${stockPairs.size} pairs to check")
-            var updatedCount = 0
-            
-            stockPairs.forEach { pair ->
-                try {
-                    Log.d(TAG, "Fetching prices for ${pair.companyName1} (${pair.ticker1}) and ${pair.companyName2} (${pair.ticker2})")
-                    val price1 = YahooFinanceService.getStockPrice(pair.ticker1)
-                    val price2 = YahooFinanceService.getStockPrice(pair.ticker2)
+    override suspend fun doWork(): Result {
+        var attempt = 1
+        
+        while (true) {
+            try {
+                Log.d(TAG, "Starting price update (attempt $attempt)")
+                val database = StockPairDatabase.getDatabase(applicationContext)
+                val stockPairDao = database.stockPairDao()
+                val yahooFinanceService = YahooFinanceService
+                val pairs = stockPairDao.getAllStockPairs()
+                var updatedCount = 0
+                
+                pairs.forEach { pair ->
+                    try {
+                        Log.d(TAG, "Checking prices for ${pair.ticker1} and ${pair.ticker2}")
+                        val price1 = yahooFinanceService.getStockPrice(pair.ticker1)
+                        val price2 = yahooFinanceService.getStockPrice(pair.ticker2)
+                        
+                        if (price1 != null && price2 != null) {
+                            Log.d(TAG, "Got prices for ${pair.ticker1}: $price1, ${pair.ticker2}: $price2")
+                            val updatedPair = pair.withCurrentPrices(price1, price2)
+                            stockPairDao.update(updatedPair)
+                            Log.d(TAG, "Updated database with new prices for ${pair.ticker1}-${pair.ticker2}")
+                            updatedCount++
 
-                    if (price1 != null && price2 != null) {
-                        Log.d(TAG, "Got prices for ${pair.ticker1}: $price1, ${pair.ticker2}: $price2")
-                        val updatedPair = pair.withCurrentPrices(price1, price2)
-                        stockPairDao.update(updatedPair)
-                        Log.d(TAG, "Updated database with new prices for ${pair.ticker1}-${pair.ticker2}")
-                        updatedCount++
-
-                        if (shouldNotify(pair, price1, price2)) {
-                            val title = "Stock Price Alert"
-                            val message = buildNotificationMessage(pair, price1, price2)
-                            showNotification(title, message)
+                            if (shouldNotify(pair, price1, price2)) {
+                                val title = "Stock Price Alert"
+                                val message = buildNotificationMessage(pair, price1, price2)
+                                showNotification(title, message)
+                            }
+                        } else {
+                            Log.w(TAG, "Failed to get prices for ${pair.ticker1} or ${pair.ticker2}")
                         }
-                    } else {
-                        Log.w(TAG, "Failed to get prices for ${pair.ticker1} or ${pair.ticker2}")
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Error checking prices for pair ${pair.companyName1} - ${pair.companyName2}: ${e.message}")
                     }
-                } catch (e: Exception) {
-                    Log.e(TAG, "Error checking prices for pair ${pair.companyName1} - ${pair.companyName2}: ${e.message}")
                 }
-            }
 
-            if (updatedCount > 0) {
-                // Broadcast update for UI refresh
-                Log.d(TAG, "Broadcasting price update completion for $updatedCount pairs")
-                val intent = Intent(ACTION_PRICES_UPDATED).apply {
-                    `package` = applicationContext.packageName
+                if (updatedCount > 0) {
+                    Log.d(TAG, "Broadcasting price update completion for $updatedCount pairs")
+                    val intent = Intent(ACTION_PRICES_UPDATED).apply {
+                        `package` = applicationContext.packageName
+                    }
+                    applicationContext.sendBroadcast(intent)
+                } else {
+                    Log.w(TAG, "No prices were updated")
                 }
-                applicationContext.sendBroadcast(intent)
-            } else {
-                Log.w(TAG, "No prices were updated")
+                
+                // Schedule next update based on market hours
+                val interval = StockMarketScheduler.getUpdateInterval()
+                scheduleNextUpdate(interval)
+                
+                return Result.success()
+                
+            } catch (e: Exception) {
+                Log.e(TAG, "Price update worker failed: ${e.message}")
+                
+                if (StockMarketScheduler.shouldRetry(attempt, e)) {
+                    attempt++
+                    delay(StockMarketScheduler.RETRY_DELAY_MINUTES * 60 * 1000) // Convert minutes to milliseconds
+                    continue
+                }
+                
+                return Result.failure()
             }
-            
-            Result.success()
-        } catch (e: Exception) {
-            Log.e(TAG, "Price update worker failed: ${e.message}")
-            Result.failure()
         }
     }
 
     private fun shouldNotify(pair: StockPair, price1: Double, price2: Double): Boolean {
+        // Don't notify if either price is 0 (not yet fetched)
+        if (price1 == 0.0 || price2 == 0.0) {
+            Log.d(TAG, "Skipping notification check for ${pair.ticker1}-${pair.ticker2} because prices are not yet fetched")
+            return false
+        }
+        
         val shouldNotify = (pair.notifyWhenEqual && abs(price1 - price2) < PRICE_EQUALITY_THRESHOLD) ||
                (pair.priceDifference > 0 && abs(price1 - price2) >= pair.priceDifference)
         
@@ -128,6 +153,22 @@ class StockPriceUpdateWorker(
         val notificationId = System.currentTimeMillis().toInt()
         notificationManager.notify(notificationId, notification)
         Log.d(TAG, "Sent notification: $title - $message")
+    }
+
+    private fun scheduleNextUpdate(intervalMinutes: Long) {
+        val workRequest = PeriodicWorkRequestBuilder<StockPriceUpdateWorker>(
+            intervalMinutes, TimeUnit.MINUTES,
+            intervalMinutes / 2, TimeUnit.MINUTES  // Flex period half of the interval
+        ).build()
+        
+        WorkManager.getInstance(applicationContext)
+            .enqueueUniquePeriodicWork(
+                "StockPriceUpdate",
+                ExistingPeriodicWorkPolicy.REPLACE,
+                workRequest
+            )
+        
+        Log.d(TAG, "Scheduled next update with $intervalMinutes minute interval")
     }
 
     companion object {
