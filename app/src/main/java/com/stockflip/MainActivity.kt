@@ -13,6 +13,7 @@ import android.widget.ArrayAdapter
 import android.widget.AutoCompleteTextView
 import android.widget.CheckBox
 import android.widget.EditText
+import android.widget.Filter
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
@@ -57,7 +58,16 @@ class MainActivity : AppCompatActivity() {
             Toast.makeText(this, "Notification permission is required for alerts", Toast.LENGTH_LONG).show()
         }
     }
-    private val stockSearchViewModel: StockSearchViewModel by viewModels {
+    private val stockSearchViewModel1: StockSearchViewModel by viewModels {
+        object : ViewModelProvider.Factory {
+            override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                @Suppress("UNCHECKED_CAST")
+                return StockSearchViewModel(StockRepository()) as T
+            }
+        }
+    }
+    
+    private val stockSearchViewModel2: StockSearchViewModel by viewModels {
         object : ViewModelProvider.Factory {
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
                 @Suppress("UNCHECKED_CAST")
@@ -237,9 +247,9 @@ class MainActivity : AppCompatActivity() {
         ticker1Input.setAdapter(adapter1)
         ticker2Input.setAdapter(adapter2)
 
-        // Set up search functionality
-        setupStockSearch(ticker1Input, adapter1)
-        setupStockSearch(ticker2Input, adapter2)
+        // Set up search functionality with separate view models
+        setupStockSearch(ticker1Input, adapter1, stockSearchViewModel1)
+        setupStockSearch(ticker2Input, adapter2, stockSearchViewModel2)
 
         // Set up item click listeners
         ticker1Input.setOnItemClickListener { _, _, position, _ ->
@@ -302,46 +312,116 @@ class MainActivity : AppCompatActivity() {
                 
                 val item = getItem(position)
                 if (item != null) {
-                    (view as TextView).text = "${item.name} (${item.symbol})"
+                    // For the input field, show the ticker first
+                    (view as TextView).text = "${item.symbol} - ${item.name}"
                 }
                 
                 return view
             }
-        }
-    }
 
-    private fun setupStockSearch(input: MaterialAutoCompleteTextView, adapter: ArrayAdapter<StockSearchResult>) {
-        lifecycleScope.launch {
-            stockSearchViewModel.searchState.collect { state ->
-                when (state) {
-                    is SearchState.Loading -> {
-                        input.setCompoundDrawablesWithIntrinsicBounds(0, 0, android.R.drawable.ic_popup_sync, 0)
+            override fun getDropDownView(position: Int, convertView: View?, parent: ViewGroup): View {
+                val view = convertView ?: LayoutInflater.from(context)
+                    .inflate(R.layout.dropdown_item, parent, false)
+                
+                val item = getItem(position)
+                if (item != null) {
+                    // For the dropdown items, show more detailed information
+                    (view as TextView).text = "${item.symbol} - ${item.name}"
+                }
+                
+                return view
+            }
+
+            override fun getFilter(): Filter {
+                return object : Filter() {
+                    @Suppress("UNCHECKED_CAST")
+                    override fun performFiltering(constraint: CharSequence?): FilterResults {
+                        val filterResults = FilterResults()
+                        filterResults.values = mutableListOf<StockSearchResult>()
+                        filterResults.count = 0
+                        return filterResults
                     }
-                    is SearchState.Success -> {
-                        input.setCompoundDrawablesWithIntrinsicBounds(0, 0, 0, 0)
-                        adapter.clear()
-                        if (state.results.isNotEmpty()) {
-                            adapter.addAll(state.results)
-                            if (input.hasFocus()) {
-                                input.post {
-                                    input.showDropDown()
-                                }
-                            }
-                        } else {
-                            input.dismissDropDown()
-                        }
-                    }
-                    is SearchState.Error -> {
-                        input.setCompoundDrawablesWithIntrinsicBounds(0, 0, 0, 0)
-                        Toast.makeText(this@MainActivity, state.message, Toast.LENGTH_SHORT).show()
+
+                    @Suppress("UNCHECKED_CAST")
+                    override fun publishResults(constraint: CharSequence?, results: FilterResults?) {
+                        // Do nothing - we handle filtering through the ViewModel
                     }
                 }
             }
         }
+    }
 
+    private fun setupStockSearch(
+        input: MaterialAutoCompleteTextView, 
+        adapter: ArrayAdapter<StockSearchResult>,
+        viewModel: StockSearchViewModel
+    ) {
+        Log.d(TAG, "Setting up search for input: ${input.id}")
+        
+        // Ensure the input is set up correctly
+        input.threshold = 2  // Start showing suggestions after 2 characters
+        input.setAdapter(adapter)  // Make sure adapter is set
+        
+        // Create a separate coroutine scope for this input
+        val stateCollectionJob = lifecycleScope.launch {
+            viewModel.searchState
+                .collect { state ->
+                    Log.d(TAG, "Search state changed for input ${input.id}: $state")
+                    when (state) {
+                        is SearchState.Loading -> {
+                            Log.d(TAG, "Loading state for input ${input.id}")
+                        }
+                        is SearchState.Success -> {
+                            Log.d(TAG, "Success state for input ${input.id}, results: ${state.results}")
+                            adapter.clear()
+                            adapter.addAll(state.results)
+                            adapter.notifyDataSetChanged()
+                            
+                            if (state.results.isNotEmpty() && input.text.isNotEmpty()) {
+                                input.post {
+                                    if (input.hasFocus()) {
+                                        Log.d(TAG, "Showing dropdown for input ${input.id}")
+                                        input.showDropDown()
+                                    }
+                                }
+                            }
+                        }
+                        is SearchState.Error -> {
+                            Log.e(TAG, "Error state for input ${input.id}: ${state.message}")
+                            adapter.clear()
+                            adapter.notifyDataSetChanged()
+                        }
+                    }
+                }
+        }
+
+        var textChangeJob: Job? = null
+        
         input.doAfterTextChanged { text ->
-            val query = text?.toString()?.trim() ?: ""
-            stockSearchViewModel.search(query)
+            Log.d(TAG, "Text changed in input ${input.id}: $text")
+            textChangeJob?.cancel()
+            
+            if (text.isNullOrEmpty()) {
+                Log.d(TAG, "Clearing adapter for input ${input.id}")
+                adapter.clear()
+                adapter.notifyDataSetChanged()
+                input.dismissDropDown()
+                return@doAfterTextChanged
+            }
+            
+            textChangeJob = lifecycleScope.launch {
+                delay(300) // Debounce time
+                Log.d(TAG, "Searching for: $text")
+                viewModel.search(text.toString())
+            }
+        }
+
+        input.setOnFocusChangeListener { _, hasFocus ->
+            Log.d(TAG, "Focus changed for input ${input.id}, hasFocus: $hasFocus")
+            if (hasFocus && input.text.isNotEmpty() && adapter.count > 0) {
+                Log.d(TAG, "Showing dropdown on focus gain")
+                input.post { input.showDropDown() }
+            }
         }
     }
 

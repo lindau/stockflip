@@ -159,7 +159,17 @@ object YahooFinanceService {
             if (query.length < 2) return@withContext emptyList()
             
             val encodedQuery = URLEncoder.encode(query, "UTF-8")
-            val url = "$SEARCH_URL?q=$encodedQuery&quotesCount=50&lang=en&region=SE&enableFuzzyQuery=true&type=equity&newsCount=0&enableEnhancedTrivialQuery=true&exchange=STO"
+            val url = "$SEARCH_URL?q=$encodedQuery" +
+                "&quotesCount=50" +
+                "&lang=en" +
+                "&region=SE" +
+                "&enableFuzzyQuery=false" +
+                "&type=equity" +
+                "&newsCount=0" +
+                "&enableEnhancedTrivialQuery=false" +
+                "&exchange=STO" +
+                "&fields=symbol,shortname,exchange,quoteType,longname,typeDisp,market"
+
             Log.d(TAG, "Searching stocks with URL: $url")
             
             val client = OkHttpClient.Builder()
@@ -193,15 +203,16 @@ object YahooFinanceService {
             val results = mutableListOf<StockSearchResult>()
             for (i in 0 until quotes.length()) {
                 val quote = quotes.getJSONObject(i)
-                if (quote.has("symbol") && quote.has("shortname")) {
+                if (quote.has("symbol")) {
                     val quoteType = quote.optString("quoteType", "")
                     val symbol = quote.getString("symbol")
-                    val name = quote.getString("shortname")
+                    val name = quote.optString("shortname") ?: 
+                             quote.optString("longname") ?: 
+                             symbol
                     val exchange = quote.optString("exchange", "")
                     val typeDisp = quote.optString("typeDisp", "")
                     val market = quote.optString("market", "")
                     
-                    // Only include stocks and filter out unwanted types
                     if (isValidStock(quoteType, symbol, name, typeDisp)) {
                         val displayName = buildDisplayName(name, exchange, market)
                         results.add(
@@ -215,14 +226,6 @@ object YahooFinanceService {
                 }
             }
             
-            // Improved sorting with better prioritization of Swedish stocks
-            results.sortWith(
-                compareBy<StockSearchResult> { !it.isSwedish }  // Swedish stocks first
-                .thenBy { !it.name.contains(query, ignoreCase = true) }  // Name matches next
-                .thenBy { !it.symbol.contains(query, ignoreCase = true) }  // Symbol matches next
-                .thenBy { it.name }  // Finally alphabetically
-            )
-            
             Log.d(TAG, "Found ${results.size} stocks matching query: $query")
             results
             
@@ -233,7 +236,6 @@ object YahooFinanceService {
     }
 
     private fun isValidStock(quoteType: String, symbol: String, name: String, typeDisp: String): Boolean {
-        // Filter out unwanted types
         if (quoteType !in setOf("EQUITY", "")) return false
         if (symbol.contains("^") || symbol.contains("=")) return false
         if (name.contains("Fund", ignoreCase = true)) return false

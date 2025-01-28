@@ -24,6 +24,8 @@ class StockRepository {
         emit(SearchState.Loading)
         
         try {
+            Log.d(TAG, "Searching for query: $query")
+            
             // Check cache first
             val cachedEntry = cache[query]
             if (cachedEntry != null && !isCacheExpired(cachedEntry.timestamp)) {
@@ -32,14 +34,47 @@ class StockRepository {
                 return@flow
             }
             
-            // Perform search
-            val results = YahooFinanceService.searchStocks(query)
+            // Prepare query - handle both ticker and name searches
+            val searchQuery = when {
+                query.contains(".ST", ignoreCase = true) -> query.uppercase()
+                query.contains("-", ignoreCase = true) -> "${query.uppercase()}.ST"
+                query.all { it.isLetterOrDigit() } -> query.uppercase() // Handle pure ticker searches
+                else -> query
+            }
             
-            // Sort results (Swedish stocks first, then by relevance)
+            Log.d(TAG, "Modified search query: $searchQuery")
+            
+            // Perform search
+            val results = YahooFinanceService.searchStocks(searchQuery)
+            Log.d(TAG, "Received ${results.size} results from YahooFinanceService")
+            
+            // Enhanced sorting logic that handles both ticker and name searches
+            val upperQuery = query.uppercase()
             val sortedResults = results.sortedWith(
-                compareByDescending<StockSearchResult> { it.isSwedish }
-                    .thenBy { it.symbol }
+                compareByDescending<StockSearchResult> { 
+                    // First priority: Exact ticker matches
+                    it.symbol == upperQuery || 
+                    it.symbol == "$upperQuery.ST" || 
+                    it.symbol.removeSuffix(".ST") == upperQuery ||
+                    it.symbol.replace("-", "") == upperQuery.replace("-", "")
+                }
+                .thenByDescending { it.isSwedish } // Second priority: Swedish stocks
+                .thenByDescending { 
+                    // Third priority: Starts with matches (ticker)
+                    it.symbol.startsWith(upperQuery) || 
+                    it.symbol.removeSuffix(".ST").startsWith(upperQuery) ||
+                    it.symbol.replace("-", "").startsWith(upperQuery.replace("-", ""))
+                }
+                .thenByDescending {
+                    // Fourth priority: Name matches
+                    it.name.equals(query, ignoreCase = true) ||
+                    it.name.startsWith(query, ignoreCase = true) ||
+                    it.name.contains(query, ignoreCase = true)
+                }
+                .thenBy { it.symbol } // Finally sort alphabetically by symbol
             )
+
+            Log.d(TAG, "Sorted results: ${sortedResults.map { "${it.symbol} (${it.name})" }}")
 
             // Cache results
             cache[query] = CacheEntry(sortedResults, System.currentTimeMillis())
