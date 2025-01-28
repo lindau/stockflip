@@ -505,18 +505,6 @@
       jars="/Users/johanlindau/.gradle/caches/modules-2/files-2.1/com.squareup.okhttp3/okhttp/4.9.0/8e17601d3bdc8cf57902c154de021931d2c27c1/okhttp-4.9.0.jar"
       resolved="com.squareup.okhttp3:okhttp:4.9.0"/>
   <library
-      name="org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:1.7.1@jar"
-      jars="/Users/johanlindau/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlinx/kotlinx-coroutines-core-jvm/1.7.1/63a0779cf668e2a47d13fda7c3b0c4f8dc7762f4/kotlinx-coroutines-core-jvm-1.7.1.jar"
-      resolved="org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:1.7.1"/>
-  <library
-      name="org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.1@jar"
-      jars="/Users/johanlindau/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlinx/kotlinx-coroutines-android/1.7.1/c2d86b569f10b7fc7e28d3f50c0eed97897d77a7/kotlinx-coroutines-android-1.7.1.jar"
-      resolved="org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.1"/>
-  <library
-      name="org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.22@jar"
-      jars="/Users/johanlindau/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-stdlib-jdk8/1.8.22/b25c86d47d6b962b9cf0f8c3f320c8a10eea3dd1/kotlin-stdlib-jdk8-1.8.22.jar"
-      resolved="org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.22"/>
-  <library
       name="androidx.cursoradapter:cursoradapter:1.0.0@aar"
       jars="/Users/johanlindau/.gradle/caches/transforms-3/07cc973b09c3c21cb2e5ef0f74727336/transformed/cursoradapter-1.0.0/jars/classes.jar"
       resolved="androidx.cursoradapter:cursoradapter:1.0.0"
@@ -663,10 +651,6 @@
       jars="/Users/johanlindau/.gradle/caches/modules-2/files-2.1/com.squareup.okio/okio/2.8.0/49b64e09d81c0cc84b267edd0c2fd7df5a64c78c/okio-jvm-2.8.0.jar"
       resolved="com.squareup.okio:okio:2.8.0"/>
   <library
-      name="org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.22@jar"
-      jars="/Users/johanlindau/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-stdlib-jdk7/1.8.22/4dabb8248310d833bb6a8b516024a91fd3d275c/kotlin-stdlib-jdk7-1.8.22.jar"
-      resolved="org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.22"/>
-  <library
       name="org.jetbrains.kotlin:kotlin-stdlib:1.9.22@jar"
       jars="/Users/johanlindau/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-stdlib/1.9.22/d6c44cd08d8f3f9bece8101216dbe6553365c6e3/kotlin-stdlib-1.9.22.jar"
       resolved="org.jetbrains.kotlin:kotlin-stdlib:1.9.22"/>
@@ -806,6 +790,71 @@
       name=":@@:app::debug"
       project=":app"/>
   <library
+      name="org.jetbrains.kotlin:kotlin-test-junit:1.9.0@jar"
+      jars="/Users/johanlindau/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-test-junit/1.9.0/f106f1676ea59098e42e209709064c6e45b2913e/kotlin-test-junit-1.9.0.jar"
+      resolved="org.jetbrains.kotlin:kotlin-test-junit:1.9.0"/>
+  <library
+      name="org.jetbrains.kotlin:kotlin-test:1.9.0@jar"
+      jars="/Users/johanlindau/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-test/1.9.0/eb12bde76a140d37b77a5d1fe4c68abcdc986dc4/kotlin-test-1.9.0.jar"
+      resolved="org.jetbrains.kotlin:kotlin-test:1.9.0"/>
+  <library
+      name="org.jetbrains.kotlinx:kotlinx-coroutines-test-jvm:1.7.3@jar"
+      jars="/Users/johanlindau/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlinx/kotlinx-coroutines-test-jvm/1.7.3/89e34400f452dab68fbb3caa66d854c89aaafa07/kotlinx-coroutines-test-jvm-1.7.3.jar"
+      resolved="org.jetbrains.kotlinx:kotlinx-coroutines-test-jvm:1.7.3"/>
+  <library
+      name="app.cash.turbine:turbine-jvm:1.0.0@jar"
+      jars="/Users/johanlindau/.gradle/caches/modules-2/files-2.1/app.cash.turbine/turbine-jvm/1.0.0/677fb6923dd18dc4cf4b92564e07815927d13d49/Turbine-jvm.jar"
+      resolved="app.cash.turbine:turbine-jvm:1.0.0"/>
+  <library
+      name="org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:1.7.3@jar"
+      jars="/Users/johanlindau/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlinx/kotlinx-coroutines-core-jvm/1.7.3/2b09627576f0989a436a00a4a54b55fa5026fb86/kotlinx-coroutines-core-jvm-1.7.3.jar"
+      resolved="org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:1.7.3"/>
+  <library
+      name="org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3@jar"
+      jars="/Users/johanlindau/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlinx/kotlinx-coroutines-android/1.7.3/38d9cad3a0b03a10453b56577984bdeb48edeed5/kotlinx-coroutines-android-1.7.3.jar"
+      resolved="org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3"/>
+  <library
+      name="io.mockk:mockk-jvm:1.13.8@jar"
+      jars="/Users/johanlindau/.gradle/caches/modules-2/files-2.1/io.mockk/mockk-jvm/1.13.8/eac6861e0fe27adfd0bdf1109893b91806105cba/mockk-jvm-1.13.8.jar"
+      resolved="io.mockk:mockk-jvm:1.13.8"/>
+  <library
+      name="io.mockk:mockk-dsl-jvm:1.13.8@jar"
+      jars="/Users/johanlindau/.gradle/caches/modules-2/files-2.1/io.mockk/mockk-dsl-jvm/1.13.8/221f6638f7b4216b08266e6ab826f22dff46e0fa/mockk-dsl-jvm-1.13.8.jar"
+      resolved="io.mockk:mockk-dsl-jvm:1.13.8"/>
+  <library
+      name="io.mockk:mockk-agent-jvm:1.13.8@jar"
+      jars="/Users/johanlindau/.gradle/caches/modules-2/files-2.1/io.mockk/mockk-agent-jvm/1.13.8/79d1017369f8ce49ac5cc08400c6b652d263490b/mockk-agent-jvm-1.13.8.jar"
+      resolved="io.mockk:mockk-agent-jvm:1.13.8"/>
+  <library
+      name="io.mockk:mockk-agent-api-jvm:1.13.8@jar"
+      jars="/Users/johanlindau/.gradle/caches/modules-2/files-2.1/io.mockk/mockk-agent-api-jvm/1.13.8/be15c6ed2a3a5c4660972da44ebe7b01add2d72e/mockk-agent-api-jvm-1.13.8.jar"
+      resolved="io.mockk:mockk-agent-api-jvm:1.13.8"/>
+  <library
+      name="io.mockk:mockk-core-jvm:1.13.8@jar"
+      jars="/Users/johanlindau/.gradle/caches/modules-2/files-2.1/io.mockk/mockk-core-jvm/1.13.8/4d7b2de28a0384827272fef9266172d73c3bbd36/mockk-core-jvm-1.13.8.jar"
+      resolved="io.mockk:mockk-core-jvm:1.13.8"/>
+  <library
+      name="org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.9.10@jar"
+      jars="/Users/johanlindau/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-stdlib-jdk8/1.9.10/c7510d64a83411a649c76f2778304ddf71d7437b/kotlin-stdlib-jdk8-1.9.10.jar"
+      resolved="org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.9.10"/>
+  <library
+      name="androidx.arch.core:core-testing:2.2.0@aar"
+      jars="/Users/johanlindau/.gradle/caches/transforms-3/8f401de4744f369c6434588e2578243d/transformed/core-testing-2.2.0/jars/classes.jar"
+      resolved="androidx.arch.core:core-testing:2.2.0"
+      folder="/Users/johanlindau/.gradle/caches/transforms-3/8f401de4744f369c6434588e2578243d/transformed/core-testing-2.2.0"
+      manifest="AndroidManifest.xml"
+      resFolder="res"
+      assetsFolder="assets"
+      lintJar="lint.jar"
+      publicResources="public.txt"
+      symbolFile="R.txt"
+      externalAnnotations="annotations.zip"
+      proguardRules="proguard.txt"/>
+  <library
+      name="org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.9.10@jar"
+      jars="/Users/johanlindau/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-stdlib-jdk7/1.9.10/bc5bfc2690338defd5195b05c57562f2194eeb10/kotlin-stdlib-jdk7-1.9.10.jar"
+      resolved="org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.9.10"/>
+  <library
       name="junit:junit:4.13.2@jar"
       jars="/Users/johanlindau/.gradle/caches/modules-2/files-2.1/junit/junit/4.13.2/8ac9e16d933b6fb43bc7f576336b8f4d7eb5ba12/junit-4.13.2.jar"
       resolved="junit:junit:4.13.2"/>
@@ -813,4 +862,52 @@
       name="org.hamcrest:hamcrest-core:1.3@jar"
       jars="/Users/johanlindau/.gradle/caches/modules-2/files-2.1/org.hamcrest/hamcrest-core/1.3/42a25dc3219429f0e5d060061f71acb49bf010a0/hamcrest-core-1.3.jar"
       resolved="org.hamcrest:hamcrest-core:1.3"/>
+  <library
+      name="org.mockito:mockito-core:2.25.0@jar"
+      jars="/Users/johanlindau/.gradle/caches/modules-2/files-2.1/org.mockito/mockito-core/2.25.0/1fcf2f6944d69b6f39cd579718d8b5395a97836b/mockito-core-2.25.0.jar"
+      resolved="org.mockito:mockito-core:2.25.0"/>
+  <library
+      name="org.objenesis:objenesis:3.3@jar"
+      jars="/Users/johanlindau/.gradle/caches/modules-2/files-2.1/org.objenesis/objenesis/3.3/1049c09f1de4331e8193e579448d0916d75b7631/objenesis-3.3.jar"
+      resolved="org.objenesis:objenesis:3.3"/>
+  <library
+      name="net.bytebuddy:byte-buddy:1.14.6@jar"
+      jars="/Users/johanlindau/.gradle/caches/modules-2/files-2.1/net.bytebuddy/byte-buddy/1.14.6/316c1b1f3208a9d716c4419ed2080443235f7d1/byte-buddy-1.14.6.jar"
+      resolved="net.bytebuddy:byte-buddy:1.14.6"/>
+  <library
+      name="net.bytebuddy:byte-buddy-agent:1.14.6@jar"
+      jars="/Users/johanlindau/.gradle/caches/modules-2/files-2.1/net.bytebuddy/byte-buddy-agent/1.14.6/46e2545d7a97b6ccb195621650c5957279eb4812/byte-buddy-agent-1.14.6.jar"
+      resolved="net.bytebuddy:byte-buddy-agent:1.14.6"/>
+  <library
+      name="org.jetbrains.kotlin:kotlin-reflect:1.9.10@jar"
+      jars="/Users/johanlindau/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-reflect/1.9.10/dd37cb80926cb4ed427b606502e6f6f063d38fb5/kotlin-reflect-1.9.10.jar"
+      resolved="org.jetbrains.kotlin:kotlin-reflect:1.9.10"/>
+  <library
+      name="org.junit.jupiter:junit-jupiter-params:5.8.2@jar"
+      jars="/Users/johanlindau/.gradle/caches/modules-2/files-2.1/org.junit.jupiter/junit-jupiter-params/5.8.2/ddeafe92fc263f895bfb73ffeca7fd56e23c2cce/junit-jupiter-params-5.8.2.jar"
+      resolved="org.junit.jupiter:junit-jupiter-params:5.8.2"/>
+  <library
+      name="org.junit.jupiter:junit-jupiter-engine:5.8.2@jar"
+      jars="/Users/johanlindau/.gradle/caches/modules-2/files-2.1/org.junit.jupiter/junit-jupiter-engine/5.8.2/c598b4328d2f397194d11df3b1648d68d7d990e3/junit-jupiter-engine-5.8.2.jar"
+      resolved="org.junit.jupiter:junit-jupiter-engine:5.8.2"/>
+  <library
+      name="org.junit.jupiter:junit-jupiter-api:5.8.2@jar"
+      jars="/Users/johanlindau/.gradle/caches/modules-2/files-2.1/org.junit.jupiter/junit-jupiter-api/5.8.2/4c21029217adf07e4c0d0c5e192b6bf610c94bdc/junit-jupiter-api-5.8.2.jar"
+      resolved="org.junit.jupiter:junit-jupiter-api:5.8.2"/>
+  <library
+      name="org.junit.platform:junit-platform-engine:1.8.2@jar"
+      jars="/Users/johanlindau/.gradle/caches/modules-2/files-2.1/org.junit.platform/junit-platform-engine/1.8.2/b737de09f19864bd136805c84df7999a142fec29/junit-platform-engine-1.8.2.jar"
+      resolved="org.junit.platform:junit-platform-engine:1.8.2"/>
+  <library
+      name="org.junit.platform:junit-platform-commons:1.8.2@jar"
+      jars="/Users/johanlindau/.gradle/caches/modules-2/files-2.1/org.junit.platform/junit-platform-commons/1.8.2/32c8b8617c1342376fd5af2053da6410d8866861/junit-platform-commons-1.8.2.jar"
+      resolved="org.junit.platform:junit-platform-commons:1.8.2"/>
+  <library
+      name="org.junit.jupiter:junit-jupiter:5.8.2@jar"
+      jars="/Users/johanlindau/.gradle/caches/modules-2/files-2.1/org.junit.jupiter/junit-jupiter/5.8.2/5a817b1e63f1217e5c586090c45e681281f097ad/junit-jupiter-5.8.2.jar"
+      resolved="org.junit.jupiter:junit-jupiter:5.8.2"/>
+  <library
+      name="org.opentest4j:opentest4j:1.2.0@jar"
+      jars="/Users/johanlindau/.gradle/caches/modules-2/files-2.1/org.opentest4j/opentest4j/1.2.0/28c11eb91f9b6d8e200631d46e20a7f407f2a046/opentest4j-1.2.0.jar"
+      resolved="org.opentest4j:opentest4j:1.2.0"/>
 </libraries>

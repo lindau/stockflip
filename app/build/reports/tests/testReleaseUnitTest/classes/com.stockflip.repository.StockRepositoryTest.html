@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<meta http-equiv="x-ua-compatible" content="IE=edge"/>
+<title>Test results - Class com.stockflip.repository.StockRepositoryTest</title>
+<link href="../css/base-style.css" rel="stylesheet" type="text/css"/>
+<link href="../css/style.css" rel="stylesheet" type="text/css"/>
+<script src="../js/report.js" type="text/javascript"></script>
+</head>
+<body>
+<div id="content">
+<h1>Class com.stockflip.repository.StockRepositoryTest</h1>
+<div class="breadcrumbs">
+<a href="../index.html">all</a> &gt; 
+<a href="../packages/com.stockflip.repository.html">com.stockflip.repository</a> &gt; StockRepositoryTest</div>
+<div id="summary">
+<table>
+<tr>
+<td>
+<div class="summaryGroup">
+<table>
+<tr>
+<td>
+<div class="infoBox" id="tests">
+<div class="counter">6</div>
+<p>tests</p>
+</div>
+</td>
+<td>
+<div class="infoBox" id="failures">
+<div class="counter">6</div>
+<p>failures</p>
+</div>
+</td>
+<td>
+<div class="infoBox" id="ignored">
+<div class="counter">0</div>
+<p>ignored</p>
+</div>
+</td>
+<td>
+<div class="infoBox" id="duration">
+<div class="counter">0.632s</div>
+<p>duration</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</td>
+<td>
+<div class="infoBox failures" id="successRate">
+<div class="percent">0%</div>
+<p>successful</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div id="tabs">
+<ul class="tabLinks">
+<li>
+<a href="#tab0">Failed tests</a>
+</li>
+<li>
+<a href="#tab1">Tests</a>
+</li>
+<li>
+<a href="#tab2">Standard error</a>
+</li>
+</ul>
+<div id="tab0" class="tab">
+<h2>Failed tests</h2>
+<div class="test">
+<a name="partial search returns relevant results"></a>
+<h3 class="failures">partial search returns relevant results</h3>
+<span class="code">
+<pre>java.lang.RuntimeException: Method e in android.util.Log not mocked. See https://developer.android.com/r/studio-ui/build/not-mocked for details.
+	at android.util.Log.e(Log.java)
+	at com.stockflip.YahooFinanceService$searchStocks$2.invokeSuspend(YahooFinanceService.kt:230)
+	at _COROUTINE._BOUNDARY._(CoroutineDebugging.kt:46)
+	at com.stockflip.repository.StockRepositoryTest$partial search returns relevant results$1$1.invokeSuspend(StockRepositoryTest.kt:136)
+	at io.mockk.impl.eval.RecordedBlockEvaluator$record$block$2$1.invokeSuspend(RecordedBlockEvaluator.kt:27)
+	at io.mockk.InternalPlatformDsl$runCoroutine$1.invokeSuspend(InternalPlatformDsl.kt:23)
+Caused by: java.lang.RuntimeException: Method e in android.util.Log not mocked. See https://developer.android.com/r/studio-ui/build/not-mocked for details.
+	at android.util.Log.e(Log.java)
+	at com.stockflip.YahooFinanceService$searchStocks$2.invokeSuspend(YahooFinanceService.kt:230)
+	at kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:33)
+	at kotlinx.coroutines.DispatchedTask.run(DispatchedTask.kt:108)
+	at kotlinx.coroutines.internal.LimitedDispatcher$Worker.run(LimitedDispatcher.kt:115)
+	at kotlinx.coroutines.scheduling.TaskImpl.run(Tasks.kt:103)
+	at kotlinx.coroutines.scheduling.CoroutineScheduler.runSafely(CoroutineScheduler.kt:584)
+	at kotlinx.coroutines.scheduling.CoroutineScheduler$Worker.executeTask(CoroutineScheduler.kt:793)
+	at kotlinx.coroutines.scheduling.CoroutineScheduler$Worker.runWorker(CoroutineScheduler.kt:697)
+	at kotlinx.coroutines.scheduling.CoroutineScheduler$Worker.run(CoroutineScheduler.kt:684)
+</pre>
+</span>
+</div>
+<div class="test">
+<a name="search handles empty results"></a>
+<h3 class="failures">search handles empty results</h3>
+<span class="code">
+<pre>java.lang.RuntimeException: Method e in android.util.Log not mocked. See https://developer.android.com/r/studio-ui/build/not-mocked for details.
+	at android.util.Log.e(Log.java)
+	at com.stockflip.YahooFinanceService$searchStocks$2.invokeSuspend(YahooFinanceService.kt:230)
+	at _COROUTINE._BOUNDARY._(CoroutineDebugging.kt:46)
+	at com.stockflip.repository.StockRepositoryTest$search handles empty results$1$1.invokeSuspend(StockRepositoryTest.kt:98)
+	at io.mockk.impl.eval.RecordedBlockEvaluator$record$block$2$1.invokeSuspend(RecordedBlockEvaluator.kt:27)
+	at io.mockk.InternalPlatformDsl$runCoroutine$1.invokeSuspend(InternalPlatformDsl.kt:23)
+Caused by: java.lang.RuntimeException: Method e in android.util.Log not mocked. See https://developer.android.com/r/studio-ui/build/not-mocked for details.
+	at android.util.Log.e(Log.java)
+	at com.stockflip.YahooFinanceService$searchStocks$2.invokeSuspend(YahooFinanceService.kt:230)
+	at kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:33)
+	at kotlinx.coroutines.DispatchedTask.run(DispatchedTask.kt:108)
+	at kotlinx.coroutines.internal.LimitedDispatcher$Worker.run(LimitedDispatcher.kt:115)
+	at kotlinx.coroutines.scheduling.TaskImpl.run(Tasks.kt:103)
+	at kotlinx.coroutines.scheduling.CoroutineScheduler.runSafely(CoroutineScheduler.kt:584)
+	at kotlinx.coroutines.scheduling.CoroutineScheduler$Worker.executeTask(CoroutineScheduler.kt:793)
+	at kotlinx.coroutines.scheduling.CoroutineScheduler$Worker.runWorker(CoroutineScheduler.kt:697)
+	at kotlinx.coroutines.scheduling.CoroutineScheduler$Worker.run(CoroutineScheduler.kt:684)
+</pre>
+</span>
+</div>
+<div class="test">
+<a name="search handles network error"></a>
+<h3 class="failures">search handles network error</h3>
+<span class="code">
+<pre>java.lang.RuntimeException: Method e in android.util.Log not mocked. See https://developer.android.com/r/studio-ui/build/not-mocked for details.
+	at android.util.Log.e(Log.java)
+	at com.stockflip.YahooFinanceService$searchStocks$2.invokeSuspend(YahooFinanceService.kt:230)
+	at _COROUTINE._BOUNDARY._(CoroutineDebugging.kt:46)
+	at com.stockflip.repository.StockRepositoryTest$search handles network error$1$1.invokeSuspend(StockRepositoryTest.kt:85)
+	at io.mockk.impl.eval.RecordedBlockEvaluator$record$block$2$1.invokeSuspend(RecordedBlockEvaluator.kt:27)
+	at io.mockk.InternalPlatformDsl$runCoroutine$1.invokeSuspend(InternalPlatformDsl.kt:23)
+Caused by: java.lang.RuntimeException: Method e in android.util.Log not mocked. See https://developer.android.com/r/studio-ui/build/not-mocked for details.
+	at android.util.Log.e(Log.java)
+	at com.stockflip.YahooFinanceService$searchStocks$2.invokeSuspend(YahooFinanceService.kt:230)
+	at kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:33)
+	at kotlinx.coroutines.DispatchedTask.run(DispatchedTask.kt:108)
+	at kotlinx.coroutines.internal.LimitedDispatcher$Worker.run(LimitedDispatcher.kt:115)
+	at kotlinx.coroutines.scheduling.TaskImpl.run(Tasks.kt:103)
+	at kotlinx.coroutines.scheduling.CoroutineScheduler.runSafely(CoroutineScheduler.kt:584)
+	at kotlinx.coroutines.scheduling.CoroutineScheduler$Worker.executeTask(CoroutineScheduler.kt:793)
+	at kotlinx.coroutines.scheduling.CoroutineScheduler$Worker.runWorker(CoroutineScheduler.kt:697)
+	at kotlinx.coroutines.scheduling.CoroutineScheduler$Worker.run(CoroutineScheduler.kt:684)
+</pre>
+</span>
+</div>
+<div class="test">
+<a name="search prioritizes Swedish stocks"></a>
+<h3 class="failures">search prioritizes Swedish stocks</h3>
+<span class="code">
+<pre>java.lang.RuntimeException: Method e in android.util.Log not mocked. See https://developer.android.com/r/studio-ui/build/not-mocked for details.
+	at android.util.Log.e(Log.java)
+	at com.stockflip.YahooFinanceService$searchStocks$2.invokeSuspend(YahooFinanceService.kt:230)
+	at _COROUTINE._BOUNDARY._(CoroutineDebugging.kt:46)
+	at com.stockflip.repository.StockRepositoryTest$search prioritizes Swedish stocks$1$1.invokeSuspend(StockRepositoryTest.kt:116)
+	at io.mockk.impl.eval.RecordedBlockEvaluator$record$block$2$1.invokeSuspend(RecordedBlockEvaluator.kt:27)
+	at io.mockk.InternalPlatformDsl$runCoroutine$1.invokeSuspend(InternalPlatformDsl.kt:23)
+Caused by: java.lang.RuntimeException: Method e in android.util.Log not mocked. See https://developer.android.com/r/studio-ui/build/not-mocked for details.
+	at android.util.Log.e(Log.java)
+	at com.stockflip.YahooFinanceService$searchStocks$2.invokeSuspend(YahooFinanceService.kt:230)
+	at kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:33)
+	at kotlinx.coroutines.DispatchedTask.run(DispatchedTask.kt:108)
+	at kotlinx.coroutines.internal.LimitedDispatcher$Worker.run(LimitedDispatcher.kt:115)
+	at kotlinx.coroutines.scheduling.TaskImpl.run(Tasks.kt:103)
+	at kotlinx.coroutines.scheduling.CoroutineScheduler.runSafely(CoroutineScheduler.kt:584)
+	at kotlinx.coroutines.scheduling.CoroutineScheduler$Worker.executeTask(CoroutineScheduler.kt:793)
+	at kotlinx.coroutines.scheduling.CoroutineScheduler$Worker.runWorker(CoroutineScheduler.kt:697)
+	at kotlinx.coroutines.scheduling.CoroutineScheduler$Worker.run(CoroutineScheduler.kt:684)
+</pre>
+</span>
+</div>
+<div class="test">
+<a name="search returns cached results within TTL"></a>
+<h3 class="failures">search returns cached results within TTL</h3>
+<span class="code">
+<pre>java.lang.RuntimeException: Method e in android.util.Log not mocked. See https://developer.android.com/r/studio-ui/build/not-mocked for details.
+	at android.util.Log.e(Log.java)
+	at com.stockflip.YahooFinanceService$searchStocks$2.invokeSuspend(YahooFinanceService.kt:230)
+	at _COROUTINE._BOUNDARY._(CoroutineDebugging.kt:46)
+	at com.stockflip.repository.StockRepositoryTest$search returns cached results within TTL$1$1.invokeSuspend(StockRepositoryTest.kt:33)
+	at io.mockk.impl.eval.RecordedBlockEvaluator$record$block$2$1.invokeSuspend(RecordedBlockEvaluator.kt:27)
+	at io.mockk.InternalPlatformDsl$runCoroutine$1.invokeSuspend(InternalPlatformDsl.kt:23)
+Caused by: java.lang.RuntimeException: Method e in android.util.Log not mocked. See https://developer.android.com/r/studio-ui/build/not-mocked for details.
+	at android.util.Log.e(Log.java)
+	at com.stockflip.YahooFinanceService$searchStocks$2.invokeSuspend(YahooFinanceService.kt:230)
+	at kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:33)
+	at kotlinx.coroutines.DispatchedTask.run(DispatchedTask.kt:108)
+	at kotlinx.coroutines.internal.LimitedDispatcher$Worker.run(LimitedDispatcher.kt:115)
+	at kotlinx.coroutines.scheduling.TaskImpl.run(Tasks.kt:103)
+	at kotlinx.coroutines.scheduling.CoroutineScheduler.runSafely(CoroutineScheduler.kt:584)
+	at kotlinx.coroutines.scheduling.CoroutineScheduler$Worker.executeTask(CoroutineScheduler.kt:793)
+	at kotlinx.coroutines.scheduling.CoroutineScheduler$Worker.runWorker(CoroutineScheduler.kt:697)
+	at kotlinx.coroutines.scheduling.CoroutineScheduler$Worker.run(CoroutineScheduler.kt:684)
+</pre>
+</span>
+</div>
+<div class="test">
+<a name="search returns fresh results after cache expiry"></a>
+<h3 class="failures">search returns fresh results after cache expiry</h3>
+<span class="code">
+<pre>java.lang.RuntimeException: Method e in android.util.Log not mocked. See https://developer.android.com/r/studio-ui/build/not-mocked for details.
+	at android.util.Log.e(Log.java)
+	at com.stockflip.YahooFinanceService$searchStocks$2.invokeSuspend(YahooFinanceService.kt:230)
+	at _COROUTINE._BOUNDARY._(CoroutineDebugging.kt:46)
+	at com.stockflip.repository.StockRepositoryTest$search returns fresh results after cache expiry$1$1.invokeSuspend(StockRepositoryTest.kt:61)
+	at io.mockk.impl.eval.RecordedBlockEvaluator$record$block$2$1.invokeSuspend(RecordedBlockEvaluator.kt:27)
+	at io.mockk.InternalPlatformDsl$runCoroutine$1.invokeSuspend(InternalPlatformDsl.kt:23)
+Caused by: java.lang.RuntimeException: Method e in android.util.Log not mocked. See https://developer.android.com/r/studio-ui/build/not-mocked for details.
+	at android.util.Log.e(Log.java)
+	at com.stockflip.YahooFinanceService$searchStocks$2.invokeSuspend(YahooFinanceService.kt:230)
+	at kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:33)
+	at kotlinx.coroutines.DispatchedTask.run(DispatchedTask.kt:108)
+	at kotlinx.coroutines.internal.LimitedDispatcher$Worker.run(LimitedDispatcher.kt:115)
+	at kotlinx.coroutines.scheduling.TaskImpl.run(Tasks.kt:103)
+	at kotlinx.coroutines.scheduling.CoroutineScheduler.runSafely(CoroutineScheduler.kt:584)
+	at kotlinx.coroutines.scheduling.CoroutineScheduler$Worker.executeTask(CoroutineScheduler.kt:793)
+	at kotlinx.coroutines.scheduling.CoroutineScheduler$Worker.runWorker(CoroutineScheduler.kt:697)
+	at kotlinx.coroutines.scheduling.CoroutineScheduler$Worker.run(CoroutineScheduler.kt:684)
+</pre>
+</span>
+</div>
+</div>
+<div id="tab1" class="tab">
+<h2>Tests</h2>
+<table>
+<thead>
+<tr>
+<th>Test</th>
+<th>Duration</th>
+<th>Result</th>
+</tr>
+</thead>
+<tr>
+<td class="failures">partial search returns relevant results</td>
+<td class="failures">0.002s</td>
+<td class="failures">failed</td>
+</tr>
+<tr>
+<td class="failures">search handles empty results</td>
+<td class="failures">0.002s</td>
+<td class="failures">failed</td>
+</tr>
+<tr>
+<td class="failures">search handles network error</td>
+<td class="failures">0.002s</td>
+<td class="failures">failed</td>
+</tr>
+<tr>
+<td class="failures">search prioritizes Swedish stocks</td>
+<td class="failures">0.002s</td>
+<td class="failures">failed</td>
+</tr>
+<tr>
+<td class="failures">search returns cached results within TTL</td>
+<td class="failures">0.003s</td>
+<td class="failures">failed</td>
+</tr>
+<tr>
+<td class="failures">search returns fresh results after cache expiry</td>
+<td class="failures">0.621s</td>
+<td class="failures">failed</td>
+</tr>
+</table>
+</div>
+<div id="tab2" class="tab">
+<h2>Standard error</h2>
+<span class="code">
+<pre>WARNING: A Java agent has been loaded dynamically (/Users/johanlindau/.gradle/caches/transforms-3/e6f27301e0d7f8f09b0d447044f232ae/transformed/jetified-byte-buddy-agent-1.14.6.jar)
+WARNING: If a serviceability tool is in use, please run with -XX:+EnableDynamicAgentLoading to hide this warning
+WARNING: If a serviceability tool is not in use, please run with -Djdk.instrument.traceUsage for more information
+WARNING: Dynamic loading of agents will be disallowed by default in a future release
+</pre>
+</span>
+</div>
+</div>
+<div id="footer">
+<p>
+<div>
+<label class="hidden" id="label-for-line-wrapping-toggle" for="line-wrapping-toggle">Wrap lines
+<input id="line-wrapping-toggle" type="checkbox" autocomplete="off"/>
+</label>
+</div>Generated by 
+<a href="http://www.gradle.org">Gradle 8.5</a> at 28 jan. 2025 09:23:45</p>
+</div>
+</div>
+</body>
+</html>

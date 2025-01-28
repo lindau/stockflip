@@ -12,12 +12,12 @@
                     <map id="android.settings.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS (used to start an activity)">
                         <location id="0"
                             file="${:app*debug*MAIN*sourceProvider*0*javaDir*0}/com/stockflip/StockPriceUpdater.kt"
-                            line="78"
+                            line="61"
                             column="34"
-                            startOffset="2793"
-                            endLine="78"
+                            startOffset="2246"
+                            endLine="61"
                             endColumn="94"
-                            endOffset="2853"/>
+                            endOffset="2306"/>
                     </map>
             </map>
     </map>
@@ -27,9 +27,33 @@
             boolean="true"/>
     </map>
     <map id="UnusedResources">
+        <location id="R.drawable.ic_notifications_off"
+            file="${:app*debug*MAIN*sourceProvider*0*resDir*0}/drawable/ic_notifications_off.xml"
+            line="2"
+            column="1"
+            startOffset="39"
+            endLine="10"
+            endColumn="10"
+            endOffset="739"/>
+        <location id="R.layout.dropdown_menu_item"
+            file="${:app*debug*MAIN*sourceProvider*0*resDir*0}/layout/dropdown_menu_item.xml"
+            line="2"
+            column="1"
+            startOffset="39"
+            endLine="8"
+            endColumn="62"
+            endOffset="330"/>
         <entry
             name="model"
-            string="attr[colorPrimaryVariant(R)],color[purple_200(U),black(U),teal_200(U),white(U),teal_700(U),ic_launcher_background(U),purple_700(U),purple_500(U)],drawable[ic_launcher_foreground(U)],id[notifyWhenEqualCheckbox(U),deleteButton(U),ticker1Input(U),priceDifferenceInput(U),addPairButton(U),stockNames(U),swipeRefreshLayout(U),stockSymbols(D),stockPairsList(U),priceInfo(U),notificationInfo(U),editButton(U),progressBar(U),ticker2Input(U),lastUpdateTime(U)],layout[item_stock_pair(U),activity_main(U),dialog_add_stock_pair(U)],mipmap[ic_launcher_round(U),ic_launcher(U)],string[app_name(U)],style[Theme_StockFlip(U),Widget_MaterialComponents_Button_TextButton(R),Theme_MaterialComponents_DayNight_DarkActionBar(R)],xml[data_extraction_rules(U),backup_rules(U)];19^20,1a^18,1c^6^9,1d^6^9,1f^21^8^7^4^3^5^2^0^1;;;"/>
+            string="attr[colorPrimary(R),textAppearanceTitleMedium(R),colorSurfaceVariant(R),colorControlNormal(R),textAppearanceBodyMedium(R),textAppearanceSubtitle1(E),textAppearanceBodyLarge(R),colorPrimaryVariant(R)],color[purple_200(U),notification_highlight(U),black(U),price_up(U),notification_active(U),teal_200(U),white(U),teal_700(U),ic_launcher_background(U),notification_inactive(U),purple_700(U),price_down(U),purple_500(U)],drawable[ic_arrow_downward(U),ic_notifications(U),ic_launcher_foreground(U),ic_compare_arrows(D),ic_notifications_off(D),ic_paid(U),ic_arrow_upward(U)],id[notifyWhenEqualCheckbox(U),searchInput(R),stockNames2(U),ticker1Input(U),priceDifferenceInput(U),priceDifference(U),addPairButton(U),stockNames(U),swipeRefreshLayout(U),priceInfo2(U),priceIndicator2(U),priceIndicator1(U),stockPairsList(U),priceInfo(U),notificationInfo(U),progressBar(U),ticker2Input(U),lastUpdateTime(U)],layout[dropdown_menu_item(D),item_stock_pair(U),activity_main(U),dialog_add_stock_pair(U),dropdown_item(U)],mipmap[ic_launcher_round(U),ic_launcher(U)],string[last_updated(U),app_name(U)],style[Widget_StockFlip_CardView(U),TextAppearance_StockFlip_BodyMedium(U),Theme_StockFlip(U),TextAppearance_StockFlip_TitleMedium(U),Widget_StockFlip_CardView_Dark(U),TextAppearance_StockFlip_BodyLarge(U),TextAppearance_Material3_BodyMedium(R),Widget_Material3_CardView_Elevated(R),TextAppearance_Material3_BodyLarge(R),Theme_Material3_DayNight(R),TextAppearance_Material3_TitleMedium(R),Widget_MaterialComponents_TextInputLayout_OutlinedBox_ExposedDropdownMenu(R),Widget_MaterialComponents_TextInputLayout_OutlinedBox(R)],xml[data_extraction_rules(U),backup_rules(U)];15^3,16^3,1a^3,1b^3,2e^5,2f^1^a^6^0^1b^15^4^e^2^16,30^2d,31^42^43,33^10^17,34^10^17,37^3e^e^8,38^3d^a,39^40^14^12^e^d^f^a^7^8^37^3a^3c^38^3b,3a^41^a,3b^3e^12,3c^3f^a;;;"/>
+        <location id="R.drawable.ic_compare_arrows"
+            file="${:app*debug*MAIN*sourceProvider*0*resDir*0}/drawable/ic_compare_arrows.xml"
+            line="2"
+            column="1"
+            startOffset="39"
+            endLine="10"
+            endColumn="10"
+            endOffset="384"/>
     </map>
 
 </incidents>

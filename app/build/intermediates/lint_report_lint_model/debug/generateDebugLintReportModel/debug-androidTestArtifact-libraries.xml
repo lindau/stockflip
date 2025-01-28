@@ -759,6 +759,51 @@
       name=":@@:app::debug"
       project=":app"/>
   <library
+      name="org.jetbrains.kotlin:kotlin-test-junit:1.9.0@jar"
+      jars="/Users/johanlindau/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-test-junit/1.9.0/f106f1676ea59098e42e209709064c6e45b2913e/kotlin-test-junit-1.9.0.jar"
+      resolved="org.jetbrains.kotlin:kotlin-test-junit:1.9.0"/>
+  <library
+      name="org.jetbrains.kotlin:kotlin-test:1.9.0@jar"
+      jars="/Users/johanlindau/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-test/1.9.0/eb12bde76a140d37b77a5d1fe4c68abcdc986dc4/kotlin-test-1.9.0.jar"
+      resolved="org.jetbrains.kotlin:kotlin-test:1.9.0"/>
+  <library
+      name="org.jetbrains.kotlinx:kotlinx-coroutines-test-jvm:1.7.3@jar"
+      jars="/Users/johanlindau/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlinx/kotlinx-coroutines-test-jvm/1.7.3/89e34400f452dab68fbb3caa66d854c89aaafa07/kotlinx-coroutines-test-jvm-1.7.3.jar"
+      resolved="org.jetbrains.kotlinx:kotlinx-coroutines-test-jvm:1.7.3"/>
+  <library
+      name="io.mockk:mockk-jvm:1.13.8@jar"
+      jars="/Users/johanlindau/.gradle/caches/modules-2/files-2.1/io.mockk/mockk-jvm/1.13.8/eac6861e0fe27adfd0bdf1109893b91806105cba/mockk-jvm-1.13.8.jar"
+      resolved="io.mockk:mockk-jvm:1.13.8"/>
+  <library
+      name="io.mockk:mockk-dsl-jvm:1.13.8@jar"
+      jars="/Users/johanlindau/.gradle/caches/modules-2/files-2.1/io.mockk/mockk-dsl-jvm/1.13.8/221f6638f7b4216b08266e6ab826f22dff46e0fa/mockk-dsl-jvm-1.13.8.jar"
+      resolved="io.mockk:mockk-dsl-jvm:1.13.8"/>
+  <library
+      name="io.mockk:mockk-agent-jvm:1.13.8@jar"
+      jars="/Users/johanlindau/.gradle/caches/modules-2/files-2.1/io.mockk/mockk-agent-jvm/1.13.8/79d1017369f8ce49ac5cc08400c6b652d263490b/mockk-agent-jvm-1.13.8.jar"
+      resolved="io.mockk:mockk-agent-jvm:1.13.8"/>
+  <library
+      name="io.mockk:mockk-agent-api-jvm:1.13.8@jar"
+      jars="/Users/johanlindau/.gradle/caches/modules-2/files-2.1/io.mockk/mockk-agent-api-jvm/1.13.8/be15c6ed2a3a5c4660972da44ebe7b01add2d72e/mockk-agent-api-jvm-1.13.8.jar"
+      resolved="io.mockk:mockk-agent-api-jvm:1.13.8"/>
+  <library
+      name="io.mockk:mockk-core-jvm:1.13.8@jar"
+      jars="/Users/johanlindau/.gradle/caches/modules-2/files-2.1/io.mockk/mockk-core-jvm/1.13.8/4d7b2de28a0384827272fef9266172d73c3bbd36/mockk-core-jvm-1.13.8.jar"
+      resolved="io.mockk:mockk-core-jvm:1.13.8"/>
+  <library
+      name="androidx.arch.core:core-testing:2.2.0@aar"
+      jars="/Users/johanlindau/.gradle/caches/transforms-3/8f401de4744f369c6434588e2578243d/transformed/core-testing-2.2.0/jars/classes.jar"
+      resolved="androidx.arch.core:core-testing:2.2.0"
+      folder="/Users/johanlindau/.gradle/caches/transforms-3/8f401de4744f369c6434588e2578243d/transformed/core-testing-2.2.0"
+      manifest="AndroidManifest.xml"
+      resFolder="res"
+      assetsFolder="assets"
+      lintJar="lint.jar"
+      publicResources="public.txt"
+      symbolFile="R.txt"
+      externalAnnotations="annotations.zip"
+      proguardRules="proguard.txt"/>
+  <library
       name="junit:junit:4.13.2@jar"
       jars="/Users/johanlindau/.gradle/caches/modules-2/files-2.1/junit/junit/4.13.2/8ac9e16d933b6fb43bc7f576336b8f4d7eb5ba12/junit-4.13.2.jar"
       resolved="junit:junit:4.13.2"/>
@@ -766,6 +811,54 @@
       name="org.hamcrest:hamcrest-core:1.3@jar"
       jars="/Users/johanlindau/.gradle/caches/modules-2/files-2.1/org.hamcrest/hamcrest-core/1.3/42a25dc3219429f0e5d060061f71acb49bf010a0/hamcrest-core-1.3.jar"
       resolved="org.hamcrest:hamcrest-core:1.3"/>
+  <library
+      name="org.mockito:mockito-core:2.25.0@jar"
+      jars="/Users/johanlindau/.gradle/caches/modules-2/files-2.1/org.mockito/mockito-core/2.25.0/1fcf2f6944d69b6f39cd579718d8b5395a97836b/mockito-core-2.25.0.jar"
+      resolved="org.mockito:mockito-core:2.25.0"/>
+  <library
+      name="org.objenesis:objenesis:3.3@jar"
+      jars="/Users/johanlindau/.gradle/caches/modules-2/files-2.1/org.objenesis/objenesis/3.3/1049c09f1de4331e8193e579448d0916d75b7631/objenesis-3.3.jar"
+      resolved="org.objenesis:objenesis:3.3"/>
+  <library
+      name="net.bytebuddy:byte-buddy:1.14.6@jar"
+      jars="/Users/johanlindau/.gradle/caches/modules-2/files-2.1/net.bytebuddy/byte-buddy/1.14.6/316c1b1f3208a9d716c4419ed2080443235f7d1/byte-buddy-1.14.6.jar"
+      resolved="net.bytebuddy:byte-buddy:1.14.6"/>
+  <library
+      name="net.bytebuddy:byte-buddy-agent:1.14.6@jar"
+      jars="/Users/johanlindau/.gradle/caches/modules-2/files-2.1/net.bytebuddy/byte-buddy-agent/1.14.6/46e2545d7a97b6ccb195621650c5957279eb4812/byte-buddy-agent-1.14.6.jar"
+      resolved="net.bytebuddy:byte-buddy-agent:1.14.6"/>
+  <library
+      name="org.jetbrains.kotlin:kotlin-reflect:1.9.10@jar"
+      jars="/Users/johanlindau/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-reflect/1.9.10/dd37cb80926cb4ed427b606502e6f6f063d38fb5/kotlin-reflect-1.9.10.jar"
+      resolved="org.jetbrains.kotlin:kotlin-reflect:1.9.10"/>
+  <library
+      name="org.junit.jupiter:junit-jupiter-params:5.8.2@jar"
+      jars="/Users/johanlindau/.gradle/caches/modules-2/files-2.1/org.junit.jupiter/junit-jupiter-params/5.8.2/ddeafe92fc263f895bfb73ffeca7fd56e23c2cce/junit-jupiter-params-5.8.2.jar"
+      resolved="org.junit.jupiter:junit-jupiter-params:5.8.2"/>
+  <library
+      name="org.junit.jupiter:junit-jupiter-engine:5.8.2@jar"
+      jars="/Users/johanlindau/.gradle/caches/modules-2/files-2.1/org.junit.jupiter/junit-jupiter-engine/5.8.2/c598b4328d2f397194d11df3b1648d68d7d990e3/junit-jupiter-engine-5.8.2.jar"
+      resolved="org.junit.jupiter:junit-jupiter-engine:5.8.2"/>
+  <library
+      name="org.junit.jupiter:junit-jupiter-api:5.8.2@jar"
+      jars="/Users/johanlindau/.gradle/caches/modules-2/files-2.1/org.junit.jupiter/junit-jupiter-api/5.8.2/4c21029217adf07e4c0d0c5e192b6bf610c94bdc/junit-jupiter-api-5.8.2.jar"
+      resolved="org.junit.jupiter:junit-jupiter-api:5.8.2"/>
+  <library
+      name="org.junit.platform:junit-platform-engine:1.8.2@jar"
+      jars="/Users/johanlindau/.gradle/caches/modules-2/files-2.1/org.junit.platform/junit-platform-engine/1.8.2/b737de09f19864bd136805c84df7999a142fec29/junit-platform-engine-1.8.2.jar"
+      resolved="org.junit.platform:junit-platform-engine:1.8.2"/>
+  <library
+      name="org.junit.platform:junit-platform-commons:1.8.2@jar"
+      jars="/Users/johanlindau/.gradle/caches/modules-2/files-2.1/org.junit.platform/junit-platform-commons/1.8.2/32c8b8617c1342376fd5af2053da6410d8866861/junit-platform-commons-1.8.2.jar"
+      resolved="org.junit.platform:junit-platform-commons:1.8.2"/>
+  <library
+      name="org.junit.jupiter:junit-jupiter:5.8.2@jar"
+      jars="/Users/johanlindau/.gradle/caches/modules-2/files-2.1/org.junit.jupiter/junit-jupiter/5.8.2/5a817b1e63f1217e5c586090c45e681281f097ad/junit-jupiter-5.8.2.jar"
+      resolved="org.junit.jupiter:junit-jupiter:5.8.2"/>
+  <library
+      name="org.opentest4j:opentest4j:1.2.0@jar"
+      jars="/Users/johanlindau/.gradle/caches/modules-2/files-2.1/org.opentest4j/opentest4j/1.2.0/28c11eb91f9b6d8e200631d46e20a7f407f2a046/opentest4j-1.2.0.jar"
+      resolved="org.opentest4j:opentest4j:1.2.0"/>
   <library
       name="androidx.test.ext:junit:1.1.5@aar"
       jars="/Users/johanlindau/.gradle/caches/transforms-3/cbff580a0b1771a3bd4b872caf3a798d/transformed/jetified-junit-1.1.5/jars/classes.jar"
@@ -793,6 +886,32 @@
       externalAnnotations="annotations.zip"
       proguardRules="proguard.txt"/>
   <library
+      name="androidx.test:rules:1.5.0@aar"
+      jars="/Users/johanlindau/.gradle/caches/transforms-3/a03aeeb56230341e1a870e322363a7b6/transformed/rules-1.5.0/jars/classes.jar"
+      resolved="androidx.test:rules:1.5.0"
+      folder="/Users/johanlindau/.gradle/caches/transforms-3/a03aeeb56230341e1a870e322363a7b6/transformed/rules-1.5.0"
+      manifest="AndroidManifest.xml"
+      resFolder="res"
+      assetsFolder="assets"
+      lintJar="lint.jar"
+      publicResources="public.txt"
+      symbolFile="R.txt"
+      externalAnnotations="annotations.zip"
+      proguardRules="proguard.txt"/>
+  <library
+      name="androidx.test:runner:1.5.2@aar"
+      jars="/Users/johanlindau/.gradle/caches/transforms-3/bb1d8b8fcae2d93f0a698a3f9fdc089e/transformed/runner-1.5.2/jars/classes.jar"
+      resolved="androidx.test:runner:1.5.2"
+      folder="/Users/johanlindau/.gradle/caches/transforms-3/bb1d8b8fcae2d93f0a698a3f9fdc089e/transformed/runner-1.5.2"
+      manifest="AndroidManifest.xml"
+      resFolder="res"
+      assetsFolder="assets"
+      lintJar="lint.jar"
+      publicResources="public.txt"
+      symbolFile="R.txt"
+      externalAnnotations="annotations.zip"
+      proguardRules="proguard.txt"/>
+  <library
       name="androidx.work:work-testing:2.9.0@aar"
       jars="/Users/johanlindau/.gradle/caches/transforms-3/0ccf994991f9f54ea3e4dbe9da7019d2/transformed/work-testing-2.9.0/jars/classes.jar"
       resolved="androidx.work:work-testing:2.9.0"
@@ -805,23 +924,6 @@
       symbolFile="R.txt"
       externalAnnotations="annotations.zip"
       proguardRules="proguard.txt"/>
-  <library
-      name="androidx.arch.core:core-testing:2.2.0@aar"
-      jars="/Users/johanlindau/.gradle/caches/transforms-3/8f401de4744f369c6434588e2578243d/transformed/core-testing-2.2.0/jars/classes.jar"
-      resolved="androidx.arch.core:core-testing:2.2.0"
-      folder="/Users/johanlindau/.gradle/caches/transforms-3/8f401de4744f369c6434588e2578243d/transformed/core-testing-2.2.0"
-      manifest="AndroidManifest.xml"
-      resFolder="res"
-      assetsFolder="assets"
-      lintJar="lint.jar"
-      publicResources="public.txt"
-      symbolFile="R.txt"
-      externalAnnotations="annotations.zip"
-      proguardRules="proguard.txt"/>
-  <library
-      name="org.jetbrains.kotlinx:kotlinx-coroutines-test-jvm:1.7.1@jar"
-      jars="/Users/johanlindau/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlinx/kotlinx-coroutines-test-jvm/1.7.1/46877b802bede2a4b97ad2abe770685190ad8706/kotlinx-coroutines-test-jvm-1.7.1.jar"
-      resolved="org.jetbrains.kotlinx:kotlinx-coroutines-test-jvm:1.7.1"/>
   <library
       name="androidx.test:core:1.5.0@aar"
       jars="/Users/johanlindau/.gradle/caches/transforms-3/924342396859e64b96e62978ea61b85d/transformed/jetified-core-1.5.0/jars/classes.jar"
@@ -836,10 +938,23 @@
       externalAnnotations="annotations.zip"
       proguardRules="proguard.txt"/>
   <library
-      name="androidx.test:runner:1.5.2@aar"
-      jars="/Users/johanlindau/.gradle/caches/transforms-3/bb1d8b8fcae2d93f0a698a3f9fdc089e/transformed/runner-1.5.2/jars/classes.jar"
-      resolved="androidx.test:runner:1.5.2"
-      folder="/Users/johanlindau/.gradle/caches/transforms-3/bb1d8b8fcae2d93f0a698a3f9fdc089e/transformed/runner-1.5.2"
+      name="io.mockk:mockk-android:1.13.8@aar"
+      jars="/Users/johanlindau/.gradle/caches/transforms-3/979a4f6aee5d45892c21763dec2234ec/transformed/jetified-mockk-android-1.13.8/jars/classes.jar"
+      resolved="io.mockk:mockk-android:1.13.8"
+      folder="/Users/johanlindau/.gradle/caches/transforms-3/979a4f6aee5d45892c21763dec2234ec/transformed/jetified-mockk-android-1.13.8"
+      manifest="AndroidManifest.xml"
+      resFolder="res"
+      assetsFolder="assets"
+      lintJar="lint.jar"
+      publicResources="public.txt"
+      symbolFile="R.txt"
+      externalAnnotations="annotations.zip"
+      proguardRules="proguard.txt"/>
+  <library
+      name="io.mockk:mockk-agent-android:1.13.8@aar"
+      jars="/Users/johanlindau/.gradle/caches/transforms-3/71bb092bce8d05141e14dc1dd33e2eab/transformed/jetified-mockk-agent-android-1.13.8/jars/classes.jar"
+      resolved="io.mockk:mockk-agent-android:1.13.8"
+      folder="/Users/johanlindau/.gradle/caches/transforms-3/71bb092bce8d05141e14dc1dd33e2eab/transformed/jetified-mockk-agent-android-1.13.8"
       manifest="AndroidManifest.xml"
       resFolder="res"
       assetsFolder="assets"
@@ -921,11 +1036,11 @@
       jars="/Users/johanlindau/.gradle/caches/modules-2/files-2.1/javax.inject/javax.inject/1/6975da39a7040257bd51d21a231b76c915872d38/javax.inject-1.jar"
       resolved="javax.inject:javax.inject:1"/>
   <library
-      name="org.mockito:mockito-core:2.25.0@jar"
-      jars="/Users/johanlindau/.gradle/caches/modules-2/files-2.1/org.mockito/mockito-core/2.25.0/1fcf2f6944d69b6f39cd579718d8b5395a97836b/mockito-core-2.25.0.jar"
-      resolved="org.mockito:mockito-core:2.25.0"/>
+      name="com.linkedin.dexmaker:dexmaker:2.28.3@jar"
+      jars="/Users/johanlindau/.gradle/caches/modules-2/files-2.1/com.linkedin.dexmaker/dexmaker/2.28.3/d2696cdba886415498d09a039af92678783fc004/dexmaker-2.28.3.jar"
+      resolved="com.linkedin.dexmaker:dexmaker:2.28.3"/>
   <library
-      name="org.objenesis:objenesis:2.6@jar"
-      jars="/Users/johanlindau/.gradle/caches/modules-2/files-2.1/org.objenesis/objenesis/2.6/639033469776fd37c08358c6b92a4761feb2af4b/objenesis-2.6.jar"
-      resolved="org.objenesis:objenesis:2.6"/>
+      name="com.jakewharton.android.repackaged:dalvik-dx:9.0.0_r3@jar"
+      jars="/Users/johanlindau/.gradle/caches/modules-2/files-2.1/com.jakewharton.android.repackaged/dalvik-dx/9.0.0_r3/df4b3258ddb4c7d531143405505a9396949bbb51/dalvik-dx-9.0.0_r3.jar"
+      resolved="com.jakewharton.android.repackaged:dalvik-dx:9.0.0_r3"/>
 </libraries>
