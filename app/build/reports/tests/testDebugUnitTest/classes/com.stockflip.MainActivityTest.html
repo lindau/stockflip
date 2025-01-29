@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<meta http-equiv="x-ua-compatible" content="IE=edge"/>
+<title>Test results - Class com.stockflip.MainActivityTest</title>
+<link href="../css/base-style.css" rel="stylesheet" type="text/css"/>
+<link href="../css/style.css" rel="stylesheet" type="text/css"/>
+<script src="../js/report.js" type="text/javascript"></script>
+</head>
+<body>
+<div id="content">
+<h1>Class com.stockflip.MainActivityTest</h1>
+<div class="breadcrumbs">
+<a href="../index.html">all</a> &gt; 
+<a href="../packages/com.stockflip.html">com.stockflip</a> &gt; MainActivityTest</div>
+<div id="summary">
+<table>
+<tr>
+<td>
+<div class="summaryGroup">
+<table>
+<tr>
+<td>
+<div class="infoBox" id="tests">
+<div class="counter">7</div>
+<p>tests</p>
+</div>
+</td>
+<td>
+<div class="infoBox" id="failures">
+<div class="counter">7</div>
+<p>failures</p>
+</div>
+</td>
+<td>
+<div class="infoBox" id="ignored">
+<div class="counter">0</div>
+<p>ignored</p>
+</div>
+</td>
+<td>
+<div class="infoBox" id="duration">
+<div class="counter">6.919s</div>
+<p>duration</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</td>
+<td>
+<div class="infoBox failures" id="successRate">
+<div class="percent">0%</div>
+<p>successful</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div id="tabs">
+<ul class="tabLinks">
+<li>
+<a href="#tab0">Failed tests</a>
+</li>
+<li>
+<a href="#tab1">Tests</a>
+</li>
+<li>
+<a href="#tab2">Standard output</a>
+</li>
+<li>
+<a href="#tab3">Standard error</a>
+</li>
+</ul>
+<div id="tab0" class="tab">
+<h2>Failed tests</h2>
+<div class="test">
+<a name="test UI state handling"></a>
+<h3 class="failures">test UI state handling</h3>
+<span class="code">
+<pre>io.mockk.MockKException: Missing mocked calls inside every { ... } block: make sure the object inside the block is a mock
+	at io.mockk.impl.recording.states.StubbingState.checkMissingCalls(StubbingState.kt:14)
+	at io.mockk.impl.recording.states.StubbingState.recordingDone(StubbingState.kt:8)
+	at io.mockk.impl.recording.CommonCallRecorder.done(CommonCallRecorder.kt:47)
+	at io.mockk.impl.eval.RecordedBlockEvaluator.record(RecordedBlockEvaluator.kt:63)
+	at io.mockk.impl.eval.EveryBlockEvaluator.every(EveryBlockEvaluator.kt:30)
+	at io.mockk.MockKDsl.internalEvery(API.kt:94)
+	at io.mockk.MockKKt.every(MockK.kt:143)
+	at com.stockflip.MainActivityTest.setup(MainActivityTest.kt:94)
+	at java.base@21.0.6/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base@21.0.6/java.lang.reflect.Method.invoke(Method.java:580)
+	at app//org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:59)
+	at app//org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)
+	at app//org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:56)
+	at app//org.junit.internal.runners.statements.RunBefores.invokeMethod(RunBefores.java:33)
+	at app//org.junit.internal.runners.statements.RunBefores.evaluate(RunBefores.java:24)
+	at app//org.junit.internal.runners.statements.RunAfters.evaluate(RunAfters.java:27)
+	at app//org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+	at app//org.robolectric.RobolectricTestRunner$HelperTestRunner$1.evaluate(RobolectricTestRunner.java:588)
+	at app//org.robolectric.internal.SandboxTestRunner$2.lambda$evaluate$2(SandboxTestRunner.java:290)
+	at app//org.robolectric.internal.bytecode.Sandbox.lambda$runOnMainThread$0(Sandbox.java:101)
+	at java.base@21.0.6/java.util.concurrent.FutureTask.run(FutureTask.java:317)
+	at java.base@21.0.6/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144)
+	at java.base@21.0.6/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
+	at java.base@21.0.6/java.lang.Thread.run(Thread.java:1583)
+</pre>
+</span>
+</div>
+<div class="test">
+<a name="test add stock pair dialog validation"></a>
+<h3 class="failures">test add stock pair dialog validation</h3>
+<span class="code">
+<pre>io.mockk.MockKException: Missing mocked calls inside every { ... } block: make sure the object inside the block is a mock
+	at io.mockk.impl.recording.states.StubbingState.checkMissingCalls(StubbingState.kt:14)
+	at io.mockk.impl.recording.states.StubbingState.recordingDone(StubbingState.kt:8)
+	at io.mockk.impl.recording.CommonCallRecorder.done(CommonCallRecorder.kt:47)
+	at io.mockk.impl.eval.RecordedBlockEvaluator.record(RecordedBlockEvaluator.kt:63)
+	at io.mockk.impl.eval.EveryBlockEvaluator.every(EveryBlockEvaluator.kt:30)
+	at io.mockk.MockKDsl.internalEvery(API.kt:94)
+	at io.mockk.MockKKt.every(MockK.kt:143)
+	at com.stockflip.MainActivityTest.setup(MainActivityTest.kt:94)
+	at java.base@21.0.6/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base@21.0.6/java.lang.reflect.Method.invoke(Method.java:580)
+	at app//org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:59)
+	at app//org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)
+	at app//org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:56)
+	at app//org.junit.internal.runners.statements.RunBefores.invokeMethod(RunBefores.java:33)
+	at app//org.junit.internal.runners.statements.RunBefores.evaluate(RunBefores.java:24)
+	at app//org.junit.internal.runners.statements.RunAfters.evaluate(RunAfters.java:27)
+	at app//org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+	at app//org.robolectric.RobolectricTestRunner$HelperTestRunner$1.evaluate(RobolectricTestRunner.java:588)
+	at app//org.robolectric.internal.SandboxTestRunner$2.lambda$evaluate$2(SandboxTestRunner.java:290)
+	at app//org.robolectric.internal.bytecode.Sandbox.lambda$runOnMainThread$0(Sandbox.java:101)
+	at java.base@21.0.6/java.util.concurrent.FutureTask.run(FutureTask.java:317)
+	at java.base@21.0.6/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144)
+	at java.base@21.0.6/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
+	at java.base@21.0.6/java.lang.Thread.run(Thread.java:1583)
+</pre>
+</span>
+</div>
+<div class="test">
+<a name="test auto refresh functionality"></a>
+<h3 class="failures">test auto refresh functionality</h3>
+<span class="code">
+<pre>io.mockk.MockKException: Missing mocked calls inside every { ... } block: make sure the object inside the block is a mock
+	at io.mockk.impl.recording.states.StubbingState.checkMissingCalls(StubbingState.kt:14)
+	at io.mockk.impl.recording.states.StubbingState.recordingDone(StubbingState.kt:8)
+	at io.mockk.impl.recording.CommonCallRecorder.done(CommonCallRecorder.kt:47)
+	at io.mockk.impl.eval.RecordedBlockEvaluator.record(RecordedBlockEvaluator.kt:63)
+	at io.mockk.impl.eval.EveryBlockEvaluator.every(EveryBlockEvaluator.kt:30)
+	at io.mockk.MockKDsl.internalEvery(API.kt:94)
+	at io.mockk.MockKKt.every(MockK.kt:143)
+	at com.stockflip.MainActivityTest.setup(MainActivityTest.kt:94)
+	at java.base@21.0.6/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base@21.0.6/java.lang.reflect.Method.invoke(Method.java:580)
+	at app//org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:59)
+	at app//org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)
+	at app//org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:56)
+	at app//org.junit.internal.runners.statements.RunBefores.invokeMethod(RunBefores.java:33)
+	at app//org.junit.internal.runners.statements.RunBefores.evaluate(RunBefores.java:24)
+	at app//org.junit.internal.runners.statements.RunAfters.evaluate(RunAfters.java:27)
+	at app//org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+	at app//org.robolectric.RobolectricTestRunner$HelperTestRunner$1.evaluate(RobolectricTestRunner.java:588)
+	at app//org.robolectric.internal.SandboxTestRunner$2.lambda$evaluate$2(SandboxTestRunner.java:290)
+	at app//org.robolectric.internal.bytecode.Sandbox.lambda$runOnMainThread$0(Sandbox.java:101)
+	at java.base@21.0.6/java.util.concurrent.FutureTask.run(FutureTask.java:317)
+	at java.base@21.0.6/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144)
+	at java.base@21.0.6/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
+	at java.base@21.0.6/java.lang.Thread.run(Thread.java:1583)
+</pre>
+</span>
+</div>
+<div class="test">
+<a name="test refresh prices"></a>
+<h3 class="failures">test refresh prices</h3>
+<span class="code">
+<pre>io.mockk.MockKException: Missing mocked calls inside every { ... } block: make sure the object inside the block is a mock
+	at io.mockk.impl.recording.states.StubbingState.checkMissingCalls(StubbingState.kt:14)
+	at io.mockk.impl.recording.states.StubbingState.recordingDone(StubbingState.kt:8)
+	at io.mockk.impl.recording.CommonCallRecorder.done(CommonCallRecorder.kt:47)
+	at io.mockk.impl.eval.RecordedBlockEvaluator.record(RecordedBlockEvaluator.kt:63)
+	at io.mockk.impl.eval.EveryBlockEvaluator.every(EveryBlockEvaluator.kt:30)
+	at io.mockk.MockKDsl.internalEvery(API.kt:94)
+	at io.mockk.MockKKt.every(MockK.kt:143)
+	at com.stockflip.MainActivityTest.setup(MainActivityTest.kt:94)
+	at java.base@21.0.6/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base@21.0.6/java.lang.reflect.Method.invoke(Method.java:580)
+	at app//org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:59)
+	at app//org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)
+	at app//org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:56)
+	at app//org.junit.internal.runners.statements.RunBefores.invokeMethod(RunBefores.java:33)
+	at app//org.junit.internal.runners.statements.RunBefores.evaluate(RunBefores.java:24)
+	at app//org.junit.internal.runners.statements.RunAfters.evaluate(RunAfters.java:27)
+	at app//org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+	at app//org.robolectric.RobolectricTestRunner$HelperTestRunner$1.evaluate(RobolectricTestRunner.java:588)
+	at app//org.robolectric.internal.SandboxTestRunner$2.lambda$evaluate$2(SandboxTestRunner.java:290)
+	at app//org.robolectric.internal.bytecode.Sandbox.lambda$runOnMainThread$0(Sandbox.java:101)
+	at java.base@21.0.6/java.util.concurrent.FutureTask.run(FutureTask.java:317)
+	at java.base@21.0.6/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144)
+	at java.base@21.0.6/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
+	at java.base@21.0.6/java.lang.Thread.run(Thread.java:1583)
+</pre>
+</span>
+</div>
+<div class="test">
+<a name="test refresh prices handles error"></a>
+<h3 class="failures">test refresh prices handles error</h3>
+<span class="code">
+<pre>io.mockk.MockKException: Missing mocked calls inside every { ... } block: make sure the object inside the block is a mock
+	at io.mockk.impl.recording.states.StubbingState.checkMissingCalls(StubbingState.kt:14)
+	at io.mockk.impl.recording.states.StubbingState.recordingDone(StubbingState.kt:8)
+	at io.mockk.impl.recording.CommonCallRecorder.done(CommonCallRecorder.kt:47)
+	at io.mockk.impl.eval.RecordedBlockEvaluator.record(RecordedBlockEvaluator.kt:63)
+	at io.mockk.impl.eval.EveryBlockEvaluator.every(EveryBlockEvaluator.kt:30)
+	at io.mockk.MockKDsl.internalEvery(API.kt:94)
+	at io.mockk.MockKKt.every(MockK.kt:143)
+	at com.stockflip.MainActivityTest.setup(MainActivityTest.kt:94)
+	at java.base@21.0.6/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base@21.0.6/java.lang.reflect.Method.invoke(Method.java:580)
+	at app//org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:59)
+	at app//org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)
+	at app//org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:56)
+	at app//org.junit.internal.runners.statements.RunBefores.invokeMethod(RunBefores.java:33)
+	at app//org.junit.internal.runners.statements.RunBefores.evaluate(RunBefores.java:24)
+	at app//org.junit.internal.runners.statements.RunAfters.evaluate(RunAfters.java:27)
+	at app//org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+	at app//org.robolectric.RobolectricTestRunner$HelperTestRunner$1.evaluate(RobolectricTestRunner.java:588)
+	at app//org.robolectric.internal.SandboxTestRunner$2.lambda$evaluate$2(SandboxTestRunner.java:290)
+	at app//org.robolectric.internal.bytecode.Sandbox.lambda$runOnMainThread$0(Sandbox.java:101)
+	at java.base@21.0.6/java.util.concurrent.FutureTask.run(FutureTask.java:317)
+	at java.base@21.0.6/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144)
+	at java.base@21.0.6/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
+	at java.base@21.0.6/java.lang.Thread.run(Thread.java:1583)
+</pre>
+</span>
+</div>
+<div class="test">
+<a name="test stock adapter creation"></a>
+<h3 class="failures">test stock adapter creation</h3>
+<span class="code">
+<pre>io.mockk.MockKException: Missing mocked calls inside every { ... } block: make sure the object inside the block is a mock
+	at io.mockk.impl.recording.states.StubbingState.checkMissingCalls(StubbingState.kt:14)
+	at io.mockk.impl.recording.states.StubbingState.recordingDone(StubbingState.kt:8)
+	at io.mockk.impl.recording.CommonCallRecorder.done(CommonCallRecorder.kt:47)
+	at io.mockk.impl.eval.RecordedBlockEvaluator.record(RecordedBlockEvaluator.kt:63)
+	at io.mockk.impl.eval.EveryBlockEvaluator.every(EveryBlockEvaluator.kt:30)
+	at io.mockk.MockKDsl.internalEvery(API.kt:94)
+	at io.mockk.MockKKt.every(MockK.kt:143)
+	at com.stockflip.MainActivityTest.setup(MainActivityTest.kt:94)
+	at java.base@21.0.6/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base@21.0.6/java.lang.reflect.Method.invoke(Method.java:580)
+	at app//org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:59)
+	at app//org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)
+	at app//org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:56)
+	at app//org.junit.internal.runners.statements.RunBefores.invokeMethod(RunBefores.java:33)
+	at app//org.junit.internal.runners.statements.RunBefores.evaluate(RunBefores.java:24)
+	at app//org.junit.internal.runners.statements.RunAfters.evaluate(RunAfters.java:27)
+	at app//org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+	at app//org.robolectric.RobolectricTestRunner$HelperTestRunner$1.evaluate(RobolectricTestRunner.java:588)
+	at app//org.robolectric.internal.SandboxTestRunner$2.lambda$evaluate$2(SandboxTestRunner.java:290)
+	at app//org.robolectric.internal.bytecode.Sandbox.lambda$runOnMainThread$0(Sandbox.java:101)
+	at java.base@21.0.6/java.util.concurrent.FutureTask.run(FutureTask.java:317)
+	at java.base@21.0.6/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144)
+	at java.base@21.0.6/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
+	at java.base@21.0.6/java.lang.Thread.run(Thread.java:1583)
+</pre>
+</span>
+</div>
+<div class="test">
+<a name="test stock search setup"></a>
+<h3 class="failures">test stock search setup</h3>
+<span class="code">
+<pre>io.mockk.MockKException: Missing mocked calls inside every { ... } block: make sure the object inside the block is a mock
+	at io.mockk.impl.recording.states.StubbingState.checkMissingCalls(StubbingState.kt:14)
+	at io.mockk.impl.recording.states.StubbingState.recordingDone(StubbingState.kt:8)
+	at io.mockk.impl.recording.CommonCallRecorder.done(CommonCallRecorder.kt:47)
+	at io.mockk.impl.eval.RecordedBlockEvaluator.record(RecordedBlockEvaluator.kt:63)
+	at io.mockk.impl.eval.EveryBlockEvaluator.every(EveryBlockEvaluator.kt:30)
+	at io.mockk.MockKDsl.internalEvery(API.kt:94)
+	at io.mockk.MockKKt.every(MockK.kt:143)
+	at com.stockflip.MainActivityTest.setup(MainActivityTest.kt:94)
+	at java.base@21.0.6/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base@21.0.6/java.lang.reflect.Method.invoke(Method.java:580)
+	at app//org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:59)
+	at app//org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)
+	at app//org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:56)
+	at app//org.junit.internal.runners.statements.RunBefores.invokeMethod(RunBefores.java:33)
+	at app//org.junit.internal.runners.statements.RunBefores.evaluate(RunBefores.java:24)
+	at app//org.junit.internal.runners.statements.RunAfters.evaluate(RunAfters.java:27)
+	at app//org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+	at app//org.robolectric.RobolectricTestRunner$HelperTestRunner$1.evaluate(RobolectricTestRunner.java:588)
+	at app//org.robolectric.internal.SandboxTestRunner$2.lambda$evaluate$2(SandboxTestRunner.java:290)
+	at app//org.robolectric.internal.bytecode.Sandbox.lambda$runOnMainThread$0(Sandbox.java:101)
+	at java.base@21.0.6/java.util.concurrent.FutureTask.run(FutureTask.java:317)
+	at java.base@21.0.6/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144)
+	at java.base@21.0.6/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
+	at java.base@21.0.6/java.lang.Thread.run(Thread.java:1583)
+</pre>
+</span>
+</div>
+</div>
+<div id="tab1" class="tab">
+<h2>Tests</h2>
+<table>
+<thead>
+<tr>
+<th>Test</th>
+<th>Duration</th>
+<th>Result</th>
+</tr>
+</thead>
+<tr>
+<td class="failures">test UI state handling</td>
+<td class="failures">0.056s</td>
+<td class="failures">failed</td>
+</tr>
+<tr>
+<td class="failures">test add stock pair dialog validation</td>
+<td class="failures">6.445s</td>
+<td class="failures">failed</td>
+</tr>
+<tr>
+<td class="failures">test auto refresh functionality</td>
+<td class="failures">0.064s</td>
+<td class="failures">failed</td>
+</tr>
+<tr>
+<td class="failures">test refresh prices</td>
+<td class="failures">0.056s</td>
+<td class="failures">failed</td>
+</tr>
+<tr>
+<td class="failures">test refresh prices handles error</td>
+<td class="failures">0.122s</td>
+<td class="failures">failed</td>
+</tr>
+<tr>
+<td class="failures">test stock adapter creation</td>
+<td class="failures">0.088s</td>
+<td class="failures">failed</td>
+</tr>
+<tr>
+<td class="failures">test stock search setup</td>
+<td class="failures">0.088s</td>
+<td class="failures">failed</td>
+</tr>
+</table>
+</div>
+<div id="tab2" class="tab">
+<h2>Standard output</h2>
+<span class="code">
+<pre>WARNING: No manifest file found at ./AndroidManifest.xml.
+Falling back to the Android OS resources only.
+To remove this warning, annotate your test class with @Config(manifest=Config.NONE).
+</pre>
+</span>
+</div>
+<div id="tab3" class="tab">
+<h2>Standard error</h2>
+<span class="code">
+<pre>No such manifest file: ./AndroidManifest.xml
+WARNING: A Java agent has been loaded dynamically (/Users/johanlindau/.gradle/caches/transforms-3/e6f27301e0d7f8f09b0d447044f232ae/transformed/jetified-byte-buddy-agent-1.14.6.jar)
+WARNING: If a serviceability tool is in use, please run with -XX:+EnableDynamicAgentLoading to hide this warning
+WARNING: If a serviceability tool is not in use, please run with -Djdk.instrument.traceUsage for more information
+WARNING: Dynamic loading of agents will be disallowed by default in a future release
+</pre>
+</span>
+</div>
+</div>
+<div id="footer">
+<p>
+<div>
+<label class="hidden" id="label-for-line-wrapping-toggle" for="line-wrapping-toggle">Wrap lines
+<input id="line-wrapping-toggle" type="checkbox" autocomplete="off"/>
+</label>
+</div>Generated by 
+<a href="http://www.gradle.org">Gradle 8.5</a> at 28 jan. 2025 17:11:15</p>
+</div>
+</div>
+</body>
+</html>

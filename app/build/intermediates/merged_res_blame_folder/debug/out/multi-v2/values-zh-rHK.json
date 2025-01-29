@@ -1,7 +1,7 @@
 {
     "logs": [
         {
-            "outputFile": "com.stockflip.app-mergeDebugResources-42:/values-zh-rHK/values-zh-rHK.xml",
+            "outputFile": "com.stockflip.app-mergeDebugResources-44:/values-zh-rHK/values-zh-rHK.xml",
             "map": [
                 {
                     "source": "/Users/johanlindau/.gradle/caches/transforms-3/4dde0fce54f6341b6da19770f76a2130/transformed/core-1.12.0/res/values-zh-rHK/values-zh-rHK.xml",

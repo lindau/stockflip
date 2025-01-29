@@ -5,32 +5,32 @@ import com.stockflip.StockSearchResult
 import com.stockflip.YahooFinanceService
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.catch
-import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
 
+/**
+ * Repository for handling stock-related operations.
+ * Manages caching and provides a clean API for stock searches.
+ */
 class StockRepository {
     private val TAG = "StockRepository"
-    
-    private data class CacheEntry(
-        val results: List<StockSearchResult>,
-        val timestamp: Long
-    )
-
-    private val cache = ConcurrentHashMap<String, CacheEntry>()
+    private val cache = mutableMapOf<String, CacheEntry>()
     private val cacheTTL = TimeUnit.MINUTES.toMillis(5) // 5 minutes TTL
-    
-    fun searchStocks(query: String): Flow<SearchState> = flow {
-        emit(SearchState.Loading)
-        
+
+    /**
+     * Searches for stocks based on the provided query.
+     * Handles both ticker and company name searches.
+     *
+     * @param query The search query (ticker or company name)
+     * @return Flow of SearchState representing the search progress and results
+     */
+    suspend fun searchStocks(query: String): Flow<SearchState> = flow {
         try {
-            Log.d(TAG, "Searching for query: $query")
+            emit(SearchState.Loading)
+            Log.d(TAG, "Starting stock search for query: $query")
             
-            // Check cache first
-            val cachedEntry = cache[query]
-            if (cachedEntry != null && !isCacheExpired(cachedEntry.timestamp)) {
-                Log.d(TAG, "Cache hit for query: $query")
-                emit(SearchState.Success(cachedEntry.results))
+            if (query.length < 2) {
+                Log.d(TAG, "Query too short, returning empty list")
+                emit(SearchState.Success(emptyList()))
                 return@flow
             }
             
@@ -56,41 +56,28 @@ class StockRepository {
                     it.symbol == upperQuery || 
                     it.symbol == "$upperQuery.ST" || 
                     it.symbol.removeSuffix(".ST") == upperQuery ||
-                    it.symbol.replace("-", "") == upperQuery.replace("-", "")
+                    it.symbol.removeSuffix(".ST").replace("-", "") == upperQuery
                 }
                 .thenByDescending { it.isSwedish } // Second priority: Swedish stocks
-                .thenByDescending { 
-                    // Third priority: Starts with matches (ticker)
-                    it.symbol.startsWith(upperQuery) || 
-                    it.symbol.removeSuffix(".ST").startsWith(upperQuery) ||
-                    it.symbol.replace("-", "").startsWith(upperQuery.replace("-", ""))
-                }
-                .thenByDescending {
-                    // Fourth priority: Name matches
-                    it.name.equals(query, ignoreCase = true) ||
-                    it.name.startsWith(query, ignoreCase = true) ||
-                    it.name.contains(query, ignoreCase = true)
-                }
-                .thenBy { it.symbol } // Finally sort alphabetically by symbol
+                .thenBy { it.symbol } // Third priority: Alphabetical order
             )
-
-            Log.d(TAG, "Sorted results: ${sortedResults.map { "${it.symbol} (${it.name})" }}")
-
-            // Cache results
-            cache[query] = CacheEntry(sortedResults, System.currentTimeMillis())
             
             emit(SearchState.Success(sortedResults))
+            
         } catch (e: Exception) {
-            Log.e(TAG, "Error searching stocks: ${e.message}", e)
-            emit(SearchState.Error("Failed to search stocks: ${e.message}", query))
+            Log.e(TAG, "Error during stock search: ${e.message}")
+            emit(SearchState.Error(e.message ?: "Unknown error", query))
         }
-    }.catch { e ->
-        Log.e(TAG, "Error in search flow: ${e.message}", e)
-        emit(SearchState.Error("An unexpected error occurred", ""))
     }
 
+    private data class CacheEntry(
+        val results: List<StockSearchResult>,
+        val timestamp: Long
+    )
+
     private fun isCacheExpired(timestamp: Long): Boolean {
-        return System.currentTimeMillis() - timestamp > cacheTTL
+        val currentTime = System.currentTimeMillis()
+        return currentTime - timestamp > cacheTTL
     }
 
     fun clearCache() {
@@ -102,6 +89,15 @@ class StockRepository {
         val currentTime = System.currentTimeMillis()
         cache.entries.removeIf { (_, entry) ->
             isCacheExpired(entry.timestamp)
+        }
+    }
+
+    private suspend fun fetchStockPrice(ticker: String): Double? {
+        return try {
+            YahooFinanceService.getStockPrice(ticker)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error fetching stock price for $ticker: ${e.message}")
+            null
         }
     }
 } 

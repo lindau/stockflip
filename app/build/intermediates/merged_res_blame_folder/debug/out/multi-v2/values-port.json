@@ -1,7 +1,7 @@
 {
     "logs": [
         {
-            "outputFile": "com.stockflip.app-mergeDebugResources-42:/values-port/values-port.xml",
+            "outputFile": "com.stockflip.app-mergeDebugResources-44:/values-port/values-port.xml",
             "map": [
                 {
                     "source": "/Users/johanlindau/.gradle/caches/transforms-3/42349fcab7a5a6a21b6eefeb34a9888a/transformed/appcompat-1.6.1/res/values-port/values-port.xml",

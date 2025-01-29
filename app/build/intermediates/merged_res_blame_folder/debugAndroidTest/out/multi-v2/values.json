@@ -1,7 +1,7 @@
 {
     "logs": [
         {
-            "outputFile": "com.stockflip.test.app-mergeDebugAndroidTestResources-19:/values/values.xml",
+            "outputFile": "com.stockflip.test.app-mergeDebugAndroidTestResources-18:/values/values.xml",
             "map": [
                 {
                     "source": "/Users/johanlindau/.gradle/caches/transforms-3/e38763203da2274fe32ea162c1ebfd07/transformed/jetified-startup-runtime-1.1.1/res/values/values.xml",

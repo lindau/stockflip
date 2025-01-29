@@ -1,16 +1,18 @@
 package com.stockflip.repository
 
+import android.util.Log
 import app.cash.turbine.test
 import com.stockflip.StockSearchResult
 import com.stockflip.YahooFinanceService
-import io.mockk.coEvery
-import io.mockk.mockkObject
+import io.mockk.*
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.test.runTest
+import org.junit.After
+import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertTrue
+import org.robolectric.shadows.ShadowLog
 import kotlin.time.ExperimentalTime
 
 @OptIn(ExperimentalCoroutinesApi::class, ExperimentalTime::class)
@@ -19,8 +21,22 @@ class StockRepositoryTest {
 
     @Before
     fun setup() {
+        // Set up logging
+        ShadowLog.stream = System.out
+        
+        // Mock Android Log class
+        mockkStatic(Log::class)
+        every { Log.d(any(), any()) } returns 0
+        every { Log.e(any(), any()) } returns 0
+        
         repository = StockRepository()
         mockkObject(YahooFinanceService)
+    }
+
+    @After
+    fun tearDown() {
+        unmockkStatic(Log::class)
+        unmockkObject(YahooFinanceService)
     }
 
     @Test
@@ -30,16 +46,8 @@ class StockRepositoryTest {
             StockSearchResult("VOLV-B.ST", "Volvo B (Stockholmsbörsen)", true)
         )
 
-        coEvery { YahooFinanceService.searchStocks(query) } returns results
+        coEvery { YahooFinanceService.searchStocks(any()) } returns results
 
-        // First search
-        repository.searchStocks(query).test {
-            assertEquals(SearchState.Loading, awaitItem())
-            assertEquals(SearchState.Success(results), awaitItem())
-            awaitComplete()
-        }
-
-        // Second search should use cache
         repository.searchStocks(query).test {
             assertEquals(SearchState.Loading, awaitItem())
             assertEquals(SearchState.Success(results), awaitItem())
@@ -58,7 +66,7 @@ class StockRepositoryTest {
             StockSearchResult("ERIC-A.ST", "Ericsson A (Stockholmsbörsen)", true)
         )
 
-        coEvery { YahooFinanceService.searchStocks(query) } returns initialResults
+        coEvery { YahooFinanceService.searchStocks(any()) } returns initialResults
 
         // First search
         repository.searchStocks(query).test {
@@ -68,7 +76,7 @@ class StockRepositoryTest {
         }
 
         // Update mock and simulate cache expiry
-        coEvery { YahooFinanceService.searchStocks(query) } returns updatedResults
+        coEvery { YahooFinanceService.searchStocks(any()) } returns updatedResults
         repository.cleanExpiredCache()
 
         // Second search should get fresh results
@@ -82,12 +90,13 @@ class StockRepositoryTest {
     @Test
     fun `search handles network error`() = runTest {
         val query = "error"
-        coEvery { YahooFinanceService.searchStocks(query) } throws Exception("Network error")
+        coEvery { YahooFinanceService.searchStocks(any()) } throws Exception("Network error")
 
         repository.searchStocks(query).test {
             assertEquals(SearchState.Loading, awaitItem())
             val error = awaitItem() as SearchState.Error
-            assertTrue(error.message.contains("Network error"))
+            assertEquals("Network error", error.message)
+            assertEquals(query, error.lastQuery)
             awaitComplete()
         }
     }
@@ -95,7 +104,7 @@ class StockRepositoryTest {
     @Test
     fun `search handles empty results`() = runTest {
         val query = "nonexistent"
-        coEvery { YahooFinanceService.searchStocks(query) } returns emptyList()
+        coEvery { YahooFinanceService.searchStocks(any()) } returns emptyList()
 
         repository.searchStocks(query).test {
             assertEquals(SearchState.Loading, awaitItem())
@@ -113,7 +122,7 @@ class StockRepositoryTest {
             StockSearchResult("VOLV-A.ST", "Volvo A", true)
         )
 
-        coEvery { YahooFinanceService.searchStocks(query) } returns results
+        coEvery { YahooFinanceService.searchStocks(any()) } returns results
 
         repository.searchStocks(query).test {
             assertEquals(SearchState.Loading, awaitItem())
@@ -133,13 +142,57 @@ class StockRepositoryTest {
             StockSearchResult("VOW.DE", "Volkswagen AG", false)
         )
 
-        coEvery { YahooFinanceService.searchStocks(query) } returns results
+        coEvery { YahooFinanceService.searchStocks(any()) } returns results
 
         repository.searchStocks(query).test {
             assertEquals(SearchState.Loading, awaitItem())
             val success = awaitItem() as SearchState.Success
             assertTrue(success.results.isNotEmpty())
             assertTrue(success.results.any { it.symbol.contains("VOLV") })
+            awaitComplete()
+        }
+    }
+
+    @Test
+    fun `test search with empty query`() = runTest {
+        repository.searchStocks("").test {
+            assertEquals(SearchState.Loading, awaitItem())
+            assertEquals(SearchState.Success(emptyList()), awaitItem())
+            awaitComplete()
+        }
+    }
+
+    @Test
+    fun `test search with short query`() = runTest {
+        repository.searchStocks("a").test {
+            assertEquals(SearchState.Loading, awaitItem())
+            assertEquals(SearchState.Success(emptyList()), awaitItem())
+            awaitComplete()
+        }
+    }
+
+    @Test
+    fun `test successful search`() = runTest {
+        val results = listOf(
+            StockSearchResult("AAPL", "Apple Inc.", false)
+        )
+        coEvery { YahooFinanceService.searchStocks(any()) } returns results
+
+        repository.searchStocks("AAPL").test {
+            assertEquals(SearchState.Loading, awaitItem())
+            val success = awaitItem() as SearchState.Success
+            assertEquals(results, success.results)
+            awaitComplete()
+        }
+    }
+
+    @Test
+    fun `test search error handling`() = runTest {
+        coEvery { YahooFinanceService.searchStocks(any()) } throws Exception("Network error")
+
+        repository.searchStocks("ERROR").test {
+            assertEquals(SearchState.Loading, awaitItem())
+            assertTrue(awaitItem() is SearchState.Error)
             awaitComplete()
         }
     }

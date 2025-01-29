@@ -1,7 +1,7 @@
 {
     "logs": [
         {
-            "outputFile": "com.stockflip.app-mergeDebugResources-42:/values-v21/values-v21.xml",
+            "outputFile": "com.stockflip.app-mergeDebugResources-44:/values-v21/values-v21.xml",
             "map": [
                 {
                     "source": "/Users/johanlindau/.gradle/caches/transforms-3/84114cdc67145947aeae5617e585aba8/transformed/material-1.11.0/res/values-v21/values-v21.xml",

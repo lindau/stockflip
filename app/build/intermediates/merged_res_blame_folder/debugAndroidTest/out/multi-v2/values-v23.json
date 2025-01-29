@@ -1,7 +1,7 @@
 {
     "logs": [
         {
-            "outputFile": "com.stockflip.test.app-mergeDebugAndroidTestResources-19:/values-v23/values-v23.xml",
+            "outputFile": "com.stockflip.test.app-mergeDebugAndroidTestResources-18:/values-v23/values-v23.xml",
             "map": [
                 {
                     "source": "/Users/johanlindau/.gradle/caches/transforms-3/e5e29cca67edb31bb00a5bb3e3eded63/transformed/work-runtime-2.9.0/res/values-v23/values-v23.xml",

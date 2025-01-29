@@ -16,6 +16,7 @@ color white
 drawable ic_arrow_downward
 drawable ic_arrow_upward
 drawable ic_compare_arrows
+drawable ic_launcher_background
 drawable ic_launcher_foreground
 drawable ic_notifications
 drawable ic_notifications_off
@@ -43,6 +44,7 @@ layout dropdown_item
 layout dropdown_menu_item
 layout item_stock_pair
 mipmap ic_launcher
+mipmap ic_launcher_foreground
 mipmap ic_launcher_round
 string app_name
 string last_updated

@@ -1,6 +1,11 @@
 package com.stockflip;
 
-@kotlin.Metadata(mv = {1, 9, 0}, k = 1, xi = 48, d1 = {"\u0000r\n\u0002\u0018\u0002\n\u0002\u0018\u0002\n\u0002\b\u0002\n\u0002\u0018\u0002\n\u0000\n\u0002\u0018\u0002\n\u0002\u0010\u000e\n\u0002\b\u0002\n\u0002\u0018\u0002\n\u0000\n\u0002\u0018\u0002\n\u0000\n\u0002\u0018\u0002\n\u0002\b\u0002\n\u0002\u0018\u0002\n\u0002\b\b\n\u0002\u0018\u0002\n\u0002\b\u0004\n\u0002\u0018\u0002\n\u0000\n\u0002\u0010\u0002\n\u0000\n\u0002\u0018\u0002\n\u0002\b\u0003\n\u0002\u0018\u0002\n\u0002\u0010 \n\u0002\b\u0005\n\u0002\u0018\u0002\n\u0002\b\f\n\u0002\u0018\u0002\n\u0002\b\u0011\u0018\u0000 J2\u00020\u0001:\u0002JKB\u0005\u00a2\u0006\u0002\u0010\u0002J\u000e\u0010\u001e\u001a\b\u0012\u0004\u0012\u00020\u000e0\u001fH\u0002J\u0010\u0010 \u001a\u00020!2\u0006\u0010\"\u001a\u00020#H\u0002J\u0010\u0010$\u001a\u00020!2\u0006\u0010\"\u001a\u00020#H\u0002J\u001c\u0010%\u001a\u00020!2\u0012\u0010&\u001a\u000e\u0012\n\u0012\b\u0012\u0004\u0012\u00020#0(0\'H\u0002J\b\u0010)\u001a\u00020!H\u0002J\b\u0010*\u001a\u00020!H\u0002J\b\u0010+\u001a\u00020!H\u0002J\u0012\u0010,\u001a\u00020!2\b\u0010-\u001a\u0004\u0018\u00010.H\u0014J\b\u0010/\u001a\u00020!H\u0014J\b\u00100\u001a\u00020!H\u0014J\b\u00101\u001a\u00020!H\u0014J\u0006\u00102\u001a\u00020!J\b\u00103\u001a\u00020!H\u0002J\b\u00104\u001a\u00020!H\u0002J\b\u00105\u001a\u00020!H\u0002J\b\u00106\u001a\u00020!H\u0002J\b\u00107\u001a\u00020!H\u0002J\b\u00108\u001a\u00020!H\u0002J&\u00109\u001a\u00020!2\u0006\u0010:\u001a\u00020;2\f\u0010<\u001a\b\u0012\u0004\u0012\u00020\u000e0\u001f2\u0006\u0010\u0019\u001a\u00020\u0011H\u0002J\b\u0010=\u001a\u00020!H\u0002J\b\u0010>\u001a\u00020!H\u0002J\u0010\u0010?\u001a\u00020!2\u0006\u0010\"\u001a\u00020#H\u0002J\u0010\u0010@\u001a\u00020!2\u0006\u0010\"\u001a\u00020#H\u0002J\u0010\u0010A\u001a\u00020!2\u0006\u0010B\u001a\u00020\u0007H\u0002J\b\u0010C\u001a\u00020!H\u0002J\u0016\u0010D\u001a\u00020!2\f\u0010E\u001a\b\u0012\u0004\u0012\u00020#0(H\u0002J\b\u0010F\u001a\u00020!H\u0002J\b\u0010G\u001a\u00020!H\u0002J\b\u0010H\u001a\u00020!H\u0002J\u0006\u0010I\u001a\u00020!R\u000e\u0010\u0003\u001a\u00020\u0004X\u0082.\u00a2\u0006\u0002\n\u0000R\u001c\u0010\u0005\u001a\u0010\u0012\f\u0012\n \b*\u0004\u0018\u00010\u00070\u00070\u0006X\u0082\u0004\u00a2\u0006\u0002\n\u0000R\u000e\u0010\t\u001a\u00020\nX\u0082\u0004\u00a2\u0006\u0002\n\u0000R\u0010\u0010\u000b\u001a\u0004\u0018\u00010\fX\u0082\u000e\u00a2\u0006\u0002\n\u0000R\u0010\u0010\r\u001a\u0004\u0018\u00010\u000eX\u0082\u000e\u00a2\u0006\u0002\n\u0000R\u0010\u0010\u000f\u001a\u0004\u0018\u00010\u000eX\u0082\u000e\u00a2\u0006\u0002\n\u0000R\u001b\u0010\u0010\u001a\u00020\u00118BX\u0082\u0084\u0002\u00a2\u0006\f\n\u0004\b\u0014\u0010\u0015\u001a\u0004\b\u0012\u0010\u0013R\u001b\u0010\u0016\u001a\u00020\u00118BX\u0082\u0084\u0002\u00a2\u0006\f\n\u0004\b\u0018\u0010\u0015\u001a\u0004\b\u0017\u0010\u0013R\u001b\u0010\u0019\u001a\u00020\u001a8BX\u0082\u0084\u0002\u00a2\u0006\f\n\u0004\b\u001d\u0010\u0015\u001a\u0004\b\u001b\u0010\u001c\u00a8\u0006L"}, d2 = {"Lcom/stockflip/MainActivity;", "Landroidx/appcompat/app/AppCompatActivity;", "()V", "binding", "Lcom/stockflip/databinding/ActivityMainBinding;", "notificationPermissionLauncher", "Landroidx/activity/result/ActivityResultLauncher;", "", "kotlin.jvm.PlatformType", "priceUpdateReceiver", "Lcom/stockflip/PriceUpdateReceiver;", "refreshJob", "Lkotlinx/coroutines/Job;", "selectedStock1", "Lcom/stockflip/StockSearchResult;", "selectedStock2", "stockSearchViewModel1", "Lcom/stockflip/viewmodel/StockSearchViewModel;", "getStockSearchViewModel1", "()Lcom/stockflip/viewmodel/StockSearchViewModel;", "stockSearchViewModel1$delegate", "Lkotlin/Lazy;", "stockSearchViewModel2", "getStockSearchViewModel2", "stockSearchViewModel2$delegate", "viewModel", "Lcom/stockflip/MainViewModel;", "getViewModel", "()Lcom/stockflip/MainViewModel;", "viewModel$delegate", "createStockAdapter", "Landroid/widget/ArrayAdapter;", "handleDeleteClick", "", "pair", "Lcom/stockflip/StockPair;", "handleEditClick", "handleUiState", "state", "Lcom/stockflip/UiState;", "", "initializeUI", "initializeUpdates", "loadInitialData", "onCreate", "savedInstanceState", "Landroid/os/Bundle;", "onDestroy", "onPause", "onResume", "refreshPrices", "registerPriceUpdateReceiver", "requestNotificationPermission", "requestPermissions", "setupAddButton", "setupObservers", "setupRecyclerView", "setupStockSearch", "input", "Lcom/google/android/material/textfield/MaterialAutoCompleteTextView;", "adapter", "setupSwipeRefresh", "showAddStockPairDialog", "showDeleteConfirmationDialog", "showEditStockPairDialog", "showError", "message", "showLoading", "showSuccess", "data", "startAutoRefresh", "stopAutoRefresh", "unregisterPriceUpdateReceiver", "updateLastUpdateTime", "Companion", "Quadruple", "app_debug"})
+/**
+ * Main activity for the StockFlip application.
+ * Handles the UI for displaying, adding, editing, and deleting stock pairs.
+ * Manages real-time stock price updates and user notifications.
+ */
+@kotlin.Metadata(mv = {1, 9, 0}, k = 1, xi = 48, d1 = {"\u0000t\n\u0002\u0018\u0002\n\u0002\u0018\u0002\n\u0002\b\u0002\n\u0002\u0018\u0002\n\u0000\n\u0002\u0018\u0002\n\u0002\u0010\u000e\n\u0002\b\u0002\n\u0002\u0018\u0002\n\u0000\n\u0002\u0018\u0002\n\u0000\n\u0002\u0018\u0002\n\u0002\b\u0002\n\u0002\u0018\u0002\n\u0002\b\b\n\u0002\u0018\u0002\n\u0002\b\u0004\n\u0002\u0018\u0002\n\u0002\b\u0002\n\u0002\u0010\u0002\n\u0000\n\u0002\u0018\u0002\n\u0002\b\u0003\n\u0002\u0018\u0002\n\u0002\u0010 \n\u0002\b\u0006\n\u0002\u0018\u0002\n\u0002\b\f\n\u0002\u0018\u0002\n\u0002\b\u0014\u0018\u0000 O2\u00020\u0001:\u0002OPB\u0005\u00a2\u0006\u0002\u0010\u0002J\u0013\u0010\u001e\u001a\b\u0012\u0004\u0012\u00020\u000e0\u001fH\u0000\u00a2\u0006\u0002\b J\u0010\u0010!\u001a\u00020\"2\u0006\u0010#\u001a\u00020$H\u0002J\u0010\u0010%\u001a\u00020\"2\u0006\u0010#\u001a\u00020$H\u0002J!\u0010&\u001a\u00020\"2\u0012\u0010\'\u001a\u000e\u0012\n\u0012\b\u0012\u0004\u0012\u00020$0)0(H\u0000\u00a2\u0006\u0002\b*J\b\u0010+\u001a\u00020\"H\u0002J\b\u0010,\u001a\u00020\"H\u0002J\b\u0010-\u001a\u00020\"H\u0002J\u0012\u0010.\u001a\u00020\"2\b\u0010/\u001a\u0004\u0018\u000100H\u0014J\b\u00101\u001a\u00020\"H\u0014J\b\u00102\u001a\u00020\"H\u0014J\b\u00103\u001a\u00020\"H\u0014J\u0006\u00104\u001a\u00020\"J\b\u00105\u001a\u00020\"H\u0002J\b\u00106\u001a\u00020\"H\u0002J\b\u00107\u001a\u00020\"H\u0002J\b\u00108\u001a\u00020\"H\u0002J\b\u00109\u001a\u00020\"H\u0002J\b\u0010:\u001a\u00020\"H\u0002J+\u0010;\u001a\u00020\"2\u0006\u0010<\u001a\u00020=2\f\u0010>\u001a\b\u0012\u0004\u0012\u00020\u000e0\u001f2\u0006\u0010\u0019\u001a\u00020\u0011H\u0000\u00a2\u0006\u0002\b?J\b\u0010@\u001a\u00020\"H\u0002J\r\u0010A\u001a\u00020\"H\u0000\u00a2\u0006\u0002\bBJ\u0010\u0010C\u001a\u00020\"2\u0006\u0010#\u001a\u00020$H\u0002J\u0010\u0010D\u001a\u00020\"2\u0006\u0010#\u001a\u00020$H\u0002J\u0010\u0010E\u001a\u00020\"2\u0006\u0010F\u001a\u00020\u0007H\u0002J\b\u0010G\u001a\u00020\"H\u0002J\u0016\u0010H\u001a\u00020\"2\f\u0010I\u001a\b\u0012\u0004\u0012\u00020$0)H\u0002J\r\u0010J\u001a\u00020\"H\u0000\u00a2\u0006\u0002\bKJ\b\u0010L\u001a\u00020\"H\u0002J\b\u0010M\u001a\u00020\"H\u0002J\b\u0010N\u001a\u00020\"H\u0002R\u000e\u0010\u0003\u001a\u00020\u0004X\u0082.\u00a2\u0006\u0002\n\u0000R\u001c\u0010\u0005\u001a\u0010\u0012\f\u0012\n \b*\u0004\u0018\u00010\u00070\u00070\u0006X\u0082\u0004\u00a2\u0006\u0002\n\u0000R\u000e\u0010\t\u001a\u00020\nX\u0082\u0004\u00a2\u0006\u0002\n\u0000R\u0010\u0010\u000b\u001a\u0004\u0018\u00010\fX\u0082\u000e\u00a2\u0006\u0002\n\u0000R\u0010\u0010\r\u001a\u0004\u0018\u00010\u000eX\u0082\u000e\u00a2\u0006\u0002\n\u0000R\u0010\u0010\u000f\u001a\u0004\u0018\u00010\u000eX\u0082\u000e\u00a2\u0006\u0002\n\u0000R\u001b\u0010\u0010\u001a\u00020\u00118BX\u0082\u0084\u0002\u00a2\u0006\f\n\u0004\b\u0014\u0010\u0015\u001a\u0004\b\u0012\u0010\u0013R\u001b\u0010\u0016\u001a\u00020\u00118BX\u0082\u0084\u0002\u00a2\u0006\f\n\u0004\b\u0018\u0010\u0015\u001a\u0004\b\u0017\u0010\u0013R\u001b\u0010\u0019\u001a\u00020\u001a8BX\u0082\u0084\u0002\u00a2\u0006\f\n\u0004\b\u001d\u0010\u0015\u001a\u0004\b\u001b\u0010\u001c\u00a8\u0006Q"}, d2 = {"Lcom/stockflip/MainActivity;", "Landroidx/appcompat/app/AppCompatActivity;", "()V", "binding", "Lcom/stockflip/databinding/ActivityMainBinding;", "notificationPermissionLauncher", "Landroidx/activity/result/ActivityResultLauncher;", "", "kotlin.jvm.PlatformType", "priceUpdateReceiver", "Lcom/stockflip/PriceUpdateReceiver;", "refreshJob", "Lkotlinx/coroutines/Job;", "selectedStock1", "Lcom/stockflip/StockSearchResult;", "selectedStock2", "stockSearchViewModel1", "Lcom/stockflip/viewmodel/StockSearchViewModel;", "getStockSearchViewModel1", "()Lcom/stockflip/viewmodel/StockSearchViewModel;", "stockSearchViewModel1$delegate", "Lkotlin/Lazy;", "stockSearchViewModel2", "getStockSearchViewModel2", "stockSearchViewModel2$delegate", "viewModel", "Lcom/stockflip/MainViewModel;", "getViewModel", "()Lcom/stockflip/MainViewModel;", "viewModel$delegate", "createStockAdapter", "Landroid/widget/ArrayAdapter;", "createStockAdapter$app_debug", "handleDeleteClick", "", "pair", "Lcom/stockflip/StockPair;", "handleEditClick", "handleUiState", "state", "Lcom/stockflip/UiState;", "", "handleUiState$app_debug", "initializeUI", "initializeUpdates", "loadInitialData", "onCreate", "savedInstanceState", "Landroid/os/Bundle;", "onDestroy", "onPause", "onResume", "refreshPrices", "registerPriceUpdateReceiver", "requestNotificationPermission", "requestPermissions", "setupAddButton", "setupObservers", "setupRecyclerView", "setupStockSearch", "input", "Lcom/google/android/material/textfield/MaterialAutoCompleteTextView;", "adapter", "setupStockSearch$app_debug", "setupSwipeRefresh", "showAddStockPairDialog", "showAddStockPairDialog$app_debug", "showDeleteConfirmationDialog", "showEditStockPairDialog", "showError", "message", "showLoading", "showSuccess", "data", "startAutoRefresh", "startAutoRefresh$app_debug", "stopAutoRefresh", "unregisterPriceUpdateReceiver", "updateLastUpdateTime", "Companion", "Quadruple", "app_debug"})
 public final class MainActivity extends androidx.appcompat.app.AppCompatActivity {
     @org.jetbrains.annotations.NotNull()
     private final kotlin.Lazy viewModel$delegate = null;
@@ -19,9 +24,21 @@ public final class MainActivity extends androidx.appcompat.app.AppCompatActivity
     private final kotlin.Lazy stockSearchViewModel1$delegate = null;
     @org.jetbrains.annotations.NotNull()
     private final kotlin.Lazy stockSearchViewModel2$delegate = null;
+    
+    /**
+     * Tag for logging purposes
+     */
     @org.jetbrains.annotations.NotNull()
     private static final java.lang.String TAG = "MainActivity";
+    
+    /**
+     * Interval for automatic price refresh in milliseconds
+     */
     private static final long AUTO_REFRESH_INTERVAL = 60000L;
+    
+    /**
+     * Format pattern for time display
+     */
     @org.jetbrains.annotations.NotNull()
     private static final java.lang.String TIME_FORMAT = "HH:mm:ss";
     @org.jetbrains.annotations.NotNull()
@@ -43,6 +60,10 @@ public final class MainActivity extends androidx.appcompat.app.AppCompatActivity
         return null;
     }
     
+    /**
+     * Initializes the activity's UI components and starts data loading.
+     * Sets up the view binding, initializes UI elements, and requests necessary permissions.
+     */
     @java.lang.Override()
     protected void onCreate(@org.jetbrains.annotations.Nullable()
     android.os.Bundle savedInstanceState) {
@@ -78,19 +99,41 @@ public final class MainActivity extends androidx.appcompat.app.AppCompatActivity
     private final void unregisterPriceUpdateReceiver() {
     }
     
-    private final void startAutoRefresh() {
+    /**
+     * Starts automatic refresh of stock prices.
+     * Cancels any existing refresh job before starting a new one.
+     */
+    public final void startAutoRefresh$app_debug() {
     }
     
+    /**
+     * Stops the automatic refresh of stock prices.
+     * Cancels the refresh job if it exists.
+     */
     private final void stopAutoRefresh() {
     }
     
-    public final void updateLastUpdateTime() {
+    /**
+     * Updates the last update time display in the UI.
+     * Uses the TIME_FORMAT pattern defined in companion object.
+     */
+    private final void updateLastUpdateTime() {
     }
     
+    /**
+     * Sets up observers for UI state changes.
+     * Handles loading, success, and error states.
+     */
     private final void setupObservers() {
     }
     
-    private final void handleUiState(com.stockflip.UiState<? extends java.util.List<com.stockflip.StockPair>> state) {
+    /**
+     * Handles different UI states and updates the view accordingly.
+     *
+     * @param state The current UI state to handle
+     */
+    public final void handleUiState$app_debug(@org.jetbrains.annotations.NotNull()
+    com.stockflip.UiState<? extends java.util.List<com.stockflip.StockPair>> state) {
     }
     
     private final void showLoading() {
@@ -114,19 +157,45 @@ public final class MainActivity extends androidx.appcompat.app.AppCompatActivity
     private final void setupAddButton() {
     }
     
-    private final void showAddStockPairDialog() {
+    /**
+     * Shows a dialog for adding a new stock pair.
+     * Handles user input validation and API calls for stock information.
+     */
+    public final void showAddStockPairDialog$app_debug() {
     }
     
-    private final android.widget.ArrayAdapter<com.stockflip.StockSearchResult> createStockAdapter() {
+    /**
+     * Creates an adapter for displaying stock search results.
+     * The adapter handles both the input field display and dropdown items.
+     *
+     * @return ArrayAdapter<StockSearchResult> configured for displaying stock search results
+     */
+    @org.jetbrains.annotations.NotNull()
+    public final android.widget.ArrayAdapter<com.stockflip.StockSearchResult> createStockAdapter$app_debug() {
         return null;
     }
     
-    private final void setupStockSearch(com.google.android.material.textfield.MaterialAutoCompleteTextView input, android.widget.ArrayAdapter<com.stockflip.StockSearchResult> adapter, com.stockflip.viewmodel.StockSearchViewModel viewModel) {
+    /**
+     * Sets up the stock search functionality for an input field.
+     * Configures the input field with debounced search, dropdown display,
+     * and result handling through the ViewModel.
+     *
+     * @param input The AutoCompleteTextView to set up search for
+     * @param adapter The adapter to display search results
+     * @param viewModel The ViewModel handling the search logic
+     */
+    public final void setupStockSearch$app_debug(@org.jetbrains.annotations.NotNull()
+    com.google.android.material.textfield.MaterialAutoCompleteTextView input, @org.jetbrains.annotations.NotNull()
+    android.widget.ArrayAdapter<com.stockflip.StockSearchResult> adapter, @org.jetbrains.annotations.NotNull()
+    com.stockflip.viewmodel.StockSearchViewModel viewModel) {
     }
     
-    private final void showDeleteConfirmationDialog(com.stockflip.StockPair pair) {
-    }
-    
+    /**
+     * Shows a dialog for editing an existing stock pair.
+     * Handles validation and updates through the ViewModel.
+     *
+     * @param pair The StockPair to edit
+     */
     private final void showEditStockPairDialog(com.stockflip.StockPair pair) {
     }
     
@@ -137,6 +206,15 @@ public final class MainActivity extends androidx.appcompat.app.AppCompatActivity
     }
     
     private final void requestNotificationPermission() {
+    }
+    
+    /**
+     * Shows a confirmation dialog for deleting a stock pair.
+     * Handles the deletion through the ViewModel if confirmed.
+     *
+     * @param pair The StockPair to delete
+     */
+    private final void showDeleteConfirmationDialog(com.stockflip.StockPair pair) {
     }
     
     @kotlin.Metadata(mv = {1, 9, 0}, k = 1, xi = 48, d1 = {"\u0000\u001a\n\u0002\u0018\u0002\n\u0002\u0010\u0000\n\u0002\b\u0002\n\u0002\u0010\t\n\u0000\n\u0002\u0010\u000e\n\u0002\b\u0002\b\u0086\u0003\u0018\u00002\u00020\u0001B\u0007\b\u0002\u00a2\u0006\u0002\u0010\u0002R\u000e\u0010\u0003\u001a\u00020\u0004X\u0082T\u00a2\u0006\u0002\n\u0000R\u000e\u0010\u0005\u001a\u00020\u0006X\u0082T\u00a2\u0006\u0002\n\u0000R\u000e\u0010\u0007\u001a\u00020\u0006X\u0082T\u00a2\u0006\u0002\n\u0000\u00a8\u0006\b"}, d2 = {"Lcom/stockflip/MainActivity$Companion;", "", "()V", "AUTO_REFRESH_INTERVAL", "", "TAG", "", "TIME_FORMAT", "app_debug"})

@@ -1,7 +1,7 @@
 {
     "logs": [
         {
-            "outputFile": "com.stockflip.app-mergeDebugResources-42:/values-en-rAU/values-en-rAU.xml",
+            "outputFile": "com.stockflip.app-mergeDebugResources-44:/values-en-rAU/values-en-rAU.xml",
             "map": [
                 {
                     "source": "/Users/johanlindau/.gradle/caches/transforms-3/42349fcab7a5a6a21b6eefeb34a9888a/transformed/appcompat-1.6.1/res/values-en-rAU/values-en-rAU.xml",

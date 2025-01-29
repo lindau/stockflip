@@ -36,6 +36,11 @@ import com.stockflip.viewmodel.StockSearchViewModel
 import com.stockflip.repository.StockRepository
 import com.stockflip.repository.SearchState
 
+/**
+ * Main activity for the StockFlip application.
+ * Handles the UI for displaying, adding, editing, and deleting stock pairs.
+ * Manages real-time stock price updates and user notifications.
+ */
 class MainActivity : AppCompatActivity() {
     private val viewModel: MainViewModel by viewModels {
         object : ViewModelProvider.Factory {
@@ -76,6 +81,10 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    /**
+     * Initializes the activity's UI components and starts data loading.
+     * Sets up the view binding, initializes UI elements, and requests necessary permissions.
+     */
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
@@ -101,7 +110,7 @@ class MainActivity : AppCompatActivity() {
         stopAutoRefresh()
     }
 
-    private fun initializeUI() {
+    private fun initializeUI(): Unit {
         setupRecyclerView()
         setupObservers()
         setupSwipeRefresh()
@@ -120,7 +129,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun loadInitialData() {
+    private fun loadInitialData(): Unit {
         lifecycleScope.launch {
             viewModel.loadStockPairs()
         }
@@ -148,7 +157,11 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun startAutoRefresh() {
+    /**
+     * Starts automatic refresh of stock prices.
+     * Cancels any existing refresh job before starting a new one.
+     */
+    internal fun startAutoRefresh(): Unit {
         refreshJob?.cancel()
         refreshJob = lifecycleScope.launch {
             while (isActive) {
@@ -164,27 +177,44 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun stopAutoRefresh() {
+    /**
+     * Stops the automatic refresh of stock prices.
+     * Cancels the refresh job if it exists.
+     */
+    private fun stopAutoRefresh(): Unit {
         refreshJob?.cancel()
         refreshJob = null
     }
 
-    fun updateLastUpdateTime() {
-        val currentTime = SimpleDateFormat(TIME_FORMAT, Locale.getDefault()).format(Date())
+    /**
+     * Updates the last update time display in the UI.
+     * Uses the TIME_FORMAT pattern defined in companion object.
+     */
+    private fun updateLastUpdateTime(): Unit {
+        val currentTime: String = SimpleDateFormat(TIME_FORMAT, Locale.getDefault()).format(Date())
         binding.lastUpdateTime.text = getString(R.string.last_updated, currentTime)
         Log.d(TAG, "Updated last update time to $currentTime")
     }
 
-    private fun setupObservers() {
+    /**
+     * Sets up observers for UI state changes.
+     * Handles loading, success, and error states.
+     */
+    private fun setupObservers(): Unit {
         lifecycleScope.launch {
-            viewModel.uiState.collect { state ->
+            viewModel.uiState.collect { state: UiState<List<StockPair>> ->
                 Log.d(TAG, "Received UI state update: $state")
                 handleUiState(state)
             }
         }
     }
 
-    private fun handleUiState(state: UiState<List<StockPair>>) {
+    /**
+     * Handles different UI states and updates the view accordingly.
+     *
+     * @param state The current UI state to handle
+     */
+    internal fun handleUiState(state: UiState<List<StockPair>>): Unit {
         when (state) {
             is UiState.Loading -> showLoading()
             is UiState.Success -> showSuccess(state.data)
@@ -192,49 +222,53 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun showLoading() {
+    private fun showLoading(): Unit {
         Log.d(TAG, "Showing loading state")
         binding.progressBar.visibility = View.VISIBLE
     }
 
-    private fun showSuccess(data: List<StockPair>) {
+    private fun showSuccess(data: List<StockPair>): Unit {
         Log.d(TAG, "Received ${data.size} stock pairs")
         binding.progressBar.visibility = View.GONE
         (binding.stockPairsList.adapter as StockPairAdapter).submitList(data)
     }
 
-    private fun showError(message: String) {
+    private fun showError(message: String): Unit {
         Log.e(TAG, "Error state: $message")
         binding.progressBar.visibility = View.GONE
         Toast.makeText(this, message, Toast.LENGTH_LONG).show()
     }
 
-    private fun setupRecyclerView() {
+    private fun setupRecyclerView(): Unit {
         Log.d(TAG, "Setting up RecyclerView")
         binding.stockPairsList.layoutManager = LinearLayoutManager(this)
         binding.stockPairsList.adapter = StockPairAdapter(
-            onDeleteClick = { pair -> handleDeleteClick(pair) },
-            onEditClick = { pair -> handleEditClick(pair) }
+            onDeleteClick = { pair: StockPair -> handleDeleteClick(pair) },
+            onEditClick = { pair: StockPair -> handleEditClick(pair) }
         )
     }
 
-    private fun handleDeleteClick(pair: StockPair) {
+    private fun handleDeleteClick(pair: StockPair): Unit {
         Log.d(TAG, "Delete clicked for pair: ${pair.companyName1} - ${pair.companyName2}")
         showDeleteConfirmationDialog(pair)
     }
 
-    private fun handleEditClick(pair: StockPair) {
+    private fun handleEditClick(pair: StockPair): Unit {
         Log.d(TAG, "Edit clicked for pair: ${pair.companyName1} - ${pair.companyName2}")
         showEditStockPairDialog(pair)
     }
 
-    private fun setupAddButton() {
+    private fun setupAddButton(): Unit {
         binding.addPairButton.setOnClickListener {
             showAddStockPairDialog()
         }
     }
 
-    private fun showAddStockPairDialog() {
+    /**
+     * Shows a dialog for adding a new stock pair.
+     * Handles user input validation and API calls for stock information.
+     */
+    internal fun showAddStockPairDialog() {
         val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_add_stock_pair, null)
         val ticker1Input = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.ticker1Input)
         val ticker2Input = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.ticker2Input)
@@ -300,32 +334,32 @@ class MainActivity : AppCompatActivity() {
             .show()
     }
 
-    private fun createStockAdapter(): ArrayAdapter<StockSearchResult> {
+    /**
+     * Creates an adapter for displaying stock search results.
+     * The adapter handles both the input field display and dropdown items.
+     *
+     * @return ArrayAdapter<StockSearchResult> configured for displaying stock search results
+     */
+    internal fun createStockAdapter(): ArrayAdapter<StockSearchResult> {
         return object : ArrayAdapter<StockSearchResult>(
             this,
             R.layout.dropdown_item,
             mutableListOf()
         ) {
             override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
-                val view = convertView ?: LayoutInflater.from(context)
-                    .inflate(R.layout.dropdown_item, parent, false)
-                
-                val item = getItem(position)
-                if (item != null) {
-                    // For the input field, show the ticker first
-                    (view as TextView).text = "${item.symbol} - ${item.name}"
-                }
-                
-                return view
+                return createAdapterItemView(position, convertView, parent)
             }
 
             override fun getDropDownView(position: Int, convertView: View?, parent: ViewGroup): View {
-                val view = convertView ?: LayoutInflater.from(context)
+                return createAdapterItemView(position, convertView, parent)
+            }
+
+            private fun createAdapterItemView(position: Int, convertView: View?, parent: ViewGroup): View {
+                val view: View = convertView ?: LayoutInflater.from(context)
                     .inflate(R.layout.dropdown_item, parent, false)
                 
-                val item = getItem(position)
+                val item: StockSearchResult? = getItem(position)
                 if (item != null) {
-                    // For the dropdown items, show more detailed information
                     (view as TextView).text = "${item.symbol} - ${item.name}"
                 }
                 
@@ -336,14 +370,14 @@ class MainActivity : AppCompatActivity() {
                 return object : Filter() {
                     @Suppress("UNCHECKED_CAST")
                     override fun performFiltering(constraint: CharSequence?): FilterResults {
-                        val filterResults = FilterResults()
+                        val filterResults: FilterResults = FilterResults()
                         filterResults.values = mutableListOf<StockSearchResult>()
                         filterResults.count = 0
                         return filterResults
                     }
 
                     @Suppress("UNCHECKED_CAST")
-                    override fun publishResults(constraint: CharSequence?, results: FilterResults?) {
+                    override fun publishResults(constraint: CharSequence?, results: FilterResults?): Unit {
                         // Do nothing - we handle filtering through the ViewModel
                     }
                 }
@@ -351,7 +385,16 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun setupStockSearch(
+    /**
+     * Sets up the stock search functionality for an input field.
+     * Configures the input field with debounced search, dropdown display,
+     * and result handling through the ViewModel.
+     *
+     * @param input The AutoCompleteTextView to set up search for
+     * @param adapter The adapter to display search results
+     * @param viewModel The ViewModel handling the search logic
+     */
+    internal fun setupStockSearch(
         input: MaterialAutoCompleteTextView, 
         adapter: ArrayAdapter<StockSearchResult>,
         viewModel: StockSearchViewModel
@@ -363,7 +406,7 @@ class MainActivity : AppCompatActivity() {
         input.setAdapter(adapter)  // Make sure adapter is set
         
         // Create a separate coroutine scope for this input
-        val stateCollectionJob = lifecycleScope.launch {
+        lifecycleScope.launch {
             viewModel.searchState
                 .collect { state ->
                     Log.d(TAG, "Search state changed for input ${input.id}: $state")
@@ -425,24 +468,12 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun showDeleteConfirmationDialog(pair: StockPair) {
-        MaterialAlertDialogBuilder(this)
-            .setTitle("Delete Stock Pair")
-            .setMessage("Are you sure you want to delete the pair ${pair.getDisplayName()}?")
-            .setPositiveButton("Delete") { _, _ ->
-                lifecycleScope.launch {
-                    try {
-                        viewModel.deleteStockPair(pair)
-                        Toast.makeText(this@MainActivity, "Stock pair deleted successfully", Toast.LENGTH_SHORT).show()
-                    } catch (e: Exception) {
-                        Toast.makeText(this@MainActivity, "Failed to delete stock pair: ${e.message}", Toast.LENGTH_LONG).show()
-                    }
-                }
-            }
-            .setNegativeButton("Cancel", null)
-            .show()
-    }
-
+    /**
+     * Shows a dialog for editing an existing stock pair.
+     * Handles validation and updates through the ViewModel.
+     *
+     * @param pair The StockPair to edit
+     */
     private fun showEditStockPairDialog(pair: StockPair) {
         val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_add_stock_pair, null)
         val ticker1Input = dialogView.findViewById<EditText>(R.id.ticker1Input).apply { setText(pair.ticker1) }
@@ -559,9 +590,36 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    /**
+     * Shows a confirmation dialog for deleting a stock pair.
+     * Handles the deletion through the ViewModel if confirmed.
+     *
+     * @param pair The StockPair to delete
+     */
+    private fun showDeleteConfirmationDialog(pair: StockPair) {
+        MaterialAlertDialogBuilder(this)
+            .setTitle("Delete Stock Pair")
+            .setMessage("Are you sure you want to delete the pair ${pair.getDisplayName()}?")
+            .setPositiveButton("Delete") { _, _ ->
+                lifecycleScope.launch {
+                    try {
+                        viewModel.deleteStockPair(pair)
+                        Toast.makeText(this@MainActivity, "Stock pair deleted successfully", Toast.LENGTH_SHORT).show()
+                    } catch (e: Exception) {
+                        Toast.makeText(this@MainActivity, "Failed to delete stock pair: ${e.message}", Toast.LENGTH_LONG).show()
+                    }
+                }
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
     companion object {
+        /** Tag for logging purposes */
         private const val TAG = "MainActivity"
+        /** Interval for automatic price refresh in milliseconds */
         private const val AUTO_REFRESH_INTERVAL = 60000L // 1 minute
+        /** Format pattern for time display */
         private const val TIME_FORMAT = "HH:mm:ss"
     }
 } 
