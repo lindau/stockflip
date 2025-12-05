@@ -153,6 +153,66 @@ object YahooFinanceService {
         }
     }
 
+    suspend fun getKeyMetric(symbol: String, metricType: WatchType.MetricType): Double? {
+        return try {
+            Log.d(TAG, "Fetching key metric ${metricType.name} for symbol: $symbol")
+            val url = when (metricType) {
+                WatchType.MetricType.PE_RATIO -> 
+                    "https://query2.finance.yahoo.com/v10/finance/quoteSummary/$symbol?modules=summaryDetail"
+                WatchType.MetricType.PS_RATIO -> 
+                    "https://query2.finance.yahoo.com/v10/finance/quoteSummary/$symbol?modules=summaryDetail"
+                WatchType.MetricType.DIVIDEND_YIELD -> 
+                    "https://query2.finance.yahoo.com/v10/finance/quoteSummary/$symbol?modules=summaryDetail"
+            }
+            
+            val client = OkHttpClient.Builder()
+                .connectTimeout(10, TimeUnit.SECONDS)
+                .readTimeout(10, TimeUnit.SECONDS)
+                .build()
+                
+            val request = okhttp3.Request.Builder()
+                .url(url)
+                .addHeader("User-Agent", "Mozilla/5.0")
+                .build()
+                
+            val response = client.newCall(request).execute()
+            
+            if (!response.isSuccessful) {
+                Log.e(TAG, "API Error: ${response.code} - ${response.message}")
+                return null
+            }
+            
+            val responseBody = response.body?.string()
+            if (responseBody == null) {
+                Log.e(TAG, "Empty response body")
+                return null
+            }
+            
+            val jsonObject = JSONObject(responseBody)
+            val quoteSummary = jsonObject.optJSONObject("quoteSummary")
+            val result = quoteSummary?.optJSONArray("result")?.optJSONObject(0)
+            val summaryDetail = result?.optJSONObject("summaryDetail")
+            
+            when (metricType) {
+                WatchType.MetricType.PE_RATIO -> {
+                    val trailingPE = summaryDetail?.optJSONObject("trailingPE")?.optDouble("raw")
+                    trailingPE?.takeIf { !it.isNaN() && it > 0 }
+                }
+                WatchType.MetricType.PS_RATIO -> {
+                    val priceToSalesTrailing12Months = summaryDetail?.optJSONObject("priceToSalesTrailing12Months")?.optDouble("raw")
+                    priceToSalesTrailing12Months?.takeIf { !it.isNaN() && it > 0 }
+                }
+                WatchType.MetricType.DIVIDEND_YIELD -> {
+                    val dividendYield = summaryDetail?.optJSONObject("dividendYield")?.optDouble("raw")
+                    dividendYield?.takeIf { !it.isNaN() && it > 0 }?.let { it * 100 } // Convert to percentage
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error fetching key metric ${metricType.name} for $symbol: ${e.message}", e)
+            null
+        }
+    }
+
     @JvmStatic
     suspend fun searchStocks(query: String): List<StockSearchResult> = withContext(Dispatchers.IO) {
         try {

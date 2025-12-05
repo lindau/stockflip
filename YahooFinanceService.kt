@@ -1,3 +1,8 @@
+import android.util.Log
+import kotlinx.coroutines.delay
+import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
+
 // Modified YahooFinanceService.kt
 object YahooFinanceService {
     private const val BASE_URL = "https://query1.finance.yahoo.com/"
@@ -24,22 +29,22 @@ object YahooFinanceService {
         }
         return null
     }
-// build.gradle (Module)
-plugins {
-    id 'androidx.room'
-}
 
-android {
-    ...
-    defaultConfig {
-        ...
-        javaCompileOptions {
-            annotationProcessorOptions {
-                arguments = [
-                    "room.schemaLocation": "$projectDir/schemas".toString()
-                ]
+    suspend fun getATH(symbol: String): Double? {
+        repeat(MAX_RETRIES) { attempt ->
+            try {
+                val response = api.getStockPriceFullHistory(symbol)
+                val highs = response.chart.result.firstOrNull()?.indicators?.quote?.firstOrNull()?.high
+                return highs?.filterNotNull()?.maxOrNull()
+            } catch (e: Exception) {
+                if (attempt == MAX_RETRIES - 1) {
+                    // Log error or rethrow if crucial, but for now return null to be safe
+                     Log.e("YahooFinanceService", "Error fetching ATH for $symbol", e)
+                     return null
+                }
+                delay(1000L * (attempt + 1))
             }
         }
+        return null
     }
-}
 }

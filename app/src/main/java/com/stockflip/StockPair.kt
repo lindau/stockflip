@@ -5,6 +5,8 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 import androidx.room.Ignore
 import java.text.DecimalFormat
+import java.text.DecimalFormatSymbols
+import java.util.Locale
 
 @Entity(tableName = "stock_pairs")
 data class StockPair(
@@ -51,6 +53,6 @@ data class StockPair(
 
     companion object {
         private const val TAG = "StockPair"
-        private val priceFormat = DecimalFormat("#,##0.00")
+        private val priceFormat = DecimalFormat("#,##0.00", DecimalFormatSymbols(Locale("sv", "SE")))
     }
 } 

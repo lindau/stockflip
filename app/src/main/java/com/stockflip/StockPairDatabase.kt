@@ -5,15 +5,18 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.migration.Migration
+import androidx.room.TypeConverters
 import androidx.sqlite.db.SupportSQLiteDatabase
 
 @Database(
-    entities = [StockPair::class],
-    version = 5,
+    entities = [StockPair::class, WatchItem::class],
+    version = 6,
     exportSchema = true
 )
+@TypeConverters(WatchTypeConverter::class)
 abstract class StockPairDatabase : RoomDatabase() {
     abstract fun stockPairDao(): StockPairDao
+    abstract fun watchItemDao(): WatchItemDao
 
     companion object {
         private val MIGRATION_4_5 = object : Migration(4, 5) {
@@ -46,6 +49,39 @@ abstract class StockPairDatabase : RoomDatabase() {
             }
         }
 
+        private val MIGRATION_5_6 = object : Migration(5, 6) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // Create new watch_items table
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS watch_items (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        watchType TEXT NOT NULL,
+                        ticker1 TEXT,
+                        ticker2 TEXT,
+                        companyName1 TEXT,
+                        companyName2 TEXT,
+                        ticker TEXT,
+                        companyName TEXT
+                    )
+                """)
+
+                // Migrate existing stock_pairs to watch_items
+                db.execSQL("""
+                    INSERT INTO watch_items (id, watchType, ticker1, ticker2, companyName1, companyName2, ticker, companyName)
+                    SELECT 
+                        id,
+                        'PRICE_PAIR|' || priceDifference || '|' || notifyWhenEqual,
+                        ticker1,
+                        ticker2,
+                        companyName1,
+                        companyName2,
+                        NULL,
+                        NULL
+                    FROM stock_pairs
+                """)
+            }
+        }
+
         @Volatile
         private var INSTANCE: StockPairDatabase? = null
 
@@ -56,7 +92,7 @@ abstract class StockPairDatabase : RoomDatabase() {
                     StockPairDatabase::class.java,
                     "stock_pair_database"
                 )
-                .addMigrations(MIGRATION_4_5)
+                .addMigrations(MIGRATION_4_5, MIGRATION_5_6)
                 .build()
                 INSTANCE = instance
                 instance

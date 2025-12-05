@@ -47,7 +47,7 @@ class MainActivity : AppCompatActivity() {
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
                 val database = StockPairDatabase.getDatabase(applicationContext)
                 @Suppress("UNCHECKED_CAST")
-                return MainViewModel(database.stockPairDao(), YahooFinanceService) as T
+                return MainViewModel(database.stockPairDao(), database.watchItemDao(), YahooFinanceService) as T
             }
         }
     }
@@ -56,6 +56,7 @@ class MainActivity : AppCompatActivity() {
     private var refreshJob: Job? = null
     private var selectedStock1: StockSearchResult? = null
     private var selectedStock2: StockSearchResult? = null
+    private var selectedStock: StockSearchResult? = null
     private val notificationPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { isGranted ->
@@ -73,6 +74,15 @@ class MainActivity : AppCompatActivity() {
     }
     
     private val stockSearchViewModel2: StockSearchViewModel by viewModels {
+        object : ViewModelProvider.Factory {
+            override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                @Suppress("UNCHECKED_CAST")
+                return StockSearchViewModel(StockRepository()) as T
+            }
+        }
+    }
+    
+    private val stockSearchViewModel: StockSearchViewModel by viewModels {
         object : ViewModelProvider.Factory {
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
                 @Suppress("UNCHECKED_CAST")
@@ -131,7 +141,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun loadInitialData(): Unit {
         lifecycleScope.launch {
-            viewModel.loadStockPairs()
+            viewModel.loadWatchItems()
         }
     }
 
@@ -167,7 +177,7 @@ class MainActivity : AppCompatActivity() {
             while (isActive) {
                 try {
                     Log.d(TAG, "Auto-refreshing stock prices")
-                    viewModel.refreshStockPairs()
+                    viewModel.refreshWatchItems()
                     updateLastUpdateTime()
                 } catch (e: Exception) {
                     Log.e(TAG, "Error during auto-refresh: ${e.message}")
@@ -202,9 +212,9 @@ class MainActivity : AppCompatActivity() {
      */
     private fun setupObservers(): Unit {
         lifecycleScope.launch {
-            viewModel.uiState.collect { state: UiState<List<StockPair>> ->
+            viewModel.watchItemUiState.collect { state: UiState<List<WatchItem>> ->
                 Log.d(TAG, "Received UI state update: $state")
-                handleUiState(state)
+                handleWatchItemUiState(state)
             }
         }
     }
@@ -214,10 +224,10 @@ class MainActivity : AppCompatActivity() {
      *
      * @param state The current UI state to handle
      */
-    internal fun handleUiState(state: UiState<List<StockPair>>): Unit {
+    internal fun handleWatchItemUiState(state: UiState<List<WatchItem>>): Unit {
         when (state) {
             is UiState.Loading -> showLoading()
-            is UiState.Success -> showSuccess(state.data)
+            is UiState.Success -> showWatchItemSuccess(state.data)
             is UiState.Error -> showError(state.message)
         }
     }
@@ -227,10 +237,10 @@ class MainActivity : AppCompatActivity() {
         binding.progressBar.visibility = View.VISIBLE
     }
 
-    private fun showSuccess(data: List<StockPair>): Unit {
-        Log.d(TAG, "Received ${data.size} stock pairs")
+    private fun showWatchItemSuccess(data: List<WatchItem>): Unit {
+        Log.d(TAG, "Received ${data.size} watch items")
         binding.progressBar.visibility = View.GONE
-        (binding.stockPairsList.adapter as StockPairAdapter).submitList(data)
+        (binding.stockPairsList.adapter as WatchItemAdapter).submitList(data)
     }
 
     private fun showError(message: String): Unit {
@@ -242,26 +252,57 @@ class MainActivity : AppCompatActivity() {
     private fun setupRecyclerView(): Unit {
         Log.d(TAG, "Setting up RecyclerView")
         binding.stockPairsList.layoutManager = LinearLayoutManager(this)
-        binding.stockPairsList.adapter = StockPairAdapter(
-            onDeleteClick = { pair: StockPair -> handleDeleteClick(pair) },
-            onEditClick = { pair: StockPair -> handleEditClick(pair) }
+        binding.stockPairsList.adapter = WatchItemAdapter(
+            onDeleteClick = { item: WatchItem -> handleDeleteClick(item) },
+            onEditClick = { item: WatchItem -> handleEditClick(item) },
+            onItemClick = { item: WatchItem -> showWatchItemDetailDialog(item) }
         )
     }
 
-    private fun handleDeleteClick(pair: StockPair): Unit {
-        Log.d(TAG, "Delete clicked for pair: ${pair.companyName1} - ${pair.companyName2}")
-        showDeleteConfirmationDialog(pair)
+    private fun handleDeleteClick(item: WatchItem): Unit {
+        Log.d(TAG, "Delete clicked for watch item: ${item.getDisplayName()}")
+        showDeleteConfirmationDialog(item)
     }
 
-    private fun handleEditClick(pair: StockPair): Unit {
-        Log.d(TAG, "Edit clicked for pair: ${pair.companyName1} - ${pair.companyName2}")
-        showEditStockPairDialog(pair)
+    private fun handleEditClick(item: WatchItem): Unit {
+        Log.d(TAG, "Edit clicked for watch item: ${item.getDisplayName()}")
+        when (item.watchType) {
+            is WatchType.PricePair -> showEditStockPairDialog(item)
+            is WatchType.PriceTarget -> showEditPriceTargetDialog(item)
+            is WatchType.KeyMetrics -> showEditKeyMetricsDialog(item)
+        }
     }
 
     private fun setupAddButton(): Unit {
         binding.addPairButton.setOnClickListener {
-            showAddStockPairDialog()
+            showWatchTypeSelectionDialog()
         }
+    }
+
+    /**
+     * Shows a dialog for selecting the type of watch to create.
+     * This allows for easy extension with new watch types in the future.
+     */
+    private fun showWatchTypeSelectionDialog(): Unit {
+        val watchTypes = listOf(
+            "Aktiepar" to WatchType.PricePair(0.0, false),
+            "Prisbevakning" to WatchType.PriceTarget(0.0, WatchType.PriceDirection.ABOVE),
+            "Nyckeltal" to WatchType.KeyMetrics(WatchType.MetricType.PE_RATIO, 0.0, WatchType.PriceDirection.ABOVE)
+        )
+        val watchTypeNames = watchTypes.map { it.first }.toTypedArray()
+
+        MaterialAlertDialogBuilder(this)
+            .setTitle("Välj bevakningstyp")
+            .setItems(watchTypeNames) { _, which ->
+                val selectedType = watchTypes[which].second
+                when (selectedType) {
+                    is WatchType.PricePair -> showAddStockPairDialog()
+                    is WatchType.PriceTarget -> showAddPriceTargetDialog()
+                    is WatchType.KeyMetrics -> showAddKeyMetricsDialog()
+                }
+            }
+            .setNegativeButton("Avbryt", null)
+            .show()
     }
 
     /**
@@ -309,28 +350,195 @@ class MainActivity : AppCompatActivity() {
                         try {
                             binding.progressBar.visibility = View.VISIBLE
                             
-                            val stockPair = StockPair(
+                            val watchItem = WatchItem(
+                                watchType = WatchType.PricePair(priceDifference, notifyWhenEqual),
                                 ticker1 = selectedStock1!!.symbol,
                                 ticker2 = selectedStock2!!.symbol,
                                 companyName1 = selectedStock1!!.name,
-                                companyName2 = selectedStock2!!.name,
-                                priceDifference = priceDifference,
-                                notifyWhenEqual = notifyWhenEqual
+                                companyName2 = selectedStock2!!.name
                             )
                             
-                            viewModel.addStockPair(stockPair)
+                            viewModel.addWatchItem(watchItem)
                             binding.progressBar.visibility = View.GONE
-                            Toast.makeText(this@MainActivity, "Stock pair added successfully", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(this@MainActivity, "Aktiepar tillagt", Toast.LENGTH_SHORT).show()
                         } catch (e: Exception) {
                             binding.progressBar.visibility = View.GONE
-                            Toast.makeText(this@MainActivity, "Failed to add stock pair: ${e.message}", Toast.LENGTH_LONG).show()
+                            Toast.makeText(this@MainActivity, "Kunde inte lägga till aktiepar: ${e.message}", Toast.LENGTH_LONG).show()
                         }
                     }
                 } else {
-                    Toast.makeText(this, "Please select both stocks and enter price difference", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, "Välj båda aktier och ange prissskillnad", Toast.LENGTH_SHORT).show()
                 }
             }
             .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    /**
+     * Shows a dialog for adding a new price target watch.
+     * Handles user input validation and API calls for stock information.
+     */
+    private fun showAddPriceTargetDialog(): Unit {
+        val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_add_price_target, null)
+        val tickerInput = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.tickerInput)
+        val targetPriceInput = dialogView.findViewById<TextInputEditText>(R.id.targetPriceInput)
+        val directionInput = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.directionInput)
+
+        // Set up adapter for stock search
+        val adapter = createStockAdapter()
+        tickerInput.setAdapter(adapter)
+
+        // Set up search functionality
+        setupStockSearch(tickerInput, adapter, stockSearchViewModel)
+
+        // Set up item click listener
+        tickerInput.setOnItemClickListener { _, _, position, _ ->
+            selectedStock = adapter.getItem(position)
+            Log.d(TAG, "Selected stock: $selectedStock")
+        }
+
+        // Set up direction dropdown
+        val directions = arrayOf("Över", "Under")
+        val directionAdapter = ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line, directions)
+        directionInput.setAdapter(directionAdapter)
+        directionInput.setOnItemClickListener { _, _, position, _ ->
+            Log.d(TAG, "Selected direction: ${directions[position]}")
+        }
+
+        MaterialAlertDialogBuilder(this)
+            .setTitle("Lägg till prisbevakning")
+            .setView(dialogView)
+            .setPositiveButton("Lägg till") { _, _ ->
+                val targetPriceStr = targetPriceInput.text.toString()
+                val directionStr = directionInput.text.toString()
+
+                if (selectedStock != null && targetPriceStr.isNotEmpty() && directionStr.isNotEmpty()) {
+                    val targetPrice = targetPriceStr.toDoubleOrNull()
+                    val direction = when (directionStr) {
+                        "Över" -> WatchType.PriceDirection.ABOVE
+                        "Under" -> WatchType.PriceDirection.BELOW
+                        else -> WatchType.PriceDirection.ABOVE
+                    }
+
+                    if (targetPrice != null && targetPrice > 0) {
+                        lifecycleScope.launch {
+                            try {
+                                binding.progressBar.visibility = View.VISIBLE
+
+                                val watchItem = WatchItem(
+                                    watchType = WatchType.PriceTarget(targetPrice, direction),
+                                    ticker = selectedStock!!.symbol,
+                                    companyName = selectedStock!!.name
+                                )
+
+                                viewModel.addWatchItem(watchItem)
+                                binding.progressBar.visibility = View.GONE
+                                Toast.makeText(this@MainActivity, "Prisbevakning tillagd", Toast.LENGTH_SHORT).show()
+                            } catch (e: Exception) {
+                                binding.progressBar.visibility = View.GONE
+                                Toast.makeText(this@MainActivity, "Kunde inte lägga till prisbevakning: ${e.message}", Toast.LENGTH_LONG).show()
+                            }
+                        }
+                    } else {
+                        Toast.makeText(this, "Ange ett giltigt målpris", Toast.LENGTH_SHORT).show()
+                    }
+                } else {
+                    Toast.makeText(this, "Välj aktie, ange målpris och riktning", Toast.LENGTH_SHORT).show()
+                }
+            }
+            .setNegativeButton("Avbryt", null)
+            .show()
+    }
+
+    /**
+     * Shows a dialog for adding a new key metrics watch.
+     * Handles user input validation and API calls for stock information.
+     */
+    private fun showAddKeyMetricsDialog(): Unit {
+        val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_add_key_metrics, null)
+        val tickerInput = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.tickerInput)
+        val metricTypeInput = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.metricTypeInput)
+        val targetValueInput = dialogView.findViewById<TextInputEditText>(R.id.targetValueInput)
+        val directionInput = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.directionInput)
+
+        // Set up adapter for stock search
+        val adapter = createStockAdapter()
+        tickerInput.setAdapter(adapter)
+        setupStockSearch(tickerInput, adapter, stockSearchViewModel)
+
+        tickerInput.setOnItemClickListener { _, _, position, _ ->
+            selectedStock = adapter.getItem(position)
+            Log.d(TAG, "Selected stock: $selectedStock")
+        }
+
+        // Set up metric type dropdown
+        val metricTypes = arrayOf("P/E-tal", "P/S-tal", "Utdelningsprocent")
+        val metricTypeAdapter = ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line, metricTypes)
+        metricTypeInput.setAdapter(metricTypeAdapter)
+        metricTypeInput.setOnItemClickListener { _, _, position, _ ->
+            Log.d(TAG, "Selected metric type: ${metricTypes[position]}")
+        }
+
+        // Set up direction dropdown
+        val directions = arrayOf("Över", "Under")
+        val directionAdapter = ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line, directions)
+        directionInput.setAdapter(directionAdapter)
+        directionInput.setOnItemClickListener { _, _, position, _ ->
+            Log.d(TAG, "Selected direction: ${directions[position]}")
+        }
+
+        MaterialAlertDialogBuilder(this)
+            .setTitle("Lägg till nyckeltalsbevakning")
+            .setView(dialogView)
+            .setPositiveButton("Lägg till") { _, _ ->
+                val tickerStr = tickerInput.text.toString().trim()
+                val metricTypeStr = metricTypeInput.text.toString()
+                val targetValueStr = targetValueInput.text.toString()
+                val directionStr = directionInput.text.toString()
+
+                val finalTicker = selectedStock?.symbol ?: tickerStr
+
+                if (finalTicker.isNotEmpty() && metricTypeStr.isNotEmpty() && targetValueStr.isNotEmpty() && directionStr.isNotEmpty()) {
+                    val metricType = when (metricTypeStr) {
+                        "P/E-tal" -> WatchType.MetricType.PE_RATIO
+                        "P/S-tal" -> WatchType.MetricType.PS_RATIO
+                        "Utdelningsprocent" -> WatchType.MetricType.DIVIDEND_YIELD
+                        else -> null
+                    }
+                    val targetValue = targetValueStr.toDoubleOrNull()
+                    val direction = when (directionStr) {
+                        "Över" -> WatchType.PriceDirection.ABOVE
+                        "Under" -> WatchType.PriceDirection.BELOW
+                        else -> null
+                    }
+
+                    if (metricType != null && targetValue != null && targetValue > 0 && direction != null) {
+                        lifecycleScope.launch {
+                            try {
+                                binding.progressBar.visibility = View.VISIBLE
+
+                                val watchItem = WatchItem(
+                                    watchType = WatchType.KeyMetrics(metricType, targetValue, direction),
+                                    ticker = finalTicker,
+                                    companyName = selectedStock?.name
+                                )
+
+                                viewModel.addWatchItem(watchItem)
+                                binding.progressBar.visibility = View.GONE
+                                Toast.makeText(this@MainActivity, "Nyckeltalsbevakning tillagd", Toast.LENGTH_SHORT).show()
+                            } catch (e: Exception) {
+                                binding.progressBar.visibility = View.GONE
+                                Toast.makeText(this@MainActivity, "Kunde inte lägga till nyckeltalsbevakning: ${e.message}", Toast.LENGTH_LONG).show()
+                            }
+                        }
+                    } else {
+                        Toast.makeText(this, "Ange giltiga värden för alla fält", Toast.LENGTH_SHORT).show()
+                    }
+                } else {
+                    Toast.makeText(this, "Fyll i alla fält", Toast.LENGTH_SHORT).show()
+                }
+            }
+            .setNegativeButton("Avbryt", null)
             .show()
     }
 
@@ -469,98 +677,451 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * Shows a dialog for editing an existing stock pair.
+     * Shows a dialog for editing an existing watch item.
      * Handles validation and updates through the ViewModel.
      *
-     * @param pair The StockPair to edit
+     * @param item The WatchItem to edit
      */
-    private fun showEditStockPairDialog(pair: StockPair) {
+    private fun showEditStockPairDialog(item: WatchItem) {
+        if (item.watchType !is WatchType.PricePair) return
+        val pricePair = item.watchType as WatchType.PricePair
         val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_add_stock_pair, null)
-        val ticker1Input = dialogView.findViewById<EditText>(R.id.ticker1Input).apply { setText(pair.ticker1) }
-        val ticker2Input = dialogView.findViewById<EditText>(R.id.ticker2Input).apply { setText(pair.ticker2) }
-        val priceDifferenceInput = dialogView.findViewById<EditText>(R.id.priceDifferenceInput).apply { setText(pair.priceDifference.toString()) }
-        val notifyWhenEqualCheckbox = dialogView.findViewById<CheckBox>(R.id.notifyWhenEqualCheckbox).apply { isChecked = pair.notifyWhenEqual }
+        val ticker1Input = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.ticker1Input).apply { setText(item.ticker1) }
+        val ticker2Input = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.ticker2Input).apply { setText(item.ticker2) }
+        val priceDifferenceInput = dialogView.findViewById<TextInputEditText>(R.id.priceDifferenceInput).apply { setText(pricePair.priceDifference.toString()) }
+        val notifyWhenEqualCheckbox = dialogView.findViewById<MaterialCheckBox>(R.id.notifyWhenEqualCheckbox).apply { isChecked = pricePair.notifyWhenEqual }
+
+        // Set up adapters
+        val adapter1 = createStockAdapter()
+        val adapter2 = createStockAdapter()
+        ticker1Input.setAdapter(adapter1)
+        ticker2Input.setAdapter(adapter2)
+
+        // Set up search functionality
+        setupStockSearch(ticker1Input, adapter1, stockSearchViewModel1)
+        setupStockSearch(ticker2Input, adapter2, stockSearchViewModel2)
+
+        // Set up item click listeners
+        ticker1Input.setOnItemClickListener { _, _, position, _ ->
+            selectedStock1 = adapter1.getItem(position)
+            Log.d(TAG, "Selected stock 1: $selectedStock1")
+        }
+
+        ticker2Input.setOnItemClickListener { _, _, position, _ ->
+            selectedStock2 = adapter2.getItem(position)
+            Log.d(TAG, "Selected stock 2: $selectedStock2")
+        }
 
         MaterialAlertDialogBuilder(this)
-            .setTitle("Edit Stock Pair")
+            .setTitle("Redigera aktiepar")
             .setView(dialogView)
-            .setPositiveButton("Update") { _, _ ->
-                val ticker1 = ticker1Input.text.toString().trim().uppercase()
-                val ticker2 = ticker2Input.text.toString().trim().uppercase()
+            .setPositiveButton("Uppdatera") { _, _ ->
+                val ticker1Str = ticker1Input.text.toString().trim()
+                val ticker2Str = ticker2Input.text.toString().trim()
                 val priceDifferenceStr = priceDifferenceInput.text.toString()
                 val notifyWhenEqual = notifyWhenEqualCheckbox.isChecked
 
-                if (ticker1.isNotEmpty() && ticker2.isNotEmpty() && priceDifferenceStr.isNotEmpty()) {
+                val finalTicker1 = selectedStock1?.symbol ?: ticker1Str
+                val finalTicker2 = selectedStock2?.symbol ?: ticker2Str
+
+                if (finalTicker1.isNotEmpty() && finalTicker2.isNotEmpty() && priceDifferenceStr.isNotEmpty()) {
                     val priceDifference = priceDifferenceStr.toDoubleOrNull() ?: 0.0
                     lifecycleScope.launch {
                         try {
                             binding.progressBar.visibility = View.VISIBLE
                             
-                            // Parallel fetch of company names and prices if tickers changed
-                            val (companyName1, companyName2, price1, price2) = withContext(Dispatchers.IO) {
-                                coroutineScope {
-                                    val ticker1Changed = ticker1 != pair.ticker1
-                                    val ticker2Changed = ticker2 != pair.ticker2
-                                    
-                                    val companyName1Deferred = if (ticker1Changed) {
-                                        async { YahooFinanceService.getCompanyName(ticker1) }
-                                    } else null
-                                    
-                                    val companyName2Deferred = if (ticker2Changed) {
-                                        async { YahooFinanceService.getCompanyName(ticker2) }
-                                    } else null
-                                    
-                                    val price1Deferred = if (ticker1Changed) {
-                                        async { YahooFinanceService.getStockPrice(ticker1) }
-                                    } else null
-                                    
-                                    val price2Deferred = if (ticker2Changed) {
-                                        async { YahooFinanceService.getStockPrice(ticker2) }
-                                    } else null
-
-                                    val companyName1Result = companyName1Deferred?.await() ?: pair.companyName1
-                                    val companyName2Result = companyName2Deferred?.await() ?: pair.companyName2
-                                    val price1Result = price1Deferred?.await() ?: pair.currentPrice1
-                                    val price2Result = price2Deferred?.await() ?: pair.currentPrice2
-
-                                    if (ticker1Changed && !ticker1.contains(".ST")) {
-                                        throw Exception("Could not find stock on Stockholm Stock Exchange: $ticker1")
-                                    }
-                                    if (ticker2Changed && !ticker2.contains(".ST")) {
-                                        throw Exception("Could not find stock on Stockholm Stock Exchange: $ticker2")
-                                    }
-
-                                    Quadruple(companyName1Result, companyName2Result, price1Result, price2Result)
-                                }
-                            }
+                            val updatedItem = item.copy(
+                                watchType = WatchType.PricePair(priceDifference, notifyWhenEqual),
+                                ticker1 = finalTicker1,
+                                ticker2 = finalTicker2,
+                                companyName1 = selectedStock1?.name ?: item.companyName1,
+                                companyName2 = selectedStock2?.name ?: item.companyName2
+                            )
                             
-                            // Create updated pair with current prices
-                            val updatedPair = pair.copy(
-                                ticker1 = ticker1,
-                                ticker2 = ticker2,
-                                companyName1 = companyName1,
-                                companyName2 = companyName2,
-                                priceDifference = priceDifference,
-                                notifyWhenEqual = notifyWhenEqual
-                            ).withCurrentPrices(price1, price2)
-                            
-                            viewModel.updateStockPair(updatedPair)
-                            // Immediately refresh all prices after update
-                            viewModel.refreshStockPairs()
+                            viewModel.updateWatchItem(updatedItem)
+                            viewModel.refreshWatchItems()
                             updateLastUpdateTime()
                             binding.progressBar.visibility = View.GONE
-                            Toast.makeText(this@MainActivity, "Stock pair updated successfully", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(this@MainActivity, "Aktiepar uppdaterat", Toast.LENGTH_SHORT).show()
                         } catch (e: Exception) {
                             binding.progressBar.visibility = View.GONE
-                            Toast.makeText(this@MainActivity, "Failed to update stock pair: ${e.message}", Toast.LENGTH_LONG).show()
+                            Toast.makeText(this@MainActivity, "Kunde inte uppdatera aktiepar: ${e.message}", Toast.LENGTH_LONG).show()
                         }
                     }
                 } else {
-                    Toast.makeText(this, "Please fill in all fields", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, "Fyll i alla fält", Toast.LENGTH_SHORT).show()
                 }
             }
-            .setNegativeButton("Cancel", null)
+            .setNegativeButton("Avbryt", null)
             .show()
+    }
+
+    /**
+     * Shows a dialog for editing an existing price target watch.
+     */
+    private fun showEditPriceTargetDialog(item: WatchItem) {
+        if (item.watchType !is WatchType.PriceTarget) return
+        val priceTarget = item.watchType as WatchType.PriceTarget
+        val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_add_price_target, null)
+        val tickerInput = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.tickerInput).apply { setText(item.ticker) }
+        val targetPriceInput = dialogView.findViewById<TextInputEditText>(R.id.targetPriceInput).apply { setText(priceTarget.targetPrice.toString()) }
+        val directionInput = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.directionInput).apply {
+            setText(when (priceTarget.direction) {
+                WatchType.PriceDirection.ABOVE -> "Över"
+                WatchType.PriceDirection.BELOW -> "Under"
+            })
+        }
+
+        // Set up adapter for stock search
+        val adapter = createStockAdapter()
+        tickerInput.setAdapter(adapter)
+        setupStockSearch(tickerInput, adapter, stockSearchViewModel)
+
+        tickerInput.setOnItemClickListener { _, _, position, _ ->
+            selectedStock = adapter.getItem(position)
+            Log.d(TAG, "Selected stock: $selectedStock")
+        }
+
+        // Set up direction dropdown
+        val directions = arrayOf("Över", "Under")
+        val directionAdapter = ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line, directions)
+        directionInput.setAdapter(directionAdapter)
+        directionInput.setOnItemClickListener { _, _, position, _ ->
+            Log.d(TAG, "Selected direction: ${directions[position]}")
+        }
+
+        MaterialAlertDialogBuilder(this)
+            .setTitle("Redigera prisbevakning")
+            .setView(dialogView)
+            .setPositiveButton("Uppdatera") { _, _ ->
+                val tickerStr = tickerInput.text.toString().trim()
+                val targetPriceStr = targetPriceInput.text.toString()
+                val directionStr = directionInput.text.toString()
+
+                val finalTicker = selectedStock?.symbol ?: tickerStr
+
+                if (finalTicker.isNotEmpty() && targetPriceStr.isNotEmpty() && directionStr.isNotEmpty()) {
+                    val targetPrice = targetPriceStr.toDoubleOrNull()
+                    val direction = when (directionStr) {
+                        "Över" -> WatchType.PriceDirection.ABOVE
+                        "Under" -> WatchType.PriceDirection.BELOW
+                        else -> WatchType.PriceDirection.ABOVE
+                    }
+
+                    if (targetPrice != null && targetPrice > 0) {
+                        lifecycleScope.launch {
+                            try {
+                                binding.progressBar.visibility = View.VISIBLE
+
+                                val updatedItem = item.copy(
+                                    watchType = WatchType.PriceTarget(targetPrice, direction),
+                                    ticker = finalTicker,
+                                    companyName = selectedStock?.name ?: item.companyName
+                                )
+
+                                viewModel.updateWatchItem(updatedItem)
+                                viewModel.refreshWatchItems()
+                                updateLastUpdateTime()
+                                binding.progressBar.visibility = View.GONE
+                                Toast.makeText(this@MainActivity, "Prisbevakning uppdaterad", Toast.LENGTH_SHORT).show()
+                            } catch (e: Exception) {
+                                binding.progressBar.visibility = View.GONE
+                                Toast.makeText(this@MainActivity, "Kunde inte uppdatera prisbevakning: ${e.message}", Toast.LENGTH_LONG).show()
+                            }
+                        }
+                    } else {
+                        Toast.makeText(this, "Ange ett giltigt målpris", Toast.LENGTH_SHORT).show()
+                    }
+                } else {
+                    Toast.makeText(this, "Fyll i alla fält", Toast.LENGTH_SHORT).show()
+                }
+            }
+            .setNegativeButton("Avbryt", null)
+            .show()
+    }
+
+    /**
+     * Shows a dialog for editing an existing key metrics watch.
+     */
+    private fun showEditKeyMetricsDialog(item: WatchItem) {
+        if (item.watchType !is WatchType.KeyMetrics) return
+        val keyMetrics = item.watchType as WatchType.KeyMetrics
+        val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_add_key_metrics, null)
+        val tickerInput = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.tickerInput).apply { setText(item.ticker) }
+        val metricTypeInput = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.metricTypeInput).apply {
+            setText(when (keyMetrics.metricType) {
+                WatchType.MetricType.PE_RATIO -> "P/E-tal"
+                WatchType.MetricType.PS_RATIO -> "P/S-tal"
+                WatchType.MetricType.DIVIDEND_YIELD -> "Utdelningsprocent"
+            })
+        }
+        val targetValueInput = dialogView.findViewById<TextInputEditText>(R.id.targetValueInput).apply {
+            setText(keyMetrics.targetValue.toString())
+        }
+        val directionInput = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.directionInput).apply {
+            setText(when (keyMetrics.direction) {
+                WatchType.PriceDirection.ABOVE -> "Över"
+                WatchType.PriceDirection.BELOW -> "Under"
+            })
+        }
+
+        // Set up adapter for stock search
+        val adapter = createStockAdapter()
+        tickerInput.setAdapter(adapter)
+        setupStockSearch(tickerInput, adapter, stockSearchViewModel)
+
+        tickerInput.setOnItemClickListener { _, _, position, _ ->
+            selectedStock = adapter.getItem(position)
+            Log.d(TAG, "Selected stock: $selectedStock")
+        }
+
+        // Set up metric type dropdown
+        val metricTypes = arrayOf("P/E-tal", "P/S-tal", "Utdelningsprocent")
+        val metricTypeAdapter = ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line, metricTypes)
+        metricTypeInput.setAdapter(metricTypeAdapter)
+        metricTypeInput.setOnItemClickListener { _, _, position, _ ->
+            Log.d(TAG, "Selected metric type: ${metricTypes[position]}")
+        }
+
+        // Set up direction dropdown
+        val directions = arrayOf("Över", "Under")
+        val directionAdapter = ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line, directions)
+        directionInput.setAdapter(directionAdapter)
+        directionInput.setOnItemClickListener { _, _, position, _ ->
+            Log.d(TAG, "Selected direction: ${directions[position]}")
+        }
+
+        MaterialAlertDialogBuilder(this)
+            .setTitle("Redigera nyckeltalsbevakning")
+            .setView(dialogView)
+            .setPositiveButton("Uppdatera") { _, _ ->
+                val tickerStr = tickerInput.text.toString().trim()
+                val metricTypeStr = metricTypeInput.text.toString()
+                val targetValueStr = targetValueInput.text.toString()
+                val directionStr = directionInput.text.toString()
+
+                val finalTicker = selectedStock?.symbol ?: tickerStr
+
+                if (finalTicker.isNotEmpty() && metricTypeStr.isNotEmpty() && targetValueStr.isNotEmpty() && directionStr.isNotEmpty()) {
+                    val metricType = when (metricTypeStr) {
+                        "P/E-tal" -> WatchType.MetricType.PE_RATIO
+                        "P/S-tal" -> WatchType.MetricType.PS_RATIO
+                        "Utdelningsprocent" -> WatchType.MetricType.DIVIDEND_YIELD
+                        else -> null
+                    }
+                    val targetValue = targetValueStr.toDoubleOrNull()
+                    val direction = when (directionStr) {
+                        "Över" -> WatchType.PriceDirection.ABOVE
+                        "Under" -> WatchType.PriceDirection.BELOW
+                        else -> null
+                    }
+
+                    if (metricType != null && targetValue != null && targetValue > 0 && direction != null) {
+                        lifecycleScope.launch {
+                            try {
+                                binding.progressBar.visibility = View.VISIBLE
+
+                                val updatedItem = item.copy(
+                                    watchType = WatchType.KeyMetrics(metricType, targetValue, direction),
+                                    ticker = finalTicker,
+                                    companyName = selectedStock?.name ?: item.companyName
+                                )
+
+                                viewModel.updateWatchItem(updatedItem)
+                                viewModel.refreshWatchItems()
+                                updateLastUpdateTime()
+                                binding.progressBar.visibility = View.GONE
+                                Toast.makeText(this@MainActivity, "Nyckeltalsbevakning uppdaterad", Toast.LENGTH_SHORT).show()
+                            } catch (e: Exception) {
+                                binding.progressBar.visibility = View.GONE
+                                Toast.makeText(this@MainActivity, "Kunde inte uppdatera nyckeltalsbevakning: ${e.message}", Toast.LENGTH_LONG).show()
+                            }
+                        }
+                    } else {
+                        Toast.makeText(this, "Ange giltiga värden för alla fält", Toast.LENGTH_SHORT).show()
+                    }
+                } else {
+                    Toast.makeText(this, "Fyll i alla fält", Toast.LENGTH_SHORT).show()
+                }
+            }
+            .setNegativeButton("Avbryt", null)
+            .show()
+    }
+
+    /**
+     * Shows a detailed view dialog for a watch item where the user can view and edit all values.
+     */
+    private fun showWatchItemDetailDialog(item: WatchItem) {
+        val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_watch_item_detail, null)
+        
+        // Set watch type chip
+        val watchTypeChip = dialogView.findViewById<com.google.android.material.chip.Chip>(R.id.watchTypeChip)
+        watchTypeChip.text = item.getWatchTypeDisplayName()
+
+        when (item.watchType) {
+            is WatchType.PricePair -> showPricePairDetail(dialogView, item)
+            is WatchType.PriceTarget -> showPriceTargetDetail(dialogView, item)
+            is WatchType.KeyMetrics -> showKeyMetricsDetail(dialogView, item)
+        }
+
+        MaterialAlertDialogBuilder(this)
+            .setTitle("Bevakningsdetaljer")
+            .setView(dialogView)
+            .setPositiveButton("Spara") { _, _ ->
+                saveWatchItemChanges(dialogView, item)
+            }
+            .setNegativeButton("Avbryt", null)
+            .show()
+    }
+
+    private fun showPricePairDetail(dialogView: android.view.View, item: WatchItem) {
+        val pricePairDetails = dialogView.findViewById<android.view.View>(R.id.pricePairDetails)
+        pricePairDetails.visibility = android.view.View.VISIBLE
+        
+        val detailStock1Name = dialogView.findViewById<TextView>(R.id.detailStock1Name)
+        val detailStock1Price = dialogView.findViewById<TextView>(R.id.detailStock1Price)
+        val detailStock2Name = dialogView.findViewById<TextView>(R.id.detailStock2Name)
+        val detailStock2Price = dialogView.findViewById<TextView>(R.id.detailStock2Price)
+        val detailPriceDifference = dialogView.findViewById<TextInputEditText>(R.id.detailPriceDifference)
+        val detailNotifyWhenEqual = dialogView.findViewById<MaterialCheckBox>(R.id.detailNotifyWhenEqual)
+
+        val pricePair = item.watchType as WatchType.PricePair
+
+        detailStock1Name.text = "${item.companyName1 ?: item.ticker1} (${item.ticker1})"
+        detailStock1Price.text = item.formatPrice1()
+        detailStock2Name.text = "${item.companyName2 ?: item.ticker2} (${item.ticker2})"
+        detailStock2Price.text = item.formatPrice2()
+        detailPriceDifference.setText(pricePair.priceDifference.toString())
+        detailNotifyWhenEqual.isChecked = pricePair.notifyWhenEqual
+    }
+
+    private fun showPriceTargetDetail(dialogView: android.view.View, item: WatchItem) {
+        val priceTargetDetails = dialogView.findViewById<android.view.View>(R.id.priceTargetDetails)
+        priceTargetDetails.visibility = android.view.View.VISIBLE
+        
+        val detailStockName = dialogView.findViewById<TextView>(R.id.detailStockName)
+        val detailCurrentPrice = dialogView.findViewById<TextView>(R.id.detailCurrentPrice)
+        val detailTargetPrice = dialogView.findViewById<TextInputEditText>(R.id.detailTargetPrice)
+        val detailDirection = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.detailDirection)
+
+        val priceTarget = item.watchType as WatchType.PriceTarget
+
+        detailStockName.text = "${item.companyName ?: item.ticker} (${item.ticker})"
+        detailCurrentPrice.text = item.formatPrice()
+        detailTargetPrice.setText(priceTarget.targetPrice.toString())
+        
+        val directions = arrayOf("Över", "Under")
+        val directionAdapter = ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line, directions)
+        detailDirection.setAdapter(directionAdapter)
+        detailDirection.setText(when (priceTarget.direction) {
+            WatchType.PriceDirection.ABOVE -> "Över"
+            WatchType.PriceDirection.BELOW -> "Under"
+        }, false)
+    }
+
+    private fun showKeyMetricsDetail(dialogView: android.view.View, item: WatchItem) {
+        val keyMetricsDetails = dialogView.findViewById<android.view.View>(R.id.keyMetricsDetails)
+        keyMetricsDetails.visibility = android.view.View.VISIBLE
+        
+        val detailKeyMetricsStockName = dialogView.findViewById<TextView>(R.id.detailKeyMetricsStockName)
+        val detailCurrentMetricValue = dialogView.findViewById<TextView>(R.id.detailCurrentMetricValue)
+        val detailMetricType = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.detailMetricType)
+        val detailTargetValue = dialogView.findViewById<TextInputEditText>(R.id.detailTargetValue)
+        val detailKeyMetricsDirection = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.detailKeyMetricsDirection)
+
+        val keyMetrics = item.watchType as WatchType.KeyMetrics
+
+        detailKeyMetricsStockName.text = "${item.companyName ?: item.ticker} (${item.ticker})"
+        
+        val metricTypeName = when (keyMetrics.metricType) {
+            WatchType.MetricType.PE_RATIO -> "P/E-tal"
+            WatchType.MetricType.PS_RATIO -> "P/S-tal"
+            WatchType.MetricType.DIVIDEND_YIELD -> "Utdelningsprocent"
+        }
+        detailCurrentMetricValue.text = "$metricTypeName: ${item.formatMetricValue()}"
+        
+        val metricTypes = arrayOf("P/E-tal", "P/S-tal", "Utdelningsprocent")
+        val metricTypeAdapter = ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line, metricTypes)
+        detailMetricType.setAdapter(metricTypeAdapter)
+        detailMetricType.setText(metricTypeName, false)
+        
+        detailTargetValue.setText(keyMetrics.targetValue.toString())
+        
+        val directions = arrayOf("Över", "Under")
+        val directionAdapter = ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line, directions)
+        detailKeyMetricsDirection.setAdapter(directionAdapter)
+        detailKeyMetricsDirection.setText(when (keyMetrics.direction) {
+            WatchType.PriceDirection.ABOVE -> "Över"
+            WatchType.PriceDirection.BELOW -> "Under"
+        }, false)
+    }
+
+    private fun saveWatchItemChanges(dialogView: android.view.View, item: WatchItem) {
+        lifecycleScope.launch {
+            try {
+                binding.progressBar.visibility = View.VISIBLE
+
+                val updatedItem = when (item.watchType) {
+                    is WatchType.PricePair -> {
+                        val priceDifferenceInput = dialogView.findViewById<TextInputEditText>(R.id.detailPriceDifference)
+                        val notifyWhenEqualCheckbox = dialogView.findViewById<MaterialCheckBox>(R.id.detailNotifyWhenEqual)
+                        
+                        val priceDifference = priceDifferenceInput.text.toString().toDoubleOrNull() ?: 0.0
+                        val notifyWhenEqual = notifyWhenEqualCheckbox.isChecked
+                        
+                        item.copy(
+                            watchType = WatchType.PricePair(priceDifference, notifyWhenEqual)
+                        )
+                    }
+                    is WatchType.PriceTarget -> {
+                        val targetPriceInput = dialogView.findViewById<TextInputEditText>(R.id.detailTargetPrice)
+                        val directionInput = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.detailDirection)
+                        
+                        val targetPrice = targetPriceInput.text.toString().toDoubleOrNull() ?: 0.0
+                        val direction = when (directionInput.text.toString()) {
+                            "Över" -> WatchType.PriceDirection.ABOVE
+                            "Under" -> WatchType.PriceDirection.BELOW
+                            else -> WatchType.PriceDirection.ABOVE
+                        }
+                        
+                        item.copy(
+                            watchType = WatchType.PriceTarget(targetPrice, direction)
+                        )
+                    }
+                    is WatchType.KeyMetrics -> {
+                        val metricTypeInput = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.detailMetricType)
+                        val targetValueInput = dialogView.findViewById<TextInputEditText>(R.id.detailTargetValue)
+                        val directionInput = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.detailKeyMetricsDirection)
+                        
+                        val metricType = when (metricTypeInput.text.toString()) {
+                            "P/E-tal" -> WatchType.MetricType.PE_RATIO
+                            "P/S-tal" -> WatchType.MetricType.PS_RATIO
+                            "Utdelningsprocent" -> WatchType.MetricType.DIVIDEND_YIELD
+                            else -> (item.watchType as WatchType.KeyMetrics).metricType
+                        }
+                        val targetValue = targetValueInput.text.toString().toDoubleOrNull() ?: 0.0
+                        val direction = when (directionInput.text.toString()) {
+                            "Över" -> WatchType.PriceDirection.ABOVE
+                            "Under" -> WatchType.PriceDirection.BELOW
+                            else -> WatchType.PriceDirection.ABOVE
+                        }
+                        
+                        item.copy(
+                            watchType = WatchType.KeyMetrics(metricType, targetValue, direction)
+                        )
+                    }
+                }
+
+                viewModel.updateWatchItem(updatedItem)
+                viewModel.refreshWatchItems()
+                updateLastUpdateTime()
+                binding.progressBar.visibility = View.GONE
+                Toast.makeText(this@MainActivity, "Bevakning uppdaterad", Toast.LENGTH_SHORT).show()
+            } catch (e: Exception) {
+                binding.progressBar.visibility = View.GONE
+                Toast.makeText(this@MainActivity, "Kunde inte uppdatera bevakning: ${e.message}", Toast.LENGTH_LONG).show()
+            }
+        }
     }
 
     private data class Quadruple<A, B, C, D>(val first: A, val second: B, val third: C, val fourth: D)
@@ -574,7 +1135,7 @@ class MainActivity : AppCompatActivity() {
     fun refreshPrices() {
         lifecycleScope.launch {
             try {
-                viewModel.refreshStockPairs()
+                viewModel.refreshWatchItems()
                 updateLastUpdateTime()
             } catch (e: Exception) {
                 Toast.makeText(this@MainActivity, "Failed to refresh: ${e.message}", Toast.LENGTH_LONG).show()
@@ -591,26 +1152,26 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * Shows a confirmation dialog for deleting a stock pair.
+     * Shows a confirmation dialog for deleting a watch item.
      * Handles the deletion through the ViewModel if confirmed.
      *
-     * @param pair The StockPair to delete
+     * @param item The WatchItem to delete
      */
-    private fun showDeleteConfirmationDialog(pair: StockPair) {
+    private fun showDeleteConfirmationDialog(item: WatchItem) {
         MaterialAlertDialogBuilder(this)
-            .setTitle("Delete Stock Pair")
-            .setMessage("Are you sure you want to delete the pair ${pair.getDisplayName()}?")
-            .setPositiveButton("Delete") { _, _ ->
+            .setTitle("Ta bort bevakning")
+            .setMessage("Är du säker på att du vill ta bort bevakningen ${item.getDisplayName()}?")
+            .setPositiveButton("Ta bort") { _, _ ->
                 lifecycleScope.launch {
                     try {
-                        viewModel.deleteStockPair(pair)
-                        Toast.makeText(this@MainActivity, "Stock pair deleted successfully", Toast.LENGTH_SHORT).show()
+                        viewModel.deleteWatchItem(item)
+                        Toast.makeText(this@MainActivity, "Bevakning borttagen", Toast.LENGTH_SHORT).show()
                     } catch (e: Exception) {
-                        Toast.makeText(this@MainActivity, "Failed to delete stock pair: ${e.message}", Toast.LENGTH_LONG).show()
+                        Toast.makeText(this@MainActivity, "Kunde inte ta bort bevakning: ${e.message}", Toast.LENGTH_LONG).show()
                     }
                 }
             }
-            .setNegativeButton("Cancel", null)
+            .setNegativeButton("Avbryt", null)
             .show()
     }
 

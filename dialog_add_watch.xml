@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="24dp">
+
+    <EditText
+        android:id="@+id/watchSymbol"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Stock Symbol (e.g., AAPL)" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginTop="8dp">
+
+        <EditText
+            android:id="@+id/dropValue"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:hint="Drop Value"
+            android:inputType="numberDecimal" />
+
+        <ToggleButton
+            android:id="@+id/togglePercentage"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textOn="%"
+            android:textOff="ABS"
+            android:checked="true" />
+    </LinearLayout>
+
+    <CheckBox
+        android:id="@+id/notifyOnTrigger"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Notify when triggered"
+        android:checked="true"
+        android:layout_marginTop="8dp" />
+
+</LinearLayout>

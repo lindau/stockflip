@@ -13,6 +13,8 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.stockflip.databinding.ItemStockPairBinding
 import java.text.DecimalFormat
+import java.text.DecimalFormatSymbols
+import java.util.Locale
 import kotlin.math.abs
 
 class StockPairAdapter(
@@ -20,7 +22,7 @@ class StockPairAdapter(
     private val onEditClick: (StockPair) -> Unit
 ) : ListAdapter<StockPair, StockPairAdapter.ViewHolder>(StockPairDiffCallback()) {
 
-    private val priceFormat = DecimalFormat("#,##0.00")
+    private val priceFormat = DecimalFormat("#,##0.00", DecimalFormatSymbols(Locale("sv", "SE")))
     private val highlightedPairs = mutableSetOf<Int>() // Track which pairs are highlighted
     private val PRICE_EQUALITY_THRESHOLD = 0.01
 

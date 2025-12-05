@@ -1,6 +1,8 @@
-// MainViewModel.kt
+import kotlinx.coroutines.flow.combine
+
 class MainViewModel(
     private val stockPairDao: StockPairDao,
+    private val stockWatchDao: StockWatchDao,
     private val yahooFinanceService: YahooFinanceService
 ) : ViewModel() {
     private val _uiState = MutableStateFlow<UiState>(UiState.Loading)
@@ -8,11 +10,16 @@ class MainViewModel(
     
     init {
         viewModelScope.launch {
-            stockPairDao.getAllStockPairs()
-                .catch { _uiState.value = UiState.Error(it.message ?: "Unknown error") }
-                .collect { pairs ->
-                    _uiState.value = UiState.Success(pairs)
-                }
+            combine(
+                stockPairDao.getAllStockPairs(),
+                stockWatchDao.getAllStockWatches()
+            ) { pairs, watches ->
+                UiState.Success(pairs, watches)
+            }.catch { 
+                _uiState.value = UiState.Error(it.message ?: "Unknown error")
+            }.collect { state ->
+                _uiState.value = state
+            }
         }
     }
     
@@ -57,9 +64,55 @@ class MainViewModel(
         }
     }
 
+    suspend fun validateAndAddStockWatch(
+        symbol: String,
+        dropValue: Double,
+        isPercentage: Boolean,
+        notifyOnTrigger: Boolean
+    ): Result<Unit> {
+        return withContext(Dispatchers.IO) {
+            try {
+                val sanitizedSymbol = symbol.trim().uppercase()
+                
+                if (dropValue < 0) {
+                    return@withContext Result.failure(IllegalArgumentException("Drop value must be positive"))
+                }
+
+                // Verify stock exists and get ATH
+                val currentPrice = yahooFinanceService.getStockPrice(sanitizedSymbol)
+                
+                if (currentPrice == null) {
+                    return@withContext Result.failure(IllegalArgumentException("Invalid stock symbol"))
+                }
+                
+                val ath = yahooFinanceService.getATH(sanitizedSymbol) ?: 0.0
+
+                stockWatchDao.insertStockWatch(
+                    StockWatchEntity(
+                        symbol = sanitizedSymbol,
+                        stockName = sanitizedSymbol, // Could fetch name if API supported it easily
+                        dropValue = dropValue,
+                        isPercentage = isPercentage,
+                        notifyOnTrigger = notifyOnTrigger,
+                        ath = ath
+                    )
+                )
+                Result.success(Unit)
+            } catch (e: Exception) {
+                Result.failure(e)
+            }
+        }
+    }
+
     fun deleteStockPair(pair: StockPairEntity) {
         viewModelScope.launch {
             stockPairDao.deleteStockPair(pair)
+        }
+    }
+
+    fun deleteStockWatch(watch: StockWatchEntity) {
+        viewModelScope.launch {
+            stockWatchDao.deleteStockWatch(watch)
         }
     }
 }

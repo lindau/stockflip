@@ -1,7 +1,7 @@
-// StockPairDatabase.kt
-@Database(entities = [StockPairEntity::class], version = 1)
+@Database(entities = [StockPairEntity::class, StockWatchEntity::class], version = 2)
 abstract class StockPairDatabase : RoomDatabase() {
     abstract fun stockPairDao(): StockPairDao
+    abstract fun stockWatchDao(): StockWatchDao
 
     companion object {
         @Volatile
@@ -13,7 +13,9 @@ abstract class StockPairDatabase : RoomDatabase() {
                     context.applicationContext,
                     StockPairDatabase::class.java,
                     "stock_pair_database"
-                ).build()
+                )
+                .fallbackToDestructiveMigration()
+                .build()
                 INSTANCE = instance
                 instance
             }

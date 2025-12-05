@@ -19,19 +19,36 @@
         android:id="@+id/stockPairsList"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        app:layout_constraintBottom_toTopOf="@+id/addPairButton"
+        app:layout_constraintBottom_toTopOf="@+id/buttonContainer"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/lastUpdateTime" />
 
-    <Button
-        android:id="@+id/addPairButton"
-        android:layout_width="wrap_content"
+    <LinearLayout
+        android:id="@+id/buttonContainer"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:text="Add Stock Pair"
+        android:orientation="horizontal"
+        android:gravity="center"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
+        app:layout_constraintStart_toStartOf="parent">
+
+        <Button
+            android:id="@+id/addPairButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Add Pair"
+            android:layout_marginEnd="8dp"/>
+
+        <Button
+            android:id="@+id/addWatchButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Add Watch"
+            android:layout_marginStart="8dp"/>
+
+    </LinearLayout>
 
     <ProgressBar
         android:id="@+id/progressBar"
