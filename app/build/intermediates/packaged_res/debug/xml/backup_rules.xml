@@ -1,5 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<full-backup-content>
-    <exclude domain="sharedpref" path="WebView.xml"/>
-    <exclude domain="database" path="room_schemas"/>
-</full-backup-content> 

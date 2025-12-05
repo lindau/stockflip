@@ -1,0 +1,20 @@
+# Gradient & built-in files
+.gradle
+/local.properties
+/.idea/workspace.xml
+/.idea/libraries
+.DS_Store
+/build
+/captures
+.externalNativeBuild
+.cxx
+local.properties
+
+# Android specific
+/app/build
+/app/release
+
+# IntelliJ / Android Studio
+*.iml
+.idea
+.vscode
