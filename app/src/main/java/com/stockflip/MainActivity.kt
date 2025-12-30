@@ -245,7 +245,7 @@ class MainActivity : AppCompatActivity() {
     private fun showWatchItemSuccess(data: List<WatchItem>): Unit {
         Log.d(TAG, "Received ${data.size} watch items")
         binding.progressBar.visibility = View.GONE
-        (binding.stockPairsList.adapter as WatchItemAdapter).submitList(data)
+        (binding.stockPairsList.adapter as GroupedWatchItemAdapter).submitGroupedList(data)
     }
 
     private fun showError(message: String): Unit {
@@ -257,7 +257,7 @@ class MainActivity : AppCompatActivity() {
     private fun setupRecyclerView(): Unit {
         Log.d(TAG, "Setting up RecyclerView")
         binding.stockPairsList.layoutManager = LinearLayoutManager(this)
-        binding.stockPairsList.adapter = WatchItemAdapter(
+        binding.stockPairsList.adapter = GroupedWatchItemAdapter(
             onDeleteClick = { item: WatchItem -> handleDeleteClick(item) },
             onEditClick = { item: WatchItem -> handleEditClick(item) },
             onItemClick = { item: WatchItem -> showWatchItemDetailDialog(item) }

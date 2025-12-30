@@ -196,9 +196,9 @@ class WatchItemAdapter(
             }
             binding.priceDifference.text = "Mål: $directionText $targetValueText"
 
-            // Notification info
+            // Notification info - only show metric type, not target value (target is shown in priceDifference)
             binding.notificationInfo.apply {
-                text = "$metricTypeName: $directionText $targetValueText"
+                text = metricTypeName
                 setChipBackgroundColorResource(R.color.notification_active)
                 isCheckable = false
                 isClickable = true
@@ -247,9 +247,9 @@ class WatchItemAdapter(
             }
             binding.priceDifference.text = "Mål: Nedgång $targetDropText"
 
-            // Notification info
+            // Notification info - only show type, not target value (target is shown in priceDifference)
             binding.notificationInfo.apply {
-                text = "Nedgång $targetDropText från ATH"
+                text = "ATH-bevakning"
                 setChipBackgroundColorResource(R.color.notification_active)
                 isCheckable = false
                 isClickable = true

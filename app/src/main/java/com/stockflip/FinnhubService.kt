@@ -2,6 +2,7 @@ package com.stockflip
 
 import android.util.Log
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -15,6 +16,11 @@ import java.util.concurrent.TimeUnit
 object FinnhubService {
     private const val TAG = "FinnhubService"
     private const val BASE_URL = "https://finnhub.io/api/v1"
+    
+    // Rate limiting: Finnhub free tier allows 60 calls/minute
+    // Add delay between requests to avoid hitting rate limits
+    private var lastRequestTime = 0L
+    private const val MIN_REQUEST_INTERVAL_MS = 1000L // 1 second between requests (60 requests per minute max)
     
     // API key is read from BuildConfig (which reads from local.properties)
     private val apiKey: String = try {
@@ -68,6 +74,16 @@ object FinnhubService {
                 return@withContext null
             }
             
+            // Rate limiting: Add delay if needed to avoid hitting rate limits
+            val currentTime = System.currentTimeMillis()
+            val timeSinceLastRequest = currentTime - lastRequestTime
+            if (timeSinceLastRequest < MIN_REQUEST_INTERVAL_MS) {
+                val delayNeeded = MIN_REQUEST_INTERVAL_MS - timeSinceLastRequest
+                Log.d(TAG, "Rate limiting: Waiting ${delayNeeded}ms before next request")
+                delay(delayNeeded)
+            }
+            lastRequestTime = System.currentTimeMillis()
+            
             val symbolVariants = getSymbolVariants(symbol)
             Log.d(TAG, "Fetching ${metricType.name} from Finnhub for symbol: $symbol (trying variants: $symbolVariants)")
             
@@ -87,11 +103,22 @@ object FinnhubService {
                     val response = client.newCall(request).execute()
                     
                     if (!response.isSuccessful) {
-                        Log.w(TAG, "Finnhub API Error for $finnhubSymbol: ${response.code} - ${response.message}")
-                        if (finnhubSymbol != symbolVariants.last()) {
-                            continue // Try next variant
+                        when (response.code) {
+                            429 -> {
+                                Log.w(TAG, "Finnhub API Rate Limit (429) for $finnhubSymbol - Too many requests. Please wait before refreshing.")
+                                // Wait a bit longer before returning to avoid immediate retry
+                                delay(2000)
+                                // Return null to indicate rate limit, but don't try other variants
+                                return@withContext null
+                            }
+                            else -> {
+                                Log.w(TAG, "Finnhub API Error for $finnhubSymbol: ${response.code} - ${response.message}")
+                                if (finnhubSymbol != symbolVariants.last()) {
+                                    continue // Try next variant
+                                }
+                                return@withContext null
+                            }
                         }
-                        return@withContext null
                     }
                     
                     val responseBody = response.body?.string()

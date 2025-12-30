@@ -3,6 +3,7 @@ package com.stockflip
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -132,8 +133,14 @@ class MainViewModel(
             val items = watchItemDao.getAllWatchItems()
             Log.d(TAG, "Found ${items.size} watch items to refresh")
 
-            val updatedItems = items.map { item ->
+            // Process items sequentially to avoid rate limits
+            val updatedItems = items.mapIndexed { index, item ->
                 try {
+                    // Add small delay between key metric requests to avoid rate limits
+                    if (item.watchType is WatchType.KeyMetrics && index > 0) {
+                        delay(1000) // 1 second delay between key metric requests
+                    }
+                    
                     when (item.watchType) {
                         is WatchType.PricePair -> {
                             if (item.ticker1 != null && item.ticker2 != null) {
