@@ -270,6 +270,14 @@ class MainActivity : AppCompatActivity() {
             is WatchType.PricePair -> showEditStockPairDialog(item)
             is WatchType.PriceTarget -> showEditPriceTargetDialog(item)
             is WatchType.KeyMetrics -> showEditKeyMetricsDialog(item)
+            is WatchType.ATHDrop -> {
+                // TODO: Implement edit dialog for ATH drop
+                Toast.makeText(this, "Edit for ATH drop not yet implemented", Toast.LENGTH_SHORT).show()
+            }
+            is WatchType.DailyHighDrop -> {
+                // TODO: Implement edit dialog for daily high drop
+                Toast.makeText(this, "Edit for daily high drop not yet implemented", Toast.LENGTH_SHORT).show()
+            }
         }
     }
 
@@ -287,7 +295,9 @@ class MainActivity : AppCompatActivity() {
         val watchTypes = listOf(
             "Aktiepar" to WatchType.PricePair(0.0, false),
             "Prisbevakning" to WatchType.PriceTarget(0.0, WatchType.PriceDirection.ABOVE),
-            "Nyckeltal" to WatchType.KeyMetrics(WatchType.MetricType.PE_RATIO, 0.0, WatchType.PriceDirection.ABOVE)
+            "Nyckeltal" to WatchType.KeyMetrics(WatchType.MetricType.PE_RATIO, 0.0, WatchType.PriceDirection.ABOVE),
+            "Fall från ATH" to WatchType.ATHDrop(0.0),
+            "Fall från dagshögsta" to WatchType.DailyHighDrop(0.0)
         )
         val watchTypeNames = watchTypes.map { it.first }.toTypedArray()
 
@@ -299,6 +309,8 @@ class MainActivity : AppCompatActivity() {
                     is WatchType.PricePair -> showAddStockPairDialog()
                     is WatchType.PriceTarget -> showAddPriceTargetDialog()
                     is WatchType.KeyMetrics -> showAddKeyMetricsDialog()
+                    is WatchType.ATHDrop -> showAddATHDropDialog()
+                    is WatchType.DailyHighDrop -> showAddDailyHighDropDialog()
                 }
             }
             .setNegativeButton("Avbryt", null)
@@ -962,6 +974,12 @@ class MainActivity : AppCompatActivity() {
             is WatchType.PricePair -> showPricePairDetail(dialogView, item)
             is WatchType.PriceTarget -> showPriceTargetDetail(dialogView, item)
             is WatchType.KeyMetrics -> showKeyMetricsDetail(dialogView, item)
+            is WatchType.ATHDrop -> {
+                // TODO: Show ATH drop detail
+            }
+            is WatchType.DailyHighDrop -> {
+                // TODO: Show daily high drop detail
+            }
         }
 
         MaterialAlertDialogBuilder(this)
@@ -1110,6 +1128,14 @@ class MainActivity : AppCompatActivity() {
                             watchType = WatchType.KeyMetrics(metricType, targetValue, direction)
                         )
                     }
+                    is WatchType.ATHDrop -> {
+                        // TODO: Implement edit for ATH drop
+                        item
+                    }
+                    is WatchType.DailyHighDrop -> {
+                        // TODO: Implement edit for daily high drop
+                        item
+                    }
                 }
 
                 viewModel.updateWatchItem(updatedItem)
@@ -1173,6 +1199,16 @@ class MainActivity : AppCompatActivity() {
             }
             .setNegativeButton("Avbryt", null)
             .show()
+    }
+
+    private fun showAddATHDropDialog() {
+        // TODO: Implement ATH drop dialog
+        Toast.makeText(this, "ATH drop dialog not yet implemented", Toast.LENGTH_SHORT).show()
+    }
+
+    private fun showAddDailyHighDropDialog() {
+        // TODO: Implement daily high drop dialog
+        Toast.makeText(this, "Daily high drop dialog not yet implemented", Toast.LENGTH_SHORT).show()
     }
 
     companion object {

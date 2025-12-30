@@ -1,4 +1,15 @@
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class MainViewModel(
     private val stockPairDao: StockPairDao,
@@ -66,35 +77,83 @@ class MainViewModel(
 
     suspend fun validateAndAddStockWatch(
         symbol: String,
-        dropValue: Double,
-        isPercentage: Boolean,
+        watchCriteria: WatchCriteria,
         notifyOnTrigger: Boolean
     ): Result<Unit> {
         return withContext(Dispatchers.IO) {
             try {
                 val sanitizedSymbol = symbol.trim().uppercase()
-                
-                if (dropValue < 0) {
-                    return@withContext Result.failure(IllegalArgumentException("Drop value must be positive"))
-                }
 
-                // Verify stock exists and get ATH
+                // Verify stock exists
                 val currentPrice = yahooFinanceService.getStockPrice(sanitizedSymbol)
                 
                 if (currentPrice == null) {
                     return@withContext Result.failure(IllegalArgumentException("Invalid stock symbol"))
                 }
-                
-                val ath = yahooFinanceService.getATH(sanitizedSymbol) ?: 0.0
+
+                // Validate and fetch data based on criteria type
+                val ath: Double
+                val dailyHigh: Double?
+                val peRatio: Double?
+                val psRatio: Double?
+
+                when (watchCriteria) {
+                    is WatchCriteria.PriceTargetCriteria -> {
+                        // No additional data needed
+                        ath = 0.0
+                        dailyHigh = null
+                        peRatio = null
+                        psRatio = null
+                    }
+                    is WatchCriteria.PERatioCriteria -> {
+                        peRatio = yahooFinanceService.getPERatio(sanitizedSymbol)
+                        if (peRatio == null) {
+                            return@withContext Result.failure(IllegalArgumentException("Could not fetch P/E ratio for this stock"))
+                        }
+                        ath = 0.0
+                        dailyHigh = null
+                        psRatio = null
+                    }
+                    is WatchCriteria.PSRatioCriteria -> {
+                        psRatio = yahooFinanceService.getPSRatio(sanitizedSymbol)
+                        if (psRatio == null) {
+                            return@withContext Result.failure(IllegalArgumentException("Could not fetch P/S ratio for this stock"))
+                        }
+                        ath = 0.0
+                        dailyHigh = null
+                        peRatio = null
+                    }
+                    is WatchCriteria.ATHDropCriteria -> {
+                        ath = yahooFinanceService.getATH(sanitizedSymbol) ?: currentPrice
+                        dailyHigh = null
+                        peRatio = null
+                        psRatio = null
+                    }
+                    is WatchCriteria.DailyHighDropCriteria -> {
+                        dailyHigh = yahooFinanceService.getDailyHigh(sanitizedSymbol) ?: currentPrice
+                        ath = 0.0
+                        peRatio = null
+                        psRatio = null
+                    }
+                }
+
+                // For backward compatibility, convert ATHDropCriteria to old format if needed
+                val dropValue = when (watchCriteria) {
+                    is WatchCriteria.ATHDropCriteria -> watchCriteria.dropPercentage
+                    is WatchCriteria.DailyHighDropCriteria -> watchCriteria.dropPercentage
+                    else -> 0.0
+                }
+                val isPercentage = watchCriteria is WatchCriteria.ATHDropCriteria || watchCriteria is WatchCriteria.DailyHighDropCriteria
 
                 stockWatchDao.insertStockWatch(
                     StockWatchEntity(
                         symbol = sanitizedSymbol,
-                        stockName = sanitizedSymbol, // Could fetch name if API supported it easily
+                        stockName = sanitizedSymbol,
                         dropValue = dropValue,
                         isPercentage = isPercentage,
                         notifyOnTrigger = notifyOnTrigger,
-                        ath = ath
+                        ath = ath,
+                        watchCriteria = watchCriteria
                     )
                 )
                 Result.success(Unit)

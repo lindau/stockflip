@@ -63,6 +63,12 @@ class WatchItemAdapter(
                 is WatchType.PricePair -> bindPricePair(item)
                 is WatchType.PriceTarget -> bindPriceTarget(item)
                 is WatchType.KeyMetrics -> bindKeyMetrics(item)
+                is WatchType.ATHDrop -> {
+                    // TODO: Bind ATH drop
+                }
+                is WatchType.DailyHighDrop -> {
+                    // TODO: Bind daily high drop
+                }
             }
         }
 
@@ -279,6 +285,14 @@ class WatchItemAdapter(
                         else -> priceFormat.format(item.currentMetricValue)
                     }
                     "${item.companyName ?: item.ticker} har $directionText målvärdet för $metricTypeName ($targetValueText). Nuvarande värde: $currentValueText"
+                }
+                is WatchType.ATHDrop -> {
+                    // TODO: Build notification message for ATH drop
+                    "ATH drop notification"
+                }
+                is WatchType.DailyHighDrop -> {
+                    // TODO: Build notification message for daily high drop
+                    "Daily high drop notification"
                 }
             }
         }

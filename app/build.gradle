@@ -16,8 +16,18 @@ android {
         versionName "1.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        
+        // Read Finnhub API key from local.properties
+        def localProperties = new Properties()
+        def localPropertiesFile = rootProject.file("local.properties")
+        if (localPropertiesFile.exists()) {
+            localPropertiesFile.withInputStream { localProperties.load(it) }
+        }
+        def finnhubApiKey = localProperties.getProperty("FINNHUB_API_KEY", "")
+        buildConfigField "String", "FINNHUB_API_KEY", "\"$finnhubApiKey\""
 
-        // Room schema export
+        // Room schema export - configured in kapt block below
+        // Also configure for javaCompileOptions for compatibility
         javaCompileOptions {
             annotationProcessorOptions {
                 arguments += [
@@ -26,6 +36,10 @@ android {
                     "room.expandProjection": "true"
                 ]
             }
+        }
+        
+        testOptions {
+            unitTests.returnDefaultValues = true
         }
     }
 
@@ -47,6 +61,34 @@ android {
     
     buildFeatures {
         viewBinding true
+        buildConfig true
+    }
+}
+
+// Configure kapt (Kotlin Annotation Processing Tool) for Room
+// Note: You may see warnings about unrecognized options when compiling androidTest.
+// This is expected and harmless - Room processor doesn't run for androidTest variant
+// since there are no Room entities in the test code. The warning can be safely ignored.
+kapt {
+    arguments {
+        arg("room.schemaLocation", "$projectDir/schemas")
+        arg("room.incremental", "true")
+        arg("room.expandProjection", "true")
+    }
+    correctErrorTypes = true
+    // Suppress warnings for androidTest variant where Room processor doesn't run
+    javacOptions {
+        option("-Xmaxwarns", "1000")
+    }
+}
+
+// Configure kapt specifically for androidTest to suppress Room option warnings
+afterEvaluate {
+    tasks.matching { it.name.startsWith("kapt") && it.name.contains("AndroidTest") }.configureEach {
+        doFirst {
+            // This is a workaround - the warning is harmless but we acknowledge it here
+            logger.info("Compiling androidTest variant - Room options warning is expected and harmless")
+        }
     }
 }
 
@@ -67,6 +109,7 @@ dependencies {
     implementation 'com.squareup.retrofit2:converter-gson:2.11.0'
     implementation 'com.squareup.okhttp3:okhttp:4.12.0'
     implementation 'com.squareup.okhttp3:logging-interceptor:4.12.0'
+    implementation 'com.squareup.okhttp3:okhttp-urlconnection:4.12.0'
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3'
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3'
     kapt 'androidx.room:room-compiler:2.6.1'

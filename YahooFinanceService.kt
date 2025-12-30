@@ -1,7 +1,13 @@
 import android.util.Log
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import org.json.JSONObject
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import java.util.concurrent.TimeUnit
 
 // Modified YahooFinanceService.kt
 object YahooFinanceService {
@@ -46,5 +52,100 @@ object YahooFinanceService {
             }
         }
         return null
+    }
+
+    suspend fun getDailyHigh(symbol: String): Double? {
+        return withContext(Dispatchers.IO) {
+            repeat(MAX_RETRIES) { attempt ->
+                try {
+                    val response = api.getDailyData(symbol)
+                    val result = response.chart.result.firstOrNull()
+                    val dayHigh = result?.meta?.regularMarketDayHigh
+                    if (dayHigh != null) {
+                        return@withContext dayHigh
+                    }
+                    val indicators = result?.indicators?.quote?.firstOrNull()
+                    val highs = indicators?.high?.filterNotNull()
+                    return@withContext highs?.maxOrNull()
+                } catch (e: Exception) {
+                    if (attempt == MAX_RETRIES - 1) {
+                        Log.e("YahooFinanceService", "Error fetching daily high for $symbol", e)
+                        return@withContext null
+                    }
+                    delay(1000L * (attempt + 1))
+                }
+            }
+            null
+        }
+    }
+
+    suspend fun getPERatio(symbol: String): Double? {
+        return withContext(Dispatchers.IO) {
+            try {
+                val url = "https://query2.finance.yahoo.com/v10/finance/quoteSummary/$symbol?modules=summaryDetail"
+                val client = OkHttpClient.Builder()
+                    .connectTimeout(10, TimeUnit.SECONDS)
+                    .readTimeout(10, TimeUnit.SECONDS)
+                    .build()
+                val request = Request.Builder()
+                    .url(url)
+                    .addHeader("User-Agent", "Mozilla/5.0")
+                    .build()
+                val response = client.newCall(request).execute()
+                if (!response.isSuccessful) {
+                    Log.e("YahooFinanceService", "API Error: ${response.code} - ${response.message}")
+                    return@withContext null
+                }
+                val responseBody = response.body?.string()
+                if (responseBody == null) {
+                    Log.e("YahooFinanceService", "Empty response body")
+                    return@withContext null
+                }
+                val jsonObject = JSONObject(responseBody)
+                val quoteSummary = jsonObject.optJSONObject("quoteSummary")
+                val result = quoteSummary?.optJSONArray("result")?.optJSONObject(0)
+                val summaryDetail = result?.optJSONObject("summaryDetail")
+                val trailingPE = summaryDetail?.optJSONObject("trailingPE")?.optDouble("raw")
+                trailingPE?.takeIf { !it.isNaN() && it > 0 }
+            } catch (e: Exception) {
+                Log.e("YahooFinanceService", "Error fetching P/E ratio for $symbol: ${e.message}", e)
+                null
+            }
+        }
+    }
+
+    suspend fun getPSRatio(symbol: String): Double? {
+        return withContext(Dispatchers.IO) {
+            try {
+                val url = "https://query2.finance.yahoo.com/v10/finance/quoteSummary/$symbol?modules=summaryDetail"
+                val client = OkHttpClient.Builder()
+                    .connectTimeout(10, TimeUnit.SECONDS)
+                    .readTimeout(10, TimeUnit.SECONDS)
+                    .build()
+                val request = Request.Builder()
+                    .url(url)
+                    .addHeader("User-Agent", "Mozilla/5.0")
+                    .build()
+                val response = client.newCall(request).execute()
+                if (!response.isSuccessful) {
+                    Log.e("YahooFinanceService", "API Error: ${response.code} - ${response.message}")
+                    return@withContext null
+                }
+                val responseBody = response.body?.string()
+                if (responseBody == null) {
+                    Log.e("YahooFinanceService", "Empty response body")
+                    return@withContext null
+                }
+                val jsonObject = JSONObject(responseBody)
+                val quoteSummary = jsonObject.optJSONObject("quoteSummary")
+                val result = quoteSummary?.optJSONArray("result")?.optJSONObject(0)
+                val summaryDetail = result?.optJSONObject("summaryDetail")
+                val priceToSalesTrailing12Months = summaryDetail?.optJSONObject("priceToSalesTrailing12Months")?.optDouble("raw")
+                priceToSalesTrailing12Months?.takeIf { !it.isNaN() && it > 0 }
+            } catch (e: Exception) {
+                Log.e("YahooFinanceService", "Error fetching P/S ratio for $symbol: ${e.message}", e)
+                null
+            }
+        }
     }
 }

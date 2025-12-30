@@ -1,4 +1,3 @@
-package com.example.stockflip
 
 import android.view.LayoutInflater
 import android.view.View
@@ -30,8 +29,32 @@ class StockWatchAdapter(
         fun bind(watch: StockWatchEntity) {
             symbol.text = watch.symbol
             
-            val dropType = if (watch.isPercentage) "%" else "ABS"
-            dropInfo.text = "Drop target: ${watch.dropValue} $dropType from ATH"
+            val criteriaText = when (val criteria = watch.watchCriteria) {
+                null -> {
+                    // Backward compatibility with old format
+                    val dropType = if (watch.isPercentage) "%" else "ABS"
+                    "Drop target: ${watch.dropValue} $dropType from ATH"
+                }
+                is WatchCriteria.PriceTargetCriteria -> {
+                    val direction = if (criteria.comparison == ComparisonType.ABOVE) "över" else "under"
+                    "Prisnivå: $direction ${criteria.threshold}"
+                }
+                is WatchCriteria.PERatioCriteria -> {
+                    val direction = if (criteria.comparison == ComparisonType.ABOVE) "över" else "under"
+                    "P/E-tal: $direction ${criteria.threshold}"
+                }
+                is WatchCriteria.PSRatioCriteria -> {
+                    val direction = if (criteria.comparison == ComparisonType.ABOVE) "över" else "under"
+                    "P/S-tal: $direction ${criteria.threshold}"
+                }
+                is WatchCriteria.ATHDropCriteria -> {
+                    "Fall från ATH: ${criteria.dropPercentage}%"
+                }
+                is WatchCriteria.DailyHighDropCriteria -> {
+                    "Fall från dagshögsta: ${criteria.dropPercentage}%"
+                }
+            }
+            dropInfo.text = criteriaText
             
             notifyInfo.text = if (watch.notifyOnTrigger) "Notifications: ON" else "Notifications: OFF"
         }

@@ -9,5 +9,6 @@ data class StockWatchEntity(
     val dropValue: Double,
     val isPercentage: Boolean,
     val notifyOnTrigger: Boolean,
-    val ath: Double = 0.0 // Cache ATH to avoid fetching full history every time
+    val ath: Double = 0.0, // Cache ATH to avoid fetching full history every time
+    val watchCriteria: WatchCriteria? = null // New flexible criteria system
 )

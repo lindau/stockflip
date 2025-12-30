@@ -98,6 +98,12 @@ data class WatchItem(
             is WatchType.KeyMetrics -> {
                 "${companyName ?: ticker} (${ticker ?: ""})"
             }
+            is WatchType.ATHDrop -> {
+                "${companyName ?: ticker} (${ticker ?: ""})"
+            }
+            is WatchType.DailyHighDrop -> {
+                "${companyName ?: ticker} (${ticker ?: ""})"
+            }
         }
     }
 
@@ -106,6 +112,8 @@ data class WatchItem(
             is WatchType.PricePair -> "Aktiepar"
             is WatchType.PriceTarget -> "Prisbevakning"
             is WatchType.KeyMetrics -> "Nyckeltal"
+            is WatchType.ATHDrop -> "Fall från ATH"
+            is WatchType.DailyHighDrop -> "Fall från dagshögsta"
         }
     }
 

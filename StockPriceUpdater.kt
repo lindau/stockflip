@@ -46,30 +46,28 @@ class StockPriceUpdater(
 
         stockWatches.forEach { watch ->
             try {
-                val currentPrice = YahooFinanceService.getStockPrice(watch.symbol)
-                // Use cached ATH or fetch if 0.0 (initial)
-                val ath = if (watch.ath > 0) watch.ath else YahooFinanceService.getATH(watch.symbol)
+                val criteria = watch.watchCriteria
+                if (criteria == null) {
+                    // Backward compatibility: handle old format
+                    val currentPrice = YahooFinanceService.getStockPrice(watch.symbol)
+                    val ath = if (watch.ath > 0) watch.ath else YahooFinanceService.getATH(watch.symbol)
 
-                if (currentPrice != null && ath != null && ath > 0) {
-                     // Update ATH if current price is higher (new ATH)
-                    val effectiveAth = if (currentPrice > ath) {
-                        currentPrice
-                    } else {
-                        ath
-                    }
-                    
-                    // Ideally we should update the DB with the new ATH here if effectiveAth > watch.ath
+                    if (currentPrice != null && ath != null && ath > 0) {
+                        val effectiveAth = if (currentPrice > ath) currentPrice else ath
+                        val diff = effectiveAth - currentPrice
+                        val isTriggered = if (watch.isPercentage) {
+                            (diff / effectiveAth * 100) >= watch.dropValue
+                        } else {
+                            diff >= watch.dropValue
+                        }
 
-                    val diff = effectiveAth - currentPrice
-                    val isTriggered = if (watch.isPercentage) {
-                        (diff / effectiveAth * 100) >= watch.dropValue
-                    } else {
-                        diff >= watch.dropValue
+                        if (watch.notifyOnTrigger && isTriggered) {
+                            createNotificationForWatch(watch, currentPrice, effectiveAth, "ATH Drop Alert: ${watch.symbol}")
+                        }
                     }
-
-                    if (watch.notifyOnTrigger && isTriggered) {
-                        createNotificationForWatch(watch, currentPrice, effectiveAth, "ATH Drop Alert: ${watch.symbol}")
-                    }
+                } else {
+                    // New flexible criteria system
+                    checkWatchCriteria(watch, criteria)
                 }
             } catch (e: Exception) {
                 Log.e("StockPriceUpdater", "Error updating watch for ${watch.symbol}", e)
@@ -82,6 +80,82 @@ class StockPriceUpdater(
     private fun createNotification(id: Int, stockA: String, stockB: String, priceA: Double, priceB: Double, title: String) {
         val message = "$stockA: $priceA, $stockB: $priceB"
         showNotification(id, title, message)
+    }
+
+    private fun checkWatchCriteria(watch: StockWatchEntity, criteria: WatchCriteria) {
+        val currentPrice = YahooFinanceService.getStockPrice(watch.symbol) ?: return
+        
+        val isTriggered = when (criteria) {
+            is WatchCriteria.PriceTargetCriteria -> {
+                when (criteria.comparison) {
+                    ComparisonType.ABOVE -> currentPrice >= criteria.threshold
+                    ComparisonType.BELOW -> currentPrice <= criteria.threshold
+                }
+            }
+            is WatchCriteria.PERatioCriteria -> {
+                val peRatio = YahooFinanceService.getPERatio(watch.symbol) ?: return
+                when (criteria.comparison) {
+                    ComparisonType.ABOVE -> peRatio >= criteria.threshold
+                    ComparisonType.BELOW -> peRatio <= criteria.threshold
+                }
+            }
+            is WatchCriteria.PSRatioCriteria -> {
+                val psRatio = YahooFinanceService.getPSRatio(watch.symbol) ?: return
+                when (criteria.comparison) {
+                    ComparisonType.ABOVE -> psRatio >= criteria.threshold
+                    ComparisonType.BELOW -> psRatio <= criteria.threshold
+                }
+            }
+            is WatchCriteria.ATHDropCriteria -> {
+                val ath = if (watch.ath > 0) watch.ath else YahooFinanceService.getATH(watch.symbol) ?: return
+                val effectiveAth = if (currentPrice > ath) currentPrice else ath
+                val dropPercentage = ((effectiveAth - currentPrice) / effectiveAth) * 100
+                dropPercentage >= criteria.dropPercentage
+            }
+            is WatchCriteria.DailyHighDropCriteria -> {
+                val dailyHigh = YahooFinanceService.getDailyHigh(watch.symbol) ?: return
+                val effectiveDailyHigh = if (currentPrice > dailyHigh) currentPrice else dailyHigh
+                val dropPercentage = ((effectiveDailyHigh - currentPrice) / effectiveDailyHigh) * 100
+                dropPercentage >= criteria.dropPercentage
+            }
+        }
+
+        if (watch.notifyOnTrigger && isTriggered) {
+            val (title, message) = when (criteria) {
+                is WatchCriteria.PriceTargetCriteria -> {
+                    val direction = if (criteria.comparison == ComparisonType.ABOVE) "överstigit" else "understigit"
+                    "Prisnivå Alert: ${watch.symbol}" to 
+                        "${watch.symbol} har $direction ${criteria.threshold}. Nuvarande pris: $currentPrice"
+                }
+                is WatchCriteria.PERatioCriteria -> {
+                    val peRatio = YahooFinanceService.getPERatio(watch.symbol) ?: return
+                    val direction = if (criteria.comparison == ComparisonType.ABOVE) "överstigit" else "understigit"
+                    "P/E Alert: ${watch.symbol}" to 
+                        "${watch.symbol} P/E-tal har $direction ${criteria.threshold}. Nuvarande P/E: $peRatio"
+                }
+                is WatchCriteria.PSRatioCriteria -> {
+                    val psRatio = YahooFinanceService.getPSRatio(watch.symbol) ?: return
+                    val direction = if (criteria.comparison == ComparisonType.ABOVE) "överstigit" else "understigit"
+                    "P/S Alert: ${watch.symbol}" to 
+                        "${watch.symbol} P/S-tal har $direction ${criteria.threshold}. Nuvarande P/S: $psRatio"
+                }
+                is WatchCriteria.ATHDropCriteria -> {
+                    val ath = if (watch.ath > 0) watch.ath else YahooFinanceService.getATH(watch.symbol) ?: return
+                    val effectiveAth = if (currentPrice > ath) currentPrice else ath
+                    val dropPercentage = ((effectiveAth - currentPrice) / effectiveAth) * 100
+                    "ATH Drop Alert: ${watch.symbol}" to 
+                        "${watch.symbol} har fallit ${String.format("%.2f", dropPercentage)}% från ATH ($effectiveAth). Nuvarande pris: $currentPrice"
+                }
+                is WatchCriteria.DailyHighDropCriteria -> {
+                    val dailyHigh = YahooFinanceService.getDailyHigh(watch.symbol) ?: return
+                    val effectiveDailyHigh = if (currentPrice > dailyHigh) currentPrice else dailyHigh
+                    val dropPercentage = ((effectiveDailyHigh - currentPrice) / effectiveDailyHigh) * 100
+                    "Dagshögsta Drop Alert: ${watch.symbol}" to 
+                        "${watch.symbol} har fallit ${String.format("%.2f", dropPercentage)}% från dagshögsta ($effectiveDailyHigh). Nuvarande pris: $currentPrice"
+                }
+            }
+            showNotification(watch.id + 10000, title, message)
+        }
     }
 
     private fun createNotificationForWatch(watch: StockWatchEntity, currentPrice: Double, ath: Double, title: String) {

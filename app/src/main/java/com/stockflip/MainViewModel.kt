@@ -193,6 +193,14 @@ class MainViewModel(
                                 item
                             }
                         }
+                        is WatchType.ATHDrop -> {
+                            // TODO: Handle ATH drop refresh
+                            item
+                        }
+                        is WatchType.DailyHighDrop -> {
+                            // TODO: Handle daily high drop refresh
+                            item
+                        }
                     }
                 } catch (e: Exception) {
                     Log.e(TAG, "Error fetching prices for watch item ${item.id}: ${e.message}")

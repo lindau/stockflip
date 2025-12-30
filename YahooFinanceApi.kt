@@ -1,12 +1,15 @@
 import retrofit2.http.GET
-import retrofit2.http.Query
+import retrofit2.http.Path
 
 interface YahooFinanceApi {
     @GET("v8/finance/chart/{symbol}")
-    suspend fun getStockPrice(@Query("symbol") symbol: String): YahooFinanceResponse
+    suspend fun getStockPrice(@Path("symbol") symbol: String): YahooFinanceResponse
 
     @GET("v8/finance/chart/{symbol}?range=max&interval=1mo")
-    suspend fun getStockPriceFullHistory(@Query("symbol") symbol: String): YahooFinanceResponse
+    suspend fun getStockPriceFullHistory(@Path("symbol") symbol: String): YahooFinanceResponse
+    
+    @GET("v8/finance/chart/{symbol}?range=1d&interval=1d")
+    suspend fun getDailyData(@Path("symbol") symbol: String): YahooFinanceResponse
 }
 
 data class YahooFinanceResponse(
@@ -24,7 +27,8 @@ data class Result(
 
 data class Meta(
     val regularMarketPrice: Double,
-    val symbol: String
+    val symbol: String,
+    val regularMarketDayHigh: Double? = null
 )
 
 data class Indicators(
