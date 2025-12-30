@@ -176,30 +176,50 @@ class MainViewModel(
                         }
                         is WatchType.KeyMetrics -> {
                             if (item.ticker != null) {
-                                Log.d(TAG, "Fetching key metric ${item.watchType.metricType.name} for ${item.ticker}")
-                                val metricValue = yahooFinanceService.getKeyMetric(item.ticker, item.watchType.metricType)
+                                val keyMetrics = item.watchType
+                                Log.d(TAG, "Fetching key metric ${keyMetrics.metricType.name} for ${item.ticker}")
+                                try {
+                                    val metricValue = yahooFinanceService.getKeyMetric(item.ticker, keyMetrics.metricType)
+                                    Log.d(TAG, "getKeyMetric returned: $metricValue for ${item.ticker}")
 
-                                if (metricValue != null) {
-                                    Log.d(TAG, "Got metric value for ${item.ticker}: $metricValue")
-                                    val updatedItem = item.withCurrentMetricValue(metricValue)
+                                    if (metricValue != null) {
+                                        Log.d(TAG, "Got metric value for ${item.ticker}: $metricValue")
+                                        val updatedItem = item.withCurrentMetricValue(metricValue)
+                                        watchItemDao.update(updatedItem)
+                                        Log.d(TAG, "Updated database with new metric value for ${item.ticker}: ${updatedItem.currentMetricValue}")
+                                        updatedItem
+                                    } else {
+                                        Log.w(TAG, "Could not get metric value for ${item.ticker} (returned null), keeping existing value: ${item.currentMetricValue}")
+                                        item
+                                    }
+                                } catch (e: Exception) {
+                                    Log.e(TAG, "Exception while fetching key metric for ${item.ticker}: ${e.message}", e)
+                                    item
+                                }
+                            } else {
+                                Log.w(TAG, "Ticker is null for KeyMetrics watch item ${item.id}")
+                                item
+                            }
+                        }
+                        is WatchType.ATHBased -> {
+                            if (item.ticker != null) {
+                                Log.d(TAG, "Fetching ATH and price for ${item.ticker}")
+                                val ath = yahooFinanceService.getATH(item.ticker)
+                                val price = yahooFinanceService.getStockPrice(item.ticker)
+
+                                if (ath != null && price != null) {
+                                    Log.d(TAG, "Got ATH for ${item.ticker}: $ath, Price: $price")
+                                    val updatedItem = item.withATHData(ath, price)
                                     watchItemDao.update(updatedItem)
-                                    Log.d(TAG, "Updated database with new metric value for ${item.ticker}")
+                                    Log.d(TAG, "Updated database with new ATH data for ${item.ticker}")
                                     updatedItem
                                 } else {
-                                    Log.w(TAG, "Could not get metric value for ${item.ticker}, keeping existing value")
+                                    Log.w(TAG, "Could not get ATH or price for ${item.ticker}, keeping existing values")
                                     item
                                 }
                             } else {
                                 item
                             }
-                        }
-                        is WatchType.ATHDrop -> {
-                            // TODO: Handle ATH drop refresh
-                            item
-                        }
-                        is WatchType.DailyHighDrop -> {
-                            // TODO: Handle daily high drop refresh
-                            item
                         }
                     }
                 } catch (e: Exception) {

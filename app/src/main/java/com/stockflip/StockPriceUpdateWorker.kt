@@ -164,7 +164,7 @@ class StockPriceUpdateWorker(
         WorkManager.getInstance(applicationContext)
             .enqueueUniquePeriodicWork(
                 "StockPriceUpdate",
-                ExistingPeriodicWorkPolicy.REPLACE,
+                ExistingPeriodicWorkPolicy.UPDATE,
                 workRequest
             )
         

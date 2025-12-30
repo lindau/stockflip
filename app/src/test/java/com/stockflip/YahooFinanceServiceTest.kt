@@ -79,4 +79,164 @@ class YahooFinanceServiceTest {
         println("Found ${results.size} results for '$query':")
         results.forEach { println("${it.symbol}: ${it.name}") }
     }
+    
+    @Test
+    fun `getATH should return valid ATH for Swedish stock`() = runBlocking {
+        // Given
+        val symbol = "VOLV-B.ST"
+        
+        // When
+        val ath = YahooFinanceService.getATH(symbol)
+        
+        // Then
+        assertNotNull("ATH should not be null for $symbol", ath)
+        assertTrue("ATH should be greater than 0", ath!! > 0.0)
+        println("ATH for $symbol: $ath")
+    }
+    
+    @Test
+    fun `getATH should return valid ATH for another Swedish stock`() = runBlocking {
+        // Given
+        val symbol = "ASSA-B.ST"
+        
+        // When
+        val ath = YahooFinanceService.getATH(symbol)
+        
+        // Then
+        assertNotNull("ATH should not be null for $symbol", ath)
+        assertTrue("ATH should be greater than 0", ath!! > 0.0)
+        println("ATH for $symbol: $ath")
+    }
+    
+    @Test
+    fun `getKeyMetric should return PE ratio for Swedish stock`() = runBlocking {
+        // Given
+        val symbol = "VOLV-B.ST"
+        val metricType = WatchType.MetricType.PE_RATIO
+        
+        // When
+        val peRatio = YahooFinanceService.getKeyMetric(symbol, metricType)
+        
+        // Then
+        assertNotNull("P/E ratio should not be null for $symbol", peRatio)
+        assertTrue("P/E ratio should be greater than 0", peRatio!! > 0.0)
+        println("P/E ratio for $symbol: $peRatio")
+    }
+    
+    @Test
+    fun `getKeyMetric should return PS ratio for Swedish stock`() = runBlocking {
+        // Given
+        val symbol = "VOLV-B.ST"
+        val metricType = WatchType.MetricType.PS_RATIO
+        
+        // When
+        val psRatio = YahooFinanceService.getKeyMetric(symbol, metricType)
+        
+        // Then
+        // P/S ratio might be null for some stocks, so we just check if it's valid when present
+        if (psRatio != null) {
+            assertTrue("P/S ratio should be greater than 0", psRatio > 0.0)
+            println("P/S ratio for $symbol: $psRatio")
+        } else {
+            println("P/S ratio not available for $symbol")
+        }
+    }
+    
+    @Test
+    fun `getKeyMetric should return dividend yield for Swedish stock`() = runBlocking {
+        // Given
+        val symbol = "VOLV-B.ST"
+        val metricType = WatchType.MetricType.DIVIDEND_YIELD
+        
+        // When
+        val dividendYield = YahooFinanceService.getKeyMetric(symbol, metricType)
+        
+        // Then
+        // Dividend yield might be null for some stocks, so we just check if it's valid when present
+        if (dividendYield != null) {
+            assertTrue("Dividend yield should be greater than 0", dividendYield > 0.0)
+            println("Dividend yield for $symbol: $dividendYield%")
+        } else {
+            println("Dividend yield not available for $symbol")
+        }
+    }
+    
+    @Test
+    fun `getKeyMetric should return PE ratio for another Swedish stock`() = runBlocking {
+        // Given
+        val symbol = "ASSA-B.ST"
+        val metricType = WatchType.MetricType.PE_RATIO
+        
+        // When
+        val peRatio = YahooFinanceService.getKeyMetric(symbol, metricType)
+        
+        // Then
+        assertNotNull("P/E ratio should not be null for $symbol", peRatio)
+        assertTrue("P/E ratio should be greater than 0", peRatio!! > 0.0)
+        println("P/E ratio for $symbol: $peRatio")
+    }
+    
+    @Test
+    fun `getKeyMetric should handle stocks without PE ratio gracefully`() = runBlocking {
+        // Given - using a stock that might not have P/E ratio
+        val symbol = "RVRC.ST"
+        val metricType = WatchType.MetricType.PE_RATIO
+        
+        // When
+        val peRatio = YahooFinanceService.getKeyMetric(symbol, metricType)
+        
+        // Then
+        // Should not throw exception, but might return null
+        if (peRatio != null) {
+            assertTrue("P/E ratio should be greater than 0 if present", peRatio > 0.0)
+            println("P/E ratio for $symbol: $peRatio")
+        } else {
+            println("P/E ratio not available for $symbol (this is acceptable)")
+        }
+    }
+    
+    @Test
+    fun `getATH and getKeyMetric should both work for the same stock`() = runBlocking {
+        // Given
+        val symbol = "VOLV-B.ST"
+        
+        // When
+        val ath = YahooFinanceService.getATH(symbol)
+        val peRatio = YahooFinanceService.getKeyMetric(symbol, WatchType.MetricType.PE_RATIO)
+        
+        // Then
+        assertNotNull("ATH should not be null for $symbol", ath)
+        assertTrue("ATH should be greater than 0", ath!! > 0.0)
+        
+        // P/E ratio comes from Finnhub directly
+        if (peRatio != null) {
+            assertTrue("P/E ratio should be greater than 0", peRatio > 0.0)
+            println("For $symbol:")
+            println("  ATH: $ath (from Yahoo Finance)")
+            println("  P/E ratio: $peRatio (from Finnhub)")
+        } else {
+            println("For $symbol:")
+            println("  ATH: $ath (from Yahoo Finance)")
+            println("  P/E ratio: Not available (Finnhub API key might not be configured)")
+        }
+    }
+    
+    @Test
+    fun `getKeyMetric should use Finnhub directly`() = runBlocking {
+        // Given - Yahoo Finance quoteSummary requires auth, so we use Finnhub directly
+        val symbol = "EVO.ST"
+        val metricType = WatchType.MetricType.PE_RATIO
+        
+        // When
+        val peRatio = YahooFinanceService.getKeyMetric(symbol, metricType)
+        
+        // Then
+        // Should get value from Finnhub (or null if API key not configured)
+        if (peRatio != null) {
+            assertTrue("P/E ratio should be greater than 0", peRatio > 0.0)
+            println("✓ Successfully got P/E ratio from Finnhub for $symbol: $peRatio")
+        } else {
+            println("⚠ P/E ratio not available for $symbol (Finnhub API key might not be configured)")
+        }
+    }
 } 

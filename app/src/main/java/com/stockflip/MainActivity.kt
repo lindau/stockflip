@@ -31,6 +31,8 @@ import com.google.android.material.textfield.TextInputEditText
 import com.stockflip.databinding.ActivityMainBinding
 import kotlinx.coroutines.*
 import java.text.SimpleDateFormat
+import java.text.DecimalFormat
+import java.text.DecimalFormatSymbols
 import java.util.*
 import com.stockflip.viewmodel.StockSearchViewModel
 import com.stockflip.repository.StockRepository
@@ -141,7 +143,10 @@ class MainActivity : AppCompatActivity() {
 
     private fun loadInitialData(): Unit {
         lifecycleScope.launch {
+            // First load from database to show existing data quickly
             viewModel.loadWatchItems()
+            // Then refresh to get latest prices and key metrics
+            viewModel.refreshWatchItems()
         }
     }
 
@@ -270,14 +275,7 @@ class MainActivity : AppCompatActivity() {
             is WatchType.PricePair -> showEditStockPairDialog(item)
             is WatchType.PriceTarget -> showEditPriceTargetDialog(item)
             is WatchType.KeyMetrics -> showEditKeyMetricsDialog(item)
-            is WatchType.ATHDrop -> {
-                // TODO: Implement edit dialog for ATH drop
-                Toast.makeText(this, "Edit for ATH drop not yet implemented", Toast.LENGTH_SHORT).show()
-            }
-            is WatchType.DailyHighDrop -> {
-                // TODO: Implement edit dialog for daily high drop
-                Toast.makeText(this, "Edit for daily high drop not yet implemented", Toast.LENGTH_SHORT).show()
-            }
+            is WatchType.ATHBased -> showEditATHBasedDialog(item)
         }
     }
 
@@ -296,8 +294,7 @@ class MainActivity : AppCompatActivity() {
             "Aktiepar" to WatchType.PricePair(0.0, false),
             "Prisbevakning" to WatchType.PriceTarget(0.0, WatchType.PriceDirection.ABOVE),
             "Nyckeltal" to WatchType.KeyMetrics(WatchType.MetricType.PE_RATIO, 0.0, WatchType.PriceDirection.ABOVE),
-            "Fall från ATH" to WatchType.ATHDrop(0.0),
-            "Fall från dagshögsta" to WatchType.DailyHighDrop(0.0)
+            "ATH-bevakning" to WatchType.ATHBased(WatchType.DropType.PERCENTAGE, 0.0)
         )
         val watchTypeNames = watchTypes.map { it.first }.toTypedArray()
 
@@ -309,8 +306,7 @@ class MainActivity : AppCompatActivity() {
                     is WatchType.PricePair -> showAddStockPairDialog()
                     is WatchType.PriceTarget -> showAddPriceTargetDialog()
                     is WatchType.KeyMetrics -> showAddKeyMetricsDialog()
-                    is WatchType.ATHDrop -> showAddATHDropDialog()
-                    is WatchType.DailyHighDrop -> showAddDailyHighDropDialog()
+                    is WatchType.ATHBased -> showAddATHBasedDialog()
                 }
             }
             .setNegativeButton("Avbryt", null)
@@ -555,6 +551,82 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
+     * Shows a dialog for adding a new ATH-based watch.
+     * Handles user input validation and API calls for stock information.
+     */
+    private fun showAddATHBasedDialog(): Unit {
+        val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_add_ath_based, null)
+        val tickerInput = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.tickerInput)
+        val dropTypeInput = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.dropTypeInput)
+        val dropValueInput = dialogView.findViewById<TextInputEditText>(R.id.dropValueInput)
+
+        // Set up adapter for stock search
+        val adapter = createStockAdapter()
+        tickerInput.setAdapter(adapter)
+        setupStockSearch(tickerInput, adapter, stockSearchViewModel)
+
+        tickerInput.setOnItemClickListener { _, _, position, _ ->
+            selectedStock = adapter.getItem(position)
+            Log.d(TAG, "Selected stock: $selectedStock")
+        }
+
+        // Set up drop type dropdown
+        val dropTypes = arrayOf("Procent", "Absolut (SEK)")
+        val dropTypeAdapter = ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line, dropTypes)
+        dropTypeInput.setAdapter(dropTypeAdapter)
+        dropTypeInput.setOnItemClickListener { _, _, position, _ ->
+            Log.d(TAG, "Selected drop type: ${dropTypes[position]}")
+        }
+
+        MaterialAlertDialogBuilder(this)
+            .setTitle("Lägg till ATH-bevakning")
+            .setView(dialogView)
+            .setPositiveButton("Lägg till") { _, _ ->
+                val tickerStr = tickerInput.text.toString().trim()
+                val dropTypeStr = dropTypeInput.text.toString()
+                val dropValueStr = dropValueInput.text.toString()
+
+                val finalTicker = selectedStock?.symbol ?: tickerStr
+
+                if (finalTicker.isNotEmpty() && dropTypeStr.isNotEmpty() && dropValueStr.isNotEmpty()) {
+                    val dropType = when (dropTypeStr) {
+                        "Procent" -> WatchType.DropType.PERCENTAGE
+                        "Absolut (SEK)" -> WatchType.DropType.ABSOLUTE
+                        else -> null
+                    }
+                    val dropValue = dropValueStr.toDoubleOrNull()
+
+                    if (dropType != null && dropValue != null && dropValue > 0) {
+                        lifecycleScope.launch {
+                            try {
+                                binding.progressBar.visibility = View.VISIBLE
+
+                                val watchItem = WatchItem(
+                                    watchType = WatchType.ATHBased(dropType, dropValue),
+                                    ticker = finalTicker,
+                                    companyName = selectedStock?.name
+                                )
+
+                                viewModel.addWatchItem(watchItem)
+                                binding.progressBar.visibility = View.GONE
+                                Toast.makeText(this@MainActivity, "ATH-bevakning tillagd", Toast.LENGTH_SHORT).show()
+                            } catch (e: Exception) {
+                                binding.progressBar.visibility = View.GONE
+                                Toast.makeText(this@MainActivity, "Kunde inte lägga till ATH-bevakning: ${e.message}", Toast.LENGTH_LONG).show()
+                            }
+                        }
+                    } else {
+                        Toast.makeText(this, "Ange giltiga värden för alla fält", Toast.LENGTH_SHORT).show()
+                    }
+                } else {
+                    Toast.makeText(this, "Fyll i alla fält", Toast.LENGTH_SHORT).show()
+                }
+            }
+            .setNegativeButton("Avbryt", null)
+            .show()
+    }
+
+    /**
      * Creates an adapter for displaying stock search results.
      * The adapter handles both the input field display and dropdown items.
      *
@@ -696,7 +768,7 @@ class MainActivity : AppCompatActivity() {
      */
     private fun showEditStockPairDialog(item: WatchItem) {
         if (item.watchType !is WatchType.PricePair) return
-        val pricePair = item.watchType as WatchType.PricePair
+        val pricePair = item.watchType
         val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_add_stock_pair, null)
         val ticker1Input = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.ticker1Input).apply { setText(item.ticker1) }
         val ticker2Input = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.ticker2Input).apply { setText(item.ticker2) }
@@ -773,7 +845,7 @@ class MainActivity : AppCompatActivity() {
      */
     private fun showEditPriceTargetDialog(item: WatchItem) {
         if (item.watchType !is WatchType.PriceTarget) return
-        val priceTarget = item.watchType as WatchType.PriceTarget
+        val priceTarget = item.watchType
         val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_add_price_target, null)
         val tickerInput = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.tickerInput).apply { setText(item.ticker) }
         val targetPriceInput = dialogView.findViewById<TextInputEditText>(R.id.targetPriceInput).apply { setText(priceTarget.targetPrice.toString()) }
@@ -857,7 +929,7 @@ class MainActivity : AppCompatActivity() {
      */
     private fun showEditKeyMetricsDialog(item: WatchItem) {
         if (item.watchType !is WatchType.KeyMetrics) return
-        val keyMetrics = item.watchType as WatchType.KeyMetrics
+        val keyMetrics = item.watchType
         val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_add_key_metrics, null)
         val tickerInput = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.tickerInput).apply { setText(item.ticker) }
         val metricTypeInput = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.metricTypeInput).apply {
@@ -941,12 +1013,98 @@ class MainActivity : AppCompatActivity() {
 
                                 viewModel.updateWatchItem(updatedItem)
                                 viewModel.refreshWatchItems()
+                            updateLastUpdateTime()
+                            binding.progressBar.visibility = View.GONE
+                                Toast.makeText(this@MainActivity, "Nyckeltalsbevakning uppdaterad", Toast.LENGTH_SHORT).show()
+                        } catch (e: Exception) {
+                            binding.progressBar.visibility = View.GONE
+                                Toast.makeText(this@MainActivity, "Kunde inte uppdatera nyckeltalsbevakning: ${e.message}", Toast.LENGTH_LONG).show()
+                        }
+                    }
+                } else {
+                        Toast.makeText(this, "Ange giltiga värden för alla fält", Toast.LENGTH_SHORT).show()
+                }
+                } else {
+                    Toast.makeText(this, "Fyll i alla fält", Toast.LENGTH_SHORT).show()
+            }
+            }
+            .setNegativeButton("Avbryt", null)
+            .show()
+    }
+
+    /**
+     * Shows a dialog for editing an existing ATH-based watch.
+     */
+    private fun showEditATHBasedDialog(item: WatchItem) {
+        if (item.watchType !is WatchType.ATHBased) return
+        val athBased = item.watchType
+        val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_add_ath_based, null)
+        val tickerInput = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.tickerInput).apply { setText(item.ticker) }
+        val dropTypeInput = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.dropTypeInput).apply {
+            setText(when (athBased.dropType) {
+                WatchType.DropType.PERCENTAGE -> "Procent"
+                WatchType.DropType.ABSOLUTE -> "Absolut (SEK)"
+            })
+        }
+        val dropValueInput = dialogView.findViewById<TextInputEditText>(R.id.dropValueInput).apply {
+            setText(athBased.dropValue.toString())
+        }
+
+        // Set up adapter for stock search
+        val adapter = createStockAdapter()
+        tickerInput.setAdapter(adapter)
+        setupStockSearch(tickerInput, adapter, stockSearchViewModel)
+
+        tickerInput.setOnItemClickListener { _, _, position, _ ->
+            selectedStock = adapter.getItem(position)
+            Log.d(TAG, "Selected stock: $selectedStock")
+        }
+
+        // Set up drop type dropdown
+        val dropTypes = arrayOf("Procent", "Absolut (SEK)")
+        val dropTypeAdapter = ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line, dropTypes)
+        dropTypeInput.setAdapter(dropTypeAdapter)
+        dropTypeInput.setOnItemClickListener { _, _, position, _ ->
+            Log.d(TAG, "Selected drop type: ${dropTypes[position]}")
+        }
+
+        MaterialAlertDialogBuilder(this)
+            .setTitle("Redigera ATH-bevakning")
+            .setView(dialogView)
+            .setPositiveButton("Uppdatera") { _, _ ->
+                val tickerStr = tickerInput.text.toString().trim()
+                val dropTypeStr = dropTypeInput.text.toString()
+                val dropValueStr = dropValueInput.text.toString()
+
+                val finalTicker = selectedStock?.symbol ?: tickerStr
+
+                if (finalTicker.isNotEmpty() && dropTypeStr.isNotEmpty() && dropValueStr.isNotEmpty()) {
+                    val dropType = when (dropTypeStr) {
+                        "Procent" -> WatchType.DropType.PERCENTAGE
+                        "Absolut (SEK)" -> WatchType.DropType.ABSOLUTE
+                        else -> null
+                    }
+                    val dropValue = dropValueStr.toDoubleOrNull()
+
+                    if (dropType != null && dropValue != null && dropValue > 0) {
+                        lifecycleScope.launch {
+                            try {
+                                binding.progressBar.visibility = View.VISIBLE
+
+                                val updatedItem = item.copy(
+                                    watchType = WatchType.ATHBased(dropType, dropValue),
+                                    ticker = finalTicker,
+                                    companyName = selectedStock?.name ?: item.companyName
+                                )
+
+                                viewModel.updateWatchItem(updatedItem)
+                                viewModel.refreshWatchItems()
                                 updateLastUpdateTime()
                                 binding.progressBar.visibility = View.GONE
-                                Toast.makeText(this@MainActivity, "Nyckeltalsbevakning uppdaterad", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(this@MainActivity, "ATH-bevakning uppdaterad", Toast.LENGTH_SHORT).show()
                             } catch (e: Exception) {
                                 binding.progressBar.visibility = View.GONE
-                                Toast.makeText(this@MainActivity, "Kunde inte uppdatera nyckeltalsbevakning: ${e.message}", Toast.LENGTH_LONG).show()
+                                Toast.makeText(this@MainActivity, "Kunde inte uppdatera ATH-bevakning: ${e.message}", Toast.LENGTH_LONG).show()
                             }
                         }
                     } else {
@@ -974,12 +1132,7 @@ class MainActivity : AppCompatActivity() {
             is WatchType.PricePair -> showPricePairDetail(dialogView, item)
             is WatchType.PriceTarget -> showPriceTargetDetail(dialogView, item)
             is WatchType.KeyMetrics -> showKeyMetricsDetail(dialogView, item)
-            is WatchType.ATHDrop -> {
-                // TODO: Show ATH drop detail
-            }
-            is WatchType.DailyHighDrop -> {
-                // TODO: Show daily high drop detail
-            }
+            is WatchType.ATHBased -> showATHBasedDetail(dialogView, item)
         }
 
         MaterialAlertDialogBuilder(this)
@@ -1074,6 +1227,37 @@ class MainActivity : AppCompatActivity() {
         }, false)
     }
 
+    private fun showATHBasedDetail(dialogView: android.view.View, item: WatchItem) {
+        val athBasedDetails = dialogView.findViewById<android.view.View>(R.id.athBasedDetails)
+        athBasedDetails.visibility = android.view.View.VISIBLE
+        
+        val detailATHStockName = dialogView.findViewById<TextView>(R.id.detailATHStockName)
+        val detailATHInfo = dialogView.findViewById<TextView>(R.id.detailATHInfo)
+        val detailATHDropType = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.detailATHDropType)
+        val detailATHDropValue = dialogView.findViewById<TextInputEditText>(R.id.detailATHDropValue)
+
+        val athBased = item.watchType as WatchType.ATHBased
+
+        detailATHStockName.text = "${item.companyName ?: item.ticker} (${item.ticker})"
+        
+        val athInfoText = if (item.currentATH > 0.0) {
+            "ATH: ${priceFormat.format(item.currentATH)} SEK | Nedgång: ${item.formatATHDrop()}"
+        } else {
+            "ATH: Loading... | Nedgång: ${item.formatATHDrop()}"
+        }
+        detailATHInfo.text = athInfoText
+        
+        val dropTypes = arrayOf("Procent", "Absolut (SEK)")
+        val dropTypeAdapter = ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line, dropTypes)
+        detailATHDropType.setAdapter(dropTypeAdapter)
+        detailATHDropType.setText(when (athBased.dropType) {
+            WatchType.DropType.PERCENTAGE -> "Procent"
+            WatchType.DropType.ABSOLUTE -> "Absolut (SEK)"
+        }, false)
+        
+        detailATHDropValue.setText(athBased.dropValue.toString())
+    }
+
     private fun saveWatchItemChanges(dialogView: android.view.View, item: WatchItem) {
         lifecycleScope.launch {
             try {
@@ -1115,7 +1299,10 @@ class MainActivity : AppCompatActivity() {
                             "P/E-tal" -> WatchType.MetricType.PE_RATIO
                             "P/S-tal" -> WatchType.MetricType.PS_RATIO
                             "Utdelningsprocent" -> WatchType.MetricType.DIVIDEND_YIELD
-                            else -> (item.watchType as WatchType.KeyMetrics).metricType
+                            else -> {
+                                val keyMetrics = item.watchType as? WatchType.KeyMetrics
+                                keyMetrics?.metricType ?: WatchType.MetricType.PE_RATIO
+                            }
                         }
                         val targetValue = targetValueInput.text.toString().toDoubleOrNull() ?: 0.0
                         val direction = when (directionInput.text.toString()) {
@@ -1128,13 +1315,23 @@ class MainActivity : AppCompatActivity() {
                             watchType = WatchType.KeyMetrics(metricType, targetValue, direction)
                         )
                     }
-                    is WatchType.ATHDrop -> {
-                        // TODO: Implement edit for ATH drop
-                        item
-                    }
-                    is WatchType.DailyHighDrop -> {
-                        // TODO: Implement edit for daily high drop
-                        item
+                    is WatchType.ATHBased -> {
+                        val dropTypeInput = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.detailATHDropType)
+                        val dropValueInput = dialogView.findViewById<TextInputEditText>(R.id.detailATHDropValue)
+                        
+                        val dropType = when (dropTypeInput.text.toString()) {
+                            "Procent" -> WatchType.DropType.PERCENTAGE
+                            "Absolut (SEK)" -> WatchType.DropType.ABSOLUTE
+                            else -> {
+                                val athBased = item.watchType as? WatchType.ATHBased
+                                athBased?.dropType ?: WatchType.DropType.PERCENTAGE
+                            }
+                        }
+                        val dropValue = dropValueInput.text.toString().toDoubleOrNull() ?: 0.0
+                        
+                        item.copy(
+                            watchType = WatchType.ATHBased(dropType, dropValue)
+                        )
                     }
                 }
 
@@ -1201,16 +1398,6 @@ class MainActivity : AppCompatActivity() {
             .show()
     }
 
-    private fun showAddATHDropDialog() {
-        // TODO: Implement ATH drop dialog
-        Toast.makeText(this, "ATH drop dialog not yet implemented", Toast.LENGTH_SHORT).show()
-    }
-
-    private fun showAddDailyHighDropDialog() {
-        // TODO: Implement daily high drop dialog
-        Toast.makeText(this, "Daily high drop dialog not yet implemented", Toast.LENGTH_SHORT).show()
-    }
-
     companion object {
         /** Tag for logging purposes */
         private const val TAG = "MainActivity"
@@ -1218,5 +1405,7 @@ class MainActivity : AppCompatActivity() {
         private const val AUTO_REFRESH_INTERVAL = 60000L // 1 minute
         /** Format pattern for time display */
         private const val TIME_FORMAT = "HH:mm:ss"
+        /** Price format with Swedish locale */
+        private val priceFormat = DecimalFormat("#,##0.00", DecimalFormatSymbols(Locale("sv", "SE")))
     }
 } 

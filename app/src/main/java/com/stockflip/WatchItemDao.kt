@@ -24,12 +24,3 @@ interface WatchItemDao {
     suspend fun getWatchItemById(id: Int): WatchItem?
 }
 
-
-
-
-
-
-
-
-
-

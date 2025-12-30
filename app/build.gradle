@@ -66,9 +66,22 @@ android {
 }
 
 // Configure kapt (Kotlin Annotation Processing Tool) for Room
-// Note: You may see warnings about unrecognized options when compiling androidTest.
-// This is expected and harmless - Room processor doesn't run for androidTest variant
-// since there are no Room entities in the test code. The warning can be safely ignored.
+// 
+// IMPORTANT: You may see warnings about unrecognized options when compiling androidTest:
+// "warning: The following options were not recognized by any processor: '[room.schemaLocation, ...]'"
+//
+// This warning is EXPECTED and HARMLESS. It occurs because:
+// 1. Room processor only runs when there are Room entities (@Entity, @Dao, @Database) to process
+// 2. androidTest variant doesn't contain any Room entities, so the processor doesn't run
+// 3. kapt still passes Room options to the processor, which then warns about unused options
+//
+// This warning does NOT affect:
+// - App functionality
+// - Room database operations
+// - Test execution
+// - Build process
+//
+// The warning can be safely ignored. It's a known limitation of kapt + Room + androidTest.
 kapt {
     arguments {
         arg("room.schemaLocation", "$projectDir/schemas")
@@ -76,20 +89,6 @@ kapt {
         arg("room.expandProjection", "true")
     }
     correctErrorTypes = true
-    // Suppress warnings for androidTest variant where Room processor doesn't run
-    javacOptions {
-        option("-Xmaxwarns", "1000")
-    }
-}
-
-// Configure kapt specifically for androidTest to suppress Room option warnings
-afterEvaluate {
-    tasks.matching { it.name.startsWith("kapt") && it.name.contains("AndroidTest") }.configureEach {
-        doFirst {
-            // This is a workaround - the warning is harmless but we acknowledge it here
-            logger.info("Compiling androidTest variant - Room options warning is expected and harmless")
-        }
-    }
 }
 
 dependencies {

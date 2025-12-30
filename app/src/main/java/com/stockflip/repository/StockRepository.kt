@@ -86,7 +86,6 @@ class StockRepository {
 
     // Periodically clean old cache entries
     fun cleanExpiredCache() {
-        val currentTime = System.currentTimeMillis()
         cache.entries.removeIf { (_, entry) ->
             isCacheExpired(entry.timestamp)
         }

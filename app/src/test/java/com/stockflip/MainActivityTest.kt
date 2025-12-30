@@ -21,7 +21,7 @@ import com.google.android.material.textfield.MaterialAutoCompleteTextView
 import com.stockflip.databinding.ActivityMainBinding
 import com.stockflip.repository.SearchState
 import com.stockflip.repository.StockRepository
-import com.stockflip.repository.StockSearchResult
+import com.stockflip.StockSearchResult
 import com.stockflip.viewmodel.StockSearchViewModel
 import io.mockk.*
 import io.mockk.impl.annotations.MockK
@@ -64,7 +64,7 @@ class MainActivityTest {
     private lateinit var stockSearchViewModel: StockSearchViewModel
     
     private lateinit var binding: ActivityMainBinding
-    private lateinit var rootView: View
+    private lateinit var rootView: ConstraintLayout
     private lateinit var mockBuilder: MaterialAlertDialogBuilder
     private lateinit var uiStateFlow: MutableStateFlow<UiState<List<StockPair>>>
     private lateinit var layoutInflater: LayoutInflater
@@ -99,6 +99,7 @@ class MainActivityTest {
         
         // Mock binding
         binding = mockk(relaxed = true)
+        rootView = mockk(relaxed = true)
         every { binding.progressBar } returns mockk(relaxed = true)
         every { binding.stockPairsList } returns mockk(relaxed = true)
         every { binding.swipeRefreshLayout } returns mockk(relaxed = true)
@@ -109,12 +110,12 @@ class MainActivityTest {
         // Mock ViewModelProvider.Factory for MainViewModel
         val mainViewModelFactory = mockk<ViewModelProvider.Factory>()
         every { mainViewModelFactory.create(MainViewModel::class.java) } returns mainViewModel
-        every { ViewModelProvider(any(), mainViewModelFactory)[MainViewModel::class.java] } returns mainViewModel
+        every { ViewModelProvider(any<androidx.lifecycle.ViewModelStoreOwner>(), mainViewModelFactory)[MainViewModel::class.java] } returns mainViewModel
         
         // Mock ViewModelProvider.Factory for StockSearchViewModel
         val stockSearchViewModelFactory = mockk<ViewModelProvider.Factory>()
         every { stockSearchViewModelFactory.create(StockSearchViewModel::class.java) } returns stockSearchViewModel
-        every { ViewModelProvider(any(), stockSearchViewModelFactory)[StockSearchViewModel::class.java] } returns stockSearchViewModel
+        every { ViewModelProvider(any<androidx.lifecycle.ViewModelStoreOwner>(), stockSearchViewModelFactory)[StockSearchViewModel::class.java] } returns stockSearchViewModel
         
         // Mock database
         val database = mockk<StockPairDatabase>()
@@ -123,15 +124,15 @@ class MainActivityTest {
         
         // Mock activity
         activity = spyk(MainActivity())
-        every { activity.binding } returns binding
+        every { activity getProperty "binding" } returns binding
         
         // Mock notification permission launcher
         val notificationLauncher = mockk<ActivityResultLauncher<String>>(relaxed = true)
-        every { activity.notificationPermissionLauncher } returns notificationLauncher
+        every { activity getProperty "notificationPermissionLauncher" } returns notificationLauncher
         
         // Mock price update receiver
         val priceUpdateReceiver = mockk<PriceUpdateReceiver>(relaxed = true)
-        every { activity.priceUpdateReceiver } returns priceUpdateReceiver
+        every { activity getProperty "priceUpdateReceiver" } returns priceUpdateReceiver
         
         // Mock MaterialAlertDialogBuilder
         mockBuilder = mockk(relaxed = true)
@@ -161,10 +162,10 @@ class MainActivityTest {
         every { anyConstructed<MainActivity>().lifecycle } returns lifecycle
         
         // Mock ViewModelProvider.Factory for MainActivity
-        val mainViewModelFactory = mockk<ViewModelProvider.Factory>(relaxed = true) {
+        val mainActivityViewModelFactory = mockk<ViewModelProvider.Factory>(relaxed = true) {
             every { create(MainViewModel::class.java) } returns mainViewModel
         }
-        every { anyConstructed<MainActivity>().defaultViewModelProviderFactory } returns mainViewModelFactory
+        every { anyConstructed<MainActivity>().defaultViewModelProviderFactory } returns mainActivityViewModelFactory
         
         // Launch activity
         try {

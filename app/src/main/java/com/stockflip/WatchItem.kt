@@ -44,6 +44,18 @@ data class WatchItem(
     var currentMetricValue: Double = 0.0
         private set
 
+    @Ignore
+    var currentATH: Double = 0.0
+        private set
+
+    @Ignore
+    var currentDropPercentage: Double = 0.0
+        private set
+
+    @Ignore
+    var currentDropAbsolute: Double = 0.0
+        private set
+
     fun withCurrentPrices(price1: Double?, price2: Double?): WatchItem {
         Log.d(TAG, "Updating prices for watch item $id: $price1, $price2")
         if (price1 == null || price2 == null) {
@@ -81,6 +93,21 @@ data class WatchItem(
         }
     }
 
+    fun withATHData(ath: Double?, currentPrice: Double?): WatchItem {
+        Log.d(TAG, "Updating ATH data for watch item $id: ATH=$ath, Price=$currentPrice")
+        if (ath == null || currentPrice == null || ath <= 0 || currentPrice <= 0) {
+            Log.w(TAG, "Received invalid ATH data for watch item $id")
+            return this
+        }
+        return copy().also {
+            it.currentATH = ath
+            it.currentPrice = currentPrice
+            it.currentDropPercentage = ((ath - currentPrice) / ath) * 100
+            it.currentDropAbsolute = ath - currentPrice
+            Log.d(TAG, "Updated ATH data for watch item $id: ATH=${it.currentATH}, Drop=${it.currentDropPercentage}%, ${it.currentDropAbsolute} SEK")
+        }
+    }
+
     fun formatPrice1(): String = formatPrice(currentPrice1)
 
     fun formatPrice2(): String = formatPrice(currentPrice2)
@@ -98,10 +125,7 @@ data class WatchItem(
             is WatchType.KeyMetrics -> {
                 "${companyName ?: ticker} (${ticker ?: ""})"
             }
-            is WatchType.ATHDrop -> {
-                "${companyName ?: ticker} (${ticker ?: ""})"
-            }
-            is WatchType.DailyHighDrop -> {
+            is WatchType.ATHBased -> {
                 "${companyName ?: ticker} (${ticker ?: ""})"
             }
         }
@@ -112,8 +136,23 @@ data class WatchItem(
             is WatchType.PricePair -> "Aktiepar"
             is WatchType.PriceTarget -> "Prisbevakning"
             is WatchType.KeyMetrics -> "Nyckeltal"
-            is WatchType.ATHDrop -> "Fall från ATH"
-            is WatchType.DailyHighDrop -> "Fall från dagshögsta"
+            is WatchType.ATHBased -> "ATH-bevakning"
+        }
+    }
+
+    fun formatATHDrop(): String {
+        return when (watchType) {
+            is WatchType.ATHBased -> {
+                when (watchType.dropType) {
+                    WatchType.DropType.PERCENTAGE -> {
+                        if (currentDropPercentage > 0.0) "${priceFormat.format(currentDropPercentage)}%" else "Loading..."
+                    }
+                    WatchType.DropType.ABSOLUTE -> {
+                        if (currentDropAbsolute > 0.0) "${priceFormat.format(currentDropAbsolute)} SEK" else "Loading..."
+                    }
+                }
+            }
+            else -> ""
         }
     }
 

@@ -63,12 +63,7 @@ class WatchItemAdapter(
                 is WatchType.PricePair -> bindPricePair(item)
                 is WatchType.PriceTarget -> bindPriceTarget(item)
                 is WatchType.KeyMetrics -> bindKeyMetrics(item)
-                is WatchType.ATHDrop -> {
-                    // TODO: Bind ATH drop
-                }
-                is WatchType.DailyHighDrop -> {
-                    // TODO: Bind daily high drop
-                }
+                is WatchType.ATHBased -> bindATHBased(item)
             }
         }
 
@@ -220,6 +215,57 @@ class WatchItemAdapter(
             updateHighlightState(item.id, shouldHighlight, item, null)
         }
 
+        private fun bindATHBased(item: WatchItem) {
+            // Hide pair fields, show single stock layout
+            binding.singleStockLayout.visibility = android.view.View.VISIBLE
+            binding.pairStockLayout1.visibility = android.view.View.GONE
+            binding.pairStockLayout2.visibility = android.view.View.GONE
+            binding.divider1.visibility = android.view.View.GONE
+            binding.divider2.visibility = android.view.View.GONE
+
+            val athBased = item.watchType as WatchType.ATHBased
+
+            // Single stock info
+            binding.singleStockName.text = "${item.companyName ?: item.ticker} (${item.ticker})"
+            
+            // Show ATH and drop info
+            val dropTypeText = when (athBased.dropType) {
+                WatchType.DropType.PERCENTAGE -> "Nedgång från ATH"
+                WatchType.DropType.ABSOLUTE -> "Nedgång från ATH"
+            }
+            val currentDropText = item.formatATHDrop()
+            binding.singlePriceInfo.text = "$dropTypeText: $currentDropText"
+            
+            if (item.currentATH > 0.0) {
+                binding.singlePriceInfo.text = "ATH: ${priceFormat.format(item.currentATH)} SEK | $currentDropText"
+            }
+
+            // Target drop info
+            val targetDropText = when (athBased.dropType) {
+                WatchType.DropType.PERCENTAGE -> "${priceFormat.format(athBased.dropValue)}%"
+                WatchType.DropType.ABSOLUTE -> "${priceFormat.format(athBased.dropValue)} SEK"
+            }
+            binding.priceDifference.text = "Mål: Nedgång $targetDropText"
+
+            // Notification info
+            binding.notificationInfo.apply {
+                text = "Nedgång $targetDropText från ATH"
+                setChipBackgroundColorResource(R.color.notification_active)
+                isCheckable = false
+                isClickable = true
+                chipIcon = null
+                textSize = 20f
+            }
+
+            // Check if notification criteria are met
+            val shouldHighlight = when (athBased.dropType) {
+                WatchType.DropType.PERCENTAGE -> item.currentDropPercentage >= athBased.dropValue
+                WatchType.DropType.ABSOLUTE -> item.currentDropAbsolute >= athBased.dropValue
+            }
+
+            updateHighlightState(item.id, shouldHighlight, item, null)
+        }
+
         private fun updateHighlightState(
             itemId: Int,
             shouldHighlight: Boolean,
@@ -250,15 +296,15 @@ class WatchItemAdapter(
             return when (item.watchType) {
                 is WatchType.PricePair -> {
                     when {
-                        (item.watchType as WatchType.PricePair).notifyWhenEqual && priceDiff != null && priceDiff <= 0.01 ->
+                        item.watchType.notifyWhenEqual && priceDiff != null && priceDiff <= 0.01 ->
                             "${item.companyName1} och ${item.companyName2} har nu samma pris på ${priceFormat.format(item.currentPrice1)} SEK"
-                        priceDiff != null && priceDiff >= (item.watchType as WatchType.PricePair).priceDifference ->
+                        priceDiff != null && priceDiff >= item.watchType.priceDifference ->
                             "Prisdifferensen mellan ${item.companyName1} och ${item.companyName2} har nått ${priceFormat.format(priceDiff)} SEK"
                         else -> ""
                     }
                 }
                 is WatchType.PriceTarget -> {
-                    val priceTarget = item.watchType as WatchType.PriceTarget
+                    val priceTarget = item.watchType
                     val directionText = when (priceTarget.direction) {
                         WatchType.PriceDirection.ABOVE -> "överstigit"
                         WatchType.PriceDirection.BELOW -> "understigit"
@@ -266,7 +312,7 @@ class WatchItemAdapter(
                     "${item.companyName ?: item.ticker} har $directionText målpriset ${priceFormat.format(priceTarget.targetPrice)} SEK. Nuvarande pris: ${priceFormat.format(item.currentPrice)} SEK"
                 }
                 is WatchType.KeyMetrics -> {
-                    val keyMetrics = item.watchType as WatchType.KeyMetrics
+                    val keyMetrics = item.watchType
                     val metricTypeName = when (keyMetrics.metricType) {
                         WatchType.MetricType.PE_RATIO -> "P/E-tal"
                         WatchType.MetricType.PS_RATIO -> "P/S-tal"
@@ -286,13 +332,14 @@ class WatchItemAdapter(
                     }
                     "${item.companyName ?: item.ticker} har $directionText målvärdet för $metricTypeName ($targetValueText). Nuvarande värde: $currentValueText"
                 }
-                is WatchType.ATHDrop -> {
-                    // TODO: Build notification message for ATH drop
-                    "ATH drop notification"
-                }
-                is WatchType.DailyHighDrop -> {
-                    // TODO: Build notification message for daily high drop
-                    "Daily high drop notification"
+                is WatchType.ATHBased -> {
+                    val athBased = item.watchType
+                    val currentDropText = item.formatATHDrop()
+                    val targetDropText = when (athBased.dropType) {
+                        WatchType.DropType.PERCENTAGE -> "${priceFormat.format(athBased.dropValue)}%"
+                        WatchType.DropType.ABSOLUTE -> "${priceFormat.format(athBased.dropValue)} SEK"
+                    }
+                    "${item.companyName ?: item.ticker} har gått ned $currentDropText från ATH (${priceFormat.format(item.currentATH)} SEK). Mål: $targetDropText"
                 }
             }
         }
@@ -337,7 +384,10 @@ class WatchItemAdapter(
                    oldItem.currentPrice1 == newItem.currentPrice1 &&
                    oldItem.currentPrice2 == newItem.currentPrice2 &&
                    oldItem.currentPrice == newItem.currentPrice &&
-                   oldItem.currentMetricValue == newItem.currentMetricValue
+                   oldItem.currentMetricValue == newItem.currentMetricValue &&
+                   oldItem.currentATH == newItem.currentATH &&
+                   oldItem.currentDropPercentage == newItem.currentDropPercentage &&
+                   oldItem.currentDropAbsolute == newItem.currentDropAbsolute
         }
     }
 

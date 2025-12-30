@@ -13,6 +13,11 @@ import java.net.URL
 import java.net.URLEncoder
 import org.json.JSONObject
 import java.util.concurrent.TimeUnit
+import java.net.CookieManager
+import java.net.CookiePolicy
+import okhttp3.JavaNetCookieJar
+import okhttp3.Request
+import kotlinx.coroutines.delay
 
 interface YahooFinanceApi {
     @GET("v8/finance/chart/{symbol}")
@@ -51,7 +56,11 @@ data class Meta(
     val shortName: String? = null,
     val longName: String? = null,
     val exchangeName: String? = null,
-    val regularMarketPreviousClose: Double? = null
+    val regularMarketPreviousClose: Double? = null,
+    val fiftyTwoWeekHigh: Double? = null,
+    val fiftyTwoWeekLow: Double? = null,
+    val regularMarketDayHigh: Double? = null,
+    val regularMarketDayLow: Double? = null
 )
 
 data class Indicators(
@@ -70,10 +79,19 @@ object YahooFinanceService {
     private val loggingInterceptor = HttpLoggingInterceptor().apply {
         level = HttpLoggingInterceptor.Level.BODY
     }
+
+    // CookieManager to handle cookies automatically
+    private val cookieManager = CookieManager().apply {
+        setCookiePolicy(CookiePolicy.ACCEPT_ALL)
+    }
+    private val cookieJar = JavaNetCookieJar(cookieManager)
     
+    // Shared OkHttpClient with cookie support
     private val client = OkHttpClient.Builder()
+        .cookieJar(cookieJar)
         .addInterceptor(loggingInterceptor)
-        .cookieJar(okhttp3.CookieJar.NO_COOKIES)
+        .connectTimeout(15, TimeUnit.SECONDS)
+        .readTimeout(15, TimeUnit.SECONDS)
         .build()
     
     private val retrofit = Retrofit.Builder()
@@ -83,12 +101,62 @@ object YahooFinanceService {
         .build()
 
     private val api = retrofit.create(YahooFinanceApi::class.java)
-    
-    // Cache for crumb and cookie to avoid fetching them every time
-    private var cachedCrumb: String? = null
-    private var cachedCookie: String? = null
-    private var crumbTimestamp: Long = 0
-    private val CRUMB_CACHE_DURATION = 3600000L // 1 hour in milliseconds
+
+    private var crumb: String? = null
+    private var isFetchingCrumb = false
+
+    private suspend fun ensureCrumb() {
+        if (crumb != null) return
+        if (isFetchingCrumb) {
+            // Simple wait if another request is already fetching
+            var retries = 0
+            while (crumb == null && isFetchingCrumb && retries < 20) {
+                delay(100)
+                retries++
+            }
+            return
+        }
+
+        isFetchingCrumb = true
+        try {
+            // Step 1: Get Cookie from main page
+            Log.d(TAG, "Fetching cookie...")
+            val cookieRequest = Request.Builder()
+                .url("https://fc.yahoo.com")
+                .addHeader("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+                .build()
+            
+            // We just need to make the request, the CookieJar will handle the Set-Cookie response
+            val cookieResponse = client.newCall(cookieRequest).execute()
+            cookieResponse.close()
+
+            // Step 2: Get Crumb
+            Log.d(TAG, "Fetching crumb...")
+            val crumbRequest = Request.Builder()
+                .url("https://query1.finance.yahoo.com/v1/test/getcrumb")
+                .addHeader("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+                .build()
+
+            val crumbResponse = client.newCall(crumbRequest).execute()
+            if (crumbResponse.isSuccessful) {
+                val fetchedCrumb = crumbResponse.body?.string()
+                if (!fetchedCrumb.isNullOrBlank()) {
+                    crumb = fetchedCrumb
+                    Log.d(TAG, "Successfully fetched crumb: $crumb")
+                } else {
+                    Log.e(TAG, "Crumb response was empty")
+                }
+            } else {
+                Log.e(TAG, "Failed to get crumb: ${crumbResponse.code} - ${crumbResponse.message}")
+            }
+            crumbResponse.close()
+
+        } catch (e: Exception) {
+            Log.e(TAG, "Error fetching crumb: ${e.message}", e)
+        } finally {
+            isFetchingCrumb = false
+        }
+    }
 
     suspend fun getStockPrice(symbol: String): Double? {
         return try {
@@ -160,374 +228,126 @@ object YahooFinanceService {
         }
     }
 
-    private suspend fun getCrumbAndCookie(): Pair<String?, String?> {
-        return withContext(Dispatchers.IO) {
-            try {
-                // Check if we have a valid cached crumb
-                val now = System.currentTimeMillis()
-                if (cachedCrumb != null && cachedCookie != null && (now - crumbTimestamp) < CRUMB_CACHE_DURATION) {
-                    Log.d(TAG, "Using cached crumb and cookie")
-                    return@withContext Pair(cachedCrumb, cachedCookie)
-                }
-                
-                Log.d(TAG, "Fetching new crumb and cookie from Yahoo Finance")
-                
-                // Use a cookie manager to handle cookies properly
-                val cookieStore = mutableMapOf<String, List<okhttp3.Cookie>>()
-                
-                val cookieJar = object : okhttp3.CookieJar {
-                    override fun saveFromResponse(url: okhttp3.HttpUrl, cookies: List<okhttp3.Cookie>) {
-                        cookieStore[url.host] = cookies
-                    }
-                    
-                    override fun loadForRequest(url: okhttp3.HttpUrl): List<okhttp3.Cookie> {
-                        // Return cookies for matching domains
-                        val matchingCookies = cookieStore.entries
-                            .filter { url.host.endsWith(it.key) || it.key.endsWith(url.host) }
-                            .flatMap { it.value }
-                        return matchingCookies.ifEmpty { 
-                            cookieStore.values.flatten() 
-                        }
-                    }
-                }
-                
-                val cookieClientWithJar = OkHttpClient.Builder()
-                    .followRedirects(true)
-                    .followSslRedirects(true)
-                    .cookieJar(cookieJar)
-                    .connectTimeout(10, TimeUnit.SECONDS)
-                    .readTimeout(10, TimeUnit.SECONDS)
-                    .build()
-                
-                // Step 1: Get cookie from fc.yahoo.com (even if it returns 404, it sets cookies)
-                try {
-                    val fcRequest = okhttp3.Request.Builder()
-                        .url("https://fc.yahoo.com")
-                        .addHeader("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
-                        .build()
-                    
-                    val fcResponse = cookieClientWithJar.newCall(fcRequest).execute()
-                    Log.d(TAG, "fc.yahoo.com response: ${fcResponse.code}")
-                    fcResponse.close() // Close to free resources
-                } catch (e: Exception) {
-                    Log.w(TAG, "Failed to get cookie from fc.yahoo.com: ${e.message}")
-                }
-                
-                // Step 2: Also visit finance.yahoo.com to get additional cookies
-                try {
-                    val financeRequest = okhttp3.Request.Builder()
-                        .url("https://finance.yahoo.com/quote/AAPL")
-                        .addHeader("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
-                        .addHeader("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
-                        .addHeader("Accept-Language", "en-US,en;q=0.9")
-                        .build()
-                    
-                    val financeResponse = cookieClientWithJar.newCall(financeRequest).execute()
-                    val htmlBody = financeResponse.body?.string()
-                    financeResponse.close()
-                    
-                    Log.d(TAG, "finance.yahoo.com response: ${financeResponse.code}")
-                } catch (e: Exception) {
-                    Log.w(TAG, "Failed to get cookie from finance.yahoo.com: ${e.message}")
-                }
-                
-                // Build cookie string from all collected cookies
-                val allCookies = cookieStore.values.flatten().distinctBy { "${it.domain}:${it.name}" }
-                val cookieString = allCookies.joinToString("; ") { "${it.name}=${it.value}" }
-                
-                Log.d(TAG, "Got ${allCookies.size} cookies: ${cookieString.take(150)}...")
-                
-                // Store HTML body for crumb extraction (from finance.yahoo.com if available)
-                val htmlBody = try {
-                    val financeRequest = okhttp3.Request.Builder()
-                        .url("https://finance.yahoo.com/quote/AAPL")
-                        .addHeader("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
-                        .build()
-                    cookieClientWithJar.newCall(financeRequest).execute().body?.string()
-                } catch (e: Exception) {
-                    null
-                }
-                
-                // Step 3: Get crumb using the cookie from fc.yahoo.com
-                var crumb: String? = null
-                if (cookieString.isNotEmpty()) {
-                    try {
-                        // Try different crumb endpoints
-                        val crumbEndpoints = listOf(
-                            "https://query2.finance.yahoo.com/v1/test/getcrumb",
-                            "https://query1.finance.yahoo.com/v1/test/getcrumb"
-                        )
-                        
-                        for (endpoint in crumbEndpoints) {
-                            try {
-                                val crumbRequest = okhttp3.Request.Builder()
-                                    .url(endpoint)
-                                    .addHeader("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
-                                    .addHeader("Cookie", cookieString)
-                                    .addHeader("Referer", "https://finance.yahoo.com/")
-                                    .addHeader("Accept", "text/plain")
-                                    .addHeader("Accept-Language", "en-US,en;q=0.9")
-                                    .build()
-                                
-                                val crumbResponse = cookieClientWithJar.newCall(crumbRequest).execute()
-                                if (crumbResponse.isSuccessful) {
-                                    crumb = crumbResponse.body?.string()?.trim()
-                                    if (crumb != null && crumb.isNotEmpty()) {
-                                        Log.d(TAG, "Got crumb from endpoint $endpoint: ${crumb.take(20)}...")
-                                        break
-                                    }
-                                } else {
-                                    val errorBody = crumbResponse.body?.string()
-                                    Log.w(TAG, "Crumb endpoint $endpoint returned ${crumbResponse.code}: $errorBody")
-                                }
-                                crumbResponse.close()
-                            } catch (e: Exception) {
-                                Log.w(TAG, "Failed to get crumb from $endpoint: ${e.message}")
-                            }
-                        }
-                    } catch (e: Exception) {
-                        Log.w(TAG, "Failed to get crumb from endpoint: ${e.message}")
-                    }
-                } else {
-                    Log.w(TAG, "No cookies available, cannot get crumb")
-                }
-                
-                // If crumb endpoint failed, try to extract from HTML
-                if (crumb == null || crumb.isEmpty()) {
-                    try {
-                        if (htmlBody != null) {
-                            // Try multiple patterns to find crumb in the HTML
-                            // Escape curly braces properly in regex
-                            val patterns = listOf(
-                                Regex("\"crumb\":\"([^\"]+)\""),
-                                Regex("crumb\":\"([^\"]+)\""),
-                                Regex("\"CrumbStore\":\\{\"crumb\":\"([^\"]+)\""),
-                                Regex("window\\.__PRELOADED_STATE__.*?\"crumb\":\"([^\"]+)\""),
-                                Regex("root\\.App\\.main.*?\"crumb\":\"([^\"]+)\""),
-                                Regex("crumbStore.*?\"crumb\":\"([^\"]+)\"")
-                            )
-                            
-                            for (pattern in patterns) {
-                                try {
-                                    val match = pattern.find(htmlBody)
-                                    if (match != null) {
-                                        crumb = match.groupValues.getOrNull(1)
-                                        if (crumb != null && crumb.isNotEmpty()) {
-                                            Log.d(TAG, "Extracted crumb from HTML using pattern: ${crumb.take(20)}...")
-                                            break
-                                        }
-                                    }
-                                } catch (e: Exception) {
-                                    Log.w(TAG, "Pattern matching failed: ${e.message}")
-                                }
-                            }
-                            
-                            // If still no crumb, try a simpler approach - look for any crumb-like string
-                            if (crumb == null || crumb.isEmpty()) {
-                                // Try to find crumb in various formats in the HTML
-                                val simplePatterns = listOf(
-                                    Regex("crumb[=:]\"?([A-Za-z0-9+/=]{20,})"),
-                                    Regex("crumb\":\"([^\"]+)\""),
-                                    Regex("crumb=([A-Za-z0-9+/=]+)"),
-                                    Regex("getCrumb\\(['\"]([^'\"]+)['\"]"),
-                                    Regex("crumb['\"]?\\s*[:=]\\s*['\"]?([A-Za-z0-9+/=]{10,})")
-                                )
-                                
-                                for (pattern in simplePatterns) {
-                                    try {
-                                        val match = pattern.find(htmlBody)
-                                        if (match != null) {
-                                            crumb = match.groupValues.getOrNull(1)
-                                            if (crumb != null && crumb.isNotEmpty() && crumb.length > 10) {
-                                                Log.d(TAG, "Extracted crumb using simple pattern: ${crumb.take(20)}...")
-                                                break
-                                            }
-                                        }
-                                    } catch (e: Exception) {
-                                        // Continue to next pattern
-                                    }
-                                }
-                                
-                                // Last resort: search for any base64-like string near "crumb"
-                                if (crumb == null || crumb.isEmpty()) {
-                                    val crumbIndex = htmlBody.indexOf("crumb", ignoreCase = true)
-                                    if (crumbIndex >= 0) {
-                                        val searchStart = maxOf(0, crumbIndex - 50)
-                                        val searchEnd = minOf(htmlBody.length, crumbIndex + 200)
-                                        val snippet = htmlBody.substring(searchStart, searchEnd)
-                                        Log.d(TAG, "Crumb context snippet: $snippet")
-                                    }
-                                }
-                            }
-                        }
-                    } catch (e: Exception) {
-                        Log.w(TAG, "Failed to extract crumb from HTML: ${e.message}")
-                        e.printStackTrace()
-                    }
-                }
-                
-                if (crumb != null && cookieString.isNotEmpty()) {
-                    cachedCrumb = crumb
-                    cachedCookie = cookieString
-                    crumbTimestamp = now
-                    Log.d(TAG, "Successfully fetched crumb and cookie")
-                    Pair(crumb, cookieString)
-                } else {
-                    Log.w(TAG, "Failed to get crumb, will try without it")
-                    Pair(null, cookieString)
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "Error fetching crumb and cookie: ${e.message}", e)
-                Pair(null, null)
+    suspend fun getKeyMetric(symbol: String, metricType: WatchType.MetricType): Double? = withContext(Dispatchers.IO) {
+        // Try Yahoo Finance first
+        try {
+            Log.d(TAG, "Fetching key metric ${metricType.name} for symbol: $symbol from Yahoo Finance")
+            ensureCrumb()
+            
+            // Construct URL with crumb if available
+            var url = "https://query2.finance.yahoo.com/v10/finance/quoteSummary/$symbol?modules=summaryDetail"
+            if (crumb != null) {
+                url += "&crumb=$crumb"
             }
+
+            val request = Request.Builder()
+                .url(url)
+                .addHeader("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+                .build()
+                
+            val response = client.newCall(request).execute()
+            if (response.isSuccessful) {
+                val responseBody = response.body?.string()
+                if (responseBody != null) {
+                    val jsonObject = JSONObject(responseBody)
+                    val quoteSummary = jsonObject.optJSONObject("quoteSummary")
+                    val result = quoteSummary?.optJSONArray("result")?.optJSONObject(0)
+                    val summaryDetail = result?.optJSONObject("summaryDetail")
+                    
+                    if (summaryDetail != null) {
+                        val value = when (metricType) {
+                            WatchType.MetricType.PE_RATIO -> {
+                                val pe = summaryDetail.optJSONObject("trailingPE")?.optDouble("raw")
+                                if (pe == null || pe.isNaN()) {
+                                    summaryDetail.optJSONObject("forwardPE")?.optDouble("raw")
+                                } else pe
+                            }
+                            WatchType.MetricType.PS_RATIO -> {
+                                summaryDetail.optJSONObject("priceToSalesTrailing12Months")?.optDouble("raw")
+                            }
+                            WatchType.MetricType.DIVIDEND_YIELD -> {
+                                val yield = summaryDetail.optJSONObject("dividendYield")?.optDouble("raw")
+                                // Yahoo returns decimal (e.g. 0.05 for 5%), convert to percentage if needed
+                                // Assuming the app expects percentage (e.g. 5.0) based on Finnhub logic
+                                if (yield != null && !yield.isNaN()) yield * 100 else null
+                            }
+                        }
+                        
+                        if (value != null && !value.isNaN() && value > 0) {
+                            Log.d(TAG, "Successfully fetched ${metricType.name} for $symbol from Yahoo: $value")
+                            return@withContext value
+                        }
+                    }
+                }
+            } else {
+                Log.w(TAG, "Yahoo Finance API Error: ${response.code} - ${response.message}")
+                 // If 401, maybe crumb expired? Reset for next time
+                if (response.code == 401) {
+                    crumb = null
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error fetching key metric ${metricType.name} for $symbol from Yahoo: ${e.message}")
+        }
+
+        // Fallback to Finnhub
+        try {
+            Log.d(TAG, "Falling back to Finnhub for key metric ${metricType.name} for symbol: $symbol")
+            val result = FinnhubService.getKeyMetric(symbol, metricType)
+            if (result == null) {
+                Log.w(TAG, "Finnhub returned null for ${metricType.name} for $symbol")
+            } else {
+                Log.d(TAG, "Finnhub returned ${metricType.name} for $symbol: $result")
+            }
+            return@withContext result
+        } catch (e: Exception) {
+            Log.e(TAG, "Error fetching key metric ${metricType.name} for $symbol from Finnhub: ${e.message}", e)
+            e.printStackTrace()
+            null
         }
     }
 
-    suspend fun getKeyMetric(symbol: String, metricType: WatchType.MetricType): Double? {
-        return withContext(Dispatchers.IO) {
-            try {
-                // Ensure symbol is properly formatted for Yahoo Finance API
-                // Try original symbol first, then with .ST suffix if it doesn't end with it
-                val formattedSymbol = if (symbol.endsWith(".ST") || symbol.contains(".")) {
-                    symbol
-                } else {
-                    // Try with .ST suffix for Swedish stocks
-                    "$symbol.ST"
-                }
-                
-                Log.d(TAG, "Fetching key metric ${metricType.name} for symbol: $symbol (formatted: $formattedSymbol)")
-                
-                // Get crumb and cookie
-                val (crumb, cookie) = getCrumbAndCookie()
-                
-                // Build URL with crumb if available
-                val baseUrl = "https://query2.finance.yahoo.com/v10/finance/quoteSummary/$formattedSymbol?modules=summaryDetail"
-                val url = if (crumb != null) {
-                    "$baseUrl&crumb=$crumb"
-                } else {
-                    baseUrl
-                }
-                
-                Log.d(TAG, "Request URL: $url")
-                
-                val client = OkHttpClient.Builder()
-                    .connectTimeout(10, TimeUnit.SECONDS)
-                    .readTimeout(10, TimeUnit.SECONDS)
-                    .build()
-                    
-                val requestBuilder = okhttp3.Request.Builder()
-                    .url(url)
-                    .addHeader("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
-                    .addHeader("Accept", "application/json")
-                    .addHeader("Accept-Language", "en-US,en;q=0.9")
-                    .addHeader("Referer", "https://finance.yahoo.com/")
-                
-                if (cookie != null) {
-                    requestBuilder.addHeader("Cookie", cookie)
-                }
-                
-                val request = requestBuilder.build()
-                val response = client.newCall(request).execute()
-                
-                Log.d(TAG, "Response code: ${response.code}")
-                
-                if (!response.isSuccessful) {
-                    Log.e(TAG, "API Error: ${response.code} - ${response.message}")
-                    val errorBody = response.body?.string()
-                    Log.e(TAG, "Error body: $errorBody")
-                    return@withContext null
-                }
-                
-                val responseBody = response.body?.string()
-                if (responseBody == null) {
-                    Log.e(TAG, "Empty response body")
-                    return@withContext null
-                }
-                
-                Log.d(TAG, "Response body length: ${responseBody.length}")
-                
-                val jsonObject = JSONObject(responseBody)
-                val quoteSummary = jsonObject.optJSONObject("quoteSummary")
-                
-                if (quoteSummary == null) {
-                    Log.e(TAG, "No quoteSummary in response")
-                    Log.d(TAG, "Full response: $responseBody")
-                    return@withContext null
-                }
-                
-                val result = quoteSummary.optJSONArray("result")
-                if (result == null || result.length() == 0) {
-                    Log.e(TAG, "No result array in quoteSummary")
-                    Log.d(TAG, "quoteSummary content: ${quoteSummary.toString()}")
-                    return@withContext null
-                }
-                
-                val firstResult = result.optJSONObject(0)
-                if (firstResult == null) {
-                    Log.e(TAG, "First result is null")
-                    return@withContext null
-                }
-                
-                val summaryDetail = firstResult.optJSONObject("summaryDetail")
-                if (summaryDetail == null) {
-                    Log.e(TAG, "No summaryDetail in result")
-                    Log.d(TAG, "First result keys: ${firstResult.keys().asSequence().toList()}")
-                    return@withContext null
-                }
-                
-                val value = when (metricType) {
-                    WatchType.MetricType.PE_RATIO -> {
-                        val trailingPE = summaryDetail.optJSONObject("trailingPE")
-                        if (trailingPE == null) {
-                            Log.w(TAG, "No trailingPE object in summaryDetail")
-                            null
-                        } else {
-                            val rawValue = trailingPE.optDouble("raw", Double.NaN)
-                            Log.d(TAG, "P/E ratio raw value: $rawValue")
-                            rawValue.takeIf { !it.isNaN() && it > 0 }
-                        }
-                    }
-                    WatchType.MetricType.PS_RATIO -> {
-                        val priceToSales = summaryDetail.optJSONObject("priceToSalesTrailing12Months")
-                        if (priceToSales == null) {
-                            Log.w(TAG, "No priceToSalesTrailing12Months object in summaryDetail")
-                            null
-                        } else {
-                            val rawValue = priceToSales.optDouble("raw", Double.NaN)
-                            Log.d(TAG, "P/S ratio raw value: $rawValue")
-                            rawValue.takeIf { !it.isNaN() && it > 0 }
-                        }
-                    }
-                    WatchType.MetricType.DIVIDEND_YIELD -> {
-                        val dividendYield = summaryDetail.optJSONObject("dividendYield")
-                        if (dividendYield == null) {
-                            Log.w(TAG, "No dividendYield object in summaryDetail")
-                            null
-                        } else {
-                            val rawValue = dividendYield.optDouble("raw", Double.NaN)
-                            Log.d(TAG, "Dividend yield raw value: $rawValue")
-                            rawValue.takeIf { !it.isNaN() && it > 0 }?.let { it * 100 } // Convert to percentage
-                        }
-                    }
-                    else -> {
-                        Log.w(TAG, "Unknown metric type: $metricType")
-                        null
-                    }
-                }
-                
-                if (value != null) {
-                    Log.d(TAG, "Successfully fetched ${metricType.name} for $symbol: $value")
-                } else {
-                    Log.w(TAG, "Could not extract ${metricType.name} value for $symbol from summaryDetail")
-                    Log.d(TAG, "summaryDetail keys: ${summaryDetail.keys().asSequence().toList()}")
-                }
-                
-                value
-            } catch (e: Exception) {
-                Log.e(TAG, "Error fetching key metric ${metricType.name} for $symbol: ${e.message}", e)
-                e.printStackTrace()
-                null
+    suspend fun getATH(symbol: String): Double? = withContext(Dispatchers.IO) {
+        try {
+            Log.d(TAG, "Fetching ATH for symbol: $symbol")
+            val response = api.getStockPrice(symbol)
+            
+            if (response.chart?.error != null) {
+                Log.e(TAG, "API Error for $symbol: ${response.chart.error.description}")
+                return@withContext null
             }
+            
+            val result = response.chart?.result?.firstOrNull()
+            if (result == null) {
+                Log.e(TAG, "No result found for $symbol")
+                return@withContext null
+            }
+            
+            val meta = result.meta
+            if (meta == null) {
+                Log.e(TAG, "No meta found for $symbol")
+                return@withContext null
+            }
+            
+            // Try to get 52-week high first (this is the ATH)
+            val week52High = meta.fiftyTwoWeekHigh
+            if (week52High != null && !week52High.isNaN() && week52High > 0) {
+                Log.d(TAG, "Got 52-week high (ATH) for $symbol: $week52High")
+                return@withContext week52High
+            }
+            
+            // Fallback: try to get day high
+            val dayHigh = meta.regularMarketDayHigh
+            if (dayHigh != null && !dayHigh.isNaN() && dayHigh > 0) {
+                Log.d(TAG, "Got day high for $symbol: $dayHigh (using as fallback ATH)")
+                return@withContext dayHigh
+            }
+            
+            Log.w(TAG, "Could not find ATH for $symbol")
+            null
+        } catch (e: Exception) {
+            Log.e(TAG, "Error fetching ATH for $symbol: ${e.message}", e)
+            null
         }
     }
 
