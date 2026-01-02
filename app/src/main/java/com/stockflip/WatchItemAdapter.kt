@@ -89,35 +89,24 @@ class WatchItemAdapter(
             binding.stockNames2.text = "${item.companyName2 ?: item.ticker2} (${item.ticker2})"
             binding.priceInfo2.text = item.formatPrice2()
 
-            // Price difference and notification info
+            // Target info
             val actualPriceDiff = abs(item.currentPrice1 - item.currentPrice2)
-            binding.priceDifference.text = "Diff: ${priceFormat.format(actualPriceDiff)} SEK"
-
             val pricePair = item.watchType as WatchType.PricePair
-            binding.notificationInfo.apply {
-                val notificationText = buildString {
-                    if (pricePair.notifyWhenEqual) {
-                        append("=")
-                    }
-                    if (pricePair.priceDifference > 0) {
-                        if (pricePair.notifyWhenEqual) append("  ")
-                        append("∆ ${priceFormat.format(pricePair.priceDifference)}")
-                    }
+            
+            // Hide the notification chip (button on the left)
+            binding.notificationInfo.visibility = android.view.View.GONE
+            
+            // Show target instead of current difference
+            val targetText = buildString {
+                if (pricePair.notifyWhenEqual) {
+                    append("=")
                 }
-
-                text = when {
-                    notificationText.isNotEmpty() -> notificationText
-                    else -> "Inga notifieringar"
+                if (pricePair.priceDifference > 0) {
+                    if (pricePair.notifyWhenEqual) append("  ")
+                    append("∆ ${priceFormat.format(pricePair.priceDifference)}")
                 }
-
-                val secondaryContainerColor = MaterialColors.getColor(binding.root, com.google.android.material.R.attr.colorSecondaryContainer)
-                setChipBackgroundColor(ColorStateList.valueOf(secondaryContainerColor))
-
-                isCheckable = false
-                isClickable = true
-                chipIcon = null
-                textSize = 20f
             }
+            binding.priceDifference.text = if (targetText.isNotEmpty()) targetText else "="
 
             // Check if notification criteria are met
             val shouldHighlight = item.currentPrice1 != 0.0 && item.currentPrice2 != 0.0 && (
@@ -149,7 +138,8 @@ class WatchItemAdapter(
             }
             binding.priceDifference.text = "$directionText ${priceFormat.format(priceTarget.targetPrice)} SEK"
 
-            // Notification info
+            // Notification info - show chip for other watch types
+            binding.notificationInfo.visibility = android.view.View.VISIBLE
             binding.notificationInfo.apply {
                 text = "$directionText ${priceFormat.format(priceTarget.targetPrice)}"
                 val secondaryContainerColor = MaterialColors.getColor(binding.root, com.google.android.material.R.attr.colorSecondaryContainer)
@@ -201,16 +191,8 @@ class WatchItemAdapter(
             }
             binding.priceDifference.text = "$directionText $targetValueText"
 
-            // Notification info - only show metric type, not target value (target is shown in priceDifference)
-            binding.notificationInfo.apply {
-                text = metricTypeName
-                val secondaryContainerColor = MaterialColors.getColor(binding.root, com.google.android.material.R.attr.colorSecondaryContainer)
-                setChipBackgroundColor(ColorStateList.valueOf(secondaryContainerColor))
-                isCheckable = false
-                isClickable = true
-                chipIcon = null
-                textSize = 20f
-            }
+            // Hide the notification chip (button on the left) for key metrics
+            binding.notificationInfo.visibility = android.view.View.GONE
 
             // Check if notification criteria are met
             val shouldHighlight = item.currentMetricValue != 0.0 && when (keyMetrics.direction) {
@@ -243,7 +225,7 @@ class WatchItemAdapter(
             binding.singlePriceInfo.text = "$dropTypeText: $currentDropText"
             
             if (item.currentATH > 0.0) {
-                binding.singlePriceInfo.text = "ATH: ${priceFormat.format(item.currentATH)} SEK | $currentDropText"
+                binding.singlePriceInfo.text = "52-veckorshögsta: ${priceFormat.format(item.currentATH)} SEK | $currentDropText"
             }
 
             // Target drop info
@@ -254,6 +236,7 @@ class WatchItemAdapter(
             binding.priceDifference.text = "Nedgång $targetDropText"
 
             // Notification info - only show type, not target value (target is shown in priceDifference)
+            binding.notificationInfo.visibility = android.view.View.VISIBLE
             binding.notificationInfo.apply {
                 text = "ATH-bevakning"
                 val secondaryContainerColor = MaterialColors.getColor(binding.root, com.google.android.material.R.attr.colorSecondaryContainer)
@@ -287,6 +270,7 @@ class WatchItemAdapter(
 
             binding.priceDifference.text = "Pris mellan ${priceFormat.format(priceRange.minPrice)} - ${priceFormat.format(priceRange.maxPrice)} SEK"
 
+            binding.notificationInfo.visibility = android.view.View.VISIBLE
             binding.notificationInfo.apply {
                 text = "Prisintervall"
                 val secondaryContainerColor = MaterialColors.getColor(binding.root, com.google.android.material.R.attr.colorSecondaryContainer)
@@ -320,6 +304,7 @@ class WatchItemAdapter(
             }
             binding.priceDifference.text = "Dagsrörelse ≥ ${priceFormat.format(dailyMove.percentThreshold)}% ($directionText)"
 
+            binding.notificationInfo.visibility = android.view.View.VISIBLE
             binding.notificationInfo.apply {
                 text = "Dagsrörelse"
                 val secondaryContainerColor = MaterialColors.getColor(binding.root, com.google.android.material.R.attr.colorSecondaryContainer)

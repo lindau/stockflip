@@ -4,10 +4,7 @@ import app.cash.turbine.test
 import com.stockflip.StockSearchResult
 import com.stockflip.repository.SearchState
 import com.stockflip.repository.StockRepository
-import io.mockk.andThen
-import io.mockk.any
-import io.mockk.coEvery
-import io.mockk.mockk
+import io.mockk.*
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.test.runTest
@@ -35,7 +32,7 @@ class StockSearchViewModelTest {
             cancelAndIgnoreRemainingEvents()
         }
 
-        io.mockk.coVerify(exactly = 0) { repository.searchStocks(any()) }
+        coVerify(exactly = 0) { repository.searchStocks(any()) }
     }
 
     @Test
@@ -46,7 +43,7 @@ class StockSearchViewModelTest {
             cancelAndIgnoreRemainingEvents()
         }
 
-        io.mockk.coVerify(exactly = 0) { repository.searchStocks(any()) }
+        coVerify(exactly = 0) { repository.searchStocks(any()) }
     }
 
     @Test

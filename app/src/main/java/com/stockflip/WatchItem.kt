@@ -146,7 +146,7 @@ data class WatchItem(
             is WatchType.PricePair -> "Aktiepar"
             is WatchType.PriceTarget -> "Prisbevakning"
             is WatchType.KeyMetrics -> "Nyckeltal"
-            is WatchType.ATHBased -> "52w High-bevakning"
+            is WatchType.ATHBased -> "52-veckorshögsta"
             is WatchType.PriceRange -> "Prisintervall"
             is WatchType.DailyMove -> "Dagsrörelse"
         }

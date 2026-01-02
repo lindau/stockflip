@@ -153,8 +153,8 @@ class GroupedWatchItemAdapter(
         if (keyMetrics.isNotEmpty() && !expandedSections.contains("Nyckeltal")) {
             expandedSections.add("Nyckeltal")
         }
-        if (athBased.isNotEmpty() && !expandedSections.contains("52w High-bevakning")) {
-            expandedSections.add("52w High-bevakning")
+        if (athBased.isNotEmpty() && !expandedSections.contains("52-veckorshögsta")) {
+            expandedSections.add("52-veckorshögsta")
         }
         if (dailyMoves.isNotEmpty() && !expandedSections.contains("Dagsrörelse")) {
             expandedSections.add("Dagsrörelse")
@@ -223,9 +223,9 @@ class GroupedWatchItemAdapter(
 
         // Add ATH Based section (only items if expanded)
         if (athBased.isNotEmpty()) {
-            groupedList.add(GroupedListItem.Header("52w High-bevakning"))
-            val isExpanded = expandedSections.contains("52w High-bevakning")
-            Log.d(TAG, "52w High-bevakning section: isExpanded=$isExpanded, items=${athBased.size}")
+            groupedList.add(GroupedListItem.Header("52-veckorshögsta"))
+            val isExpanded = expandedSections.contains("52-veckorshögsta")
+            Log.d(TAG, "52-veckorshögsta section: isExpanded=$isExpanded, items=${athBased.size}")
             if (isExpanded) {
                 athBased.forEach { groupedList.add(GroupedListItem.WatchItemWrapper(it)) }
             }
