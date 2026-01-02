@@ -98,11 +98,16 @@ class WatchItemAdapter(
             
             // Show target instead of current difference
             val targetText = buildString {
-                if (pricePair.notifyWhenEqual) {
+                val hasEqual = pricePair.notifyWhenEqual
+                val hasDiff = pricePair.priceDifference > 0
+                
+                if (hasEqual) {
                     append("=")
                 }
-                if (pricePair.priceDifference > 0) {
-                    if (pricePair.notifyWhenEqual) append("  ")
+                if (hasEqual && hasDiff) {
+                    append(" & ")
+                }
+                if (hasDiff) {
                     append("∆ ${priceFormat.format(pricePair.priceDifference)}")
                 }
             }

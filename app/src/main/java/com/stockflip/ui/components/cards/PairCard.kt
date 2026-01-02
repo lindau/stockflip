@@ -26,11 +26,16 @@ fun PairCard(
 ) {
     val pricePair = item.watchType as? WatchType.PricePair ?: return
     val targetText = buildString {
-        if (pricePair.notifyWhenEqual) {
+        val hasEqual = pricePair.notifyWhenEqual
+        val hasDiff = pricePair.priceDifference > 0
+        
+        if (hasEqual) {
             append("=")
         }
-        if (pricePair.priceDifference > 0) {
-            if (pricePair.notifyWhenEqual) append("  ")
+        if (hasEqual && hasDiff) {
+            append(" & ")
+        }
+        if (hasDiff) {
             append("∆ ${priceFormat(pricePair.priceDifference)}")
         }
     }

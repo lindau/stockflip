@@ -1,9 +1,9 @@
 # PRD Fas 1 - Implementeringsstatus (Uppdaterad)
 
 ## Sammanfattning
-**Implementeringsgrad: ~95%**
+**Implementeringsgrad: 100%**
 
-Nästan allt från PRD Fas 1 är implementerat. Endast en mindre sak saknas: UI för att skapa prisintervall-bevakning.
+Allt från PRD Fas 1 är implementerat. UI för prisintervall-bevakning är nu komplett.
 
 ---
 
@@ -183,24 +183,17 @@ Nästan allt från PRD Fas 1 är implementerat. Endast en mindre sak saknas: UI 
 
 ---
 
-## ❌ Saknas
+## ✅ Allt implementerat
 
 ### 1. UI för prisintervall-bevakning
 - **PRD krav (6.3)**: "pris inom [A, B]"
-- **Status**: ❌ **SAKNAS**
-- **Vad som saknas**:
-  - ❌ Ingen knapp i `StockDetailFragment` för att skapa prisintervall-bevakning
-  - ❌ Ingen dialog (`dialog_add_price_range.xml`) för att ange minPrice och maxPrice
-  - ❌ Ingen funktion `showCreatePriceRangeDialog()` i `StockDetailFragment`
-- **Notering**: 
-  - Backend-stöd finns redan (`WatchType.PriceRange`, `AlertRule.SinglePrice.WITHIN_RANGE`)
-  - Utvärdering fungerar redan (`AlertEvaluator.evaluateSinglePrice()`)
-  - Endast UI saknas
-
-**Behöver implementeras**:
-1. Dialog-layout: `dialog_add_price_range.xml` med två fält (minPrice, maxPrice)
-2. Funktion i `StockDetailFragment`: `showCreatePriceRangeDialog()`
-3. Knapp i `fragment_stock_detail.xml`: `createPriceRangeButton`
+- **Status**: ✅ **FULLT IMPLEMENTERAT**
+- **Implementation**:
+  - ✅ Dialog-layout: `dialog_add_price_range.xml` med två fält (minPrice, maxPrice)
+  - ✅ Funktion i `StockDetailFragment`: `showCreatePriceRangeDialog()`
+  - ✅ Knapp i `fragment_stock_detail.xml`: `createPriceRangeButton`
+  - ✅ Backend-stöd: `WatchType.PriceRange`, `AlertRule.SinglePrice.WITHIN_RANGE`
+  - ✅ Utvärdering: `AlertEvaluator.evaluateSinglePrice()`
 
 ---
 
@@ -248,18 +241,17 @@ Nästan allt från PRD Fas 1 är implementerat. Endast en mindre sak saknas: UI 
 - ✅ Uppdateringspolicy (WorkManager, appstart, refresh)
 
 ### PRD 6.3 - Nya bevakningstyper
-- ⚠️ **Status**: 95% implementerat
+- ✅ **Status**: 100% implementerat
 - ✅ Målpris (ABOVE/BELOW)
-- ❌ Prisintervall (WITHIN_RANGE) - backend finns, UI saknas
+- ✅ Prisintervall (WITHIN_RANGE) - backend och UI komplett
 - ✅ Drawdown från 52w high
 - ✅ Dagsrörelse i procent
 
 ### PRD 6.4 - Enskild aktie detaljvy
 - ✅ **Status**: Fullt implementerat
 - ✅ Alla krav från PRD uppfyllda
-- ✅ Snabbval för målpris, drawdown, dagsrörelse
+- ✅ Snabbval för målpris, drawdown, dagsrörelse, prisintervall
 - ✅ Lista med befintliga bevakningar
-- ❌ Snabbval för prisintervall saknas (men kan läggas till via redigering)
 
 ### PRD 6.5 - Alert-utvärdering & notiser
 - ✅ **Status**: Fullt implementerat
@@ -271,11 +263,11 @@ Nästan allt från PRD Fas 1 är implementerat. Endast en mindre sak saknas: UI 
 
 ## Rekommenderade nästa steg
 
-### Prioritet 1: Kritiskt saknad funktion
-1. **UI för prisintervall-bevakning**
-   - Skapa `dialog_add_price_range.xml`
-   - Lägg till `showCreatePriceRangeDialog()` i `StockDetailFragment`
-   - Lägg till knapp i `fragment_stock_detail.xml`
+### Prioritet 1: Fas 2 - Nyckeltal & historik
+1. **KeyMetrics evaluering**
+   - Implementera `AlertRule.SingleKeyMetric`
+   - Implementera `evaluateSingleKeyMetric()` i `AlertEvaluator`
+   - Historikvisning för P/E (1/3/5 år)
 
 ### Prioritet 2: Förbättringar (valfritt)
 2. **Terminologi**
@@ -289,15 +281,15 @@ Nästan allt från PRD Fas 1 är implementerat. Endast en mindre sak saknas: UI 
 
 ## Slutsats
 
-**PRD Fas 1 är nästan helt implementerad (~95%).**
-
-Endast en sak saknas: UI för att skapa prisintervall-bevakning. All backend-funktionalitet finns redan, så det är bara att lägga till en dialog och en knapp.
+**PRD Fas 1 är 100% implementerad.**
 
 Alla kritiska krav från PRD Fas 1 är uppfyllda:
 - ✅ Gemensam datamodell för bevakningar
-- ✅ Alla prisbaserade larm-typer (utom UI för prisintervall)
+- ✅ Alla prisbaserade larm-typer (inklusive prisintervall med komplett UI)
 - ✅ Enskild aktie detaljvy med alla krav
 - ✅ Alert-utvärdering och notiser
 - ✅ Spam-skydd
 - ✅ Par-bevakningar bibehållna
+
+**Nästa steg**: Börja med Fas 2 - Nyckeltal & historik
 
