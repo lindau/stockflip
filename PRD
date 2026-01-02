@@ -1,0 +1,535 @@
+1. Bakgrund
+
+Befintlig app:
+
+Native Android-app (Kotlin) utvecklad av Johan.
+
+Huvudfunktion idag:
+
+Lägga upp par av aktier (t.ex. A- och B-aktier i samma bolag).
+
+Bevaka prisspread mellan dessa två.
+
+Skicka notiser när:
+
+spreaden når ett angivet värde, eller
+
+priserna är lika (konvergens-case).
+
+Syftet är att stödja arbitrageaffärer i bolag där A- och B-aktier brukar konvergera över tid.
+
+Nytt behov:
+
+Bevaka enskilda aktier som är intressanta men för tillfället dyra.
+
+Larm när:
+
+pris når vissa nivåer/intervall,
+
+priset fallit en viss procent från 52-veckors högsta,
+
+priset rör sig kraftigt under en dag,
+
+(senare) nyckeltal som P/E, EPS, direktavkastning når intressanta nivåer.
+
+Få historik på nyckeltal (t.ex. P/E senaste 1/3/5 åren) för att sätta larm på ”rimliga” nivåer.
+
+Allt är för en enda användare (Johan), vilket ger frihet i design men också krav på att det ska vara enkelt att experimentera.
+
+2. Vision & mål
+
+Vision:
+En personlig ”bevaknings-terminal” för aktier som kombinerar:
+
+par-arbitrage mellan A/B-aktier,
+
+smarta bevakningar för enskilda aktier,
+
+nyckeltals- och historikbaserade larm,
+
+i en lokal-first Android-app där all logik kan köras på telefonen, med möjlighet att på sikt komplettera med backend på homelab.
+
+Övergripande mål:
+
+Utöka appen från ren par-arbitrage till ett generellt bevakningsverktyg för både par och enskilda aktier.
+
+Göra det enkelt att sätta larm utifrån aktuella värden (pris, nyckeltal) med tydlig kontext (historik, snitt, intervall).
+
+Lägga en teknisk grund som gör det möjligt att i framtiden:
+
+lägga till fundamentals (P/E, EPS, yield) och historiska profiler,
+
+bygga en regelmotor där flera villkor kan kombineras (AND/OR).
+
+3. Produktöversikt
+
+Appen ska på sikt bestå av:
+
+Par-bevakning:
+
+befintlig funktionalitet för aktiepar (A/B) och spread-larm.
+
+Single-stock-bevakning (fas 1):
+
+prisbaserade larm för enskilda aktier (målpris, prisintervall, drawdown, dagsrörelse).
+
+Nyckeltals- och historikbevakning (fas 2):
+
+larm på P/E, EPS, direktavkastning etc., med visning av 1/3/5-årshistorik (snitt/min/max).
+
+Avancerade kombinationslarm (fas 3):
+
+logisk sammansättning av flera villkor (t.ex. pris + P/E + volym).
+
+Allt drivs initialt av en tjock klient (all logik i appen), med möjlighet att senare lägga delar på homelab.
+
+4. Roadmap / faser
+Fas 1 – Enskilda aktier, prisbaserade bevakningar
+
+Scope:
+
+Stöd för enskilda aktier som bevakningsobjekt.
+
+Prisbaserade larm:
+
+målpris / prisintervall,
+
+prisfall i procent från 52-veckors högsta,
+
+dagsrörelse i procent.
+
+Enkel detaljvy per aktie med centrala prisuppgifter.
+
+Gemensam datamodell för bevakningar (par + single).
+
+Återanvändning av befintlig notifieringsmotor.
+
+Fas 2 – Fundamenta & nyckeltal (inkl. historik)
+
+Scope:
+
+Larm på:
+
+P/E (TTM, ev. senare forward),
+
+EPS (TTM, ev. tillväxt),
+
+direktavkastning,
+
+ev. P/B.
+
+För P/E (och ev. fler nyckeltal) ska appen visa historisk profil när larm skapas:
+
+1, 3, 5 år: min, max, snitt (ev. median).
+
+UI ska erbjuda presets baserat på historiken (t.ex. ”larm under 5-årssnittet”).
+
+Samma alerta-motor som fas 1.
+
+Fas 3 – Regelmotor / kombinerade larm
+
+Scope:
+
+Introducera en regelmotor ovanpå enskilda villkor:
+
+stöd för AND/OR/NOT mellan flera conditions.
+
+UI för att bygga ”egna” larm:
+
+t.ex. ”pris 20 % under 52w high OCH P/E < 20 OCH volym > 2× snitt”.
+
+Fortsatt single-user, men med mycket större flexibilitet.
+
+5. Användare & centrala user stories
+
+Användare: Johan (endast).
+
+Exempel-user stories, fas 1
+
+”Jag vill kunna lägga in en enskild aktie och få larm när priset når en nivå jag vill köpa på.”
+
+”Jag vill kunna definiera att en aktie ska larma när den har tappat t.ex. 15 % från 52-veckors högsta.”
+
+”Jag vill få larm när en aktie rör sig mer än t.ex. 5 % under dagen, så jag kan kolla vad som hänt.”
+
+Exempel-user stories, fas 2
+
+”När jag skapar ett P/E-larm vill jag se hur P/E har sett ut historiskt (1/3/5 år) för att bedöma om min larmnivå är rimlig.”
+
+”Jag vill kunna sätta larm på direktavkastning, t.ex. när yielden är över 5 %, för utdelningscase.”
+
+Exempel-user stories, fas 3
+
+”Jag vill kunna kombinera flera villkor, t.ex. att en aktie både ska ha fallit 20 % från toppen och ha P/E < 18 innan jag får ett larm.”
+
+6. Funktionella krav – Fas 1 (implementeras nu)
+6.1. Datamodell för bevakningar
+
+Införa en gemensam modell för bevakningsregler, t.ex.:
+
+AlertRule (konceptuellt):
+
+PairSpread(symbolA, symbolB, spreadTarget, …) – befintlig funktionalitet.
+
+SinglePrice(symbol, comparisonType, priceLimitOrRange)
+
+comparisonType: ≤, ≥, WITHIN_RANGE.
+
+SingleDrawdownFromHigh(symbol, percentDrop)
+
+baserad på 52-veckors högsta.
+
+SingleDailyMove(symbol, percentThreshold, direction)
+
+direction: upp, ned, eller båda.
+
+Alla AlertRule ska kunna evalueras via en gemensam funktion, t.ex. evaluate(rule, marketData).
+
+6.2. Datahämtning (pris)
+
+Appen ska kunna hämta för en given aktie:
+
+Senaste pris.
+
+52-veckors högsta.
+
+Föregående stängning (för att beräkna dagsrörelse i %).
+
+Policy:
+
+Tillåten fördröjning (t.ex. 15 minuter) är OK.
+
+Prisdata ska uppdateras:
+
+vid appstart,
+
+när en akties detaljvy öppnas,
+
+enligt någon lågintensiv bakgrundsrutin (t.ex. WorkManager, 1 gång/timme/dag – kan justeras).
+
+6.3. Nya bevakningstyper (fas 1)
+
+Målpris / prisintervall
+
+Villkor: pris ≤ X, pris ≥ X, eller pris inom [A, B].
+
+UI:
+
+visa nuvarande pris,
+
+föreslå ett standardvärde (t.ex. 10–15 % under dagens pris).
+
+Drawdown från 52-veckors högsta
+
+Villkor: procentuell nedgång från 52w high ≥ Y %.
+
+UI:
+
+visa 52w high, nuvarande pris och aktuell drawdown,
+
+låta användaren ange t.ex. ”larm vid 15 % drawdown”.
+
+Dagsrörelse i procent
+
+Villkor: dagsförändring i % ≥ +X eller ≤ -X.
+
+UI:
+
+låta användaren ange threshold (t.ex. 5 %),
+
+stöd för upp, ned, eller ”båda”.
+
+6.4. Enskild aktie – detaljvy (fas 1)
+
+För en vald aktie ska detaljvyn visa:
+
+Namn + ticker.
+
+Senaste pris.
+
+Dagens förändring i %.
+
+52-veckors högsta.
+
+Sektion ”Bevakningar”:
+
+Snabbval för att skapa:
+
+målpris-larm,
+
+drawdown-larm,
+
+dagsrörelselarm.
+
+Lista med befintliga bevakningar för aktien:
+
+typ,
+
+villkor,
+
+status (aktiv, triggad etc.).
+
+6.5. Alert-utvärdering & notiser (fas 1)
+
+Befintlig mekanism för att utvärdera par-bevakningar ska:
+
+utökas till att iterera över samtliga AlertRule (par + single).
+
+För varje alert:
+
+hämta aktuell marknadsdata,
+
+evaluerar villkoret,
+
+om sant → skicka notis.
+
+Notisen ska innehålla:
+
+aktiens namn/ticker,
+
+vilket villkor som triggade,
+
+det faktiska värdet (t.ex. ”Pris = 119,50 kr, larmnivå 120 kr”).
+
+Enkel skyddsmekanism mot spam:
+
+varje alert får trigga max en gång per handelsdag eller markeras ”triggad” tills manuellt återaktiverad.
+
+7. Funktionella krav – Fas 2 (design-in, byggs senare)
+
+Fas 2 implementeras inte nu, men fas 1 ska ta höjd för det i datamodell/arkitektur.
+
+7.1. Nyckeltal & snapshots
+
+För en aktie ska det finnas en modell som kan bära:
+
+Nuvarande nyckeltal:
+
+P/E (TTM),
+
+EPS (TTM),
+
+direktavkastning (%),
+
+ev. P/B.
+
+Historiska sammanfattningar per nyckeltal, t.ex.:
+
+MetricHistorySummary:
+
+metricName: t.ex. ”PE_TTM”.
+
+1 år: min, max, snitt (ev. median).
+
+3 år: min, max, snitt, ev. median.
+
+5 år: min, max, snitt, ev. median.
+
+7.2. Historikvisning vid larm på P/E
+
+När P/E-larm skapas ska UI visa:
+
+Nuvarande P/E (TTM).
+
+Historik:
+
+1 år: snitt + min/max.
+
+3 år: snitt + min/max.
+
+5 år: snitt + min/max.
+
+Exempel:
+
+1 år: snitt 22,7 (min 18,2 / max 27,9)
+3 år: snitt 21,4 (min 15,0 / max 30,1)
+5 år: snitt 19,8 (min 12,3 / max 34,2)
+
+UI ska erbjuda presets, t.ex.:
+
+”Sätt larm under 5-årssnittet”
+
+”Sätt larm under 3-årsmin”
+
+”Sätt larm vid 1-årssnitt − 20 %”
+
+Larmet sparar alltid en fix tröskel (exakt P/E-värde) och gärna ”värde vid skapande” för referens.
+
+7.3. Uppdateringspolicy för fundamentals
+
+Fundamentals (P/E, EPS, yield etc.) behöver inte uppdateras i realtid.
+
+Rekommendation:
+
+uppdatera vid öppning av detaljvy om cache är äldre än X timmar,
+
+alternativt nattlig uppdatering (om WorkManager/liknande används).
+
+Data lagras lokalt i appen (Room/SQLite) i första steget.
+
+8. Funktionella krav – Fas 3 (regelmotor, design-in)
+
+Fas 3 ska kunna byggas ovanpå fas 1–2.
+
+8.1. Regelmotor / expression-lager
+
+Utöver enskilda AlertRule ska modellen kunna uttrycka kombinationer, t.ex.:
+
+AlertExpression:
+
+Single(rule: AlertRule)
+
+And(left: AlertExpression, right: AlertExpression)
+
+Or(left: AlertExpression, right: AlertExpression)
+
+Not(inner: AlertExpression)
+
+Då kan larm uttryckas som:
+
+And( Single(PriceBelow), Single(PEBelow) ) etc.
+
+Utvärdering sker via en funktion:
+
+evaluateExpression(expr, data): Boolean,
+
+där data är ett ”snapshot” av marknads- och fundamentalsdata för berörda aktier.
+
+8.2. Avancerat UI (senare)
+
+I framtiden:
+
+En ”avancerad bevakning”-vy där du:
+
+Läggar till flera villkor (pris, P/E, volym, drawdown etc.).
+
+Väljer hur de kombineras (”alla måste gälla” / ”något av dem räcker”).
+
+Intern representation = AlertExpression med underliggande AlertRule.
+
+9. Data- & integrationsstrategi
+9.1. Datakällor
+
+Pris och basics:
+
+nuvarande pris,
+
+52-veckors högsta,
+
+föregående stängning,
+
+volym etc.
+
+Nyckeltal:
+
+P/E (TTM),
+
+EPS (TTM),
+
+utdelning / yield,
+
+ev. P/B.
+
+Initialt:
+
+Appen pratar direkt med en eller flera externa API:er (t.ex. Yahoo/Alpha Vantage/Finnhub etc. – val tas utanför PRD).
+
+All logik för hämtning, cache och beräkning ligger i appen (Variant ”tjock klient”).
+
+9.2. Lagring
+
+Lokal databas (Room/SQLite) i appen:
+
+historiska prisserier (så mycket som behövs för fas 1 + P/E-beräkningar),
+
+snapshots av fundamentals + MetricHistorySummary.
+
+Cache-policy:
+
+pris: uppdateras vid behov + lågintensiv bakgrund.
+
+fundamentals: uppdateras max någon gång per dag per aktie, eller vid explicit ”refresh”.
+
+9.3. Framtida backend (homelab) – ”nice to have”
+
+På sikt kan en backend på homelab ta över:
+
+datahämtning,
+
+beräkning av historik,
+
+eventuellt bevakningsutvärdering.
+
+Appen pratar då med backend via REST och använder samma interna modell (AlertRule, AlertExpression).
+
+Fas 1–2 designas så att ett Repository-lager lätt kan byta implementering (lokal → remote).
+
+10. Icke-funktionella krav
+
+Prestanda:
+
+Inga tunga beräkningar i UI-tråd.
+
+Pris- och nyckeltalslogik får ta lite tid i bakgrunden (begränsat dataset).
+
+Batteri och nätverk:
+
+Begränsa polling.
+
+Använd WorkManager för periodiska jobb med constraints (t.ex. endast på WiFi+laddning för tunga uppdateringar).
+
+Stabilitet:
+
+Par-bevakningarna (befintlig funktionalitet) får inte gå sönder under fas 1.
+
+Brancher och Git används för att isolera större ändringar.
+
+Säkerhet/integritet:
+
+Single-user, ingen känslig personlig data.
+
+API-nycklar hanteras så gott det går (men viss exponering i en hobby-app tolereras).
+
+11. Tekniska beslut & utvecklingsmiljö
+
+Plattform: Android (Kotlin, Jetpack Compose, Gradle-projekt).
+
+IDE: Antigravity och/eller Cursor parallellt, med Git som sanningskälla.
+
+Versionshantering:
+
+Git lokalt i projektmappen.
+
+Möjlig remote på homelab (t.ex. Forgejo/Gitea i Docker) för backup och webUI.
+
+Arkitektur i appen:
+
+MVVM + Repository-mönster.
+
+Tydlig separation:
+
+UI (Compose),
+
+ViewModels,
+
+Repository-lager (data),
+
+Alert-/regelmotor (domänlogik).
+
+12. Risker & begränsningar
+
+Datakvalitet:
+
+Gratis-/freemium-API:er kan ha begränsningar/avvikelser, vilket kan ge mindre exakt P/E-historik.
+
+Komplexitet över tid:
+
+För många bevakningstyper/parametrar kan göra UI rörigt; fasindelning minskar risken.
+
+Underhåll:
+
+API-ändringar från dataleverantörer kan kräva kodändringar.
+
+Teknisk skuld:
+
+Om fas 1 byggs ”snabbt” utan tydlig domänmodell blir fas 2–3 svårare → därför är AlertRule/AlertExpression-tänket viktigt redan nu (även om inte allt används direkt).

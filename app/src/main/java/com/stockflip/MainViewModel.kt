@@ -19,7 +19,9 @@ class MainViewModel(
     val uiState: StateFlow<UiState<List<StockPair>>> = _uiState
 
     private val _watchItemUiState = MutableStateFlow<UiState<List<WatchItem>>>(UiState.Loading)
-    val watchItemUiState: StateFlow<UiState<List<WatchItem>>> = _watchItemUiState
+    val watchItemUiState: StateFlow<UiState<List<WatchItem>>> = _watchItemUiState.asStateFlow()
+    
+    private var isRefreshing = false
 
     init {
         Log.d(TAG, "MainViewModel initialized")
@@ -118,7 +120,21 @@ class MainViewModel(
             _watchItemUiState.value = UiState.Loading
             val items = watchItemDao.getAllWatchItems()
             Log.d(TAG, "Loaded ${items.size} watch items")
-            _watchItemUiState.value = UiState.Success(items)
+            
+            // Check if there are KeyMetrics items that need refreshing
+            // KeyMetrics currentMetricValue is @Ignore and not saved to database,
+            // so we need to refresh to get the actual values
+            val hasKeyMetrics = items.any { it.watchType is WatchType.KeyMetrics }
+            
+            if (hasKeyMetrics) {
+                Log.d(TAG, "Found KeyMetrics items, keeping Loading state until refresh completes")
+                // Don't set Success state yet - wait for refreshWatchItems() to complete
+                // This ensures KeyMetrics values are loaded before showing UI
+            } else {
+                // No KeyMetrics items, safe to show data from database immediately
+                _watchItemUiState.value = UiState.Success(items)
+                Log.d(TAG, "No KeyMetrics items, set UI state to Success")
+            }
         } catch (e: Exception) {
             Log.e(TAG, "Error loading watch items: ${e.message}")
             _watchItemUiState.value = UiState.Error("Failed to load watch items: ${e.message}")
@@ -126,9 +142,17 @@ class MainViewModel(
     }
 
     suspend fun refreshWatchItems() {
+        // Prevent concurrent refresh calls
+        if (isRefreshing) {
+            Log.d(TAG, "Refresh already in progress, skipping duplicate call")
+            return
+        }
+        
+        isRefreshing = true
         try {
-            Log.d(TAG, "Refreshing watch items")
+            Log.d(TAG, "=== START refreshWatchItems() ===")
             _watchItemUiState.value = UiState.Loading
+            Log.d(TAG, "Set UI state to Loading")
 
             val items = watchItemDao.getAllWatchItems()
             Log.d(TAG, "Found ${items.size} watch items to refresh")
@@ -228,6 +252,45 @@ class MainViewModel(
                                 item
                             }
                         }
+                        is WatchType.PriceRange -> {
+                            if (item.ticker != null) {
+                                Log.d(TAG, "Fetching price for ${item.ticker} (PriceRange)")
+                                val price = yahooFinanceService.getStockPrice(item.ticker)
+
+                                if (price != null) {
+                                    Log.d(TAG, "Got price for ${item.ticker}: $price")
+                                    val updatedItem = item.withCurrentPrice(price)
+                                    watchItemDao.update(updatedItem)
+                                    Log.d(TAG, "Updated database with new price for ${item.ticker}")
+                                    updatedItem
+                                } else {
+                                    Log.w(TAG, "Could not get price for ${item.ticker}, keeping existing price")
+                                    item
+                                }
+                            } else {
+                                item
+                            }
+                        }
+                        is WatchType.DailyMove -> {
+                            if (item.ticker != null) {
+                                Log.d(TAG, "Fetching price and previousClose for ${item.ticker} (DailyMove)")
+                                val price = yahooFinanceService.getStockPrice(item.ticker)
+                                val previousClose = yahooFinanceService.getPreviousClose(item.ticker)
+
+                                if (price != null) {
+                                    Log.d(TAG, "Got price for ${item.ticker}: $price, previousClose: $previousClose")
+                                    val updatedItem = item.withCurrentPrice(price)
+                                    watchItemDao.update(updatedItem)
+                                    Log.d(TAG, "Updated database with new price for ${item.ticker}")
+                                    updatedItem
+                                } else {
+                                    Log.w(TAG, "Could not get price for ${item.ticker}, keeping existing price")
+                                    item
+                                }
+                            } else {
+                                item
+                            }
+                        }
                     }
                 } catch (e: Exception) {
                     Log.e(TAG, "Error fetching prices for watch item ${item.id}: ${e.message}")
@@ -235,11 +298,43 @@ class MainViewModel(
                 }
             }
 
-            _watchItemUiState.value = UiState.Success(updatedItems)
-            Log.d(TAG, "Successfully refreshed ${updatedItems.size} watch items")
+            // Use updatedItems directly instead of reloading from database
+            // This is important because currentMetricValue is @Ignore and not saved to database
+            Log.d(TAG, "Refresh complete, using updated items directly (${updatedItems.size} items)")
+            
+            // Log key metrics items specifically
+            try {
+                val keyMetricsItems = updatedItems.filter { it.watchType is WatchType.KeyMetrics }
+                Log.d(TAG, "Found ${keyMetricsItems.size} KeyMetrics items in updated list")
+                keyMetricsItems.forEach { item ->
+                    Log.d(TAG, "KeyMetrics item: ${item.ticker}, currentMetricValue: ${item.currentMetricValue}")
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error logging KeyMetrics items: ${e.message}", e)
+            }
+            
+            // Update StateFlow - this is critical!
+            try {
+                Log.d(TAG, "About to update StateFlow with ${updatedItems.size} items")
+                _watchItemUiState.value = UiState.Success(updatedItems)
+                Log.d(TAG, "StateFlow updated! Current value type: ${_watchItemUiState.value::class.simpleName}")
+                if (_watchItemUiState.value is UiState.Success) {
+                    val successState = _watchItemUiState.value as UiState.Success
+                    Log.d(TAG, "StateFlow contains ${successState.data.size} items")
+                }
+                Log.d(TAG, "Set UI state to Success with ${updatedItems.size} watch items")
+            } catch (e: Exception) {
+                Log.e(TAG, "CRITICAL: Error updating StateFlow: ${e.message}", e)
+                throw e
+            }
+            Log.d(TAG, "=== END refreshWatchItems() - SUCCESS ===")
         } catch (e: Exception) {
-            Log.e(TAG, "Error refreshing watch items: ${e.message}")
+            Log.e(TAG, "=== END refreshWatchItems() - ERROR: ${e.message} ===", e)
             _watchItemUiState.value = UiState.Error("Failed to refresh watch items: ${e.message}")
+            Log.d(TAG, "Set UI state to Error")
+        } finally {
+            isRefreshing = false
+            Log.d(TAG, "Refresh flag reset")
         }
     }
 

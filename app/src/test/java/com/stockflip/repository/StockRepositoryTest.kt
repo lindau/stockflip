@@ -6,7 +6,6 @@ import com.stockflip.StockSearchResult
 import com.stockflip.YahooFinanceService
 import io.mockk.*
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.*
@@ -18,6 +17,7 @@ import kotlin.time.ExperimentalTime
 @OptIn(ExperimentalCoroutinesApi::class, ExperimentalTime::class)
 class StockRepositoryTest {
     private lateinit var repository: StockRepository
+    private var currentTime = 0L
 
     @Before
     fun setup() {
@@ -29,7 +29,11 @@ class StockRepositoryTest {
         every { Log.d(any(), any()) } returns 0
         every { Log.e(any(), any()) } returns 0
         
-        repository = StockRepository()
+        currentTime = 0L
+        repository = StockRepository(
+            timeProvider = { currentTime },
+            cacheTTL = 1000L
+        )
         mockkObject(YahooFinanceService)
     }
 
@@ -53,6 +57,14 @@ class StockRepositoryTest {
             assertEquals(SearchState.Success(results), awaitItem())
             awaitComplete()
         }
+
+        repository.searchStocks(query).test {
+            assertEquals(SearchState.Loading, awaitItem())
+            assertEquals(SearchState.Success(results), awaitItem())
+            awaitComplete()
+        }
+
+        coVerify(exactly = 1) { YahooFinanceService.searchStocks(any()) }
     }
 
     @Test
@@ -68,7 +80,7 @@ class StockRepositoryTest {
 
         coEvery { YahooFinanceService.searchStocks(any()) } returns initialResults
 
-        // First search
+        // First search caches results
         repository.searchStocks(query).test {
             assertEquals(SearchState.Loading, awaitItem())
             assertEquals(SearchState.Success(initialResults), awaitItem())
@@ -77,7 +89,7 @@ class StockRepositoryTest {
 
         // Update mock and simulate cache expiry
         coEvery { YahooFinanceService.searchStocks(any()) } returns updatedResults
-        repository.cleanExpiredCache()
+        currentTime = 2000L
 
         // Second search should get fresh results
         repository.searchStocks(query).test {
@@ -85,6 +97,8 @@ class StockRepositoryTest {
             assertEquals(SearchState.Success(updatedResults), awaitItem())
             awaitComplete()
         }
+
+        coVerify(exactly = 2) { YahooFinanceService.searchStocks(any()) }
     }
 
     @Test
@@ -160,6 +174,8 @@ class StockRepositoryTest {
             assertEquals(SearchState.Success(emptyList()), awaitItem())
             awaitComplete()
         }
+
+        coVerify(exactly = 0) { YahooFinanceService.searchStocks(any()) }
     }
 
     @Test
@@ -169,6 +185,8 @@ class StockRepositoryTest {
             assertEquals(SearchState.Success(emptyList()), awaitItem())
             awaitComplete()
         }
+
+        coVerify(exactly = 0) { YahooFinanceService.searchStocks(any()) }
     }
 
     @Test

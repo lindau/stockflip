@@ -10,7 +10,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 
 @Database(
     entities = [StockPair::class, WatchItem::class],
-    version = 6,
+    version = 7,
     exportSchema = true
 )
 @TypeConverters(WatchTypeConverter::class)
@@ -82,6 +82,24 @@ abstract class StockPairDatabase : RoomDatabase() {
             }
         }
 
+        private val MIGRATION_6_7 = object : Migration(6, 7) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // Lägg till spam-skyddsfält i watch_items tabellen
+                db.execSQL("""
+                    ALTER TABLE watch_items 
+                    ADD COLUMN lastTriggeredDate TEXT
+                """)
+                db.execSQL("""
+                    ALTER TABLE watch_items 
+                    ADD COLUMN isTriggered INTEGER NOT NULL DEFAULT 0
+                """)
+                db.execSQL("""
+                    ALTER TABLE watch_items 
+                    ADD COLUMN isActive INTEGER NOT NULL DEFAULT 1
+                """)
+            }
+        }
+
         @Volatile
         private var INSTANCE: StockPairDatabase? = null
 
@@ -92,7 +110,7 @@ abstract class StockPairDatabase : RoomDatabase() {
                     StockPairDatabase::class.java,
                     "stock_pair_database"
                 )
-                .addMigrations(MIGRATION_4_5, MIGRATION_5_6)
+                .addMigrations(MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7)
                 .build()
                 INSTANCE = instance
                 instance

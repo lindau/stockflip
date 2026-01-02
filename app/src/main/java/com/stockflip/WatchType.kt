@@ -35,11 +35,42 @@ sealed class WatchType {
 
     /**
      * Watch for when a stock has dropped from its All-Time High (ATH).
+     * Använder 52-veckors högsta enligt PRD.
      */
     data class ATHBased(
         val dropType: DropType,
         val dropValue: Double
     ) : WatchType()
+
+    /**
+     * Watch for when a stock price is within a specific range.
+     * Enligt PRD: "pris inom [A, B]"
+     */
+    data class PriceRange(
+        val minPrice: Double,
+        val maxPrice: Double
+    ) : WatchType() {
+        init {
+            require(minPrice < maxPrice) {
+                "minPrice måste vara mindre än maxPrice"
+            }
+        }
+    }
+
+    /**
+     * Watch for when a stock's daily price movement exceeds a threshold.
+     * Enligt PRD: "dagsförändring i % ≥ +X eller ≤ -X"
+     */
+    data class DailyMove(
+        val percentThreshold: Double,
+        val direction: DailyMoveDirection
+    ) : WatchType() {
+        init {
+            require(percentThreshold > 0) {
+                "percentThreshold måste vara större än 0"
+            }
+        }
+    }
 
     enum class PriceDirection {
         ABOVE,  // Alert when price goes above target
@@ -53,7 +84,13 @@ sealed class WatchType {
     }
 
     enum class DropType {
-        PERCENTAGE,  // Drop in percentage from ATH
-        ABSOLUTE     // Drop in absolute value (SEK) from ATH
+        PERCENTAGE,  // Drop in percentage from ATH (52w high)
+        ABSOLUTE     // Drop in absolute value (SEK) from ATH (52w high)
+    }
+
+    enum class DailyMoveDirection {
+        UP,     // Alert när dailyChange ≥ +percentThreshold
+        DOWN,   // Alert när dailyChange ≤ -percentThreshold
+        BOTH    // Alert när |dailyChange| ≥ percentThreshold
     }
 }

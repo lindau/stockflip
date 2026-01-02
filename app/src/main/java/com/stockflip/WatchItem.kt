@@ -26,7 +26,11 @@ data class WatchItem(
     val companyName2: String? = null,
     // For single stock watches (price target, etc.)
     val ticker: String? = null,
-    val companyName: String? = null
+    val companyName: String? = null,
+    // Spam protection fields (enligt PRD: max en gång per handelsdag eller markeras triggad)
+    val lastTriggeredDate: String? = null, // Format: "YYYY-MM-DD"
+    val isTriggered: Boolean = false, // Markerad som triggad, kräver manuell återaktivering
+    val isActive: Boolean = true // Om alerten är aktiv (kan inaktiveras manuellt)
 ) {
     @Ignore
     var currentPrice1: Double = 0.0
@@ -128,6 +132,12 @@ data class WatchItem(
             is WatchType.ATHBased -> {
                 "${companyName ?: ticker} (${ticker ?: ""})"
             }
+            is WatchType.PriceRange -> {
+                "${companyName ?: ticker} (${ticker ?: ""})"
+            }
+            is WatchType.DailyMove -> {
+                "${companyName ?: ticker} (${ticker ?: ""})"
+            }
         }
     }
 
@@ -136,7 +146,9 @@ data class WatchItem(
             is WatchType.PricePair -> "Aktiepar"
             is WatchType.PriceTarget -> "Prisbevakning"
             is WatchType.KeyMetrics -> "Nyckeltal"
-            is WatchType.ATHBased -> "ATH-bevakning"
+            is WatchType.ATHBased -> "52w High-bevakning"
+            is WatchType.PriceRange -> "Prisintervall"
+            is WatchType.DailyMove -> "Dagsrörelse"
         }
     }
 
@@ -173,9 +185,78 @@ data class WatchItem(
     private fun formatPrice(price: Double): String =
         if (price > 0.0) "${priceFormat.format(price)} SEK" else "Loading..."
 
+    /**
+     * Kontrollerar om alerten kan trigga baserat på spam-skydd.
+     * Enligt PRD: max en gång per handelsdag eller markeras triggad tills manuellt återaktiverad.
+     * 
+     * @param today Datum i format "YYYY-MM-DD"
+     * @return true om alerten kan trigga, false annars
+     */
+    fun canTrigger(today: String): Boolean {
+        // Om alerten är inaktiverad, kan den inte trigga
+        if (!isActive) {
+            return false
+        }
+        
+        // Om alerten är markerad som triggad, krävs manuell återaktivering
+        if (isTriggered) {
+            return false
+        }
+        
+        // Om alerten redan triggade idag, skippa
+        if (lastTriggeredDate == today) {
+            return false
+        }
+        
+        return true
+    }
+
+    /**
+     * Markerar alerten som triggad för idag.
+     * 
+     * @param today Datum i format "YYYY-MM-DD"
+     * @return Ny WatchItem med uppdaterade spam-skyddsfält
+     */
+    fun markAsTriggered(today: String): WatchItem {
+        return copy(
+            lastTriggeredDate = today,
+            isTriggered = true
+        )
+    }
+
+    /**
+     * Återaktiverar alerten (tar bort triggad-status).
+     * 
+     * @return Ny WatchItem med isTriggered = false
+     */
+    fun reactivate(): WatchItem {
+        return copy(isTriggered = false)
+    }
+
+    /**
+     * Aktiverar/inaktiverar alerten.
+     * 
+     * @param active true för att aktivera, false för att inaktivera
+     * @return Ny WatchItem med uppdaterat isActive
+     */
+    fun setActive(active: Boolean): WatchItem {
+        return copy(isActive = active)
+    }
+
     companion object {
         private const val TAG = "WatchItem"
         private val priceFormat = DecimalFormat("#,##0.00", DecimalFormatSymbols(Locale("sv", "SE")))
+        
+        /**
+         * Hämtar dagens datum i format "YYYY-MM-DD".
+         */
+        fun getTodayDateString(): String {
+            val calendar = java.util.Calendar.getInstance()
+            val year = calendar.get(java.util.Calendar.YEAR)
+            val month = calendar.get(java.util.Calendar.MONTH) + 1 // Calendar.MONTH är 0-baserad
+            val day = calendar.get(java.util.Calendar.DAY_OF_MONTH)
+            return String.format("%04d-%02d-%02d", year, month, day)
+        }
     }
 }
 

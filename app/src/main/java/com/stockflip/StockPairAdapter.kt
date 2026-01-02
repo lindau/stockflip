@@ -4,13 +4,16 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.content.res.ColorStateList
 import android.util.Log
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
 import androidx.core.app.NotificationCompat
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.color.MaterialColors
 import com.stockflip.databinding.ItemStockPairBinding
 import java.text.DecimalFormat
 import java.text.DecimalFormatSymbols
@@ -81,6 +84,7 @@ class StockPairAdapter(
 
             // Price difference and notification info
             val actualPriceDiff = abs(pair.currentPrice1 - pair.currentPrice2)
+            // targetLabel is already set in XML with "Mål: "
             binding.priceDifference.text = "Diff: ${priceFormat.format(actualPriceDiff)} SEK"
             
             // Set up notification chip with improved visualization
@@ -100,11 +104,9 @@ class StockPairAdapter(
                     else -> "Inga notifieringar"
                 }
                 
-                // Set chip colors
-                setChipBackgroundColorResource(when {
-                    pair.notifyWhenEqual || pair.priceDifference > 0 -> R.color.notification_active
-                    else -> R.color.notification_inactive
-                })
+                // Set chip colors using secondaryContainer
+                val secondaryContainerColor = MaterialColors.getColor(binding.root, com.google.android.material.R.attr.colorSecondaryContainer)
+                setChipBackgroundColor(ColorStateList.valueOf(secondaryContainerColor))
                 
                 isCheckable = false
                 isClickable = true
@@ -133,10 +135,18 @@ class StockPairAdapter(
                 highlightedPairs.remove(pair.id)
             }
 
-            // Set background color based on notification criteria
-            binding.root.setCardBackgroundColor(binding.root.context.getColor(
-                if (shouldHighlight) R.color.notification_highlight else android.R.color.white
-            ))
+            // Use icon + text color instead of background color for triggered status
+            binding.triggeredIcon.visibility = if (shouldHighlight) View.VISIBLE else View.GONE
+            
+            // Get error color from theme
+            val errorColor = MaterialColors.getColor(binding.root, com.google.android.material.R.attr.colorError)
+            val onSurfaceColor = MaterialColors.getColor(binding.root, com.google.android.material.R.attr.colorOnSurface)
+            
+            binding.priceDifference.setTextColor(if (shouldHighlight) errorColor else onSurfaceColor)
+            
+            // Keep card background as surface (no pink background)
+            val surfaceColor = MaterialColors.getColor(binding.root, com.google.android.material.R.attr.colorSurface)
+            binding.root.setCardBackgroundColor(surfaceColor)
         }
 
         private fun buildNotificationMessage(pair: StockPair, priceDiff: Double): String {

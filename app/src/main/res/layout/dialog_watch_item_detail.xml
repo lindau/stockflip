@@ -18,10 +18,8 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginBottom="16dp"
+            style="@style/Widget.StockFlip.AssistChip"
             android:textAppearance="?attr/textAppearanceBodyMedium"
-            android:textColor="@color/white"
-            app:chipBackgroundColor="?attr/colorPrimary"
-            app:chipStrokeWidth="0dp"
             tools:text="Aktiepar" />
 
         <!-- Price Pair Details -->

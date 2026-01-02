@@ -12,8 +12,7 @@
     android:paddingBottom="12dp"
     android:background="?attr/colorSurface"
     android:clickable="true"
-    android:focusable="true"
-    android:backgroundTint="?attr/colorSurfaceVariant">
+    android:focusable="true">
 
     <TextView
         android:id="@+id/sectionHeaderText"

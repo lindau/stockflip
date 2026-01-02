@@ -1,15 +1,63 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="purple_200">#FFBB86FC</color>
-    <color name="purple_500">#FF6200EE</color>
-    <color name="purple_700">#FF3700B3</color>
-    <color name="teal_200">#FF03DAC5</color>
-    <color name="teal_700">#FF018786</color>
+    <!-- Pine & Sand Theme Colors - Light -->
+    <color name="pine_primary">#2F5D50</color>
+    <color name="pine_on_primary">#FFFFFF</color>
+    <color name="pine_primary_container">#DDEBE5</color>
+    <color name="pine_on_primary_container">#0E1F1A</color>
+    
+    <color name="sand_secondary">#6B5E4B</color>
+    <color name="sand_on_secondary">#FFFFFF</color>
+    <color name="sand_secondary_container">#F0E9DE</color>
+    <color name="sand_on_secondary_container">#1A1612</color>
+    
+    <color name="pine_background">#F6F2EA</color>
+    <color name="pine_on_background">#1A1612</color>
+    
+    <color name="pine_surface">#FFFCF7</color>
+    <color name="pine_on_surface">#1A1612</color>
+    <color name="pine_surface_variant">#EFE7DB</color>
+    <color name="pine_on_surface_variant">#4A4034</color>
+    
+    <color name="pine_outline">#CFC3B3</color>
+    <color name="pine_error">#B3261E</color>
+    <color name="pine_on_error">#FFFFFF</color>
+    <color name="pine_error_container">#F9DEDC</color>
+    <color name="pine_on_error_container">#410E0B</color>
+    
+    <!-- Pine & Sand Theme Colors - Dark -->
+    <color name="pine_primary_dark">#B7D7CC</color>
+    <color name="pine_on_primary_dark">#123027</color>
+    <color name="pine_primary_container_dark">#1F4439</color>
+    <color name="pine_on_primary_container_dark">#DDEBE5</color>
+    
+    <color name="sand_secondary_dark">#D4C5AE</color>
+    <color name="sand_on_secondary_dark">#1A1612</color>
+    <color name="sand_secondary_container_dark">#3C342B</color>
+    <color name="sand_on_secondary_container_dark">#F0E9DE</color>
+    
+    <color name="pine_background_dark">#12100D</color>
+    <color name="pine_on_background_dark">#EDE7DE</color>
+    
+    <color name="pine_surface_dark">#171411</color>
+    <color name="pine_on_surface_dark">#EDE7DE</color>
+    <color name="pine_surface_variant_dark">#231E18</color>
+    <color name="pine_on_surface_variant_dark">#CFC3B3</color>
+    
+    <color name="pine_outline_dark">#3C342B</color>
+    <color name="pine_error_dark">#F2B8B5</color>
+    <color name="pine_on_error_dark">#601410</color>
+    <color name="pine_error_container_dark">#8C1D18</color>
+    <color name="pine_on_error_container_dark">#F9DEDC</color>
+    
+    <!-- Legacy colors (kept for compatibility) -->
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
-    <color name="notification_highlight">#FFE0E0</color>
-    <color name="notification_active">#2196F3</color>
+    
+    <!-- Status colors -->
+    <color name="notification_highlight">#F0E9DE</color>
+    <color name="notification_active">#6B5E4B</color>
     <color name="notification_inactive">#9E9E9E</color>
-    <color name="price_down">#FF1744</color>
-    <color name="price_up">#00E676</color>
-</resources> 
+    <color name="price_down">#B3261E</color>
+    <color name="price_up">#2F5D50</color>
+</resources>

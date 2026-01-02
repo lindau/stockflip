@@ -22,10 +22,8 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginBottom="12dp"
+            style="@style/Widget.StockFlip.AssistChip"
             android:textAppearance="?attr/textAppearanceBodySmall"
-            android:textColor="@color/white"
-            app:chipBackgroundColor="?attr/colorPrimary"
-            app:chipStrokeWidth="0dp"
             tools:text="Aktiepar" />
 
         <!-- Single Stock Layout (for Price Target) -->
@@ -48,7 +46,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:textAppearance="?attr/textAppearanceTitleMedium"
-                    android:textColor="@color/black"
+                    android:textColor="?attr/colorOnSurface"
                     android:textStyle="bold"
                     tools:text="Apple Inc. (AAPL)" />
 
@@ -58,7 +56,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
                     android:textAppearance="?attr/textAppearanceBodyLarge"
-                    android:textColor="@color/black"
+                    android:textColor="?attr/colorOnSurface"
                     tools:text="180.50 SEK" />
             </LinearLayout>
         </LinearLayout>
@@ -82,7 +80,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:textAppearance="?attr/textAppearanceTitleMedium"
-                    android:textColor="@color/black"
+                    android:textColor="?attr/colorOnSurface"
                     android:textStyle="bold"
                     tools:text="Apple Inc. (AAPL)" />
 
@@ -92,7 +90,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
                     android:textAppearance="?attr/textAppearanceBodyLarge"
-                    android:textColor="@color/black"
+                    android:textColor="?attr/colorOnSurface"
                     tools:text="180.50 SEK" />
             </LinearLayout>
         </LinearLayout>
@@ -122,7 +120,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:textAppearance="?attr/textAppearanceTitleMedium"
-                    android:textColor="@color/black"
+                    android:textColor="?attr/colorOnSurface"
                     android:textStyle="bold"
                     tools:text="Microsoft Corp. (MSFT)" />
 
@@ -132,7 +130,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
                     android:textAppearance="?attr/textAppearanceBodyLarge"
-                    android:textColor="@color/black"
+                    android:textColor="?attr/colorOnSurface"
                     tools:text="175.25 SEK" />
             </LinearLayout>
         </LinearLayout>
@@ -154,27 +152,53 @@
                 android:id="@+id/notificationInfo"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:textAppearance="?attr/textAppearanceBodyMedium"
-                android:textColor="@color/white"
-                app:chipBackgroundColor="?attr/colorSurfaceVariant"
+                style="@style/Widget.StockFlip.AssistChip"
+                android:textAppearance="?attr/textAppearanceBodySmall"
                 app:chipIcon="@drawable/ic_notifications"
-                app:chipIconTint="@color/white"
-                app:chipStrokeWidth="0dp"
+                app:chipIconTint="?attr/colorOnSecondaryContainer"
                 app:ensureMinTouchTargetSize="true"
-                tools:text="Notify when ≥ 5.00 SEK" />
+                tools:text="Aktiepar" />
 
             <Space
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1" />
 
-            <TextView
-                android:id="@+id/priceDifference"
+            <LinearLayout
+                android:id="@+id/targetContainer"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:textAppearance="?attr/textAppearanceBodyMedium"
-                android:textColor="@color/black"
-                tools:text="Diff: 5.25 SEK" />
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <TextView
+                    android:id="@+id/targetLabel"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textAppearance="?attr/textAppearanceLabelMedium"
+                    android:textColor="?attr/colorOnSurfaceVariant"
+                    android:text="Mål: "
+                    tools:text="Mål: " />
+
+                <TextView
+                    android:id="@+id/priceDifference"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textAppearance="?attr/textAppearanceBodyMedium"
+                    android:textColor="?attr/colorOnSurface"
+                    tools:text="Över 120 SEK" />
+
+                <ImageView
+                    android:id="@+id/triggeredIcon"
+                    android:layout_width="16dp"
+                    android:layout_height="16dp"
+                    android:layout_marginStart="8dp"
+                    android:src="@android:drawable/ic_dialog_alert"
+                    android:contentDescription="Triggad"
+                    android:visibility="gone"
+                    android:tint="?attr/colorError"
+                    tools:visibility="visible" />
+            </LinearLayout>
         </LinearLayout>
     </LinearLayout>
 </com.google.android.material.card.MaterialCardView>

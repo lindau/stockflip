@@ -11,10 +11,12 @@ import java.util.concurrent.TimeUnit
  * Repository for handling stock-related operations.
  * Manages caching and provides a clean API for stock searches.
  */
-class StockRepository {
+class StockRepository(
+    private val timeProvider: () -> Long = { System.currentTimeMillis() },
+    private val cacheTTL: Long = TimeUnit.MINUTES.toMillis(5)
+) {
     private val TAG = "StockRepository"
     private val cache = mutableMapOf<String, CacheEntry>()
-    private val cacheTTL = TimeUnit.MINUTES.toMillis(5) // 5 minutes TTL
 
     /**
      * Searches for stocks based on the provided query.
@@ -31,6 +33,15 @@ class StockRepository {
             if (query.length < 2) {
                 Log.d(TAG, "Query too short, returning empty list")
                 emit(SearchState.Success(emptyList()))
+                return@flow
+            }
+
+            cleanExpiredCache()
+            val cacheKey = query.trim().lowercase()
+            val cached = cache[cacheKey]
+            if (cached != null && !isCacheExpired(cached.timestamp)) {
+                Log.d(TAG, "Returning cached results for query: $query")
+                emit(SearchState.Success(cached.results))
                 return@flow
             }
             
@@ -61,7 +72,8 @@ class StockRepository {
                 .thenByDescending { it.isSwedish } // Second priority: Swedish stocks
                 .thenBy { it.symbol } // Third priority: Alphabetical order
             )
-            
+
+            cache[cacheKey] = CacheEntry(sortedResults, timeProvider())
             emit(SearchState.Success(sortedResults))
             
         } catch (e: Exception) {
@@ -76,7 +88,7 @@ class StockRepository {
     )
 
     private fun isCacheExpired(timestamp: Long): Boolean {
-        val currentTime = System.currentTimeMillis()
+        val currentTime = timeProvider()
         return currentTime - timestamp > cacheTTL
     }
 
@@ -88,15 +100,6 @@ class StockRepository {
     fun cleanExpiredCache() {
         cache.entries.removeIf { (_, entry) ->
             isCacheExpired(entry.timestamp)
-        }
-    }
-
-    private suspend fun fetchStockPrice(ticker: String): Double? {
-        return try {
-            YahooFinanceService.getStockPrice(ticker)
-        } catch (e: Exception) {
-            Log.e(TAG, "Error fetching stock price for $ticker: ${e.message}")
-            null
         }
     }
 } 

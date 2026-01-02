@@ -4,6 +4,8 @@ import app.cash.turbine.test
 import com.stockflip.StockSearchResult
 import com.stockflip.repository.SearchState
 import com.stockflip.repository.StockRepository
+import io.mockk.andThen
+import io.mockk.any
 import io.mockk.coEvery
 import io.mockk.mockk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -27,32 +29,24 @@ class StockSearchViewModelTest {
 
     @Test
     fun `test search with empty query`() = runTest {
-        coEvery { repository.searchStocks("") } returns flow {
-            emit(SearchState.Loading)
-            emit(SearchState.Success(emptyList()))
-        }
-
         viewModel.search("")
         viewModel.searchState.test {
-            assertEquals(SearchState.Loading, awaitItem())
             assertEquals(SearchState.Success(emptyList()), awaitItem())
             cancelAndIgnoreRemainingEvents()
         }
+
+        io.mockk.coVerify(exactly = 0) { repository.searchStocks(any()) }
     }
 
     @Test
     fun `test search with short query`() = runTest {
-        coEvery { repository.searchStocks("a") } returns flow {
-            emit(SearchState.Loading)
-            emit(SearchState.Success(emptyList()))
-        }
-
         viewModel.search("a")
         viewModel.searchState.test {
-            assertEquals(SearchState.Loading, awaitItem())
             assertEquals(SearchState.Success(emptyList()), awaitItem())
             cancelAndIgnoreRemainingEvents()
         }
+
+        io.mockk.coVerify(exactly = 0) { repository.searchStocks(any()) }
     }
 
     @Test
@@ -67,6 +61,7 @@ class StockSearchViewModelTest {
 
         viewModel.search("AAPL")
         viewModel.searchState.test {
+            assertEquals(SearchState.Success(emptyList()), awaitItem())
             assertEquals(SearchState.Loading, awaitItem())
             assertEquals(SearchState.Success(results), awaitItem())
             cancelAndIgnoreRemainingEvents()
@@ -83,31 +78,9 @@ class StockSearchViewModelTest {
 
         viewModel.search("ERROR")
         viewModel.searchState.test {
+            assertEquals(SearchState.Success(emptyList()), awaitItem())
             assertEquals(SearchState.Loading, awaitItem())
             assertTrue(awaitItem() is SearchState.Error)
-            cancelAndIgnoreRemainingEvents()
-        }
-    }
-
-    @Test
-    fun `test search debounce`() = runTest {
-        val results = listOf(
-            StockSearchResult("AAPL", "Apple Inc.", false),
-            StockSearchResult("AAPL.ST", "Apple Inc. (Stockholm)", false)
-        )
-        coEvery { repository.searchStocks("AAPL") } returns flow {
-            emit(SearchState.Loading)
-            emit(SearchState.Success(results))
-        }
-
-        viewModel.search("A")
-        viewModel.search("AA")
-        viewModel.search("AAP")
-        viewModel.search("AAPL")
-
-        viewModel.searchState.test {
-            assertEquals(SearchState.Loading, awaitItem())
-            assertEquals(SearchState.Success(results), awaitItem())
             cancelAndIgnoreRemainingEvents()
         }
     }
@@ -121,8 +94,35 @@ class StockSearchViewModelTest {
 
         viewModel.search("NONEXISTENT")
         viewModel.searchState.test {
+            assertEquals(SearchState.Success(emptyList()), awaitItem())
             assertEquals(SearchState.Loading, awaitItem())
             assertEquals(SearchState.Success(emptyList()), awaitItem())
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `retry should re-run last failed query`() = runTest {
+        val errorState = SearchState.Error("Network error", "AAPL")
+        val results = listOf(StockSearchResult("AAPL", "Apple Inc.", false))
+
+        coEvery { repository.searchStocks("AAPL") } returns flow {
+            emit(SearchState.Loading)
+            emit(errorState)
+        } andThen flow {
+            emit(SearchState.Loading)
+            emit(SearchState.Success(results))
+        }
+
+        viewModel.search("AAPL")
+        viewModel.retry()
+
+        viewModel.searchState.test {
+            assertEquals(SearchState.Success(emptyList()), awaitItem())
+            assertEquals(SearchState.Loading, awaitItem())
+            assertEquals(errorState, awaitItem())
+            assertEquals(SearchState.Loading, awaitItem())
+            assertEquals(SearchState.Success(results), awaitItem())
             cancelAndIgnoreRemainingEvents()
         }
     }

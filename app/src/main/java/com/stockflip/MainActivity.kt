@@ -23,6 +23,8 @@ import androidx.core.widget.doAfterTextChanged
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
+import androidx.lifecycle.Lifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.checkbox.MaterialCheckBox
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -66,31 +68,19 @@ class MainActivity : AppCompatActivity() {
             Toast.makeText(this, "Notification permission is required for alerts", Toast.LENGTH_LONG).show()
         }
     }
-    private val stockSearchViewModel1: StockSearchViewModel by viewModels {
-        object : ViewModelProvider.Factory {
-            override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                @Suppress("UNCHECKED_CAST")
-                return StockSearchViewModel(StockRepository()) as T
-            }
+    private val stockSearchViewModelFactory = object : ViewModelProvider.Factory {
+        override fun <T : ViewModel> create(modelClass: Class<T>): T {
+            @Suppress("UNCHECKED_CAST")
+            return StockSearchViewModel(StockRepository()) as T
         }
     }
-    
-    private val stockSearchViewModel2: StockSearchViewModel by viewModels {
-        object : ViewModelProvider.Factory {
-            override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                @Suppress("UNCHECKED_CAST")
-                return StockSearchViewModel(StockRepository()) as T
-            }
-        }
-    }
-    
+
+    private val stockSearchViewModel1: StockSearchViewModel by viewModels { stockSearchViewModelFactory }
+
+    private val stockSearchViewModel2: StockSearchViewModel by viewModels { stockSearchViewModelFactory }
+
     private val stockSearchViewModel: StockSearchViewModel by viewModels {
-        object : ViewModelProvider.Factory {
-            override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                @Suppress("UNCHECKED_CAST")
-                return StockSearchViewModel(StockRepository()) as T
-            }
-        }
+        stockSearchViewModelFactory
     }
 
     /**
@@ -122,6 +112,19 @@ class MainActivity : AppCompatActivity() {
         stopAutoRefresh()
     }
 
+    override fun onBackPressed() {
+        // Om vi är i StockDetailFragment, gå tillbaka till listan
+        if (supportFragmentManager.backStackEntryCount > 0) {
+            supportFragmentManager.popBackStack()
+            // Visa RecyclerView igen
+            binding.swipeRefreshLayout.visibility = View.VISIBLE
+            binding.addPairButton.visibility = View.VISIBLE
+        } else {
+            @Suppress("DEPRECATION")
+            super.onBackPressed()
+        }
+    }
+
     private fun initializeUI(): Unit {
         setupRecyclerView()
         setupObservers()
@@ -143,9 +146,11 @@ class MainActivity : AppCompatActivity() {
 
     private fun loadInitialData(): Unit {
         lifecycleScope.launch {
-            // First load from database to show existing data quickly
+            // Load from database first to show existing data quickly
+            // This is safe for non-KeyMetrics items
             viewModel.loadWatchItems()
-            // Then refresh to get latest prices and key metrics
+            // Then immediately refresh to get latest prices and key metrics
+            // This ensures KeyMetrics values are loaded correctly
             viewModel.refreshWatchItems()
         }
     }
@@ -216,10 +221,29 @@ class MainActivity : AppCompatActivity() {
      * Handles loading, success, and error states.
      */
     private fun setupObservers(): Unit {
+        Log.d(TAG, "Setting up observers for watchItemUiState")
         lifecycleScope.launch {
-            viewModel.watchItemUiState.collect { state: UiState<List<WatchItem>> ->
-                Log.d(TAG, "Received UI state update: $state")
-                handleWatchItemUiState(state)
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                Log.d(TAG, "Starting to collect from watchItemUiState StateFlow (lifecycle: STARTED)")
+                viewModel.watchItemUiState.collect { state: UiState<List<WatchItem>> ->
+                    when (state) {
+                        is UiState.Loading -> {
+                            Log.d(TAG, "=== UI STATE: Loading ===")
+                        }
+                        is UiState.Success -> {
+                            Log.d(TAG, "=== UI STATE: Success with ${state.data.size} items ===")
+                            val keyMetricsItems = state.data.filter { it.watchType is WatchType.KeyMetrics }
+                            Log.d(TAG, "KeyMetrics items in UI state: ${keyMetricsItems.size}")
+                            keyMetricsItems.forEach { item ->
+                                Log.d(TAG, "KeyMetrics in UI: ${item.ticker}, value: ${item.currentMetricValue}")
+                            }
+                        }
+                        is UiState.Error -> {
+                            Log.d(TAG, "=== UI STATE: Error - ${state.message} ===")
+                        }
+                    }
+                    handleWatchItemUiState(state)
+                }
             }
         }
     }
@@ -243,9 +267,24 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showWatchItemSuccess(data: List<WatchItem>): Unit {
-        Log.d(TAG, "Received ${data.size} watch items")
+        Log.d(TAG, "=== showWatchItemSuccess() called with ${data.size} watch items ===")
+        val keyMetricsItems = data.filter { it.watchType is WatchType.KeyMetrics }
+        Log.d(TAG, "KeyMetrics items in showWatchItemSuccess: ${keyMetricsItems.size}")
+        keyMetricsItems.forEach { item ->
+            Log.d(TAG, "KeyMetrics item in showWatchItemSuccess: ${item.ticker}, currentMetricValue: ${item.currentMetricValue}")
+        }
+        
         binding.progressBar.visibility = View.GONE
-        (binding.stockPairsList.adapter as GroupedWatchItemAdapter).submitGroupedList(data)
+        Log.d(TAG, "Progress bar hidden")
+        
+        val adapter = binding.stockPairsList.adapter as? GroupedWatchItemAdapter
+        if (adapter != null) {
+            Log.d(TAG, "Adapter found, calling submitGroupedList with ${data.size} items")
+            adapter.submitGroupedList(data)
+            Log.d(TAG, "submitGroupedList called successfully")
+        } else {
+            Log.e(TAG, "CRITICAL: Adapter is null! Cannot update UI")
+        }
     }
 
     private fun showError(message: String): Unit {
@@ -260,8 +299,50 @@ class MainActivity : AppCompatActivity() {
         binding.stockPairsList.adapter = GroupedWatchItemAdapter(
             onDeleteClick = { item: WatchItem -> handleDeleteClick(item) },
             onEditClick = { item: WatchItem -> handleEditClick(item) },
-            onItemClick = { item: WatchItem -> showWatchItemDetailDialog(item) }
+            onItemClick = { item: WatchItem -> handleItemClick(item) }
         )
+    }
+
+    /**
+     * Hanterar klick på WatchItem.
+     * För single-stock alerts öppnas StockDetailFragment, för par-alerts visas dialog.
+     */
+    private fun handleItemClick(item: WatchItem): Unit {
+        when (item.watchType) {
+            is WatchType.PricePair -> {
+                // Par-alerts: visa dialog som tidigare
+                showWatchItemDetailDialog(item)
+            }
+            is WatchType.PriceTarget,
+            is WatchType.PriceRange,
+            is WatchType.ATHBased,
+            is WatchType.DailyMove -> {
+                // Single-stock alerts: öppna StockDetailFragment
+                val symbol = item.ticker ?: return
+                val companyName = item.companyName
+                navigateToStockDetail(symbol, companyName)
+            }
+            else -> {
+                // Andra typer: visa dialog
+                showWatchItemDetailDialog(item)
+            }
+        }
+    }
+
+    /**
+     * Navigerar till StockDetailFragment för en aktie.
+     */
+    private fun navigateToStockDetail(symbol: String, companyName: String? = null): Unit {
+        val fragment = StockDetailFragment.newInstance(symbol, companyName)
+        
+        supportFragmentManager.beginTransaction()
+            .replace(R.id.fragmentContainer, fragment)
+            .addToBackStack("stock_detail")
+            .commit()
+        
+        // Dölj RecyclerView och visa Fragment
+        binding.swipeRefreshLayout.visibility = View.GONE
+        binding.addPairButton.visibility = View.GONE
     }
 
     private fun handleDeleteClick(item: WatchItem): Unit {
@@ -274,8 +355,16 @@ class MainActivity : AppCompatActivity() {
         when (item.watchType) {
             is WatchType.PricePair -> showEditStockPairDialog(item)
             is WatchType.PriceTarget -> showEditPriceTargetDialog(item)
+            is WatchType.PriceRange -> {
+                // PriceRange kan redigeras via StockDetailFragment
+                Toast.makeText(this, "Redigera via aktiedetaljvy", Toast.LENGTH_SHORT).show()
+            }
             is WatchType.KeyMetrics -> showEditKeyMetricsDialog(item)
             is WatchType.ATHBased -> showEditATHBasedDialog(item)
+            is WatchType.DailyMove -> {
+                // DailyMove kan redigeras via StockDetailFragment
+                Toast.makeText(this, "Redigera via aktiedetaljvy", Toast.LENGTH_SHORT).show()
+            }
         }
     }
 
@@ -305,8 +394,14 @@ class MainActivity : AppCompatActivity() {
                 when (selectedType) {
                     is WatchType.PricePair -> showAddStockPairDialog()
                     is WatchType.PriceTarget -> showAddPriceTargetDialog()
+                    is WatchType.PriceRange -> {
+                        Toast.makeText(this, "Skapa via aktiedetaljvy", Toast.LENGTH_SHORT).show()
+                    }
                     is WatchType.KeyMetrics -> showAddKeyMetricsDialog()
                     is WatchType.ATHBased -> showAddATHBasedDialog()
+                    is WatchType.DailyMove -> {
+                        Toast.makeText(this, "Skapa via aktiedetaljvy", Toast.LENGTH_SHORT).show()
+                    }
                 }
             }
             .setNegativeButton("Avbryt", null)
@@ -1131,8 +1226,16 @@ class MainActivity : AppCompatActivity() {
         when (item.watchType) {
             is WatchType.PricePair -> showPricePairDetail(dialogView, item)
             is WatchType.PriceTarget -> showPriceTargetDetail(dialogView, item)
+            is WatchType.PriceRange -> {
+                // PriceRange hanteras via StockDetailFragment
+                Toast.makeText(this, "Redigera via aktiedetaljvy", Toast.LENGTH_SHORT).show()
+            }
             is WatchType.KeyMetrics -> showKeyMetricsDetail(dialogView, item)
             is WatchType.ATHBased -> showATHBasedDetail(dialogView, item)
+            is WatchType.DailyMove -> {
+                // DailyMove hanteras via StockDetailFragment
+                Toast.makeText(this, "Redigera via aktiedetaljvy", Toast.LENGTH_SHORT).show()
+            }
         }
 
         MaterialAlertDialogBuilder(this)
@@ -1289,6 +1392,14 @@ class MainActivity : AppCompatActivity() {
                         item.copy(
                             watchType = WatchType.PriceTarget(targetPrice, direction)
                         )
+                    }
+                    is WatchType.PriceRange -> {
+                        // PriceRange hanteras via StockDetailFragment
+                        item
+                    }
+                    is WatchType.DailyMove -> {
+                        // DailyMove hanteras via StockDetailFragment
+                        item
                     }
                     is WatchType.KeyMetrics -> {
                         val metricTypeInput = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.detailMetricType)

@@ -94,6 +94,14 @@ object YahooFinanceService {
         .readTimeout(15, TimeUnit.SECONDS)
         .build()
     
+    // Separate client with shorter timeout for cookie/crumb fetching
+    private val cookieClient = OkHttpClient.Builder()
+        .cookieJar(cookieJar)
+        .connectTimeout(2, TimeUnit.SECONDS) // Reduced from 5s to 2s
+        .readTimeout(2, TimeUnit.SECONDS) // Reduced from 5s to 2s
+        .writeTimeout(2, TimeUnit.SECONDS) // Reduced from 5s to 2s
+        .build()
+    
     private val retrofit = Retrofit.Builder()
         .baseUrl(BASE_URL)
         .client(client)
@@ -104,6 +112,12 @@ object YahooFinanceService {
 
     private var crumb: String? = null
     private var isFetchingCrumb = false
+    
+    // Circuit breaker for Yahoo Finance
+    private var consecutiveFailures = 0
+    private const val MAX_CONSECUTIVE_FAILURES = 3
+    private var lastFailureTime = 0L
+    private const val FAILURE_COOLDOWN_MS = 60000L // 1 minute cooldown after failures
 
     private suspend fun ensureCrumb() {
         if (crumb != null) return
@@ -119,40 +133,63 @@ object YahooFinanceService {
 
         isFetchingCrumb = true
         try {
-            // Step 1: Get Cookie from main page
-            Log.d(TAG, "Fetching cookie...")
-            val cookieRequest = Request.Builder()
-                .url("https://fc.yahoo.com")
-                .addHeader("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
-                .build()
-            
-            // We just need to make the request, the CookieJar will handle the Set-Cookie response
-            val cookieResponse = client.newCall(cookieRequest).execute()
-            cookieResponse.close()
+            // Step 1: Get Cookie from main page (optional - skip if it fails)
+            try {
+                Log.d(TAG, "Fetching cookie...")
+                val cookieRequest = Request.Builder()
+                    .url("https://fc.yahoo.com")
+                    .addHeader("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+                    .build()
+                
+                Log.d(TAG, "About to execute cookie request to https://fc.yahoo.com")
+                val cookieResponse = cookieClient.newCall(cookieRequest).execute()
+                Log.d(TAG, "Cookie response received: ${cookieResponse.code} ${cookieResponse.message}")
+                
+                if (cookieResponse.isSuccessful || cookieResponse.code == 404) {
+                    // 404 is acceptable - cookie might already be set or URL changed
+                    Log.d(TAG, "Cookie request completed (status: ${cookieResponse.code})")
+                } else {
+                    Log.w(TAG, "Cookie request failed with status: ${cookieResponse.code}, continuing anyway")
+                }
+                cookieResponse.close()
+            } catch (e: java.net.SocketTimeoutException) {
+                Log.w(TAG, "Cookie request timed out after 5 seconds, continuing without cookie")
+            } catch (e: Exception) {
+                Log.w(TAG, "Cookie request failed: ${e.message}, continuing anyway")
+            }
 
-            // Step 2: Get Crumb
+            // Step 2: Get Crumb (required)
             Log.d(TAG, "Fetching crumb...")
             val crumbRequest = Request.Builder()
                 .url("https://query1.finance.yahoo.com/v1/test/getcrumb")
                 .addHeader("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
                 .build()
 
-            val crumbResponse = client.newCall(crumbRequest).execute()
-            if (crumbResponse.isSuccessful) {
-                val fetchedCrumb = crumbResponse.body?.string()
-                if (!fetchedCrumb.isNullOrBlank()) {
-                    crumb = fetchedCrumb
-                    Log.d(TAG, "Successfully fetched crumb: $crumb")
+            try {
+                Log.d(TAG, "About to execute crumb request to https://query1.finance.yahoo.com/v1/test/getcrumb")
+                val crumbResponse = cookieClient.newCall(crumbRequest).execute()
+                Log.d(TAG, "Crumb response received: ${crumbResponse.code} ${crumbResponse.message}")
+                
+                if (crumbResponse.isSuccessful) {
+                    val fetchedCrumb = crumbResponse.body?.string()
+                    if (!fetchedCrumb.isNullOrBlank()) {
+                        crumb = fetchedCrumb.trim()
+                        Log.d(TAG, "Successfully fetched crumb: $crumb")
+                    } else {
+                        Log.e(TAG, "Crumb response was empty")
+                    }
                 } else {
-                    Log.e(TAG, "Crumb response was empty")
+                    Log.e(TAG, "Failed to get crumb: ${crumbResponse.code} - ${crumbResponse.message}")
                 }
-            } else {
-                Log.e(TAG, "Failed to get crumb: ${crumbResponse.code} - ${crumbResponse.message}")
+                crumbResponse.close()
+            } catch (e: java.net.SocketTimeoutException) {
+                Log.e(TAG, "Crumb request timed out after 5 seconds")
+            } catch (e: Exception) {
+                Log.e(TAG, "Error fetching crumb: ${e.message}", e)
             }
-            crumbResponse.close()
 
         } catch (e: Exception) {
-            Log.e(TAG, "Error fetching crumb: ${e.message}", e)
+            Log.e(TAG, "Unexpected error in ensureCrumb: ${e.message}", e)
         } finally {
             isFetchingCrumb = false
         }
@@ -229,15 +266,33 @@ object YahooFinanceService {
     }
 
     suspend fun getKeyMetric(symbol: String, metricType: WatchType.MetricType): Double? = withContext(Dispatchers.IO) {
-        // Try Yahoo Finance first
+        // Try Yahoo Finance first, unless circuit breaker is open
         try {
+            if (consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {
+                val timeSinceLastFailure = System.currentTimeMillis() - lastFailureTime
+                if (timeSinceLastFailure < FAILURE_COOLDOWN_MS) {
+                    Log.w(TAG, "Yahoo Finance circuit breaker open (failures: $consecutiveFailures), skipping to fallback")
+                    throw Exception("Circuit breaker open")
+                } else {
+                    Log.i(TAG, "Circuit breaker cooldown expired, retrying Yahoo Finance")
+                    consecutiveFailures = 0
+                }
+            }
+            
             Log.d(TAG, "Fetching key metric ${metricType.name} for symbol: $symbol from Yahoo Finance")
             ensureCrumb()
+            
+            if (crumb == null) {
+                Log.w(TAG, "Crumb is null after ensureCrumb(), will try without crumb (may get 401)")
+            }
             
             // Construct URL with crumb if available
             var url = "https://query2.finance.yahoo.com/v10/finance/quoteSummary/$symbol?modules=summaryDetail"
             if (crumb != null) {
                 url += "&crumb=$crumb"
+                Log.d(TAG, "Using crumb in request: $crumb")
+            } else {
+                Log.d(TAG, "Making request without crumb (may fail with 401)")
             }
 
             val request = Request.Builder()
@@ -245,9 +300,14 @@ object YahooFinanceService {
                 .addHeader("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
                 .build()
                 
+            Log.d(TAG, "Making request to Yahoo Finance API: $url")
             val response = client.newCall(request).execute()
+            Log.d(TAG, "Yahoo Finance API response received: ${response.code} ${response.message}")
+            
             if (response.isSuccessful) {
                 val responseBody = response.body?.string()
+                Log.d(TAG, "Response body length: ${responseBody?.length ?: 0}")
+                
                 if (responseBody != null) {
                     val jsonObject = JSONObject(responseBody)
                     val quoteSummary = jsonObject.optJSONObject("quoteSummary")
@@ -255,6 +315,7 @@ object YahooFinanceService {
                     val summaryDetail = result?.optJSONObject("summaryDetail")
                     
                     if (summaryDetail != null) {
+                        Log.d(TAG, "Found summaryDetail in response")
                         val value = when (metricType) {
                             WatchType.MetricType.PE_RATIO -> {
                                 val pe = summaryDetail.optJSONObject("trailingPE")?.optDouble("raw")
@@ -276,18 +337,31 @@ object YahooFinanceService {
                         if (value != null && !value.isNaN() && value > 0) {
                             Log.d(TAG, "Successfully fetched ${metricType.name} for $symbol from Yahoo: $value")
                             return@withContext value
+                        } else {
+                            Log.w(TAG, "Could not extract ${metricType.name} from Yahoo response (value: $value)")
                         }
+                    } else {
+                        Log.w(TAG, "No summaryDetail found in Yahoo response. Result: ${result != null}, quoteSummary: ${quoteSummary != null}")
                     }
+                } else {
+                    Log.w(TAG, "Yahoo Finance response body is null")
                 }
             } else {
                 Log.w(TAG, "Yahoo Finance API Error: ${response.code} - ${response.message}")
                  // If 401, maybe crumb expired? Reset for next time
                 if (response.code == 401) {
+                    Log.w(TAG, "Yahoo Finance returned 401, resetting crumb")
                     crumb = null
                 }
             }
+            response.close()
         } catch (e: Exception) {
             Log.e(TAG, "Error fetching key metric ${metricType.name} for $symbol from Yahoo: ${e.message}")
+            if (e.message != "Circuit breaker open") {
+                consecutiveFailures++
+                lastFailureTime = System.currentTimeMillis()
+                Log.w(TAG, "Yahoo failure count: $consecutiveFailures")
+            }
         }
 
         // Fallback to Finnhub
@@ -347,6 +421,81 @@ object YahooFinanceService {
             null
         } catch (e: Exception) {
             Log.e(TAG, "Error fetching ATH for $symbol: ${e.message}", e)
+            null
+        }
+    }
+
+    /**
+     * Hämtar föregående stängningspris för en aktie.
+     * Används för att beräkna dagsförändring i procent.
+     * 
+     * @param symbol Aktiens symbol
+     * @return Föregående stängningspris, eller null om det inte kunde hämtas
+     */
+    suspend fun getPreviousClose(symbol: String): Double? = withContext(Dispatchers.IO) {
+        try {
+            Log.d(TAG, "Fetching previous close for symbol: $symbol")
+            val response = api.getStockPrice(symbol)
+            
+            if (response.chart?.error != null) {
+                Log.e(TAG, "API Error for $symbol: ${response.chart.error.description}")
+                return@withContext null
+            }
+            
+            val result = response.chart?.result?.firstOrNull()
+            if (result == null) {
+                Log.e(TAG, "No result found for $symbol")
+                return@withContext null
+            }
+            
+            val meta = result.meta
+            if (meta == null) {
+                Log.e(TAG, "No meta found for $symbol")
+                return@withContext null
+            }
+            
+            val previousClose = meta.regularMarketPreviousClose
+            if (previousClose != null && !previousClose.isNaN() && previousClose > 0) {
+                Log.d(TAG, "Got previous close for $symbol: $previousClose")
+                return@withContext previousClose
+            }
+            
+            Log.w(TAG, "Could not find previous close for $symbol")
+            null
+        } catch (e: Exception) {
+            Log.e(TAG, "Error fetching previous close for $symbol: ${e.message}", e)
+            null
+        }
+    }
+
+    /**
+     * Beräknar dagsförändring i procent för en aktie.
+     * Formel: ((currentPrice - previousClose) / previousClose) * 100
+     * 
+     * @param symbol Aktiens symbol
+     * @return Dagsförändring i procent (positivt värde = upp, negativt värde = ned), eller null om det inte kunde beräknas
+     */
+    suspend fun getDailyChangePercent(symbol: String): Double? = withContext(Dispatchers.IO) {
+        try {
+            Log.d(TAG, "Calculating daily change percent for symbol: $symbol")
+            val currentPrice = getStockPrice(symbol)
+            val previousClose = getPreviousClose(symbol)
+            
+            if (currentPrice == null || previousClose == null) {
+                Log.w(TAG, "Could not calculate daily change for $symbol: currentPrice=$currentPrice, previousClose=$previousClose")
+                return@withContext null
+            }
+            
+            if (previousClose <= 0) {
+                Log.w(TAG, "Previous close is invalid for $symbol: $previousClose")
+                return@withContext null
+            }
+            
+            val changePercent = ((currentPrice - previousClose) / previousClose) * 100
+            Log.d(TAG, "Daily change for $symbol: $changePercent% (current: $currentPrice, previous: $previousClose)")
+            return@withContext changePercent
+        } catch (e: Exception) {
+            Log.e(TAG, "Error calculating daily change percent for $symbol: ${e.message}", e)
             null
         }
     }

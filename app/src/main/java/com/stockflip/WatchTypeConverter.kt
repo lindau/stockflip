@@ -13,6 +13,8 @@ class WatchTypeConverter {
             is WatchType.PriceTarget -> "PRICE_TARGET|${watchType.targetPrice}|${watchType.direction.name}"
             is WatchType.KeyMetrics -> "KEY_METRICS|${watchType.metricType.name}|${watchType.targetValue}|${watchType.direction.name}"
             is WatchType.ATHBased -> "ATH_BASED|${watchType.dropType.name}|${watchType.dropValue}"
+            is WatchType.PriceRange -> "PRICE_RANGE|${watchType.minPrice}|${watchType.maxPrice}"
+            is WatchType.DailyMove -> "DAILY_MOVE|${watchType.percentThreshold}|${watchType.direction.name}"
         }
     }
 
@@ -36,6 +38,14 @@ class WatchTypeConverter {
             "ATH_BASED" -> WatchType.ATHBased(
                 dropType = WatchType.DropType.valueOf(parts[1]),
                 dropValue = parts[2].toDouble()
+            )
+            "PRICE_RANGE" -> WatchType.PriceRange(
+                minPrice = parts[1].toDouble(),
+                maxPrice = parts[2].toDouble()
+            )
+            "DAILY_MOVE" -> WatchType.DailyMove(
+                percentThreshold = parts[1].toDouble(),
+                direction = WatchType.DailyMoveDirection.valueOf(parts[2])
             )
             else -> throw IllegalArgumentException("Unknown watch type: ${parts[0]}")
         }
