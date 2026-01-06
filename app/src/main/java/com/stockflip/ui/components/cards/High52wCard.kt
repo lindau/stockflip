@@ -1,5 +1,6 @@
 package com.stockflip.ui.components.cards
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -10,9 +11,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.stockflip.WatchItem
@@ -23,6 +27,10 @@ import com.stockflip.ui.components.StatusStripe
 fun High52wCard(
     item: WatchItem,
     priceFormat: (Double) -> String,
+    showStatus: Boolean = false,
+    showControls: Boolean = false,
+    onToggleActive: (() -> Unit)? = null,
+    onClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     val athBased = item.watchType as? WatchType.ATHBased ?: return
@@ -43,7 +51,9 @@ fun High52wCard(
     }
 
     Card(
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier
+            .fillMaxWidth()
+            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
         ),
@@ -59,24 +69,34 @@ fun High52wCard(
                     .fillMaxWidth()
                     .padding(16.dp)
             ) {
-                // Title
-                Text(
-                    text = "${item.companyName ?: item.ticker} (${item.ticker})",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                
-                // 52w high info
-                Text(
-                    text = "52-veckorshögsta: ${priceFormat(item.currentATH)} | $currentDropText",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
+                // Header row med stock name och switch i övre högra hörnet
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.Top
+                ) {
+                    // Stock name
+                    Text(
+                        text = "${item.companyName ?: item.ticker} (${item.ticker})",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.weight(1f)
+                    )
+                    
+                    // Toggle switch - övre högra hörnet
+                    if (showControls && onToggleActive != null) {
+                        Switch(
+                            checked = item.isActive,
+                            onCheckedChange = { onToggleActive() },
+                            modifier = Modifier.scale(0.7f) // Gör switchen mindre
+                        )
+                    }
+                }
                 
                 Spacer(modifier = Modifier.height(12.dp))
                 
-                // Target text
+                // Target text - aligned to the right
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.End
@@ -91,6 +111,22 @@ fun High52wCard(
                         }
                     )
                 }
+                
+                // Status text - visas när showStatus är true
+                if (showStatus) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.End
+                    ) {
+                        Text(
+                            text = com.stockflip.ui.components.cards.formatAlertStatus(item),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+                
             }
         }
     }

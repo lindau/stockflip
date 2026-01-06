@@ -70,6 +70,7 @@ class WatchItemAdapter(
                 is WatchType.ATHBased -> bindATHBased(item)
                 is WatchType.PriceRange -> bindPriceRange(item)
                 is WatchType.DailyMove -> bindDailyMove(item)
+                is WatchType.Combined -> bindCombined(item)
             }
         }
 
@@ -360,6 +361,43 @@ class WatchItemAdapter(
             binding.root.setCardBackgroundColor(surfaceColor)
         }
 
+        private fun bindCombined(item: WatchItem) {
+            // Hide pair fields, show single stock layout
+            binding.singleStockLayout.visibility = android.view.View.VISIBLE
+            binding.pairStockLayout1.visibility = android.view.View.GONE
+            binding.pairStockLayout2.visibility = android.view.View.GONE
+            binding.divider1.visibility = android.view.View.GONE
+            binding.divider2.visibility = android.view.View.GONE
+
+            val combined = item.watchType as WatchType.Combined
+
+            // Get symbols from expression
+            val symbols = combined.expression.getSymbols()
+            val firstSymbol = symbols.firstOrNull() ?: item.ticker ?: "N/A"
+            
+            // Display name - show first symbol or count
+            val displayName = if (symbols.size == 1) {
+                "${item.companyName ?: firstSymbol} ($firstSymbol)"
+            } else {
+                "${symbols.size} aktier: ${symbols.joinToString(", ")}"
+            }
+            
+            binding.singleStockName.text = displayName
+            
+            // Show expression description
+            val expressionDescription = combined.expression.getDescription()
+            binding.singlePriceInfo.text = "Villkor: $expressionDescription"
+
+            // Target info (visa "Kombinerat larm")
+            binding.priceDifference.text = "Kombinerat larm"
+
+            // Hide the notification chip
+            binding.notificationInfo.visibility = android.view.View.GONE
+
+            // Combined alerts evalueras separat, så vi visar inte trigger-status här
+            // (kan utökas senare)
+        }
+
         private fun buildNotificationMessage(item: WatchItem, priceDiff: Double?): String {
             return when (item.watchType) {
                 is WatchType.PricePair -> {
@@ -421,6 +459,10 @@ class WatchItemAdapter(
                         WatchType.DailyMoveDirection.BOTH -> "båda"
                     }
                     "${item.companyName ?: item.ticker} har rört sig ${priceFormat.format(dailyMove.percentThreshold)}% $directionText idag"
+                }
+                is WatchType.Combined -> {
+                    val combined = item.watchType
+                    "Kombinerat larm triggat: ${combined.expression.getDescription()}"
                 }
             }
         }

@@ -72,6 +72,14 @@ sealed class WatchType {
         }
     }
 
+    /**
+     * Watch for combined conditions using logical operators (AND, OR, NOT).
+     * Enligt PRD Fas 3: "kombinerade larm med flera villkor"
+     */
+    data class Combined(
+        val expression: AlertExpression
+    ) : WatchType()
+
     enum class PriceDirection {
         ABOVE,  // Alert when price goes above target
         BELOW   // Alert when price goes below target

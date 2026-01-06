@@ -9,14 +9,15 @@ import androidx.room.TypeConverters
 import androidx.sqlite.db.SupportSQLiteDatabase
 
 @Database(
-    entities = [StockPair::class, WatchItem::class],
-    version = 7,
+    entities = [StockPair::class, WatchItem::class, MetricHistoryEntity::class],
+    version = 8,
     exportSchema = true
 )
 @TypeConverters(WatchTypeConverter::class)
 abstract class StockPairDatabase : RoomDatabase() {
     abstract fun stockPairDao(): StockPairDao
     abstract fun watchItemDao(): WatchItemDao
+    abstract fun metricHistoryDao(): MetricHistoryDao
 
     companion object {
         private val MIGRATION_4_5 = object : Migration(4, 5) {
@@ -100,6 +101,65 @@ abstract class StockPairDatabase : RoomDatabase() {
             }
         }
 
+        private val MIGRATION_7_8 = object : Migration(7, 8) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                try {
+                    // Kontrollera om tabellen redan finns (för säkerhets skull)
+                    val cursor = db.query("SELECT name FROM sqlite_master WHERE type='table' AND name='metric_history'")
+                    val tableExists = cursor.moveToFirst()
+                    cursor.close()
+                    
+                    if (!tableExists) {
+                        // Skapa metric_history tabell för Fas 2 - historisk nyckeltal-data
+                        db.execSQL("""
+                            CREATE TABLE metric_history (
+                                id TEXT PRIMARY KEY NOT NULL,
+                                symbol TEXT NOT NULL,
+                                metricType TEXT NOT NULL,
+                                date INTEGER NOT NULL,
+                                value REAL NOT NULL
+                            )
+                        """)
+                    }
+                    
+                    // Skapa index för snabbare queries (IF NOT EXISTS hanteras av SQLite)
+                    try {
+                        db.execSQL("""
+                            CREATE INDEX IF NOT EXISTS index_metric_history_symbol_metricType 
+                            ON metric_history(symbol, metricType)
+                        """)
+                    } catch (e: Exception) {
+                        // Index kan redan finnas, ignorera fel
+                    }
+                    
+                    try {
+                        db.execSQL("""
+                            CREATE INDEX IF NOT EXISTS index_metric_history_date 
+                            ON metric_history(date)
+                        """)
+                    } catch (e: Exception) {
+                        // Index kan redan finnas, ignorera fel
+                    }
+                } catch (e: Exception) {
+                    // Om något går fel, försök skapa tabellen ändå
+                    android.util.Log.e("StockPairDatabase", "Error in migration 7->8: ${e.message}", e)
+                    try {
+                        db.execSQL("""
+                            CREATE TABLE IF NOT EXISTS metric_history (
+                                id TEXT PRIMARY KEY NOT NULL,
+                                symbol TEXT NOT NULL,
+                                metricType TEXT NOT NULL,
+                                date INTEGER NOT NULL,
+                                value REAL NOT NULL
+                            )
+                        """)
+                    } catch (e2: Exception) {
+                        android.util.Log.e("StockPairDatabase", "Failed to create metric_history table: ${e2.message}", e2)
+                    }
+                }
+            }
+        }
+
         @Volatile
         private var INSTANCE: StockPairDatabase? = null
 
@@ -110,10 +170,54 @@ abstract class StockPairDatabase : RoomDatabase() {
                     StockPairDatabase::class.java,
                     "stock_pair_database"
                 )
-                .addMigrations(MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7)
+                .addMigrations(MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8)
+                .fallbackToDestructiveMigrationOnDowngrade()
+                .addCallback(object : RoomDatabase.Callback() {
+                    override fun onOpen(db: SupportSQLiteDatabase) {
+                        super.onOpen(db)
+                        // Säkerställ att metric_history-tabellen finns även om migrationen misslyckades
+                        ensureMetricHistoryTableExists(db)
+                    }
+                })
                 .build()
                 INSTANCE = instance
                 instance
+            }
+        }
+        
+        /**
+         * Säkerställer att metric_history-tabellen finns.
+         * Anropas vid databas-öppning för att hantera edge cases där migrationen misslyckades.
+         */
+        private fun ensureMetricHistoryTableExists(db: SupportSQLiteDatabase) {
+            try {
+                val cursor = db.query("SELECT name FROM sqlite_master WHERE type='table' AND name='metric_history'")
+                val tableExists = cursor.moveToFirst()
+                cursor.close()
+                
+                if (!tableExists) {
+                    android.util.Log.w("StockPairDatabase", "metric_history table missing, creating it now")
+                    db.execSQL("""
+                        CREATE TABLE IF NOT EXISTS metric_history (
+                            id TEXT PRIMARY KEY NOT NULL,
+                            symbol TEXT NOT NULL,
+                            metricType TEXT NOT NULL,
+                            date INTEGER NOT NULL,
+                            value REAL NOT NULL
+                        )
+                    """)
+                    db.execSQL("""
+                        CREATE INDEX IF NOT EXISTS index_metric_history_symbol_metricType 
+                        ON metric_history(symbol, metricType)
+                    """)
+                    db.execSQL("""
+                        CREATE INDEX IF NOT EXISTS index_metric_history_date 
+                        ON metric_history(date)
+                    """)
+                    android.util.Log.d("StockPairDatabase", "metric_history table created successfully")
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("StockPairDatabase", "Error ensuring metric_history table exists: ${e.message}", e)
             }
         }
     }

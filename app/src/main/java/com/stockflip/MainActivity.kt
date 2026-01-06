@@ -39,6 +39,12 @@ import java.util.*
 import com.stockflip.viewmodel.StockSearchViewModel
 import com.stockflip.repository.StockRepository
 import com.stockflip.repository.SearchState
+import com.stockflip.repository.MetricHistoryRepository
+import com.stockflip.MetricHistoryService
+import com.stockflip.ui.presets.MetricPresets
+import com.stockflip.ui.presets.PresetType
+import android.widget.ProgressBar
+import androidx.cardview.widget.CardView
 
 /**
  * Main activity for the StockFlip application.
@@ -81,6 +87,13 @@ class MainActivity : AppCompatActivity() {
 
     private val stockSearchViewModel: StockSearchViewModel by viewModels {
         stockSearchViewModelFactory
+    }
+
+    // MetricHistoryService för att hämta historisk data
+    private val metricHistoryService: MetricHistoryService by lazy {
+        val database = StockPairDatabase.getDatabase(applicationContext)
+        val repository = MetricHistoryRepository(database.metricHistoryDao())
+        MetricHistoryService(repository)
     }
 
     /**
@@ -134,6 +147,9 @@ class MainActivity : AppCompatActivity() {
 
     private fun initializeUpdates() {
         StockPriceUpdater.startPeriodicUpdate(this)
+        
+        // Schemalägg nattlig uppdatering av historik för nyckeltal
+        com.stockflip.workers.MetricHistoryUpdateWorker.scheduleNightlyUpdate(this)
         registerPriceUpdateReceiver()
         StockPriceUpdater.requestBatteryOptimizationExemption(this)
     }
@@ -316,14 +332,15 @@ class MainActivity : AppCompatActivity() {
             is WatchType.PriceTarget,
             is WatchType.PriceRange,
             is WatchType.ATHBased,
-            is WatchType.DailyMove -> {
+            is WatchType.DailyMove,
+            is WatchType.KeyMetrics -> {
                 // Single-stock alerts: öppna StockDetailFragment
                 val symbol = item.ticker ?: return
                 val companyName = item.companyName
                 navigateToStockDetail(symbol, companyName)
             }
-            else -> {
-                // Andra typer: visa dialog
+            is WatchType.Combined -> {
+                // Combined alerts: visa dialog
                 showWatchItemDetailDialog(item)
             }
         }
@@ -365,6 +382,10 @@ class MainActivity : AppCompatActivity() {
                 // DailyMove kan redigeras via StockDetailFragment
                 Toast.makeText(this, "Redigera via aktiedetaljvy", Toast.LENGTH_SHORT).show()
             }
+            is WatchType.Combined -> {
+                // Combined alerts kan inte redigeras ännu
+                Toast.makeText(this, "Redigering av kombinerade larm kommer snart", Toast.LENGTH_SHORT).show()
+            }
         }
     }
 
@@ -401,6 +422,9 @@ class MainActivity : AppCompatActivity() {
                     is WatchType.ATHBased -> showAddATHBasedDialog()
                     is WatchType.DailyMove -> {
                         Toast.makeText(this, "Skapa via aktiedetaljvy", Toast.LENGTH_SHORT).show()
+                    }
+                    is WatchType.Combined -> {
+                        showAddCombinedAlertDialog()
                     }
                 }
             }
@@ -480,8 +504,10 @@ class MainActivity : AppCompatActivity() {
     /**
      * Shows a dialog for adding a new price target watch.
      * Handles user input validation and API calls for stock information.
+     * 
+     * @param prefillSymbol Optional symbol to prefill in the ticker input field
      */
-    private fun showAddPriceTargetDialog(): Unit {
+    private fun showAddPriceTargetDialog(prefillSymbol: String? = null): Unit {
         val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_add_price_target, null)
         val tickerInput = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.tickerInput)
         val targetPriceInput = dialogView.findViewById<TextInputEditText>(R.id.targetPriceInput)
@@ -493,6 +519,20 @@ class MainActivity : AppCompatActivity() {
 
         // Set up search functionality
         setupStockSearch(tickerInput, adapter, stockSearchViewModel)
+
+        // Prefill symbol if provided
+        if (prefillSymbol != null) {
+            tickerInput.setText(prefillSymbol, false)
+            // Try to find and select the stock in the adapter
+            for (i in 0 until adapter.count) {
+                val item = adapter.getItem(i)
+                if (item?.symbol == prefillSymbol) {
+                    selectedStock = item
+                    Log.d(TAG, "Prefilled stock: $selectedStock")
+                    break
+                }
+            }
+        }
 
         // Set up item click listener
         tickerInput.setOnItemClickListener { _, _, position, _ ->
@@ -556,22 +596,57 @@ class MainActivity : AppCompatActivity() {
     /**
      * Shows a dialog for adding a new key metrics watch.
      * Handles user input validation and API calls for stock information.
+     * 
+     * @param prefillSymbol Optional symbol to prefill in the ticker input field
      */
-    private fun showAddKeyMetricsDialog(): Unit {
+    private fun showAddKeyMetricsDialog(prefillSymbol: String? = null): Unit {
         val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_add_key_metrics, null)
         val tickerInput = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.tickerInput)
         val metricTypeInput = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.metricTypeInput)
         val targetValueInput = dialogView.findViewById<TextInputEditText>(R.id.targetValueInput)
         val directionInput = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.directionInput)
+        
+        // History UI elements
+        val historyCard = dialogView.findViewById<CardView>(R.id.historyCard)
+        val currentValueText = dialogView.findViewById<TextView>(R.id.currentValueText)
+        val historyOneYear = dialogView.findViewById<TextView>(R.id.historyOneYear)
+        val historyThreeYear = dialogView.findViewById<TextView>(R.id.historyThreeYear)
+        val historyFiveYear = dialogView.findViewById<TextView>(R.id.historyFiveYear)
+        val presetBelow5YearAvg = dialogView.findViewById<com.google.android.material.button.MaterialButton>(R.id.presetBelow5YearAvg)
+        val presetBelow3YearMin = dialogView.findViewById<com.google.android.material.button.MaterialButton>(R.id.presetBelow3YearMin)
+        val presetOneYearAvgMinus20 = dialogView.findViewById<com.google.android.material.button.MaterialButton>(R.id.presetOneYearAvgMinus20)
 
         // Set up adapter for stock search
         val adapter = createStockAdapter()
         tickerInput.setAdapter(adapter)
         setupStockSearch(tickerInput, adapter, stockSearchViewModel)
 
+        // Prefill symbol if provided
+        if (prefillSymbol != null) {
+            tickerInput.setText(prefillSymbol, false)
+            // Try to find and select the stock in the adapter
+            for (i in 0 until adapter.count) {
+                val item = adapter.getItem(i)
+                if (item?.symbol == prefillSymbol) {
+                    selectedStock = item
+                    Log.d(TAG, "Prefilled stock: $selectedStock")
+                    break
+                }
+            }
+        }
+
+        var selectedMetricType: WatchType.MetricType? = null
+        var historySummary: com.stockflip.MetricHistorySummary? = null
+
         tickerInput.setOnItemClickListener { _, _, position, _ ->
             selectedStock = adapter.getItem(position)
             Log.d(TAG, "Selected stock: $selectedStock")
+            // Load history when stock is selected
+            if (selectedStock != null && selectedMetricType != null) {
+                loadHistoryForDialog(selectedStock!!.symbol, selectedMetricType!!, historyCard, currentValueText, historyOneYear, historyThreeYear, historyFiveYear, presetBelow5YearAvg, presetBelow3YearMin, presetOneYearAvgMinus20) { summary ->
+                    historySummary = summary
+                }
+            }
         }
 
         // Set up metric type dropdown
@@ -579,7 +654,39 @@ class MainActivity : AppCompatActivity() {
         val metricTypeAdapter = ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line, metricTypes)
         metricTypeInput.setAdapter(metricTypeAdapter)
         metricTypeInput.setOnItemClickListener { _, _, position, _ ->
+            selectedMetricType = when (position) {
+                0 -> WatchType.MetricType.PE_RATIO
+                1 -> WatchType.MetricType.PS_RATIO
+                2 -> WatchType.MetricType.DIVIDEND_YIELD
+                else -> null
+            }
             Log.d(TAG, "Selected metric type: ${metricTypes[position]}")
+            // Load history when metric type is selected
+            if (selectedStock != null && selectedMetricType != null) {
+                loadHistoryForDialog(selectedStock!!.symbol, selectedMetricType!!, historyCard, currentValueText, historyOneYear, historyThreeYear, historyFiveYear, presetBelow5YearAvg, presetBelow3YearMin, presetOneYearAvgMinus20) { summary ->
+                    historySummary = summary
+                }
+            }
+        }
+        
+        // Set up preset buttons
+        presetBelow5YearAvg.setOnClickListener {
+            historySummary?.let { summary ->
+                val value = MetricPresets.getPresetValue(PresetType.BELOW_5_YEAR_AVG, summary)
+                value?.let { targetValueInput.setText(String.format(Locale.getDefault(), "%.2f", it)) }
+            }
+        }
+        presetBelow3YearMin.setOnClickListener {
+            historySummary?.let { summary ->
+                val value = MetricPresets.getPresetValue(PresetType.BELOW_3_YEAR_MIN, summary)
+                value?.let { targetValueInput.setText(String.format(Locale.getDefault(), "%.2f", it)) }
+            }
+        }
+        presetOneYearAvgMinus20.setOnClickListener {
+            historySummary?.let { summary ->
+                val value = MetricPresets.getPresetValue(PresetType.ONE_YEAR_AVG_MINUS_20, summary)
+                value?.let { targetValueInput.setText(String.format(Locale.getDefault(), "%.2f", it)) }
+            }
         }
 
         // Set up direction dropdown
@@ -649,7 +756,12 @@ class MainActivity : AppCompatActivity() {
      * Shows a dialog for adding a new ATH-based watch.
      * Handles user input validation and API calls for stock information.
      */
-    private fun showAddATHBasedDialog(): Unit {
+    /**
+     * Shows a dialog for adding a new ATH-based watch.
+     * 
+     * @param prefillSymbol Optional symbol to prefill in the ticker input field
+     */
+    private fun showAddATHBasedDialog(prefillSymbol: String? = null): Unit {
         val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_add_ath_based, null)
         val tickerInput = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.tickerInput)
         val dropTypeInput = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.dropTypeInput)
@@ -719,6 +831,232 @@ class MainActivity : AppCompatActivity() {
             }
             .setNegativeButton("Avbryt", null)
             .show()
+    }
+
+    /**
+     * Shows a dialog for adding a new combined alert.
+     * Allows users to create alerts with multiple conditions combined with AND/OR.
+     */
+    private fun showAddCombinedAlertDialog(): Unit {
+        val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_add_combined_alert, null)
+        val conditionsRecyclerView = dialogView.findViewById<androidx.recyclerview.widget.RecyclerView>(R.id.conditionsRecyclerView)
+        val addConditionButton = dialogView.findViewById<com.google.android.material.button.MaterialButton>(R.id.addConditionButton)
+        val operatorInput = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.operatorInput)
+        val previewText = dialogView.findViewById<TextView>(R.id.previewText)
+
+        // Setup RecyclerView
+        conditionsRecyclerView.layoutManager = androidx.recyclerview.widget.LinearLayoutManager(this)
+        
+        // Setup stock adapter
+        val stockAdapter = createStockAdapter()
+        
+        // Create condition adapter (lateinit to use in lambdas)
+        lateinit var conditionAdapter: com.stockflip.ui.builders.ConditionBuilderAdapter
+        
+        conditionAdapter = com.stockflip.ui.builders.ConditionBuilderAdapter(
+            stockAdapter = stockAdapter,
+            onStockSelected = { _, _ ->
+                updatePreview(conditionAdapter, operatorInput, previewText)
+            },
+            onConditionTypeChanged = { _, _ ->
+                updatePreview(conditionAdapter, operatorInput, previewText)
+            },
+            onValueChanged = { _, _ ->
+                updatePreview(conditionAdapter, operatorInput, previewText)
+            },
+            onRemove = { position ->
+                conditionAdapter.removeCondition(position)
+                updatePreview(conditionAdapter, operatorInput, previewText)
+            }
+        )
+        
+        conditionsRecyclerView.adapter = conditionAdapter
+
+        // Setup operator dropdown
+        val operators = arrayOf("OCH (AND)", "ELLER (OR)")
+        val operatorAdapter = ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line, operators)
+        operatorInput.setAdapter(operatorAdapter)
+        operatorInput.setText(operators[0], false) // Default to AND
+        operatorInput.setOnItemClickListener { _, _, _, _ ->
+            updatePreview(conditionAdapter, operatorInput, previewText)
+        }
+
+        // Add condition button
+        addConditionButton.setOnClickListener {
+            conditionAdapter.addCondition()
+            updatePreview(conditionAdapter, operatorInput, previewText)
+        }
+
+        // Initial preview
+        updatePreview(conditionAdapter, operatorInput, previewText)
+
+        MaterialAlertDialogBuilder(this)
+            .setTitle("Skapa kombinerat larm")
+            .setView(dialogView)
+            .setPositiveButton("Lägg till") { _, _ ->
+                val conditions = conditionAdapter.getConditions()
+                val operatorStr = operatorInput.text.toString()
+                
+                if (conditions.isEmpty()) {
+                    Toast.makeText(this, "Lägg till minst ett villkor", Toast.LENGTH_SHORT).show()
+                    return@setPositiveButton
+                }
+                
+                // Validate all conditions
+                val validConditions = conditions.filter { 
+                    it.symbol?.isNotEmpty() == true && 
+                    it.value.isNotEmpty() && 
+                    it.value.toDoubleOrNull() != null 
+                }
+                
+                if (validConditions.size != conditions.size) {
+                    Toast.makeText(this, "Alla villkor måste ha aktie och giltigt värde", Toast.LENGTH_SHORT).show()
+                    return@setPositiveButton
+                }
+                
+                // Build AlertExpression
+                val expression = buildAlertExpression(validConditions, operatorStr)
+                if (expression == null) {
+                    Toast.makeText(this, "Kunde inte skapa uttryck", Toast.LENGTH_SHORT).show()
+                    return@setPositiveButton
+                }
+                
+                // Get first symbol for WatchItem
+                val firstSymbol = validConditions.first().symbol ?: return@setPositiveButton
+                
+                lifecycleScope.launch {
+                    try {
+                        binding.progressBar.visibility = View.VISIBLE
+                        
+                        val watchItem = WatchItem(
+                            watchType = WatchType.Combined(expression),
+                            ticker = firstSymbol,
+                            companyName = null // Could be enhanced to fetch company name
+                        )
+                        
+                        viewModel.addWatchItem(watchItem)
+                        binding.progressBar.visibility = View.GONE
+                        Toast.makeText(this@MainActivity, "Kombinerat larm tillagt", Toast.LENGTH_SHORT).show()
+                    } catch (e: Exception) {
+                        binding.progressBar.visibility = View.GONE
+                        Toast.makeText(this@MainActivity, "Kunde inte lägga till kombinerat larm: ${e.message}", Toast.LENGTH_LONG).show()
+                    }
+                }
+            }
+            .setNegativeButton("Avbryt", null)
+            .show()
+    }
+
+    /**
+     * Updates the preview text showing the current expression.
+     */
+    private fun updatePreview(
+        adapter: com.stockflip.ui.builders.ConditionBuilderAdapter,
+        operatorInput: MaterialAutoCompleteTextView,
+        previewText: TextView
+    ) {
+        val conditions = adapter.getConditions()
+        if (conditions.isEmpty()) {
+            previewText.text = "Lägg till minst ett villkor"
+            previewText.setTextColor(getColor(android.R.color.darker_gray))
+            return
+        }
+        
+        val expression = buildAlertExpression(conditions, operatorInput.text.toString())
+        if (expression != null) {
+            previewText.text = expression.getDescription()
+            previewText.setTextColor(getColor(android.R.color.black))
+        } else {
+            previewText.text = "Ofullständiga villkor"
+            previewText.setTextColor(getColor(android.R.color.holo_red_dark))
+        }
+    }
+
+    /**
+     * Builds an AlertExpression from a list of conditions and an operator.
+     */
+    private fun buildAlertExpression(
+        conditions: List<com.stockflip.ui.builders.ConditionBuilderAdapter.ConditionData>,
+        operatorStr: String
+    ): AlertExpression? {
+        if (conditions.isEmpty()) return null
+        
+        // Convert conditions to AlertRules
+        val rules = conditions.mapNotNull { condition ->
+            buildAlertRule(condition)
+        }
+        
+        if (rules.isEmpty()) return null
+        
+        // Build expression based on operator
+        val isAnd = operatorStr.contains("OCH") || operatorStr.contains("AND")
+        
+        // Start with first rule
+        var expression: AlertExpression = AlertExpression.Single(rules.first())
+        
+        // Combine with remaining rules
+        for (i in 1 until rules.size) {
+            val nextExpression = AlertExpression.Single(rules[i])
+            expression = if (isAnd) {
+                AlertExpression.And(expression, nextExpression)
+            } else {
+                AlertExpression.Or(expression, nextExpression)
+            }
+        }
+        
+        return expression
+    }
+
+    /**
+     * Builds an AlertRule from a ConditionData.
+     */
+    private fun buildAlertRule(condition: com.stockflip.ui.builders.ConditionBuilderAdapter.ConditionData): AlertRule? {
+        val symbol = condition.symbol ?: return null
+        val value = condition.value.toDoubleOrNull() ?: return null
+        
+        return when (condition.conditionType) {
+            "Pris" -> {
+                val comparisonType = when (condition.direction) {
+                    "Över" -> AlertRule.PriceComparisonType.ABOVE
+                    "Under" -> AlertRule.PriceComparisonType.BELOW
+                    else -> return null
+                }
+                AlertRule.SinglePrice(symbol, comparisonType, value)
+            }
+            "P/E-tal" -> {
+                val direction = when (condition.direction) {
+                    "Över" -> AlertRule.PriceComparisonType.ABOVE
+                    "Under" -> AlertRule.PriceComparisonType.BELOW
+                    else -> return null
+                }
+                AlertRule.SingleKeyMetric(symbol, AlertRule.KeyMetricType.PE_RATIO, value, direction)
+            }
+            "P/S-tal" -> {
+                val direction = when (condition.direction) {
+                    "Över" -> AlertRule.PriceComparisonType.ABOVE
+                    "Under" -> AlertRule.PriceComparisonType.BELOW
+                    else -> return null
+                }
+                AlertRule.SingleKeyMetric(symbol, AlertRule.KeyMetricType.PS_RATIO, value, direction)
+            }
+            "Utdelningsprocent" -> {
+                val direction = when (condition.direction) {
+                    "Över" -> AlertRule.PriceComparisonType.ABOVE
+                    "Under" -> AlertRule.PriceComparisonType.BELOW
+                    else -> return null
+                }
+                AlertRule.SingleKeyMetric(symbol, AlertRule.KeyMetricType.DIVIDEND_YIELD, value, direction)
+            }
+            "52w High Drop" -> {
+                // For now, assume percentage drop
+                AlertRule.SingleDrawdownFromHigh(symbol, AlertRule.DrawdownDropType.PERCENTAGE, value)
+            }
+            "Dagsrörelse" -> {
+                // For daily move, value is the percentage threshold
+                AlertRule.SingleDailyMove(symbol, value, AlertRule.DailyMoveDirection.BOTH)
+            }
+            else -> null
+        }
     }
 
     /**
@@ -1043,15 +1381,33 @@ class MainActivity : AppCompatActivity() {
                 WatchType.PriceDirection.BELOW -> "Under"
             })
         }
+        
+        // History UI elements
+        val historyCard = dialogView.findViewById<CardView>(R.id.historyCard)
+        val currentValueText = dialogView.findViewById<TextView>(R.id.currentValueText)
+        val historyOneYear = dialogView.findViewById<TextView>(R.id.historyOneYear)
+        val historyThreeYear = dialogView.findViewById<TextView>(R.id.historyThreeYear)
+        val historyFiveYear = dialogView.findViewById<TextView>(R.id.historyFiveYear)
+        val presetBelow5YearAvg = dialogView.findViewById<com.google.android.material.button.MaterialButton>(R.id.presetBelow5YearAvg)
+        val presetBelow3YearMin = dialogView.findViewById<com.google.android.material.button.MaterialButton>(R.id.presetBelow3YearMin)
+        val presetOneYearAvgMinus20 = dialogView.findViewById<com.google.android.material.button.MaterialButton>(R.id.presetOneYearAvgMinus20)
 
         // Set up adapter for stock search
         val adapter = createStockAdapter()
         tickerInput.setAdapter(adapter)
         setupStockSearch(tickerInput, adapter, stockSearchViewModel)
 
+        var historySummary: com.stockflip.MetricHistorySummary? = null
+
         tickerInput.setOnItemClickListener { _, _, position, _ ->
             selectedStock = adapter.getItem(position)
             Log.d(TAG, "Selected stock: $selectedStock")
+            // Load history when stock is selected
+            if (selectedStock != null) {
+                loadHistoryForDialog(selectedStock!!.symbol, keyMetrics.metricType, historyCard, currentValueText, historyOneYear, historyThreeYear, historyFiveYear, presetBelow5YearAvg, presetBelow3YearMin, presetOneYearAvgMinus20) { summary ->
+                    historySummary = summary
+                }
+            }
         }
 
         // Set up metric type dropdown
@@ -1060,6 +1416,47 @@ class MainActivity : AppCompatActivity() {
         metricTypeInput.setAdapter(metricTypeAdapter)
         metricTypeInput.setOnItemClickListener { _, _, position, _ ->
             Log.d(TAG, "Selected metric type: ${metricTypes[position]}")
+            // Load history when metric type changes
+            val newMetricType = when (position) {
+                0 -> WatchType.MetricType.PE_RATIO
+                1 -> WatchType.MetricType.PS_RATIO
+                2 -> WatchType.MetricType.DIVIDEND_YIELD
+                else -> keyMetrics.metricType
+            }
+            val symbol = selectedStock?.symbol ?: item.ticker
+            if (!symbol.isNullOrEmpty()) {
+                loadHistoryForDialog(symbol, newMetricType, historyCard, currentValueText, historyOneYear, historyThreeYear, historyFiveYear, presetBelow5YearAvg, presetBelow3YearMin, presetOneYearAvgMinus20) { summary ->
+                    historySummary = summary
+                }
+            }
+        }
+        
+        // Set up preset buttons
+        presetBelow5YearAvg.setOnClickListener {
+            historySummary?.let { summary ->
+                val value = MetricPresets.getPresetValue(PresetType.BELOW_5_YEAR_AVG, summary)
+                value?.let { targetValueInput.setText(String.format(Locale.getDefault(), "%.2f", it)) }
+            }
+        }
+        presetBelow3YearMin.setOnClickListener {
+            historySummary?.let { summary ->
+                val value = MetricPresets.getPresetValue(PresetType.BELOW_3_YEAR_MIN, summary)
+                value?.let { targetValueInput.setText(String.format(Locale.getDefault(), "%.2f", it)) }
+            }
+        }
+        presetOneYearAvgMinus20.setOnClickListener {
+            historySummary?.let { summary ->
+                val value = MetricPresets.getPresetValue(PresetType.ONE_YEAR_AVG_MINUS_20, summary)
+                value?.let { targetValueInput.setText(String.format(Locale.getDefault(), "%.2f", it)) }
+            }
+        }
+        
+        // Load history initially
+        lifecycleScope.launch {
+            val ticker = item.ticker ?: return@launch
+            loadHistoryForDialog(ticker, keyMetrics.metricType, historyCard, currentValueText, historyOneYear, historyThreeYear, historyFiveYear, presetBelow5YearAvg, presetBelow3YearMin, presetOneYearAvgMinus20) { summary ->
+                historySummary = summary
+            }
         }
 
         // Set up direction dropdown
@@ -1235,6 +1632,10 @@ class MainActivity : AppCompatActivity() {
             is WatchType.DailyMove -> {
                 // DailyMove hanteras via StockDetailFragment
                 Toast.makeText(this, "Redigera via aktiedetaljvy", Toast.LENGTH_SHORT).show()
+            }
+            is WatchType.Combined -> {
+                // Combined alerts kommer snart
+                Toast.makeText(this, "Redigering av kombinerade larm kommer snart", Toast.LENGTH_SHORT).show()
             }
         }
 
@@ -1426,6 +1827,10 @@ class MainActivity : AppCompatActivity() {
                             watchType = WatchType.KeyMetrics(metricType, targetValue, direction)
                         )
                     }
+                    is WatchType.Combined -> {
+                        // Combined alerts kan inte redigeras via denna dialog ännu
+                        item
+                    }
                     is WatchType.ATHBased -> {
                         val dropTypeInput = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.detailATHDropType)
                         val dropValueInput = dialogView.findViewById<TextInputEditText>(R.id.detailATHDropValue)
@@ -1459,6 +1864,98 @@ class MainActivity : AppCompatActivity() {
     }
 
     private data class Quadruple<A, B, C, D>(val first: A, val second: B, val third: C, val fourth: D)
+
+    /**
+     * Laddar och visar historik för ett nyckeltal i dialogen.
+     */
+    private fun loadHistoryForDialog(
+        symbol: String,
+        metricType: WatchType.MetricType,
+        historyCard: CardView,
+        currentValueText: TextView,
+        historyOneYear: TextView,
+        historyThreeYear: TextView,
+        historyFiveYear: TextView,
+        presetBelow5YearAvg: com.google.android.material.button.MaterialButton,
+        presetBelow3YearMin: com.google.android.material.button.MaterialButton,
+        presetOneYearAvgMinus20: com.google.android.material.button.MaterialButton,
+        onHistoryLoaded: (com.stockflip.MetricHistorySummary?) -> Unit
+    ) {
+        lifecycleScope.launch {
+            try {
+                // Hämta nuvarande värde
+                val currentValue = YahooFinanceService.getKeyMetric(symbol, metricType)
+                
+                // Hämta historik
+                val summary = metricHistoryService.getOrFetchHistorySummary(symbol, metricType, currentValue)
+                
+                if (summary != null) {
+                    // Visa historik
+                    historyCard.visibility = View.VISIBLE
+                    
+                    // Visa nuvarande värde
+                    val metricName = when (metricType) {
+                        WatchType.MetricType.PE_RATIO -> "P/E"
+                        WatchType.MetricType.PS_RATIO -> "P/S"
+                        WatchType.MetricType.DIVIDEND_YIELD -> "Utdelningsprocent"
+                    }
+                    currentValueText.text = if (currentValue != null) {
+                        "Nuvarande $metricName: ${String.format(Locale.getDefault(), "%.2f", currentValue)}"
+                    } else {
+                        "Nuvarande $metricName: Ej tillgängligt"
+                    }
+                    
+                    // Visa historik
+                    historyOneYear.text = if (!summary.oneYear.isEmpty()) {
+                        "1 år: snitt ${String.format(Locale.getDefault(), "%.1f", summary.oneYear.average)} " +
+                        "(min ${String.format(Locale.getDefault(), "%.1f", summary.oneYear.min)} / " +
+                        "max ${String.format(Locale.getDefault(), "%.1f", summary.oneYear.max)})"
+                    } else {
+                        "1 år: Ingen data"
+                    }
+                    
+                    historyThreeYear.text = if (!summary.threeYear.isEmpty()) {
+                        "3 år: snitt ${String.format(Locale.getDefault(), "%.1f", summary.threeYear.average)} " +
+                        "(min ${String.format(Locale.getDefault(), "%.1f", summary.threeYear.min)} / " +
+                        "max ${String.format(Locale.getDefault(), "%.1f", summary.threeYear.max)})"
+                    } else {
+                        "3 år: Ingen data"
+                    }
+                    
+                    historyFiveYear.text = if (!summary.fiveYear.isEmpty()) {
+                        "5 år: snitt ${String.format(Locale.getDefault(), "%.1f", summary.fiveYear.average)} " +
+                        "(min ${String.format(Locale.getDefault(), "%.1f", summary.fiveYear.min)} / " +
+                        "max ${String.format(Locale.getDefault(), "%.1f", summary.fiveYear.max)})"
+                    } else {
+                        "5 år: Ingen data"
+                    }
+                    
+                    // Uppdatera preset-knappar
+                    val below5YearAvgValue = MetricPresets.getPresetValue(PresetType.BELOW_5_YEAR_AVG, summary)
+                    presetBelow5YearAvg.text = MetricPresets.getPresetDescription(PresetType.BELOW_5_YEAR_AVG, summary)
+                    presetBelow5YearAvg.isEnabled = below5YearAvgValue != null
+                    
+                    val below3YearMinValue = MetricPresets.getPresetValue(PresetType.BELOW_3_YEAR_MIN, summary)
+                    presetBelow3YearMin.text = MetricPresets.getPresetDescription(PresetType.BELOW_3_YEAR_MIN, summary)
+                    presetBelow3YearMin.isEnabled = below3YearMinValue != null
+                    
+                    val oneYearAvgMinus20Value = MetricPresets.getPresetValue(PresetType.ONE_YEAR_AVG_MINUS_20, summary)
+                    presetOneYearAvgMinus20.text = MetricPresets.getPresetDescription(PresetType.ONE_YEAR_AVG_MINUS_20, summary)
+                    presetOneYearAvgMinus20.isEnabled = oneYearAvgMinus20Value != null
+                    
+                    onHistoryLoaded(summary)
+                } else {
+                    // Ingen historik tillgänglig
+                    historyCard.visibility = View.GONE
+                    onHistoryLoaded(null)
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error loading history: ${e.message}", e)
+                historyCard.visibility = View.GONE
+                onHistoryLoaded(null)
+            }
+        }
+    }
 
     private fun setupSwipeRefresh() {
         binding.swipeRefreshLayout.setOnRefreshListener {

@@ -10,7 +10,12 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.unit.dp
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.DiffUtil
@@ -31,6 +36,13 @@ import kotlin.math.abs
 sealed class GroupedListItem {
     data class Header(val title: String) : GroupedListItem()
     data class WatchItemWrapper(val item: WatchItem) : GroupedListItem()
+    data class MultipleWatchesWrapper(
+        val symbol: String,
+        val companyName: String?,
+        val watchCount: Int,
+        val currentPrice: Double,
+        val watchItems: List<WatchItem>
+    ) : GroupedListItem()
 }
 
 /**
@@ -50,6 +62,7 @@ class GroupedWatchItemAdapter(
     companion object {
         private const val VIEW_TYPE_HEADER = 0
         private const val VIEW_TYPE_WATCH_ITEM = 1
+        private const val VIEW_TYPE_MULTIPLE_WATCHES = 2
         private const val TAG = "GroupedWatchItemAdapter"
     }
 
@@ -57,6 +70,7 @@ class GroupedWatchItemAdapter(
         return when (getItem(position)) {
             is GroupedListItem.Header -> VIEW_TYPE_HEADER
             is GroupedListItem.WatchItemWrapper -> VIEW_TYPE_WATCH_ITEM
+            is GroupedListItem.MultipleWatchesWrapper -> VIEW_TYPE_MULTIPLE_WATCHES
         }
     }
 
@@ -77,6 +91,14 @@ class GroupedWatchItemAdapter(
                     ViewGroup.LayoutParams.WRAP_CONTENT
                 )
                 ComposeWatchItemViewHolder(composeView)
+            }
+            VIEW_TYPE_MULTIPLE_WATCHES -> {
+                val composeView = ComposeView(parent.context)
+                composeView.layoutParams = ViewGroup.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT
+                )
+                MultipleWatchesViewHolder(composeView)
             }
             else -> throw IllegalArgumentException("Unknown view type: $viewType")
         }
@@ -107,6 +129,19 @@ class GroupedWatchItemAdapter(
                 val watchItemHolder = holder as ComposeWatchItemViewHolder
                 watchItemHolder.bind(item.item)
             }
+            is GroupedListItem.MultipleWatchesWrapper -> {
+                val multipleWatchesHolder = holder as MultipleWatchesViewHolder
+                multipleWatchesHolder.bind(item) {
+                    // Navigate to StockDetailFragment when clicked
+                    // Use the first watch item to get symbol and company name
+                    val firstItem = item.watchItems.firstOrNull()
+                    if (firstItem != null) {
+                        // Create a dummy WatchItem for navigation
+                        val navItem = firstItem.copy(ticker = item.symbol, companyName = item.companyName)
+                        onItemClick(navItem)
+                    }
+                }
+            }
         }
     }
     
@@ -120,65 +155,48 @@ class GroupedWatchItemAdapter(
     }
 
     /**
-     * Converts a list of WatchItems into grouped list with headers
+     * Converts a list of WatchItems into grouped list by stock symbol
      */
     fun submitGroupedList(items: List<WatchItem>) {
         Log.d(TAG, "=== submitGroupedList() called with ${items.size} items ===")
         // Store all items for rebuilding when expansion state changes
         allWatchItems = items
         
-        // Group items by type
+        // Initialize sections as expanded by default
         val pricePairs = items.filter { it.watchType is WatchType.PricePair }
-        val priceTargets = items.filter { it.watchType is WatchType.PriceTarget }
-        val priceRanges = items.filter { it.watchType is WatchType.PriceRange }
-        val keyMetrics = items.filter { it.watchType is WatchType.KeyMetrics }
-        val athBased = items.filter { it.watchType is WatchType.ATHBased }
-        val dailyMoves = items.filter { it.watchType is WatchType.DailyMove }
-        
-        Log.d(TAG, "KeyMetrics items in submitGroupedList: ${keyMetrics.size}")
-        keyMetrics.forEach { item ->
-            Log.d(TAG, "KeyMetrics in submitGroupedList: ${item.ticker}, currentMetricValue: ${item.currentMetricValue}")
+        val singleStockItems = items.filter { 
+            it.watchType !is WatchType.PricePair && it.ticker != null 
         }
-
-        // Initialize all sections as expanded by default (only for sections that have items)
+        
         if (pricePairs.isNotEmpty() && !expandedSections.contains("Aktiepar")) {
             expandedSections.add("Aktiepar")
         }
-        if (priceTargets.isNotEmpty() && !expandedSections.contains("Prismål")) {
-            expandedSections.add("Prismål")
-        }
-        if (priceRanges.isNotEmpty() && !expandedSections.contains("Prisintervall")) {
-            expandedSections.add("Prisintervall")
-        }
-        if (keyMetrics.isNotEmpty() && !expandedSections.contains("Nyckeltal")) {
-            expandedSections.add("Nyckeltal")
-        }
-        if (athBased.isNotEmpty() && !expandedSections.contains("52-veckorshögsta")) {
-            expandedSections.add("52-veckorshögsta")
-        }
-        if (dailyMoves.isNotEmpty() && !expandedSections.contains("Dagsrörelse")) {
-            expandedSections.add("Dagsrörelse")
+        if (singleStockItems.isNotEmpty() && !expandedSections.contains("Enskilda Aktier")) {
+            expandedSections.add("Enskilda Aktier")
         }
 
-        // Build the filtered list based on expansion state
+        // Build the filtered list grouped by stock
         buildFilteredList(items)
     }
     
     /**
-     * Builds and submits a filtered list based on current expansion state
+     * Builds and submits a filtered list grouped by stock symbol
      */
     private fun buildFilteredList(items: List<WatchItem>) {
         val groupedList = mutableListOf<GroupedListItem>()
 
-        // Group items by type
+        // Separate PricePairs (they have two stocks, handle separately)
         val pricePairs = items.filter { it.watchType is WatchType.PricePair }
-        val priceTargets = items.filter { it.watchType is WatchType.PriceTarget }
-        val priceRanges = items.filter { it.watchType is WatchType.PriceRange }
-        val keyMetrics = items.filter { it.watchType is WatchType.KeyMetrics }
-        val athBased = items.filter { it.watchType is WatchType.ATHBased }
-        val dailyMoves = items.filter { it.watchType is WatchType.DailyMove }
+        
+        // Group single-stock items by ticker
+        val singleStockItems = items.filter { 
+            it.watchType !is WatchType.PricePair && it.ticker != null 
+        }
+        
+        // Group by ticker
+        val itemsByTicker = singleStockItems.groupBy { it.ticker!! }
 
-        // Add Price Pairs section (only items if expanded)
+        // Add Price Pairs section (handle separately as they have two stocks)
         if (pricePairs.isNotEmpty()) {
             groupedList.add(GroupedListItem.Header("Aktiepar"))
             val isExpanded = expandedSections.contains("Aktiepar")
@@ -188,56 +206,32 @@ class GroupedWatchItemAdapter(
             }
         }
 
-        // Add Price Targets section (only items if expanded)
-        if (priceTargets.isNotEmpty()) {
-            groupedList.add(GroupedListItem.Header("Prismål"))
-            val isExpanded = expandedSections.contains("Prismål")
-            Log.d(TAG, "Prismål section: isExpanded=$isExpanded, items=${priceTargets.size}")
+        // Add header for single stocks if there are any
+        if (itemsByTicker.isNotEmpty()) {
+            groupedList.add(GroupedListItem.Header("Enskilda Aktier"))
+            val isExpanded = expandedSections.contains("Enskilda Aktier")
+            Log.d(TAG, "Enskilda Aktier section: isExpanded=$isExpanded, items=${itemsByTicker.size} stocks")
+            
             if (isExpanded) {
-                priceTargets.forEach { groupedList.add(GroupedListItem.WatchItemWrapper(it)) }
-            }
-        }
-
-        // Add Price Ranges section (only items if expanded)
-        if (priceRanges.isNotEmpty()) {
-            groupedList.add(GroupedListItem.Header("Prisintervall"))
-            val isExpanded = expandedSections.contains("Prisintervall")
-            Log.d(TAG, "Prisintervall section: isExpanded=$isExpanded, items=${priceRanges.size}")
-            if (isExpanded) {
-                priceRanges.forEach { groupedList.add(GroupedListItem.WatchItemWrapper(it)) }
-            }
-        }
-
-        // Add Key Metrics section (only items if expanded)
-        if (keyMetrics.isNotEmpty()) {
-            groupedList.add(GroupedListItem.Header("Nyckeltal"))
-            val isExpanded = expandedSections.contains("Nyckeltal")
-            Log.d(TAG, "Nyckeltal section: isExpanded=$isExpanded, items=${keyMetrics.size}")
-            keyMetrics.forEach { item ->
-                Log.d(TAG, "KeyMetrics item before adding to list: ${item.ticker}, currentMetricValue: ${item.currentMetricValue}")
-            }
-            if (isExpanded) {
-                keyMetrics.forEach { groupedList.add(GroupedListItem.WatchItemWrapper(it)) }
-            }
-        }
-
-        // Add ATH Based section (only items if expanded)
-        if (athBased.isNotEmpty()) {
-            groupedList.add(GroupedListItem.Header("52-veckorshögsta"))
-            val isExpanded = expandedSections.contains("52-veckorshögsta")
-            Log.d(TAG, "52-veckorshögsta section: isExpanded=$isExpanded, items=${athBased.size}")
-            if (isExpanded) {
-                athBased.forEach { groupedList.add(GroupedListItem.WatchItemWrapper(it)) }
-            }
-        }
-
-        // Add Daily Moves section (only items if expanded)
-        if (dailyMoves.isNotEmpty()) {
-            groupedList.add(GroupedListItem.Header("Dagsrörelse"))
-            val isExpanded = expandedSections.contains("Dagsrörelse")
-            Log.d(TAG, "Dagsrörelse section: isExpanded=$isExpanded, items=${dailyMoves.size}")
-            if (isExpanded) {
-                dailyMoves.forEach { groupedList.add(GroupedListItem.WatchItemWrapper(it)) }
+                // Process single-stock items grouped by ticker (sorted alphabetically)
+                itemsByTicker.toSortedMap().forEach { (ticker, watchItemsForTicker) ->
+                    val companyName = watchItemsForTicker.firstOrNull()?.companyName
+                    val currentPrice = watchItemsForTicker.firstOrNull()?.currentPrice ?: 0.0
+                    
+                    if (watchItemsForTicker.size == 1) {
+                        // Single watch type - show the card directly
+                        groupedList.add(GroupedListItem.WatchItemWrapper(watchItemsForTicker.first()))
+                    } else {
+                        // Multiple watch types - show "multiple watches" card
+                        groupedList.add(GroupedListItem.MultipleWatchesWrapper(
+                            symbol = ticker,
+                            companyName = companyName,
+                            watchCount = watchItemsForTicker.size,
+                            currentPrice = currentPrice,
+                            watchItems = watchItemsForTicker
+                        ))
+                    }
+                }
             }
         }
 
@@ -290,6 +284,29 @@ class GroupedWatchItemAdapter(
             }
         }
     }
+    
+    inner class MultipleWatchesViewHolder(
+        private val composeView: ComposeView
+    ) : RecyclerView.ViewHolder(composeView) {
+        
+        fun bind(wrapper: GroupedListItem.MultipleWatchesWrapper, onClick: () -> Unit) {
+            composeView.setContent {
+                StockFlipTheme {
+                    com.stockflip.ui.components.cards.MultipleWatchesCard(
+                        symbol = wrapper.symbol,
+                        companyName = wrapper.companyName,
+                        watchCount = wrapper.watchCount,
+                        currentPrice = wrapper.currentPrice,
+                        priceFormat = { value -> priceFormat.format(value) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable(onClick = onClick)
+                            .padding(horizontal = 16.dp, vertical = 8.dp)
+                    )
+                }
+            }
+        }
+    }
 
     // Old WatchItemViewHolder removed - now using ComposeWatchItemViewHolder
 
@@ -323,6 +340,12 @@ class GroupedWatchItemAdapter(
                     old.currentATH == new.currentATH &&
                     old.currentDropPercentage == new.currentDropPercentage &&
                     old.currentDropAbsolute == new.currentDropAbsolute
+                }
+                oldItem is GroupedListItem.MultipleWatchesWrapper && newItem is GroupedListItem.MultipleWatchesWrapper -> {
+                    oldItem.symbol == newItem.symbol &&
+                    oldItem.companyName == newItem.companyName &&
+                    oldItem.watchCount == newItem.watchCount &&
+                    oldItem.currentPrice == newItem.currentPrice
                 }
                 else -> false
             }

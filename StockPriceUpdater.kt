@@ -106,11 +106,18 @@ class StockPriceUpdater(
     /**
      * Utvärderar single-stock alert (WatchItem).
      * Använder AlertEvaluator och spam-skydd.
+     * Stödjer både enskilda AlertRule och kombinerade AlertExpression.
      */
     private suspend fun evaluateWatchItemAlert(watchItem: WatchItem, database: StockPairDatabase) {
         // Kontrollera spam-skydd
         if (!watchItem.canTrigger(today)) {
             Log.d(TAG, "Skipping watch item ${watchItem.id} due to spam protection")
+            return
+        }
+        
+        // Hantera Combined WatchType separat
+        if (watchItem.watchType is WatchType.Combined) {
+            evaluateCombinedAlert(watchItem, database)
             return
         }
         
@@ -151,6 +158,93 @@ class StockPriceUpdater(
             
             Log.d(TAG, "Alert triggered for watch item ${watchItem.id}: $title")
         }
+    }
+
+    /**
+     * Utvärderar kombinerat alert (Combined WatchType).
+     * Använder ExpressionEvaluator för att evaluera AlertExpression med flera villkor.
+     */
+    private suspend fun evaluateCombinedAlert(watchItem: WatchItem, database: StockPairDatabase) {
+        val combined = watchItem.watchType as? WatchType.Combined ?: return
+        val expression = combined.expression
+        
+        // Hämta alla symboler som behövs för uttrycket
+        val symbols = expression.getSymbols()
+        if (symbols.isEmpty()) {
+            Log.w(TAG, "Combined alert ${watchItem.id} has no symbols")
+            return
+        }
+        
+        Log.d(TAG, "Evaluating combined alert ${watchItem.id} with symbols: $symbols")
+        
+        // Skapa MarketSnapshot för varje symbol
+        val snapshots = mutableMapOf<String, MarketSnapshot>()
+        
+        for (symbol in symbols) {
+            // För kombinerade alerts behöver vi all data (pris, 52w high, daily change, key metrics)
+            val snapshot = createCompleteSnapshot(symbol) ?: continue
+            snapshots[symbol] = snapshot
+        }
+        
+        // Validera att alla nödvändiga snapshots finns
+        if (!ExpressionEvaluator.validateSnapshots(expression, snapshots)) {
+            Log.w(TAG, "Missing snapshots for combined alert ${watchItem.id}")
+            return
+        }
+        
+        // Utvärdera uttrycket
+        val shouldTrigger = ExpressionEvaluator.evaluateExpression(expression, snapshots)
+        
+        if (shouldTrigger) {
+            // Markera som triggad
+            val updatedWatchItem = watchItem.markAsTriggered(today)
+            database.watchItemDao().update(updatedWatchItem)
+            
+            // Skicka notis
+            val title = "Kombinerat Alert: ${watchItem.getDisplayName()}"
+            val message = "Kombinerat larm triggat: ${expression.getDescription()}"
+            showNotification(watchItem.id + 10000, title, message)
+            
+            Log.d(TAG, "Combined alert triggered for watch item ${watchItem.id}: $title")
+        }
+    }
+
+    /**
+     * Skapar en komplett MarketSnapshot med all tillgänglig data.
+     * Används för kombinerade alerts som kan behöva olika typer av data.
+     */
+    private suspend fun createCompleteSnapshot(symbol: String): MarketSnapshot? {
+        val lastPrice = YahooFinanceService.getStockPrice(symbol) ?: return null
+        val previousClose = YahooFinanceService.getPreviousClose(symbol)
+        val week52High = YahooFinanceService.getATH(symbol) // getATH hämtar faktiskt 52w high
+        
+        // Hämta alla nyckeltal
+        val keyMetrics = mutableMapOf<AlertRule.KeyMetricType, Double>()
+        
+        // Försök hämta P/E
+        val peValue = YahooFinanceService.getKeyMetric(symbol, WatchType.MetricType.PE_RATIO)
+        if (peValue != null) {
+            keyMetrics[AlertRule.KeyMetricType.PE_RATIO] = peValue
+        }
+        
+        // Försök hämta P/S
+        val psValue = YahooFinanceService.getKeyMetric(symbol, WatchType.MetricType.PS_RATIO)
+        if (psValue != null) {
+            keyMetrics[AlertRule.KeyMetricType.PS_RATIO] = psValue
+        }
+        
+        // Försök hämta Dividend Yield
+        val yieldValue = YahooFinanceService.getKeyMetric(symbol, WatchType.MetricType.DIVIDEND_YIELD)
+        if (yieldValue != null) {
+            keyMetrics[AlertRule.KeyMetricType.DIVIDEND_YIELD] = yieldValue
+        }
+        
+        return MarketSnapshot.forSingleStock(
+            lastPrice = lastPrice,
+            previousClose = previousClose,
+            week52High = week52High,
+            keyMetrics = keyMetrics
+        )
     }
 
     /**

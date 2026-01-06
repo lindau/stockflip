@@ -1,6 +1,8 @@
 package com.stockflip
 
+import android.util.Base64
 import androidx.room.TypeConverter
+import java.nio.charset.StandardCharsets
 
 /**
  * Type converters for Room database to handle WatchType serialization.
@@ -15,6 +17,12 @@ class WatchTypeConverter {
             is WatchType.ATHBased -> "ATH_BASED|${watchType.dropType.name}|${watchType.dropValue}"
             is WatchType.PriceRange -> "PRICE_RANGE|${watchType.minPrice}|${watchType.maxPrice}"
             is WatchType.DailyMove -> "DAILY_MOVE|${watchType.percentThreshold}|${watchType.direction.name}"
+            is WatchType.Combined -> {
+                // Använd Base64 för att undvika problem med "|" i JSON
+                val json = AlertExpressionConverter.toJson(watchType.expression)
+                val encoded = Base64.encodeToString(json.toByteArray(StandardCharsets.UTF_8), Base64.NO_WRAP)
+                "COMBINED|$encoded"
+            }
         }
     }
 
@@ -47,6 +55,14 @@ class WatchTypeConverter {
                 percentThreshold = parts[1].toDouble(),
                 direction = WatchType.DailyMoveDirection.valueOf(parts[2])
             )
+            "COMBINED" -> {
+                // AlertExpression är serialiserad som Base64-kodad JSON
+                val encoded = parts[1]
+                val jsonString = String(Base64.decode(encoded, Base64.NO_WRAP), StandardCharsets.UTF_8)
+                WatchType.Combined(
+                    expression = AlertExpressionConverter.fromJson(jsonString)
+                )
+            }
             else -> throw IllegalArgumentException("Unknown watch type: ${parts[0]}")
         }
     }

@@ -14,6 +14,7 @@ import com.stockflip.ui.components.cards.PairCard
 import com.stockflip.ui.components.cards.PriceTargetCard
 import com.stockflip.ui.components.cards.PriceRangeCard
 import com.stockflip.ui.components.cards.DailyMoveCard
+import com.stockflip.ui.components.cards.CombinedAlertCard
 import java.text.DecimalFormat
 import java.text.DecimalFormatSymbols
 import java.util.Locale
@@ -25,6 +26,9 @@ fun ComposeWatchItemCard(
         DecimalFormat("#,##0.00", DecimalFormatSymbols(Locale("sv", "SE"))).format(value)
     },
     onItemClick: () -> Unit = {},
+    showStatus: Boolean = false,
+    showControls: Boolean = false,
+    onToggleActive: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -45,13 +49,10 @@ fun ComposeWatchItemCard(
                 MetricAlertCard(
                     item = item,
                     priceFormat = priceFormat,
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
-            is com.stockflip.WatchType.ATHBased -> {
-                High52wCard(
-                    item = item,
-                    priceFormat = priceFormat,
+                    showStatus = showStatus,
+                    showControls = showControls,
+                    onToggleActive = onToggleActive,
+                    onClick = if (showControls) onItemClick else null,
                     modifier = Modifier.fillMaxWidth()
                 )
             }
@@ -59,6 +60,10 @@ fun ComposeWatchItemCard(
                 PriceTargetCard(
                     item = item,
                     priceFormat = priceFormat,
+                    showStatus = showStatus,
+                    showControls = showControls,
+                    onToggleActive = onToggleActive,
+                    onClick = if (showControls) onItemClick else null,
                     modifier = Modifier.fillMaxWidth()
                 )
             }
@@ -66,11 +71,37 @@ fun ComposeWatchItemCard(
                 PriceRangeCard(
                     item = item,
                     priceFormat = priceFormat,
+                    showStatus = showStatus,
+                    showControls = showControls,
+                    onToggleActive = onToggleActive,
+                    onClick = if (showControls) onItemClick else null,
                     modifier = Modifier.fillMaxWidth()
                 )
             }
             is com.stockflip.WatchType.DailyMove -> {
                 DailyMoveCard(
+                    item = item,
+                    priceFormat = priceFormat,
+                    showStatus = showStatus,
+                    showControls = showControls,
+                    onToggleActive = onToggleActive,
+                    onClick = if (showControls) onItemClick else null,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+            is com.stockflip.WatchType.ATHBased -> {
+                High52wCard(
+                    item = item,
+                    priceFormat = priceFormat,
+                    showStatus = showStatus,
+                    showControls = showControls,
+                    onToggleActive = onToggleActive,
+                    onClick = if (showControls) onItemClick else null,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+            is com.stockflip.WatchType.Combined -> {
+                CombinedAlertCard(
                     item = item,
                     priceFormat = priceFormat,
                     modifier = Modifier.fillMaxWidth()

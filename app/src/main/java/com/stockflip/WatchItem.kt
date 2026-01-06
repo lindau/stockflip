@@ -49,6 +49,10 @@ data class WatchItem(
         private set
 
     @Ignore
+    var metricValueAtCreation: Double = 0.0
+        private set
+
+    @Ignore
     var currentATH: Double = 0.0
         private set
 
@@ -92,6 +96,11 @@ data class WatchItem(
             return this
         }
         return copy().also {
+            // Om metricValueAtCreation är 0, spara första värdet som "värde vid skapande"
+            if (it.metricValueAtCreation == 0.0 && value > 0.0) {
+                it.metricValueAtCreation = value
+                Log.d(TAG, "Set metric value at creation for watch item $id: ${it.metricValueAtCreation}")
+            }
             it.currentMetricValue = value
             Log.d(TAG, "Updated metric value for watch item $id: ${it.currentMetricValue}")
         }
@@ -138,6 +147,15 @@ data class WatchItem(
             is WatchType.DailyMove -> {
                 "${companyName ?: ticker} (${ticker ?: ""})"
             }
+            is WatchType.Combined -> {
+                // För Combined kan vi visa första symbolen eller en generisk beskrivning
+                val symbols = watchType.expression.getSymbols()
+                if (symbols.isNotEmpty()) {
+                    "${symbols.first()} (kombinerat)"
+                } else {
+                    "Kombinerat larm"
+                }
+            }
         }
     }
 
@@ -149,6 +167,7 @@ data class WatchItem(
             is WatchType.ATHBased -> "52-veckorshögsta"
             is WatchType.PriceRange -> "Prisintervall"
             is WatchType.DailyMove -> "Dagsrörelse"
+            is WatchType.Combined -> "Kombinerat larm"
         }
     }
 

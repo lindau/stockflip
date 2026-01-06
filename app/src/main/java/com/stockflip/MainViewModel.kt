@@ -291,6 +291,18 @@ class MainViewModel(
                                 item
                             }
                         }
+                        is WatchType.Combined -> {
+                            // Combined WatchType hanteras separat i evaluateCombinedAlerts
+                            // Här behöver vi bara hämta data för alla symboler i uttrycket
+                            val expression = item.watchType.expression
+                            val symbols = expression.getSymbols()
+                            
+                            Log.d(TAG, "Fetching data for combined alert with symbols: $symbols")
+                            
+                            // Hämta data för alla symboler (hanteras i evaluateCombinedAlerts)
+                            // För nu, returnera item oförändrat
+                            item
+                        }
                     }
                 } catch (e: Exception) {
                     Log.e(TAG, "Error fetching prices for watch item ${item.id}: ${e.message}")

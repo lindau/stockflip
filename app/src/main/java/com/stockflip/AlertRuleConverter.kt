@@ -91,6 +91,24 @@ object AlertRuleConverter {
                     direction = direction
                 )
             }
+            is WatchType.Combined -> {
+                // Combined WatchType använder AlertExpression direkt, inte AlertRule
+                // Returnera null eftersom Combined inte kan konverteras till en enskild AlertRule
+                null
+            }
+        }
+    }
+    
+    /**
+     * Konverterar WatchItem med Combined WatchType till AlertExpression.
+     * 
+     * @param watchItem WatchItem med Combined WatchType
+     * @return AlertExpression eller null om WatchItem inte är Combined
+     */
+    fun toAlertExpression(watchItem: WatchItem): AlertExpression? {
+        return when (val watchType = watchItem.watchType) {
+            is WatchType.Combined -> watchType.expression
+            else -> null
         }
     }
     

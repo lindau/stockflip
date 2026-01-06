@@ -3,23 +3,17 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:background="?attr/colorSurface">
+    android:layout_height="match_parent">
 
     <com.google.android.material.appbar.AppBarLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar">
+        android:layout_height="wrap_content">
 
         <com.google.android.material.appbar.MaterialToolbar
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
-            android:background="?attr/colorSurface"
-            app:title="Aktiedetaljer"
-            app:titleTextColor="?attr/colorOnSurface"
-            app:navigationIcon="?attr/homeAsUpIndicator"
-            app:navigationIconTint="?attr/colorOnSurface" />
+            app:title="Aktiedetaljer" />
 
     </com.google.android.material.appbar.AppBarLayout>
 
@@ -180,68 +174,6 @@
 
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- Quick Actions Card -->
-            <com.google.android.material.card.MaterialCardView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="16dp"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="4dp">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="16dp">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Snabbevakningar"
-                        android:textAppearance="?attr/textAppearanceTitleMedium"
-                        android:textStyle="bold"
-                        android:textColor="?attr/colorOnSurface"
-                        android:layout_marginBottom="12dp" />
-
-                    <!-- Create Price Target Alert -->
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/createPriceTargetButton"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginBottom="8dp"
-                        android:text="Skapa målpris-bevakning"
-                        style="@style/Widget.Material3.Button.OutlinedButton" />
-
-                    <!-- Create Drawdown Alert -->
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/createDrawdownButton"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginBottom="8dp"
-                        android:text="Skapa drawdown-bevakning"
-                        style="@style/Widget.Material3.Button.OutlinedButton" />
-
-                    <!-- Create Daily Move Alert -->
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/createDailyMoveButton"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginBottom="8dp"
-                        android:text="Skapa dagsrörelse-bevakning"
-                        style="@style/Widget.Material3.Button.OutlinedButton" />
-
-                    <!-- Create Price Range Alert -->
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/createPriceRangeButton"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="Skapa prisintervall-bevakning"
-                        style="@style/Widget.Material3.Button.OutlinedButton" />
-
-                </LinearLayout>
-
-            </com.google.android.material.card.MaterialCardView>
-
             <!-- Alerts List Card -->
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
@@ -282,6 +214,88 @@
                         android:padding="16dp"
                         android:visibility="gone"
                         tools:visibility="visible" />
+
+                </LinearLayout>
+
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Quick Actions Card -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/quickActionsCard"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="4dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="12dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Snabbevakningar"
+                        android:textAppearance="?attr/textAppearanceTitleMedium"
+                        android:textStyle="bold"
+                        android:textColor="?attr/colorOnSurface"
+                        android:layout_marginBottom="8dp" />
+
+                    <!-- Create Price Target Alert -->
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/createPriceTargetButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="6dp"
+                        android:minHeight="40dp"
+                        android:paddingVertical="8dp"
+                        android:text="Målpris-bevakning"
+                        style="@style/Widget.Material3.Button.OutlinedButton" />
+
+                    <!-- Create Drawdown Alert -->
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/createDrawdownButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="6dp"
+                        android:minHeight="40dp"
+                        android:paddingVertical="8dp"
+                        android:text="Drawdown-bevakning"
+                        style="@style/Widget.Material3.Button.OutlinedButton" />
+
+                    <!-- Create Daily Move Alert -->
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/createDailyMoveButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="6dp"
+                        android:minHeight="40dp"
+                        android:paddingVertical="8dp"
+                        android:text="Dagsrörelse-bevakning"
+                        style="@style/Widget.Material3.Button.OutlinedButton" />
+
+                    <!-- Create Price Range Alert -->
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/createPriceRangeButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="6dp"
+                        android:minHeight="40dp"
+                        android:paddingVertical="8dp"
+                        android:text="Prisintervall-bevakning"
+                        style="@style/Widget.Material3.Button.OutlinedButton" />
+
+                    <!-- Create Key Metrics Alert -->
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/createKeyMetricsButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:minHeight="40dp"
+                        android:paddingVertical="8dp"
+                        android:text="Nyckeltalsbevakning"
+                        style="@style/Widget.Material3.Button.OutlinedButton" />
 
                 </LinearLayout>
 

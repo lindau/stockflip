@@ -71,7 +71,7 @@ class StockDetailViewModel(
     }
 
     /**
-     * Hämtar alla alerts för denna aktie.
+     * Hämtar alla alerts för denna aktie och uppdaterar med aktuella priser.
      */
     fun loadAlerts() {
         viewModelScope.launch {
@@ -84,8 +84,68 @@ class StockDetailViewModel(
                     watchItem.ticker == symbol || watchItem.ticker1 == symbol || watchItem.ticker2 == symbol
                 }
                 
-                _alertsState.value = UiState.Success(stockAlerts)
-                Log.d(TAG, "Loaded ${stockAlerts.size} alerts for $symbol")
+                // Uppdatera med aktuella priser
+                val updatedAlerts = stockAlerts.map { item ->
+                    when (item.watchType) {
+                        is WatchType.PricePair -> {
+                            if (item.ticker1 != null && item.ticker2 != null) {
+                                val price1 = yahooFinanceService.getStockPrice(item.ticker1)
+                                val price2 = yahooFinanceService.getStockPrice(item.ticker2)
+                                if (price1 != null && price2 != null) {
+                                    item.withCurrentPrices(price1, price2)
+                                } else {
+                                    item
+                                }
+                            } else {
+                                item
+                            }
+                        }
+                        is WatchType.PriceTarget,
+                        is WatchType.PriceRange,
+                        is WatchType.DailyMove -> {
+                            val ticker = item.ticker ?: symbol
+                            val price = yahooFinanceService.getStockPrice(ticker)
+                            if (price != null) {
+                                item.withCurrentPrice(price)
+                            } else {
+                                item
+                            }
+                        }
+                        is WatchType.ATHBased -> {
+                            val ticker = item.ticker ?: symbol
+                            val ath = yahooFinanceService.getATH(ticker)
+                            val price = yahooFinanceService.getStockPrice(ticker)
+                            if (ath != null && price != null) {
+                                item.withATHData(ath, price)
+                            } else if (price != null) {
+                                item.withCurrentPrice(price)
+                            } else {
+                                item
+                            }
+                        }
+                        is WatchType.KeyMetrics -> {
+                            val ticker = item.ticker ?: symbol
+                            val metricType = (item.watchType as? WatchType.KeyMetrics)?.metricType
+                            if (metricType != null) {
+                                val metricValue = yahooFinanceService.getKeyMetric(ticker, metricType)
+                                if (metricValue != null) {
+                                    item.withCurrentMetricValue(metricValue)
+                                } else {
+                                    item
+                                }
+                            } else {
+                                item
+                            }
+                        }
+                        is WatchType.Combined -> {
+                            // Combined alerts behöver inte uppdateras här
+                            item
+                        }
+                    }
+                }
+                
+                _alertsState.value = UiState.Success(updatedAlerts)
+                Log.d(TAG, "Loaded ${updatedAlerts.size} alerts for $symbol")
             } catch (e: Exception) {
                 Log.e(TAG, "Error loading alerts: ${e.message}", e)
                 _alertsState.value = UiState.Error("Kunde inte ladda alerts: ${e.message}")
@@ -160,6 +220,21 @@ class StockDetailViewModel(
                 Log.d(TAG, "Toggled alert ${watchItem.id} to ${updated.isActive}")
             } catch (e: Exception) {
                 Log.e(TAG, "Error toggling alert: ${e.message}", e)
+            }
+        }
+    }
+
+    /**
+     * Uppdaterar en befintlig alert.
+     */
+    fun updateWatchItem(watchItem: WatchItem) {
+        viewModelScope.launch {
+            try {
+                watchItemDao.update(watchItem)
+                loadAlerts() // Reload alerts
+                Log.d(TAG, "Updated alert ${watchItem.id}")
+            } catch (e: Exception) {
+                Log.e(TAG, "Error updating alert: ${e.message}", e)
             }
         }
     }
