@@ -96,12 +96,29 @@ class MetricHistoryRepository(
             it.date >= startDate && it.date <= endDate
         }
         
+        val dateFormat = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault())
+        val startDateStr = dateFormat.format(java.util.Date(startDate))
+        val endDateStr = dateFormat.format(java.util.Date(endDate))
+        
+        // Log first and last dates in history for debugging
+        val firstHistoryDate = history.minOfOrNull { it.date }?.let { dateFormat.format(java.util.Date(it)) } ?: "N/A"
+        val lastHistoryDate = history.maxOfOrNull { it.date }?.let { dateFormat.format(java.util.Date(it)) } ?: "N/A"
+        val firstFilteredDate = filtered.minOfOrNull { it.date }?.let { dateFormat.format(java.util.Date(it)) } ?: "N/A"
+        val lastFilteredDate = filtered.maxOfOrNull { it.date }?.let { dateFormat.format(java.util.Date(it)) } ?: "N/A"
+        
+        Log.d(TAG, "Calculating period summary:")
+        Log.d(TAG, "  Period: $startDateStr to $endDateStr")
+        Log.d(TAG, "  Total history: ${history.size} points (from $firstHistoryDate to $lastHistoryDate)")
+        Log.d(TAG, "  Filtered: ${filtered.size} points (from $firstFilteredDate to $lastFilteredDate)")
+        
         if (filtered.isEmpty()) {
+            Log.d(TAG, "No data in period, returning empty summary")
             return PeriodSummary(0.0, 0.0, 0.0, null)
         }
         
         val values = filtered.map { it.value }
         val sortedValues = values.sorted()
+        val uniqueValues = values.distinct()
         
         val min = values.minOrNull() ?: 0.0
         val max = values.maxOrNull() ?: 0.0
@@ -115,6 +132,13 @@ class MetricHistoryRepository(
             }
         } else {
             null
+        }
+        
+        Log.d(TAG, "Period summary results:")
+        Log.d(TAG, "  min=$min, max=$max, average=$average, median=$median")
+        Log.d(TAG, "  dataPoints=${values.size}, uniqueValues=${uniqueValues.size}")
+        if (uniqueValues.size == 1) {
+            Log.w(TAG, "  WARNING: All values in period are identical (${uniqueValues.first()})")
         }
         
         return PeriodSummary(
@@ -200,6 +224,32 @@ class MetricHistoryRepository(
         val maxAgeMillis = TimeUnit.HOURS.toMillis(maxAgeHours)
         val now = System.currentTimeMillis()
         return (now - lastUpdate) > maxAgeMillis
+    }
+
+    /**
+     * Kontrollerar om historiken har tillräckligt med data (t.ex. minst X dagar).
+     * 
+     * @param symbol Aktiens symbol
+     * @param metricType Typ av nyckeltal
+     * @param minDays Minsta antal dagar med data som krävs
+     * @return true om historiken har tillräckligt med data, false annars
+     */
+    suspend fun hasEnoughHistory(
+        symbol: String,
+        metricType: WatchType.MetricType,
+        minDays: Int = 365
+    ): Boolean {
+        val allHistory = dao.getAllHistoryForMetric(symbol, metricType.name)
+        if (allHistory.isEmpty()) {
+            return false
+        }
+        
+        val firstDate = allHistory.minOf { it.date }
+        val lastDate = allHistory.maxOf { it.date }
+        val daysWithData = ((lastDate - firstDate) / (1000 * 60 * 60 * 24)).toInt() + 1
+        
+        Log.d(TAG, "Checking history sufficiency for $symbol ${metricType.name}: $daysWithData days (min: $minDays)")
+        return daysWithData >= minDays
     }
 
     /**

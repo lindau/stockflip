@@ -42,7 +42,17 @@ class StockDetailViewModel(
                 val lastPrice = yahooFinanceService.getStockPrice(symbol)
                 val previousClose = yahooFinanceService.getPreviousClose(symbol)
                 val week52High = yahooFinanceService.getATH(symbol) // getATH hämtar 52w high
-                val dailyChangePercent = yahooFinanceService.getDailyChangePercent(symbol)
+                val week52Low = yahooFinanceService.get52WeekLow(symbol)
+                val currency = yahooFinanceService.getCurrency(symbol) ?: "SEK"
+                val exchange = yahooFinanceService.getExchange(symbol)
+                var dailyChangePercent = yahooFinanceService.getDailyChangePercent(symbol)
+                
+                // Fallback-beräkning om API returnerar null men vi har både pris och previousClose
+                if (dailyChangePercent == null && lastPrice != null && previousClose != null && previousClose > 0) {
+                    dailyChangePercent = ((lastPrice - previousClose) / previousClose) * 100
+                    Log.d(TAG, "Calculated daily change as fallback: $dailyChangePercent%")
+                }
+                
                 val companyName = yahooFinanceService.getCompanyName(symbol) ?: symbol
                 
                 val drawdownPercent = if (lastPrice != null && week52High != null && week52High > 0) {
@@ -57,6 +67,9 @@ class StockDetailViewModel(
                     lastPrice = lastPrice,
                     previousClose = previousClose,
                     week52High = week52High,
+                    week52Low = week52Low,
+                    currency = currency,
+                    exchange = exchange,
                     dailyChangePercent = dailyChangePercent,
                     drawdownPercent = drawdownPercent
                 )
@@ -257,6 +270,9 @@ data class StockDetailData(
     val lastPrice: Double?,
     val previousClose: Double?,
     val week52High: Double?,
+    val week52Low: Double?,
+    val currency: String = "SEK",
+    val exchange: String? = null,
     val dailyChangePercent: Double?,
     val drawdownPercent: Double?
 )

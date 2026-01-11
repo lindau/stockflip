@@ -36,32 +36,52 @@ class MetricHistoryService(
         currentValue: Double?
     ) = withContext(Dispatchers.IO) {
         try {
-            // Kontrollera om historik behöver uppdateras
-            val needsUpdate = metricHistoryRepository.needsUpdate(symbol, metricType, maxAgeHours = 24)
+            // Kontrollera om historik behöver uppdateras (baserat på tid)
+            val needsUpdateByTime = metricHistoryRepository.needsUpdate(symbol, metricType, maxAgeHours = 24)
             
-            if (!needsUpdate) {
-                Log.d(TAG, "History for $symbol ${metricType.name} is up to date")
+            // Kontrollera om vi har tillräckligt med historik (minst 1 års data)
+            val existingSummary = metricHistoryRepository.getMetricHistorySummary(symbol, metricType)
+            val hasEnoughHistory = existingSummary != null && 
+                existingSummary.oneYear.average > 0.0 && 
+                metricHistoryRepository.hasEnoughHistory(symbol, metricType, minDays = 365)
+            
+            if (!needsUpdateByTime && hasEnoughHistory) {
+                Log.d(TAG, "History for $symbol ${metricType.name} is up to date and has sufficient data")
                 return@withContext
             }
+            
+            if (!needsUpdateByTime && !hasEnoughHistory) {
+                Log.d(TAG, "History for $symbol ${metricType.name} is recent but insufficient, fetching from Finnhub")
+            } else if (needsUpdateByTime) {
+                Log.d(TAG, "History for $symbol ${metricType.name} needs update, fetching from Finnhub")
+            }
 
-            Log.d(TAG, "Fetching historical data for $symbol ${metricType.name}")
+            Log.d(TAG, "Fetching historical data for $symbol ${metricType.name} from Finnhub")
 
             // Försök hämta historik från Finnhub
-            val historyData = FinnhubService.getMetricHistory(symbol, metricType, years = 5)
+            val historyData = try {
+                FinnhubService.getMetricHistory(symbol, metricType, years = 5)
+            } catch (e: Exception) {
+                Log.e(TAG, "Error fetching history from Finnhub for $symbol ${metricType.name}: ${e.message}", e)
+                null
+            }
             
             if (historyData != null && historyData.isNotEmpty()) {
                 // Spara historisk data från API
                 val historyPairs = historyData.map { it.date to it.value }
                 metricHistoryRepository.saveMetricHistoryList(symbol, metricType, historyPairs)
-                Log.d(TAG, "Saved ${historyData.size} historical data points from API for $symbol ${metricType.name}")
+                Log.d(TAG, "Saved ${historyData.size} historical data points from Finnhub API for $symbol ${metricType.name}")
+                
+                // Logga datumintervall för debugging
+                val firstDate = historyData.minOfOrNull { it.date }?.let { 
+                    java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(java.util.Date(it))
+                } ?: "N/A"
+                val lastDate = historyData.maxOfOrNull { it.date }?.let { 
+                    java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(java.util.Date(it))
+                } ?: "N/A"
+                Log.d(TAG, "History data range: $firstDate to $lastDate")
             } else {
-                // Ingen historik från API, spara nuvarande värde om det finns
-                if (currentValue != null && currentValue > 0) {
-                    metricHistoryRepository.saveMetricHistory(symbol, metricType, currentValue)
-                    Log.d(TAG, "No API history available, saved current value for $symbol ${metricType.name}: $currentValue")
-                } else {
-                    Log.w(TAG, "No historical data available and no current value to save for $symbol ${metricType.name}")
-                }
+                Log.w(TAG, "No historical data from Finnhub for $symbol ${metricType.name} - will not save any data")
             }
         } catch (e: Exception) {
             Log.e(TAG, "Error fetching and saving history: ${e.message}", e)

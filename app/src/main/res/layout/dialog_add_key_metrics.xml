@@ -130,46 +130,6 @@
                 android:layout_marginBottom="12dp"
                 android:textSize="12sp" />
 
-            <!-- Preset-knappar -->
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Snabbval:"
-                android:textStyle="bold"
-                android:textSize="12sp"
-                android:layout_marginBottom="8dp" />
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical">
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/presetBelow5YearAvg"
-                    style="@style/Widget.Material3.Button.TextButton"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="Under 5-årssnittet"
-                    android:layout_marginBottom="4dp" />
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/presetBelow3YearMin"
-                    style="@style/Widget.Material3.Button.TextButton"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="Under 3-årsmin"
-                    android:layout_marginBottom="4dp" />
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/presetOneYearAvgMinus20"
-                    style="@style/Widget.Material3.Button.TextButton"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="1-årssnitt − 20%"
-                    android:layout_marginBottom="4dp" />
-
-            </LinearLayout>
-
         </LinearLayout>
 
     </androidx.cardview.widget.CardView>

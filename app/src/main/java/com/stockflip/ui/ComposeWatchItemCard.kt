@@ -35,7 +35,7 @@ fun ComposeWatchItemCard(
         modifier = modifier
             .fillMaxWidth()
             .clickable(onClick = onItemClick)
-            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .padding(horizontal = 8.dp, vertical = 8.dp)
     ) {
         when (item.watchType) {
             is com.stockflip.WatchType.PricePair -> {

@@ -28,7 +28,7 @@ import java.text.DecimalFormatSymbols
 import java.util.Locale
 
 /**
- * Fragment för att visa detaljer om en enskild aktie.
+ * Fragment för att visa detaljer om en enskild aktie/krypto.
  * 
  * Enligt PRD Fas 1 ska denna visa:
  * - Namn + ticker
@@ -103,7 +103,6 @@ class StockDetailFragment : Fragment() {
         }
         viewModel = ViewModelProvider(this, factory)[StockDetailViewModel::class.java]
 
-        setupToolbar()
         setupRecyclerView()
         setupQuickActions()
         setupObservers()
@@ -111,12 +110,6 @@ class StockDetailFragment : Fragment() {
         // Ladda data
         viewModel.loadStockData()
         viewModel.loadAlerts()
-    }
-
-    private fun setupToolbar() {
-        binding.toolbar.setNavigationOnClickListener {
-            requireActivity().onBackPressed()
-        }
     }
 
     private fun setupRecyclerView() {
@@ -205,8 +198,17 @@ class StockDetailFragment : Fragment() {
         binding.companyName.text = data.companyName
         binding.symbol.text = data.symbol
         
+        // Visa landsflagga baserat på börs och valuta (valuta som fallback)
+        // För krypto returneras null, då visas ingen flagga
+        val flagEmoji = CountryFlagHelper.getFlagForExchange(data.exchange, data.currency)
+        binding.countryFlag.text = flagEmoji ?: ""
+        
+        // Dölj nyckeltal-knappen om det är en kryptovaluta
+        val isCrypto = StockSearchResult.isCryptoSymbol(data.symbol)
+        binding.createKeyMetricsButton.visibility = if (isCrypto) android.view.View.GONE else android.view.View.VISIBLE
+        
         binding.lastPrice.text = data.lastPrice?.let { 
-            "${priceFormat.format(it)} SEK"
+            CurrencyHelper.formatPrice(it, data.currency)
         } ?: "Laddar..."
         
         binding.dailyChangePercent.text = when {
@@ -222,14 +224,27 @@ class StockDetailFragment : Fragment() {
                 "$sign${priceFormat.format(change)}%"
             }
             data.lastPrice != null && data.previousClose != null -> {
-                // Vi har både pris och föregående stängning, men förändringen är 0 eller kunde inte beräknas
-                binding.dailyChangePercent.setTextColor(android.graphics.Color.parseColor("#757575")) // Gray
-                "0.00%"
+                // Beräkna förändringen direkt om vi har både pris och previousClose
+                val change = ((data.lastPrice - data.previousClose) / data.previousClose) * 100
+                if (kotlin.math.abs(change) < 0.001) {
+                    // Förändringen är i praktiken 0, börsen är förmodligen stängd
+                    binding.dailyChangePercent.setTextColor(android.graphics.Color.parseColor("#757575")) // Gray
+                    "Börsen stängd"
+                } else {
+                    val sign = if (change >= 0) "+" else ""
+                    val color = if (change >= 0) {
+                        android.graphics.Color.parseColor("#4CAF50") // Green
+                    } else {
+                        android.graphics.Color.parseColor("#F44336") // Red
+                    }
+                    binding.dailyChangePercent.setTextColor(color)
+                    "$sign${priceFormat.format(change)}%"
+                }
             }
             data.lastPrice != null -> {
                 // Vi har nuvarande pris men ingen föregående stängning (t.ex. helger eller marknaden stängd)
                 binding.dailyChangePercent.setTextColor(android.graphics.Color.parseColor("#757575")) // Gray
-                "Ej tillgängligt"
+                "Börsen stängd"
             }
             else -> {
                 // Inget pris ännu
@@ -239,7 +254,11 @@ class StockDetailFragment : Fragment() {
         }
         
         binding.week52High.text = data.week52High?.let {
-            "${priceFormat.format(it)} SEK"
+            CurrencyHelper.formatPrice(it, data.currency)
+        } ?: "Laddar..."
+        
+        binding.week52Low.text = data.week52Low?.let {
+            CurrencyHelper.formatPrice(it, data.currency)
         } ?: "Laddar..."
         
         binding.drawdownPercent.text = data.drawdownPercent?.let {
@@ -249,17 +268,12 @@ class StockDetailFragment : Fragment() {
 
 
     private fun showCreatePriceTargetDialog() {
-        val symbol = arguments?.getString(ARG_SYMBOL) ?: return
-        val companyName = arguments?.getString(ARG_COMPANY_NAME)
-            ?: (viewModel.stockDataState.value as? UiState.Success<StockDetailData>)?.data?.companyName
-            ?: ""
-        
         val dialogView = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_add_price_target, null)
         val tickerInput = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.tickerInput)
         val targetPriceInput = dialogView.findViewById<TextInputEditText>(R.id.targetPriceInput)
         val directionInput = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.directionInput)
         
-        // Dölj aktie-fältet eftersom vi redan är på denna akties sida
+        // Dölj aktie/krypto-fältet eftersom vi redan är på denna akties/kryptos sida
         // TextInputLayout är parent till MaterialAutoCompleteTextView
         tickerInput?.parent?.let { parent ->
             if (parent is com.google.android.material.textfield.TextInputLayout) {
@@ -270,13 +284,9 @@ class StockDetailFragment : Fragment() {
         }
         
         // Förifyll med 10-15% under dagens pris enligt PRD
-        viewModel.stockDataState.value?.let { state ->
-            if (state is UiState.Success) {
-                state.data.lastPrice?.let { currentPrice ->
-                    val suggestedPrice = currentPrice * 0.90 // 10% under
-                    targetPriceInput.setText(priceFormat.format(suggestedPrice))
-                }
-            }
+        (viewModel.stockDataState.value as? UiState.Success<StockDetailData>)?.data?.lastPrice?.let { currentPrice ->
+            val suggestedPrice = currentPrice * 0.90 // 10% under
+            targetPriceInput.setText(priceFormat.format(suggestedPrice))
         }
 
         // Set up direction dropdown
@@ -300,12 +310,12 @@ class StockDetailFragment : Fragment() {
                     }
 
                     if (targetPrice != null && targetPrice > 0) {
-                        val companyName = (viewModel.stockDataState.value as? UiState.Success<StockDetailData>)?.data?.companyName
+                        val currentCompanyName = (viewModel.stockDataState.value as? UiState.Success<StockDetailData>)?.data?.companyName
                             ?: arguments?.getString(ARG_COMPANY_NAME) ?: ""
                         
                         viewModel.createAlert(
                             WatchType.PriceTarget(targetPrice, direction),
-                            companyName
+                            currentCompanyName
                         )
                         Toast.makeText(requireContext(), "Målpris-bevakning skapad", Toast.LENGTH_SHORT).show()
                     } else {
@@ -320,14 +330,12 @@ class StockDetailFragment : Fragment() {
     }
 
     private fun showCreateDrawdownDialog() {
-        val symbol = arguments?.getString(ARG_SYMBOL) ?: return
-        
         val dialogView = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_add_ath_based, null)
         val tickerInput = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.tickerInput)
         val dropTypeInput = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.dropTypeInput)
         val dropValueInput = dialogView.findViewById<TextInputEditText>(R.id.dropValueInput)
         
-        // Dölj aktie-fältet eftersom vi redan är på denna akties sida
+        // Dölj aktie/krypto-fältet eftersom vi redan är på denna akties/kryptos sida
         // TextInputLayout är parent till MaterialAutoCompleteTextView
         tickerInput?.parent?.let { parent ->
             if (parent is com.google.android.material.textfield.TextInputLayout) {
@@ -344,13 +352,9 @@ class StockDetailFragment : Fragment() {
         dropTypeInput.setText("Procent", false) // Default to percentage
         
         // Visa aktuell drawdown från 52w high enligt PRD
-        viewModel.stockDataState.value?.let { state ->
-            if (state is UiState.Success) {
-                state.data.drawdownPercent?.let { currentDrawdown ->
-                    val suggestedDrop = currentDrawdown + 5.0 // 5% mer än nuvarande
-                    dropValueInput.setText(priceFormat.format(suggestedDrop))
-                }
-            }
+        (viewModel.stockDataState.value as? UiState.Success<StockDetailData>)?.data?.drawdownPercent?.let { currentDrawdown ->
+            val suggestedDrop = currentDrawdown + 5.0 // 5% mer än nuvarande
+            dropValueInput.setText(priceFormat.format(suggestedDrop))
         }
 
         MaterialAlertDialogBuilder(requireContext())
@@ -369,12 +373,12 @@ class StockDetailFragment : Fragment() {
                     val dropValue = dropValueStr.toDoubleOrNull()
 
                     if (dropValue != null && dropValue > 0) {
-                        val companyName = (viewModel.stockDataState.value as? UiState.Success<StockDetailData>)?.data?.companyName
+                        val currentCompanyName = (viewModel.stockDataState.value as? UiState.Success<StockDetailData>)?.data?.companyName
                             ?: arguments?.getString(ARG_COMPANY_NAME) ?: ""
                         
                         viewModel.createAlert(
                             WatchType.ATHBased(dropType, dropValue),
-                            companyName
+                            currentCompanyName
                         )
                         Toast.makeText(requireContext(), "Drawdown-bevakning skapad", Toast.LENGTH_SHORT).show()
                     } else {
@@ -389,7 +393,18 @@ class StockDetailFragment : Fragment() {
     }
 
     private fun showCreateDailyMoveDialog() {
+        val symbol = arguments?.getString(ARG_SYMBOL) ?: return
+        val companyName = arguments?.getString(ARG_COMPANY_NAME)
+            ?: (viewModel.stockDataState.value as? UiState.Success<StockDetailData>)?.data?.companyName
+            ?: ""
+        
         val dialogView = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_add_daily_move, null)
+        val tickerInput = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.tickerInput)
+        val tickerInputLayout = tickerInput?.parent as? TextInputLayout
+        tickerInputLayout?.visibility = android.view.View.GONE
+        tickerInput?.setText("$symbol - $companyName")
+        tickerInput?.isEnabled = false
+        
         val thresholdInput = dialogView.findViewById<TextInputEditText>(R.id.thresholdInput)
         val directionInput = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.directionInput)
 
@@ -415,12 +430,12 @@ class StockDetailFragment : Fragment() {
                     }
 
                     if (threshold != null && threshold > 0) {
-                        val companyName = (viewModel.stockDataState.value as? UiState.Success<StockDetailData>)?.data?.companyName
+                        val currentCompanyName = (viewModel.stockDataState.value as? UiState.Success<StockDetailData>)?.data?.companyName
                             ?: arguments?.getString(ARG_COMPANY_NAME) ?: ""
                         
                         viewModel.createAlert(
                             WatchType.DailyMove(threshold, direction),
-                            companyName
+                            currentCompanyName
                         )
                         Toast.makeText(requireContext(), "Dagsrörelse-bevakning skapad", Toast.LENGTH_SHORT).show()
                     } else {
@@ -440,15 +455,11 @@ class StockDetailFragment : Fragment() {
         val maxPriceInput = dialogView.findViewById<TextInputEditText>(R.id.maxPriceInput)
         
         // Förifyll med 10-15% under/över dagens pris enligt PRD
-        viewModel.stockDataState.value?.let { state ->
-            if (state is UiState.Success) {
-                state.data.lastPrice?.let { currentPrice ->
-                    val suggestedMinPrice = currentPrice * 0.90 // 10% under
-                    val suggestedMaxPrice = currentPrice * 1.10 // 10% över
-                    minPriceInput.setText(priceFormat.format(suggestedMinPrice))
-                    maxPriceInput.setText(priceFormat.format(suggestedMaxPrice))
-                }
-            }
+        (viewModel.stockDataState.value as? UiState.Success<StockDetailData>)?.data?.lastPrice?.let { currentPrice ->
+            val suggestedMinPrice = currentPrice * 0.90 // 10% under
+            val suggestedMaxPrice = currentPrice * 1.10 // 10% över
+            minPriceInput.setText(priceFormat.format(suggestedMinPrice))
+            maxPriceInput.setText(priceFormat.format(suggestedMaxPrice))
         }
 
         MaterialAlertDialogBuilder(requireContext())
@@ -466,12 +477,12 @@ class StockDetailFragment : Fragment() {
                         if (minPrice >= maxPrice) {
                             Toast.makeText(requireContext(), "Minsta pris måste vara mindre än högsta pris", Toast.LENGTH_SHORT).show()
                         } else {
-                            val companyName = (viewModel.stockDataState.value as? UiState.Success<StockDetailData>)?.data?.companyName
+                            val currentCompanyName = (viewModel.stockDataState.value as? UiState.Success<StockDetailData>)?.data?.companyName
                                 ?: arguments?.getString(ARG_COMPANY_NAME) ?: ""
                             
                             viewModel.createAlert(
                                 WatchType.PriceRange(minPrice, maxPrice),
-                                companyName
+                                currentCompanyName
                             )
                             Toast.makeText(requireContext(), "Prisintervall-bevakning skapad", Toast.LENGTH_SHORT).show()
                         }
@@ -503,61 +514,18 @@ class StockDetailFragment : Fragment() {
             val targetValueInput = dialogView.findViewById<TextInputEditText>(R.id.targetValueInput)
             val directionInput = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.directionInput)
             
-            // Förifyll aktieslaget
-            tickerInput.setText("$symbol - ${companyName ?: symbol}", false)
-            tickerInput.isEnabled = false // Gör det read-only eftersom vi redan är på denna akties sida
+            // Förifyll aktie/krypto-slaget
+            tickerInput.setText("$symbol - $companyName", false)
+            tickerInput.isEnabled = false // Gör det read-only eftersom vi redan är på denna akties/kryptos sida
             
-            // History UI elements
+            // History UI elements - hidden
             val historyCard = dialogView.findViewById<CardView>(R.id.historyCard)
-            val currentValueText = dialogView.findViewById<TextView>(R.id.currentValueText)
-            val historyOneYear = dialogView.findViewById<TextView>(R.id.historyOneYear)
-            val historyThreeYear = dialogView.findViewById<TextView>(R.id.historyThreeYear)
-            val historyFiveYear = dialogView.findViewById<TextView>(R.id.historyFiveYear)
-            val presetBelow5YearAvg = dialogView.findViewById<com.google.android.material.button.MaterialButton>(R.id.presetBelow5YearAvg)
-            val presetBelow3YearMin = dialogView.findViewById<com.google.android.material.button.MaterialButton>(R.id.presetBelow3YearMin)
-            val presetOneYearAvgMinus20 = dialogView.findViewById<com.google.android.material.button.MaterialButton>(R.id.presetOneYearAvgMinus20)
-
-            var selectedMetricType: WatchType.MetricType? = null
-            var historySummary: com.stockflip.MetricHistorySummary? = null
+            historyCard.visibility = android.view.View.GONE
 
             // Set up metric type dropdown
             val metricTypes = arrayOf("P/E-tal", "P/S-tal", "Utdelningsprocent")
             val metricTypeAdapter = ArrayAdapter(requireContext(), android.R.layout.simple_dropdown_item_1line, metricTypes)
             metricTypeInput.setAdapter(metricTypeAdapter)
-            metricTypeInput.setOnItemClickListener { _, _, position, _ ->
-                selectedMetricType = when (position) {
-                    0 -> WatchType.MetricType.PE_RATIO
-                    1 -> WatchType.MetricType.PS_RATIO
-                    2 -> WatchType.MetricType.DIVIDEND_YIELD
-                    else -> null
-                }
-                // Load history when metric type is selected
-                if (selectedMetricType != null) {
-                    loadHistoryForDialog(symbol, selectedMetricType!!, historyCard, currentValueText, historyOneYear, historyThreeYear, historyFiveYear, presetBelow5YearAvg, presetBelow3YearMin, presetOneYearAvgMinus20) { summary ->
-                        historySummary = summary
-                    }
-                }
-            }
-            
-            // Set up preset buttons
-            presetBelow5YearAvg.setOnClickListener {
-                historySummary?.let { summary ->
-                    val value = com.stockflip.ui.presets.MetricPresets.getPresetValue(com.stockflip.ui.presets.PresetType.BELOW_5_YEAR_AVG, summary)
-                    value?.let { targetValueInput.setText(String.format(Locale.getDefault(), "%.2f", it)) }
-                }
-            }
-            presetBelow3YearMin.setOnClickListener {
-                historySummary?.let { summary ->
-                    val value = com.stockflip.ui.presets.MetricPresets.getPresetValue(com.stockflip.ui.presets.PresetType.BELOW_3_YEAR_MIN, summary)
-                    value?.let { targetValueInput.setText(String.format(Locale.getDefault(), "%.2f", it)) }
-                }
-            }
-            presetOneYearAvgMinus20.setOnClickListener {
-                historySummary?.let { summary ->
-                    val value = com.stockflip.ui.presets.MetricPresets.getPresetValue(com.stockflip.ui.presets.PresetType.ONE_YEAR_AVG_MINUS_20, summary)
-                    value?.let { targetValueInput.setText(String.format(Locale.getDefault(), "%.2f", it)) }
-                }
-            }
 
             // Set up direction dropdown
             val directions = arrayOf("Över", "Under")
@@ -604,62 +572,6 @@ class StockDetailFragment : Fragment() {
         }
     }
 
-    private fun loadHistoryForDialog(
-        symbol: String,
-        metricType: WatchType.MetricType,
-        historyCard: CardView,
-        currentValueText: TextView,
-        historyOneYear: TextView,
-        historyThreeYear: TextView,
-        historyFiveYear: TextView,
-        presetBelow5YearAvg: com.google.android.material.button.MaterialButton,
-        presetBelow3YearMin: com.google.android.material.button.MaterialButton,
-        presetOneYearAvgMinus20: com.google.android.material.button.MaterialButton,
-        onSummaryLoaded: (com.stockflip.MetricHistorySummary) -> Unit
-    ) {
-        viewLifecycleOwner.lifecycleScope.launch {
-            try {
-                // Hämta nuvarande värde
-                val currentValue = YahooFinanceService.getKeyMetric(symbol, metricType)
-                
-                val database = StockPairDatabase.getDatabase(requireContext())
-                val metricHistoryRepository = MetricHistoryRepository(database.metricHistoryDao())
-                val metricHistoryService = MetricHistoryService(metricHistoryRepository)
-                
-                val summary = metricHistoryService.getOrFetchHistorySummary(symbol, metricType, currentValue)
-                
-                if (summary != null && !summary.oneYear.isEmpty()) {
-                    historyCard.visibility = android.view.View.VISIBLE
-                    
-                    val metricTypeName = when (metricType) {
-                        WatchType.MetricType.PE_RATIO -> "P/E"
-                        WatchType.MetricType.PS_RATIO -> "P/S"
-                        WatchType.MetricType.DIVIDEND_YIELD -> "Utdelningsprocent"
-                    }
-                    
-                    // Visa nuvarande värde
-                    currentValueText.text = "Nuvarande $metricTypeName: ${currentValue?.let { String.format(Locale.getDefault(), "%.2f", it) } ?: "N/A"}"
-                    
-                    if (!summary.oneYear.isEmpty()) {
-                        historyOneYear.text = "1 år: snitt ${String.format(Locale.getDefault(), "%.1f", summary.oneYear.average)} (min ${String.format(Locale.getDefault(), "%.1f", summary.oneYear.min)} / max ${String.format(Locale.getDefault(), "%.1f", summary.oneYear.max)})"
-                    }
-                    if (!summary.threeYear.isEmpty()) {
-                        historyThreeYear.text = "3 år: snitt ${String.format(Locale.getDefault(), "%.1f", summary.threeYear.average)} (min ${String.format(Locale.getDefault(), "%.1f", summary.threeYear.min)} / max ${String.format(Locale.getDefault(), "%.1f", summary.threeYear.max)})"
-                    }
-                    if (!summary.fiveYear.isEmpty()) {
-                        historyFiveYear.text = "5 år: snitt ${String.format(Locale.getDefault(), "%.1f", summary.fiveYear.average)} (min ${String.format(Locale.getDefault(), "%.1f", summary.fiveYear.min)} / max ${String.format(Locale.getDefault(), "%.1f", summary.fiveYear.max)})"
-                    }
-                    
-                    onSummaryLoaded(summary)
-                } else {
-                    historyCard.visibility = android.view.View.GONE
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "Error loading history: ${e.message}", e)
-                historyCard.visibility = android.view.View.GONE
-            }
-        }
-    }
 
     private fun showDeleteConfirmation(watchItem: WatchItem) {
         MaterialAlertDialogBuilder(requireContext())
@@ -811,10 +723,10 @@ class StockDetailFragment : Fragment() {
         val dailyMove = item.watchType
         val dialogView = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_add_daily_move, null)
         val tickerInput = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.tickerInput)
-        val tickerInputLayout = tickerInput.parent as? TextInputLayout
+        val tickerInputLayout = tickerInput?.parent as? TextInputLayout
         tickerInputLayout?.visibility = android.view.View.GONE
-        tickerInput.setText(item.ticker ?: "")
-        tickerInput.isEnabled = false
+        tickerInput?.setText(item.ticker ?: "")
+        tickerInput?.isEnabled = false
         
         val thresholdInput = dialogView.findViewById<TextInputEditText>(R.id.thresholdInput).apply {
             setText(priceFormat.format(dailyMove.percentThreshold))
@@ -948,7 +860,7 @@ class StockDetailFragment : Fragment() {
         val dialogView = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_add_key_metrics, null)
         val tickerInput = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.tickerInput)
         val tickerInputLayout = tickerInput.parent as? TextInputLayout
-        tickerInputLayout?.visibility = android.view.View.GONE // Dölj ticker-input eftersom vi redan är på rätt aktie
+        tickerInputLayout?.visibility = android.view.View.GONE // Dölj ticker-input eftersom vi redan är på rätt aktie/krypto
         tickerInput.setText("$symbol - $companyName")
         tickerInput.isEnabled = false
         
@@ -969,58 +881,16 @@ class StockDetailFragment : Fragment() {
             })
         }
         
-        // History UI elements
+        // History UI elements - hidden
         val historyCard = dialogView.findViewById<CardView>(R.id.historyCard)
-        val currentValueText = dialogView.findViewById<TextView>(R.id.currentValueText)
-        val historyOneYear = dialogView.findViewById<TextView>(R.id.historyOneYear)
-        val historyThreeYear = dialogView.findViewById<TextView>(R.id.historyThreeYear)
-        val historyFiveYear = dialogView.findViewById<TextView>(R.id.historyFiveYear)
-        val presetBelow5YearAvg = dialogView.findViewById<com.google.android.material.button.MaterialButton>(R.id.presetBelow5YearAvg)
-        val presetBelow3YearMin = dialogView.findViewById<com.google.android.material.button.MaterialButton>(R.id.presetBelow3YearMin)
-        val presetOneYearAvgMinus20 = dialogView.findViewById<com.google.android.material.button.MaterialButton>(R.id.presetOneYearAvgMinus20)
-
-        var historySummary: com.stockflip.MetricHistorySummary? = null
-
-        // Ladda historik automatiskt när dialogen öppnas
-        loadHistoryForDialog(symbol, keyMetrics.metricType, historyCard, currentValueText, historyOneYear, historyThreeYear, historyFiveYear, presetBelow5YearAvg, presetBelow3YearMin, presetOneYearAvgMinus20) { summary ->
-            historySummary = summary
-        }
+        historyCard.visibility = android.view.View.GONE
 
         // Set up metric type dropdown
         val metricTypes = arrayOf("P/E-tal", "P/S-tal", "Utdelningsprocent")
         val metricTypeAdapter = ArrayAdapter(requireContext(), android.R.layout.simple_dropdown_item_1line, metricTypes)
         metricTypeInput.setAdapter(metricTypeAdapter)
-        metricTypeInput.setOnItemClickListener { _, _, position, _ ->
-            val newMetricType = when (position) {
-                0 -> WatchType.MetricType.PE_RATIO
-                1 -> WatchType.MetricType.PS_RATIO
-                2 -> WatchType.MetricType.DIVIDEND_YIELD
-                else -> keyMetrics.metricType
-            }
-            // Ladda historik när metric type ändras
-            loadHistoryForDialog(symbol, newMetricType, historyCard, currentValueText, historyOneYear, historyThreeYear, historyFiveYear, presetBelow5YearAvg, presetBelow3YearMin, presetOneYearAvgMinus20) { summary ->
-                historySummary = summary
-            }
-        }
-        
-        // Set up preset buttons
-        presetBelow5YearAvg.setOnClickListener {
-            historySummary?.let { summary ->
-                val value = com.stockflip.ui.presets.MetricPresets.getPresetValue(com.stockflip.ui.presets.PresetType.BELOW_5_YEAR_AVG, summary)
-                value?.let { targetValueInput.setText(String.format(Locale.getDefault(), "%.2f", it)) }
-            }
-        }
-        presetBelow3YearMin.setOnClickListener {
-            historySummary?.let { summary ->
-                val value = com.stockflip.ui.presets.MetricPresets.getPresetValue(com.stockflip.ui.presets.PresetType.BELOW_3_YEAR_MIN, summary)
-                value?.let { targetValueInput.setText(String.format(Locale.getDefault(), "%.2f", it)) }
-            }
-        }
-        presetOneYearAvgMinus20.setOnClickListener {
-            historySummary?.let { summary ->
-                val value = com.stockflip.ui.presets.MetricPresets.getPresetValue(com.stockflip.ui.presets.PresetType.ONE_YEAR_AVG_MINUS_20, summary)
-                value?.let { targetValueInput.setText(String.format(Locale.getDefault(), "%.2f", it)) }
-            }
+        metricTypeInput.setOnItemClickListener { _, _, _, _ ->
+            // Metric type changed - no history loading
         }
 
         // Set up direction dropdown

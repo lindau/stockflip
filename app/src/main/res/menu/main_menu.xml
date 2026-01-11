@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <item
+        android:id="@+id/menu_sort"
+        android:title="Sortera"
+        android:icon="@android:drawable/ic_menu_sort_by_size"
+        app:showAsAction="ifRoom">
+        <menu>
+            <item
+                android:id="@+id/menu_sort_alphabetical"
+                android:title="Bokstavsordning" />
+            <item
+                android:id="@+id/menu_sort_addition"
+                android:title="Tilläggsordning" />
+            <item
+                android:id="@+id/menu_sort_custom"
+                android:title="Anpassningsbar" />
+        </menu>
+    </item>
+</menu>

@@ -312,16 +312,31 @@ object FinnhubService {
                         return@withContext null
                     }
 
+                    Log.d(TAG, "Finnhub response body length: ${responseBody.length}")
+                    Log.d(TAG, "Finnhub response preview (first 500 chars): ${responseBody.take(500)}")
+
                     val jsonObject = JSONObject(responseBody)
+                    
+                    // Log the structure of the response
+                    val keys = jsonObject.keys()
+                    val keyList = mutableListOf<String>()
+                    while (keys.hasNext()) {
+                        keyList.add(keys.next())
+                    }
+                    Log.d(TAG, "Finnhub response keys: $keyList")
+                    
                     val data = jsonObject.optJSONArray("data")
                     
                     if (data == null || data.length() == 0) {
                         Log.w(TAG, "No financial data in Finnhub response for $finnhubSymbol")
+                        Log.w(TAG, "Full response: $responseBody")
                         if (finnhubSymbol != symbolVariants.last()) {
                             continue
                         }
                         return@withContext null
                     }
+                    
+                    Log.d(TAG, "Found ${data.length()} financial reports in Finnhub response")
 
                     // Parse financial statements and extract metric values
                     val historyData = parseFinancialsForMetric(data, metricType, years)
@@ -369,7 +384,12 @@ object FinnhubService {
             add(Calendar.YEAR, -years)
         }
 
+        Log.d(TAG, "Parsing financials for ${metricType.name}, years=$years, totalReports=${data.length()}")
+
         try {
+            val uniqueValues = mutableSetOf<Double>()
+            val reportDates = mutableListOf<String>()
+            
             // Iterera genom financial statements (senaste först)
             for (i in 0 until data.length()) {
                 val statement = data.optJSONObject(i) ?: continue
@@ -387,8 +407,14 @@ object FinnhubService {
                     // Extract metric value from statement
                     val metricValue = extractMetricFromStatement(statement, metricType)
                     if (metricValue == null || metricValue <= 0) {
+                        Log.d(TAG, "Skipping report $reportDateStr: invalid metric value")
                         continue
                     }
+
+                    uniqueValues.add(metricValue)
+                    reportDates.add(reportDateStr)
+                    
+                    Log.d(TAG, "Processing report $reportDateStr: value=$metricValue")
 
                     // Convert quarterly/annual report to daily snapshots
                     // Use the report date and create daily entries until next report
@@ -401,7 +427,7 @@ object FinnhubService {
                         val nextReportDateStr = nextStatement.optString("reportDate", "")
                         if (nextReportDateStr.isNotEmpty()) {
                             val nextDate = dateFormat.parse(nextReportDateStr)
-                            if (nextDate != null) {
+                            if (nextDate != null && !nextDate.before(cutoffDate.time)) {
                                 nextReportTimestamp = nextDate.time
                                 break
                             }
@@ -412,17 +438,27 @@ object FinnhubService {
                     val endTimestamp = nextReportTimestamp ?: System.currentTimeMillis()
                     calendar.timeInMillis = reportTimestamp
                     
+                    var daysAdded = 0
                     while (calendar.timeInMillis <= endTimestamp && calendar.timeInMillis <= System.currentTimeMillis()) {
                         historyData.add(MetricHistoryData(
                             date = calendar.timeInMillis,
                             value = metricValue
                         ))
                         calendar.add(Calendar.DAY_OF_MONTH, 1)
+                        daysAdded++
                     }
+                    
+                    Log.d(TAG, "Added $daysAdded daily snapshots for report $reportDateStr with value $metricValue")
                 } catch (e: Exception) {
                     Log.w(TAG, "Error parsing report date $reportDateStr: ${e.message}")
                     continue
                 }
+            }
+            
+            Log.d(TAG, "Parsed ${historyData.size} total data points from ${reportDates.size} reports")
+            Log.d(TAG, "Unique metric values found: $uniqueValues")
+            if (uniqueValues.size == 1) {
+                Log.w(TAG, "WARNING: All reports have the same value (${uniqueValues.first()}). This may indicate data quality issues.")
             }
         } catch (e: Exception) {
             Log.e(TAG, "Error parsing financials: ${e.message}", e)
@@ -439,35 +475,74 @@ object FinnhubService {
         statement: JSONObject,
         metricType: WatchType.MetricType
     ): Double? {
+        // Log statement structure for debugging
+        val statementKeys = mutableListOf<String>()
+        val keys = statement.keys()
+        while (keys.hasNext()) {
+            statementKeys.add(keys.next())
+        }
+        Log.d(TAG, "Statement keys: $statementKeys")
+        
         // Finnhub financials structure varies, try common fields
-        val metric = statement.optJSONObject("metric") ?: statement
+        val metric = statement.optJSONObject("metric")
+        
+        if (metric != null) {
+            val metricKeys = mutableListOf<String>()
+            val metricKeysIterator = metric.keys()
+            while (metricKeysIterator.hasNext()) {
+                metricKeys.add(metricKeysIterator.next())
+            }
+            Log.d(TAG, "Metric object keys: $metricKeys")
+        } else {
+            Log.d(TAG, "No 'metric' object found, using statement directly")
+        }
+        
+        val source = metric ?: statement
         
         return when (metricType) {
             WatchType.MetricType.PE_RATIO -> {
                 // P/E ratio might not be directly in financials, might need to calculate
                 // For now, try to find it in metric object
-                var peRatio = metric.optDouble("peRatio", Double.NaN)
+                var peRatio = source.optDouble("peRatio", Double.NaN)
                 if (peRatio.isNaN() || peRatio <= 0) {
-                    peRatio = metric.optDouble("peRatioTTM", Double.NaN)
+                    peRatio = source.optDouble("peRatioTTM", Double.NaN)
                 }
+                if (peRatio.isNaN() || peRatio <= 0) {
+                    peRatio = source.optDouble("pe", Double.NaN)
+                }
+                if (peRatio.isNaN() || peRatio <= 0) {
+                    peRatio = source.optDouble("priceToEarnings", Double.NaN)
+                }
+                Log.d(TAG, "P/E ratio extraction: peRatio=$peRatio")
                 peRatio.takeIf { !it.isNaN() && it > 0 }
             }
             WatchType.MetricType.PS_RATIO -> {
-                var psRatio = metric.optDouble("priceToSalesRatio", Double.NaN)
+                var psRatio = source.optDouble("priceToSalesRatio", Double.NaN)
                 if (psRatio.isNaN() || psRatio <= 0) {
-                    psRatio = metric.optDouble("priceToSalesRatioTTM", Double.NaN)
+                    psRatio = source.optDouble("priceToSalesRatioTTM", Double.NaN)
                 }
+                if (psRatio.isNaN() || psRatio <= 0) {
+                    psRatio = source.optDouble("ps", Double.NaN)
+                }
+                if (psRatio.isNaN() || psRatio <= 0) {
+                    psRatio = source.optDouble("priceToSales", Double.NaN)
+                }
+                Log.d(TAG, "P/S ratio extraction: priceToSalesRatio=$psRatio")
                 psRatio.takeIf { !it.isNaN() && it > 0 }
             }
             WatchType.MetricType.DIVIDEND_YIELD -> {
-                var dividendYield = metric.optDouble("dividendYield", Double.NaN)
+                var dividendYield = source.optDouble("dividendYield", Double.NaN)
                 if (dividendYield.isNaN() || dividendYield <= 0) {
-                    dividendYield = metric.optDouble("dividendYieldTTM", Double.NaN)
+                    dividendYield = source.optDouble("dividendYieldTTM", Double.NaN)
+                }
+                if (dividendYield.isNaN() || dividendYield <= 0) {
+                    dividendYield = source.optDouble("dividend", Double.NaN)
                 }
                 // Convert to percentage if needed
                 if (!dividendYield.isNaN() && dividendYield > 0 && dividendYield < 1.0) {
                     dividendYield = dividendYield * 100
                 }
+                Log.d(TAG, "Dividend yield extraction: dividendYield=$dividendYield")
                 dividendYield.takeIf { !it.isNaN() && dividendYield > 0 }
             }
         }

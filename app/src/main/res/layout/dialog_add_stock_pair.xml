@@ -11,7 +11,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginBottom="16dp"
-        android:hint="First Stock">
+        android:hint="Första aktien">
 
         <com.google.android.material.textfield.MaterialAutoCompleteTextView
             android:id="@+id/ticker1Input"
@@ -28,7 +28,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginBottom="16dp"
-        android:hint="Second Stock">
+        android:hint="Andra aktien">
 
         <com.google.android.material.textfield.MaterialAutoCompleteTextView
             android:id="@+id/ticker2Input"
@@ -45,7 +45,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginBottom="16dp"
-        android:hint="Price Difference">
+        android:hint="Prissskillnad">
 
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/priceDifferenceInput"
@@ -61,6 +61,6 @@
         android:id="@+id/notifyWhenEqualCheckbox"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Notify when prices are equal" />
+        android:text="Meddela när priserna är lika" />
 
 </LinearLayout> 

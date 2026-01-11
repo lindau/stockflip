@@ -19,8 +19,8 @@ open class StockSearchViewModel(
 
     private var searchJob: Job? = null
 
-    fun search(query: String) {
-        Log.d(TAG, "Starting search for query: $query")
+    fun search(query: String, includeCrypto: Boolean = true) {
+        Log.d(TAG, "Starting search for query: $query (includeCrypto: $includeCrypto)")
         
         if (query.length < 2) {
             Log.d(TAG, "Query too short, clearing results")
@@ -34,7 +34,7 @@ open class StockSearchViewModel(
                 Log.d(TAG, "Executing search for query: $query")
                 _searchState.value = SearchState.Loading
                 
-                repository.searchStocks(query)
+                repository.searchStocks(query, includeCrypto)
                     .collect { state ->
                         Log.d(TAG, "Received search state: $state")
                         _searchState.value = state
@@ -49,7 +49,7 @@ open class StockSearchViewModel(
     fun retry() {
         val currentState = _searchState.value
         if (currentState is SearchState.Error) {
-            search(currentState.lastQuery ?: "")
+            search(currentState.lastQuery ?: "", includeCrypto = true)
         }
     }
 

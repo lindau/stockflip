@@ -56,7 +56,7 @@ fun CombinedAlertCard(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(16.dp)
+                    .padding(12.dp)
             ) {
                 // Stock info - show first symbol or all symbols
                 val symbolText = if (symbols.size == 1) {

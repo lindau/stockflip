@@ -58,6 +58,10 @@ class GroupedWatchItemAdapter(
     private val highlightedItems = mutableSetOf<Int>()
     // Track which sections are expanded (default: all expanded)
     private val expandedSections = mutableSetOf<String>()
+    // Sorteringsläge
+    private var sortMode: SortHelper.SortMode = SortHelper.SortMode.ADDITION_ORDER
+    // Anpassningsbar ordning för drag & drop (ticker -> position)
+    private var customOrder: Map<String, Int> = emptyMap()
 
     companion object {
         private const val VIEW_TYPE_HEADER = 0
@@ -171,14 +175,32 @@ class GroupedWatchItemAdapter(
         if (pricePairs.isNotEmpty() && !expandedSections.contains("Aktiepar")) {
             expandedSections.add("Aktiepar")
         }
-        if (singleStockItems.isNotEmpty() && !expandedSections.contains("Enskilda Aktier")) {
-            expandedSections.add("Enskilda Aktier")
+        if (singleStockItems.isNotEmpty() && !expandedSections.contains("Enskilda Aktier/Krypto")) {
+            expandedSections.add("Enskilda Aktier/Krypto")
         }
 
         // Build the filtered list grouped by stock
         buildFilteredList(items)
     }
     
+    /**
+     * Sätter sorteringsläge och uppdaterar listan.
+     */
+    fun setSortMode(mode: SortHelper.SortMode) {
+        sortMode = mode
+        rebuildAndSubmitList()
+    }
+
+    /**
+     * Sätter anpassningsbar ordning (för drag & drop).
+     */
+    fun setCustomOrder(order: Map<String, Int>) {
+        customOrder = order
+        if (sortMode == SortHelper.SortMode.CUSTOM) {
+            rebuildAndSubmitList()
+        }
+    }
+
     /**
      * Builds and submits a filtered list grouped by stock symbol
      */
@@ -187,6 +209,7 @@ class GroupedWatchItemAdapter(
 
         // Separate PricePairs (they have two stocks, handle separately)
         val pricePairs = items.filter { it.watchType is WatchType.PricePair }
+        val sortedPricePairs = SortHelper.sortWatchItems(pricePairs, sortMode, customOrder)
         
         // Group single-stock items by ticker
         val singleStockItems = items.filter { 
@@ -195,26 +218,27 @@ class GroupedWatchItemAdapter(
         
         // Group by ticker
         val itemsByTicker = singleStockItems.groupBy { it.ticker!! }
+        val sortedItemsByTicker = SortHelper.sortTickerGroups(itemsByTicker, sortMode, customOrder)
 
         // Add Price Pairs section (handle separately as they have two stocks)
-        if (pricePairs.isNotEmpty()) {
+        if (sortedPricePairs.isNotEmpty()) {
             groupedList.add(GroupedListItem.Header("Aktiepar"))
             val isExpanded = expandedSections.contains("Aktiepar")
-            Log.d(TAG, "Aktiepar section: isExpanded=$isExpanded, items=${pricePairs.size}")
+            Log.d(TAG, "Aktiepar section: isExpanded=$isExpanded, items=${sortedPricePairs.size}")
             if (isExpanded) {
-                pricePairs.forEach { groupedList.add(GroupedListItem.WatchItemWrapper(it)) }
+                sortedPricePairs.forEach { groupedList.add(GroupedListItem.WatchItemWrapper(it)) }
             }
         }
 
         // Add header for single stocks if there are any
-        if (itemsByTicker.isNotEmpty()) {
-            groupedList.add(GroupedListItem.Header("Enskilda Aktier"))
-            val isExpanded = expandedSections.contains("Enskilda Aktier")
-            Log.d(TAG, "Enskilda Aktier section: isExpanded=$isExpanded, items=${itemsByTicker.size} stocks")
+        if (sortedItemsByTicker.isNotEmpty()) {
+            groupedList.add(GroupedListItem.Header("Enskilda Aktier/Krypto"))
+            val isExpanded = expandedSections.contains("Enskilda Aktier/Krypto")
+            Log.d(TAG, "Enskilda Aktier/Krypto section: isExpanded=$isExpanded, items=${sortedItemsByTicker.size} stocks")
             
             if (isExpanded) {
-                // Process single-stock items grouped by ticker (sorted alphabetically)
-                itemsByTicker.toSortedMap().forEach { (ticker, watchItemsForTicker) ->
+                // Process single-stock items grouped by ticker (sorted according to sortMode)
+                sortedItemsByTicker.forEach { (ticker, watchItemsForTicker) ->
                     val companyName = watchItemsForTicker.firstOrNull()?.companyName
                     val currentPrice = watchItemsForTicker.firstOrNull()?.currentPrice ?: 0.0
                     

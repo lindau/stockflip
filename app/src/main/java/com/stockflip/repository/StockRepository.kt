@@ -23,12 +23,13 @@ class StockRepository(
      * Handles both ticker and company name searches.
      *
      * @param query The search query (ticker or company name)
+     * @param includeCrypto Whether to include cryptocurrency results (default: true)
      * @return Flow of SearchState representing the search progress and results
      */
-    suspend fun searchStocks(query: String): Flow<SearchState> = flow {
+    suspend fun searchStocks(query: String, includeCrypto: Boolean = true): Flow<SearchState> = flow {
         try {
             emit(SearchState.Loading)
-            Log.d(TAG, "Starting stock search for query: $query")
+            Log.d(TAG, "Starting stock search for query: $query (includeCrypto: $includeCrypto)")
             
             if (query.length < 2) {
                 Log.d(TAG, "Query too short, returning empty list")
@@ -37,7 +38,7 @@ class StockRepository(
             }
 
             cleanExpiredCache()
-            val cacheKey = query.trim().lowercase()
+            val cacheKey = "${query.trim().lowercase()}_$includeCrypto"
             val cached = cache[cacheKey]
             if (cached != null && !isCacheExpired(cached.timestamp)) {
                 Log.d(TAG, "Returning cached results for query: $query")
@@ -48,7 +49,7 @@ class StockRepository(
             // Prepare query - handle both ticker and name searches
             val searchQuery = when {
                 query.contains(".ST", ignoreCase = true) -> query.uppercase()
-                query.contains("-", ignoreCase = true) -> "${query.uppercase()}.ST"
+                query.contains("-", ignoreCase = true) && !query.contains("-USD") && !query.contains("-EUR") -> "${query.uppercase()}.ST"
                 query.all { it.isLetterOrDigit() } -> query.uppercase() // Handle pure ticker searches
                 else -> query
             }
@@ -56,7 +57,7 @@ class StockRepository(
             Log.d(TAG, "Modified search query: $searchQuery")
             
             // Perform search
-            val results = YahooFinanceService.searchStocks(searchQuery)
+            val results = YahooFinanceService.searchStocks(searchQuery, includeCrypto)
             Log.d(TAG, "Received ${results.size} results from YahooFinanceService")
             
             // Enhanced sorting logic that handles both ticker and name searches

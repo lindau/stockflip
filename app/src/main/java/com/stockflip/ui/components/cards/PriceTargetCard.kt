@@ -62,7 +62,7 @@ fun PriceTargetCard(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(16.dp)
+                    .padding(12.dp)
             ) {
                 // Header row med stock name och switch i övre högra hörnet
                 Row(

@@ -2,4 +2,5 @@
 <resources>
     <string name="app_name">StockFlip</string>
     <string name="last_updated">Last updated: %1$s</string>
+    <string name="icon_description">Icon</string>
 </resources> 

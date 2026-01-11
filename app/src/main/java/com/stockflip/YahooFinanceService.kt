@@ -212,19 +212,19 @@ object YahooFinanceService {
             }
             
             val price = result.meta?.regularMarketPrice
-            if (price == null) {
-                Log.e(TAG, "No price found for $symbol")
+            if (price == null || price.isNaN() || price <= 0) {
+                Log.e(TAG, "No valid price found for $symbol: $price")
                 return null
             }
             
             Log.d(TAG, """
                 Stock data for $symbol:
                 Price: $price
-                Currency: ${result.meta.currency}
-                Exchange: ${result.meta.exchangeName}
-                Instrument Type: ${result.meta.instrumentType}
-                Short Name: ${result.meta.shortName}
-                Long Name: ${result.meta.longName}
+                Currency: ${result.meta?.currency}
+                Exchange: ${result.meta?.exchangeName}
+                Instrument Type: ${result.meta?.instrumentType}
+                Short Name: ${result.meta?.shortName}
+                Long Name: ${result.meta?.longName}
             """.trimIndent())
             
             price
@@ -261,6 +261,86 @@ object YahooFinanceService {
             }
         } catch (e: Exception) {
             Log.e(TAG, "Error fetching company info for $symbol: ${e.message}", e)
+            null
+        }
+    }
+
+    /**
+     * Hämtar valuta för en aktie.
+     * 
+     * @param symbol Aktiens symbol
+     * @return Valuta-kod (t.ex. "SEK", "USD"), eller null om det inte kunde hämtas
+     */
+    suspend fun getCurrency(symbol: String): String? = withContext(Dispatchers.IO) {
+        try {
+            Log.d(TAG, "Fetching currency for symbol: $symbol")
+            val response = api.getStockPrice(symbol)
+            
+            if (response.chart?.error != null) {
+                Log.e(TAG, "API Error for $symbol: ${response.chart.error.description}")
+                return@withContext null
+            }
+            
+            val result = response.chart?.result?.firstOrNull()
+            if (result == null) {
+                Log.e(TAG, "No result found for $symbol")
+                return@withContext null
+            }
+            
+            val currency = result.meta?.currency
+            if (currency != null && currency.isNotEmpty()) {
+                Log.d(TAG, "Got currency for $symbol: $currency")
+                return@withContext currency
+            }
+            
+            // Fallback: använd börs för att bestämma valuta
+            val exchange = result.meta?.exchangeName
+            if (exchange != null) {
+                val fallbackCurrency = CurrencyHelper.getCurrencyFromExchange(exchange)
+                Log.d(TAG, "Using fallback currency for $symbol based on exchange $exchange: $fallbackCurrency")
+                return@withContext fallbackCurrency
+            }
+            
+            Log.w(TAG, "Could not determine currency for $symbol")
+            null
+        } catch (e: Exception) {
+            Log.e(TAG, "Error fetching currency for $symbol: ${e.message}", e)
+            null
+        }
+    }
+
+    /**
+     * Hämtar börs för en aktie.
+     * 
+     * @param symbol Aktiens symbol
+     * @return Börs-kod (t.ex. "STO", "NASDAQ"), eller null om det inte kunde hämtas
+     */
+    suspend fun getExchange(symbol: String): String? = withContext(Dispatchers.IO) {
+        try {
+            Log.d(TAG, "Fetching exchange for symbol: $symbol")
+            val response = api.getStockPrice(symbol)
+            
+            if (response.chart?.error != null) {
+                Log.e(TAG, "API Error for $symbol: ${response.chart.error.description}")
+                return@withContext null
+            }
+            
+            val result = response.chart?.result?.firstOrNull()
+            if (result == null) {
+                Log.e(TAG, "No result found for $symbol")
+                return@withContext null
+            }
+            
+            val exchange = result.meta?.exchangeName
+            if (exchange != null && exchange.isNotEmpty()) {
+                Log.d(TAG, "Got exchange for $symbol: $exchange")
+                return@withContext exchange
+            }
+            
+            Log.w(TAG, "Could not determine exchange for $symbol")
+            null
+        } catch (e: Exception) {
+            Log.e(TAG, "Error fetching exchange for $symbol: ${e.message}", e)
             null
         }
     }
@@ -426,6 +506,48 @@ object YahooFinanceService {
     }
 
     /**
+     * Hämtar 52-veckors lägsta pris för en aktie.
+     * 
+     * @param symbol Aktiens symbol
+     * @return 52-veckors lägsta pris, eller null om det inte kunde hämtas
+     */
+    suspend fun get52WeekLow(symbol: String): Double? = withContext(Dispatchers.IO) {
+        try {
+            Log.d(TAG, "Fetching 52-week low for symbol: $symbol")
+            val response = api.getStockPrice(symbol)
+            
+            if (response.chart?.error != null) {
+                Log.e(TAG, "API Error for $symbol: ${response.chart.error.description}")
+                return@withContext null
+            }
+            
+            val result = response.chart?.result?.firstOrNull()
+            if (result == null) {
+                Log.e(TAG, "No result found for $symbol")
+                return@withContext null
+            }
+            
+            val meta = result.meta
+            if (meta == null) {
+                Log.e(TAG, "No meta found for $symbol")
+                return@withContext null
+            }
+            
+            val week52Low = meta.fiftyTwoWeekLow
+            if (week52Low != null && !week52Low.isNaN() && week52Low > 0) {
+                Log.d(TAG, "Got 52-week low for $symbol: $week52Low")
+                return@withContext week52Low
+            }
+            
+            Log.w(TAG, "Could not find 52-week low for $symbol")
+            null
+        } catch (e: Exception) {
+            Log.e(TAG, "Error fetching 52-week low for $symbol: ${e.message}", e)
+            null
+        }
+    }
+
+    /**
      * Hämtar föregående stängningspris för en aktie.
      * Används för att beräkna dagsförändring i procent.
      * 
@@ -501,7 +623,7 @@ object YahooFinanceService {
     }
 
     @JvmStatic
-    suspend fun searchStocks(query: String): List<StockSearchResult> = withContext(Dispatchers.IO) {
+    suspend fun searchCrypto(query: String): List<StockSearchResult> = withContext(Dispatchers.IO) {
         try {
             if (query.length < 2) return@withContext emptyList()
             
@@ -509,15 +631,14 @@ object YahooFinanceService {
             val url = "$SEARCH_URL?q=$encodedQuery" +
                 "&quotesCount=50" +
                 "&lang=en" +
-                "&region=SE" +
+                "&region=US" +
                 "&enableFuzzyQuery=false" +
-                "&type=equity" +
+                "&type=cryptocurrency" +
                 "&newsCount=0" +
                 "&enableEnhancedTrivialQuery=false" +
-                "&exchange=STO" +
                 "&fields=symbol,shortname,exchange,quoteType,longname,typeDisp,market"
 
-            Log.d(TAG, "Searching stocks with URL: $url")
+            Log.d(TAG, "Searching crypto with URL: $url")
             
             val client = OkHttpClient.Builder()
                 .connectTimeout(10, TimeUnit.SECONDS)
@@ -542,7 +663,7 @@ object YahooFinanceService {
                 return@withContext emptyList()
             }
             
-            Log.d(TAG, "Received response: $responseBody")
+            Log.d(TAG, "Received crypto response: $responseBody")
             
             val jsonObject = JSONObject(responseBody)
             val quotes = jsonObject.optJSONArray("quotes") ?: return@withContext emptyList()
@@ -556,25 +677,109 @@ object YahooFinanceService {
                     val name = quote.optString("shortname") ?: 
                              quote.optString("longname") ?: 
                              symbol
-                    val exchange = quote.optString("exchange", "")
-                    val typeDisp = quote.optString("typeDisp", "")
-                    val market = quote.optString("market", "")
                     
-                    if (isValidStock(quoteType, symbol, name, typeDisp)) {
-                        val displayName = buildDisplayName(name, exchange, market)
+                    if (quoteType == "CRYPTOCURRENCY" || StockSearchResult.isCryptoSymbol(symbol)) {
                         results.add(
                             StockSearchResult(
                                 symbol = symbol,
-                                name = displayName,
-                                isSwedish = symbol.endsWith(".ST") || exchange == "STO"
+                                name = name,
+                                isSwedish = false,
+                                isCrypto = true
                             )
                         )
                     }
                 }
             }
             
-            Log.d(TAG, "Found ${results.size} stocks matching query: $query")
+            Log.d(TAG, "Found ${results.size} crypto matching query: $query")
             results
+            
+        } catch (e: Exception) {
+            Log.e(TAG, "Error searching crypto: ${e.message}", e)
+            emptyList()
+        }
+    }
+
+    @JvmStatic
+    suspend fun searchStocks(query: String, includeCrypto: Boolean = true): List<StockSearchResult> = withContext(Dispatchers.IO) {
+        try {
+            if (query.length < 2) return@withContext emptyList()
+            
+            val encodedQuery = URLEncoder.encode(query, "UTF-8")
+            
+            // Sök aktier
+            val equityUrl = "$SEARCH_URL?q=$encodedQuery" +
+                "&quotesCount=50" +
+                "&lang=en" +
+                "&region=SE" +
+                "&enableFuzzyQuery=false" +
+                "&type=equity" +
+                "&newsCount=0" +
+                "&enableEnhancedTrivialQuery=false" +
+                "&exchange=STO" +
+                "&fields=symbol,shortname,exchange,quoteType,longname,typeDisp,market"
+
+            Log.d(TAG, "Searching stocks with URL: $equityUrl")
+            
+            val client = OkHttpClient.Builder()
+                .connectTimeout(10, TimeUnit.SECONDS)
+                .readTimeout(10, TimeUnit.SECONDS)
+                .build()
+                
+            val equityRequest = okhttp3.Request.Builder()
+                .url(equityUrl)
+                .addHeader("User-Agent", "Mozilla/5.0")
+                .build()
+                
+            val equityResponse = client.newCall(equityRequest).execute()
+            
+            val allResults = mutableListOf<StockSearchResult>()
+            
+            // Parse aktier
+            if (equityResponse.isSuccessful) {
+                val responseBody = equityResponse.body?.string()
+                if (responseBody != null) {
+                    val jsonObject = JSONObject(responseBody)
+                    val quotes = jsonObject.optJSONArray("quotes")
+                    
+                    if (quotes != null) {
+                        for (i in 0 until quotes.length()) {
+                            val quote = quotes.getJSONObject(i)
+                            if (quote.has("symbol")) {
+                                val quoteType = quote.optString("quoteType", "")
+                                val symbol = quote.getString("symbol")
+                                val name = quote.optString("shortname") ?: 
+                                         quote.optString("longname") ?: 
+                                         symbol
+                                val exchange = quote.optString("exchange", "")
+                                val typeDisp = quote.optString("typeDisp", "")
+                                val market = quote.optString("market", "")
+                                
+                                if (isValidStock(quoteType, symbol, name, typeDisp)) {
+                                    val displayName = buildDisplayName(name, exchange, market)
+                                    allResults.add(
+                                        StockSearchResult(
+                                            symbol = symbol,
+                                            name = displayName,
+                                            isSwedish = symbol.endsWith(".ST") || exchange == "STO",
+                                            isCrypto = false
+                                        )
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            
+            // Sök krypto om includeCrypto är true
+            if (includeCrypto) {
+                val cryptoResults = searchCrypto(query)
+                allResults.addAll(cryptoResults)
+            }
+            
+            Log.d(TAG, "Found ${allResults.size} total results (stocks + crypto) matching query: $query")
+            allResults
             
         } catch (e: Exception) {
             Log.e(TAG, "Error searching stocks: ${e.message}", e)
@@ -594,9 +799,7 @@ object YahooFinanceService {
 
     private fun buildDisplayName(name: String, exchange: String, market: String): String {
         return when {
-            exchange == "STO" || market.contains("se_market", ignoreCase = true) -> 
-                "$name (Stockholmsbörsen)"
-            exchange.isNotEmpty() -> "$name ($exchange)"
+            exchange.isNotEmpty() && exchange != "STO" -> "$name ($exchange)"
             else -> name
         }
     }
