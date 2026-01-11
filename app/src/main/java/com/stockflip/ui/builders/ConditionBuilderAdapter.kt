@@ -15,18 +15,17 @@ import com.stockflip.WatchType
  * Adapter för att visa och redigera villkor i kombinerade alerts.
  */
 class ConditionBuilderAdapter(
-    private val stockAdapter: ArrayAdapter<*>,
-    private val onStockSelected: (Int, String?) -> Unit,
     private val onConditionTypeChanged: (Int, String) -> Unit,
     private val onValueChanged: (Int, String) -> Unit,
+    private val onOperatorChanged: (Int, String) -> Unit,
     private val onRemove: (Int) -> Unit
 ) : RecyclerView.Adapter<ConditionBuilderAdapter.ConditionViewHolder>() {
 
     data class ConditionData(
-        var symbol: String? = null,
         var conditionType: String = "Pris",
         var direction: String = "Över",
-        var value: String = ""
+        var value: String = "",
+        var operator: String? = null  // AND/OR, null för första villkoret
     )
 
     private val conditions = mutableListOf<ConditionData>()
@@ -34,6 +33,17 @@ class ConditionBuilderAdapter(
     fun addCondition() {
         conditions.add(ConditionData())
         notifyItemInserted(conditions.size - 1)
+    }
+
+    fun addCondition(condition: ConditionData) {
+        conditions.add(condition)
+        notifyItemInserted(conditions.size - 1)
+    }
+
+    fun setConditions(newConditions: List<ConditionData>) {
+        conditions.clear()
+        conditions.addAll(newConditions)
+        notifyDataSetChanged()
     }
 
     fun removeCondition(position: Int) {
@@ -61,7 +71,8 @@ class ConditionBuilderAdapter(
     inner class ConditionViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         private val conditionNumber = itemView.findViewById<android.widget.TextView>(R.id.conditionNumber)
         private val removeButton = itemView.findViewById<com.google.android.material.button.MaterialButton>(R.id.removeConditionButton)
-        private val symbolInput = itemView.findViewById<MaterialAutoCompleteTextView>(R.id.conditionSymbolInput)
+        private val operatorLayout = itemView.findViewById<TextInputLayout>(R.id.operatorLayout)
+        private val operatorInput = itemView.findViewById<MaterialAutoCompleteTextView>(R.id.conditionOperatorInput)
         private val conditionTypeInput = itemView.findViewById<MaterialAutoCompleteTextView>(R.id.conditionTypeInput)
         private val directionLayout = itemView.findViewById<TextInputLayout>(R.id.directionLayout)
         private val directionInput = itemView.findViewById<MaterialAutoCompleteTextView>(R.id.conditionDirectionInput)
@@ -70,19 +81,19 @@ class ConditionBuilderAdapter(
         fun bind(condition: ConditionData, position: Int) {
             conditionNumber.text = "Villkor ${position + 1}:"
             
-            // Setup symbol input
-            symbolInput.setAdapter(stockAdapter as ArrayAdapter<*>)
-            symbolInput.setText(condition.symbol ?: "")
-            symbolInput.setOnItemClickListener { _, _, itemPosition, _ ->
-                // Extract symbol from StockSearchResult if needed
-                val item = stockAdapter.getItem(itemPosition)
-                val symbol = when (item) {
-                    is com.stockflip.StockSearchResult -> item.symbol
-                    is String -> item
-                    else -> symbolInput.text.toString()
+            // Setup operator (visas för alla utom första villkoret)
+            val isFirstCondition = position == 0
+            operatorLayout.visibility = if (isFirstCondition) View.GONE else View.VISIBLE
+            
+            if (!isFirstCondition) {
+                val operators = arrayOf("OCH", "ELLER")
+                val operatorAdapter = ArrayAdapter(itemView.context, android.R.layout.simple_dropdown_item_1line, operators)
+                operatorInput.setAdapter(operatorAdapter)
+                operatorInput.setText(condition.operator ?: operators[0], false)
+                operatorInput.setOnItemClickListener { _, _, _, _ ->
+                    condition.operator = operatorInput.text.toString()
+                    onOperatorChanged(position, condition.operator ?: "")
                 }
-                condition.symbol = symbol
-                onStockSelected(position, condition.symbol)
             }
 
             // Setup condition type
@@ -107,6 +118,14 @@ class ConditionBuilderAdapter(
 
             // Setup value
             valueInput.setText(condition.value)
+            valueInput.addTextChangedListener(object : android.text.TextWatcher {
+                override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+                override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+                override fun afterTextChanged(s: android.text.Editable?) {
+                    condition.value = s?.toString() ?: ""
+                    onValueChanged(position, condition.value)
+                }
+            })
             valueInput.setOnFocusChangeListener { _, hasFocus ->
                 if (!hasFocus) {
                     condition.value = valueInput.text.toString()

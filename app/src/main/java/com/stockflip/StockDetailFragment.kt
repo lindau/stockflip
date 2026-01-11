@@ -14,6 +14,7 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.core.widget.doAfterTextChanged
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.textfield.MaterialAutoCompleteTextView
@@ -22,6 +23,15 @@ import com.google.android.material.textfield.TextInputLayout
 import com.stockflip.databinding.FragmentStockDetailBinding
 import com.stockflip.repository.MetricHistoryRepository
 import com.stockflip.MetricHistoryService
+import com.stockflip.viewmodel.StockSearchViewModel
+import com.stockflip.repository.StockRepository
+import com.stockflip.repository.SearchState
+import com.stockflip.ui.builders.ConditionBuilderAdapter
+import android.widget.ImageView
+import android.text.TextWatcher
+import android.text.Editable
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.text.DecimalFormat
 import java.text.DecimalFormatSymbols
@@ -46,6 +56,7 @@ class StockDetailFragment : Fragment() {
 
     private lateinit var viewModel: StockDetailViewModel
     private lateinit var alertAdapter: AlertAdapter
+    private lateinit var stockSearchViewModel: StockSearchViewModel
 
     private val priceFormat = DecimalFormat("#,##0.00", DecimalFormatSymbols(Locale("sv", "SE")))
 
@@ -102,6 +113,18 @@ class StockDetailFragment : Fragment() {
             }
         }
         viewModel = ViewModelProvider(this, factory)[StockDetailViewModel::class.java]
+        
+        // Setup stock search ViewModel
+        val searchFactory = object : ViewModelProvider.Factory {
+            override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
+                if (modelClass.isAssignableFrom(StockSearchViewModel::class.java)) {
+                    @Suppress("UNCHECKED_CAST")
+                    return StockSearchViewModel(StockRepository()) as T
+                }
+                throw IllegalArgumentException("Unknown ViewModel class")
+            }
+        }
+        stockSearchViewModel = ViewModelProvider(this, searchFactory)[StockSearchViewModel::class.java]
 
         setupRecyclerView()
         setupQuickActions()
@@ -595,6 +618,7 @@ class StockDetailFragment : Fragment() {
             is WatchType.DailyMove -> showEditDailyMoveDialog(item)
             is WatchType.ATHBased -> showEditDrawdownDialog(item)
             is WatchType.KeyMetrics -> showEditKeyMetricsDialog(item)
+            is WatchType.Combined -> showEditCombinedAlertDialog(item)
             else -> {
                 Toast.makeText(requireContext(), "Redigering för denna bevakningstyp stöds inte ännu", Toast.LENGTH_SHORT).show()
             }
@@ -943,6 +967,481 @@ class StockDetailFragment : Fragment() {
             .setNegativeButton("Avbryt", null)
             .create()
         dialog.show()
+    }
+
+    /**
+     * Shows a dialog for editing an existing combined alert.
+     */
+    private fun showEditCombinedAlertDialog(watchItem: WatchItem) {
+        val combined = watchItem.watchType as? WatchType.Combined ?: return
+        val expression = combined.expression
+        
+        // Dekomponera uttrycket till villkor
+        val decompositionResult = decomposeExpression(expression)
+        if (decompositionResult == null) {
+            Toast.makeText(requireContext(), "Detta kombinerat larm kan inte redigeras (komplex struktur)", Toast.LENGTH_LONG).show()
+            return
+        }
+        
+        val (symbol, conditions) = decompositionResult
+        
+        val dialogView = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_add_combined_alert, null)
+        val symbolInput = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.symbolInput)
+        val conditionsRecyclerView = dialogView.findViewById<androidx.recyclerview.widget.RecyclerView>(R.id.conditionsRecyclerView)
+        val addConditionButton = dialogView.findViewById<MaterialButton>(R.id.addConditionButton)
+        val previewText = dialogView.findViewById<TextView>(R.id.previewText)
+
+        // Setup RecyclerView
+        conditionsRecyclerView.layoutManager = LinearLayoutManager(requireContext())
+        
+        // Create condition adapter with existing conditions
+        lateinit var conditionAdapter: ConditionBuilderAdapter
+        
+        conditionAdapter = ConditionBuilderAdapter(
+            onConditionTypeChanged = { _, _ ->
+                val newSymbol = symbolInput.text.toString()
+                updatePreview(conditionAdapter, newSymbol, previewText)
+            },
+            onValueChanged = { _, _ ->
+                val newSymbol = symbolInput.text.toString()
+                updatePreview(conditionAdapter, newSymbol, previewText)
+            },
+            onOperatorChanged = { _, _ ->
+                val newSymbol = symbolInput.text.toString()
+                updatePreview(conditionAdapter, newSymbol, previewText)
+            },
+            onRemove = { position ->
+                conditionAdapter.removeCondition(position)
+                val newSymbol = symbolInput.text.toString()
+                updatePreview(conditionAdapter, newSymbol, previewText)
+            }
+        )
+        
+        // Lägg till befintliga villkor med värden
+        conditionAdapter.setConditions(conditions)
+        
+        conditionsRecyclerView.adapter = conditionAdapter
+
+        // Setup stock adapter for symbol input
+        val stockAdapter = createStockAdapter()
+        symbolInput.setAdapter(stockAdapter)
+        symbolInput.setText(symbol, false)
+        
+        // Set up search functionality
+        setupStockSearch(symbolInput, stockAdapter, stockSearchViewModel, includeCrypto = true)
+        
+        symbolInput.setOnItemClickListener { _, _, itemPosition, _ ->
+            val item = stockAdapter.getItem(itemPosition)
+            val newSymbol = item?.symbol ?: symbolInput.text.toString()
+            updatePreview(conditionAdapter, newSymbol, previewText)
+        }
+
+        // Add condition button
+        addConditionButton.setOnClickListener {
+            conditionAdapter.addCondition()
+            val newSymbol = symbolInput.text.toString()
+            updatePreview(conditionAdapter, newSymbol, previewText)
+        }
+
+        // Initial preview
+        updatePreview(conditionAdapter, symbol, previewText)
+
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle("Redigera kombinerat larm")
+            .setView(dialogView)
+            .setPositiveButton("Spara") { _, _ ->
+                val newSymbol = symbolInput.text.toString().trim()
+                val newConditions = conditionAdapter.getConditions()
+                
+                // Validate symbol
+                if (newSymbol.isEmpty()) {
+                    Toast.makeText(requireContext(), "Välj en aktie", Toast.LENGTH_SHORT).show()
+                    return@setPositiveButton
+                }
+                
+                if (newConditions.isEmpty()) {
+                    Toast.makeText(requireContext(), "Lägg till minst ett villkor", Toast.LENGTH_SHORT).show()
+                    return@setPositiveButton
+                }
+                
+                // Validate all conditions
+                val validConditions = newConditions.filter { 
+                    it.value.isNotEmpty() && 
+                    it.value.toDoubleOrNull() != null 
+                }
+                
+                if (validConditions.size != newConditions.size) {
+                    Toast.makeText(requireContext(), "Alla villkor måste ha giltigt värde", Toast.LENGTH_SHORT).show()
+                    return@setPositiveButton
+                }
+                
+                // Build AlertExpression
+                val newExpression = buildAlertExpression(newSymbol, validConditions)
+                if (newExpression == null) {
+                    Toast.makeText(requireContext(), "Kunde inte skapa uttryck", Toast.LENGTH_SHORT).show()
+                    return@setPositiveButton
+                }
+                
+                lifecycleScope.launch {
+                    try {
+                        val updatedWatchItem = watchItem.copy(
+                            watchType = WatchType.Combined(newExpression),
+                            ticker = newSymbol
+                        )
+                        
+                        viewModel.updateWatchItem(updatedWatchItem)
+                        Toast.makeText(requireContext(), "Kombinerat larm uppdaterat", Toast.LENGTH_SHORT).show()
+                    } catch (e: Exception) {
+                        Toast.makeText(requireContext(), "Kunde inte uppdatera kombinerat larm: ${e.message}", Toast.LENGTH_LONG).show()
+                    }
+                }
+            }
+            .setNeutralButton("Ta bort") { _, _ ->
+                showDeleteConfirmation(watchItem)
+            }
+            .setNegativeButton("Avbryt", null)
+            .show()
+    }
+
+    /**
+     * Dekomponerar en AlertExpression till symbol och lista av villkor.
+     * Fungerar bara för "flat" uttryck (alla AND eller alla OR, inga parenteser).
+     */
+    private fun decomposeExpression(expression: AlertExpression): Pair<String, List<ConditionBuilderAdapter.ConditionData>>? {
+        val conditions = mutableListOf<ConditionBuilderAdapter.ConditionData>()
+        var currentSymbol: String? = null
+        
+        fun extractRules(expr: AlertExpression, operator: String? = null): Boolean {
+            return when (expr) {
+                is AlertExpression.Single -> {
+                    val rule = expr.rule
+                    val symbol = when (rule) {
+                        is AlertRule.SinglePrice -> rule.symbol
+                        is AlertRule.SingleDrawdownFromHigh -> rule.symbol
+                        is AlertRule.SingleDailyMove -> rule.symbol
+                        is AlertRule.SingleKeyMetric -> rule.symbol
+                        is AlertRule.PairSpread -> return false // PairSpread stöds inte
+                    }
+                    
+                    // Kontrollera att alla villkor använder samma aktie
+                    if (currentSymbol == null) {
+                        currentSymbol = symbol
+                    } else if (currentSymbol != symbol) {
+                        return false // Olika aktier, kan inte dekomponeras
+                    }
+                    
+                    // Konvertera AlertRule till ConditionData
+                    val conditionData = when (rule) {
+                        is AlertRule.SinglePrice -> {
+                            ConditionBuilderAdapter.ConditionData(
+                                conditionType = "Pris",
+                                direction = if (rule.comparisonType == AlertRule.PriceComparisonType.ABOVE) "Över" else "Under",
+                                value = rule.priceLimit.toString(),
+                                operator = operator
+                            )
+                        }
+                        is AlertRule.SingleDrawdownFromHigh -> {
+                            ConditionBuilderAdapter.ConditionData(
+                                conditionType = "52w High Drop",
+                                direction = "Över",
+                                value = rule.dropValue.toString(),
+                                operator = operator
+                            )
+                        }
+                        is AlertRule.SingleDailyMove -> {
+                            ConditionBuilderAdapter.ConditionData(
+                                conditionType = "Dagsrörelse",
+                                direction = "Över",
+                                value = rule.percentThreshold.toString(),
+                                operator = operator
+                            )
+                        }
+                        is AlertRule.SingleKeyMetric -> {
+                            val conditionType = when (rule.metricType) {
+                                AlertRule.KeyMetricType.PE_RATIO -> "P/E-tal"
+                                AlertRule.KeyMetricType.PS_RATIO -> "P/S-tal"
+                                AlertRule.KeyMetricType.DIVIDEND_YIELD -> "Utdelningsprocent"
+                            }
+                            ConditionBuilderAdapter.ConditionData(
+                                conditionType = conditionType,
+                                direction = if (rule.direction == AlertRule.PriceComparisonType.ABOVE) "Över" else "Under",
+                                value = rule.targetValue.toString(),
+                                operator = operator
+                            )
+                        }
+                        else -> return false
+                    }
+                    
+                    conditions.add(conditionData)
+                    true
+                }
+                is AlertExpression.And -> {
+                    val leftOk = extractRules(expr.left, null)
+                    if (!leftOk) return false
+                    val rightOk = extractRules(expr.right, "OCH")
+                    leftOk && rightOk
+                }
+                is AlertExpression.Or -> {
+                    val leftOk = extractRules(expr.left, null)
+                    if (!leftOk) return false
+                    val rightOk = extractRules(expr.right, "ELLER")
+                    leftOk && rightOk
+                }
+                is AlertExpression.Not -> {
+                    false // NOT stöds inte för redigering
+                }
+            }
+        }
+        
+        val success = extractRules(expression)
+        if (!success || currentSymbol == null || conditions.isEmpty()) {
+            return null
+        }
+        
+        // Ta bort operator från första villkoret
+        if (conditions.isNotEmpty()) {
+            conditions[0].operator = null
+        }
+        
+        return Pair(currentSymbol!!, conditions.toList())
+    }
+
+    /**
+     * Updates the preview text showing the current expression.
+     */
+    private fun updatePreview(
+        adapter: ConditionBuilderAdapter,
+        symbol: String,
+        previewText: TextView
+    ) {
+        val conditions = adapter.getConditions()
+        if (symbol.isEmpty()) {
+            previewText.text = "Välj en aktie"
+            previewText.setTextColor(requireContext().getColor(android.R.color.darker_gray))
+            return
+        }
+        
+        if (conditions.isEmpty()) {
+            previewText.text = "Lägg till minst ett villkor"
+            previewText.setTextColor(requireContext().getColor(android.R.color.darker_gray))
+            return
+        }
+        
+        val expression = buildAlertExpression(symbol, conditions)
+        if (expression != null) {
+            previewText.text = expression.getDescription()
+            previewText.setTextColor(requireContext().getColor(android.R.color.black))
+        } else {
+            previewText.text = "Ofullständiga villkor"
+            previewText.setTextColor(requireContext().getColor(android.R.color.holo_red_dark))
+        }
+    }
+
+    /**
+     * Builds an AlertExpression from a list of conditions with operators between them.
+     */
+    private fun buildAlertExpression(
+        symbol: String,
+        conditions: List<ConditionBuilderAdapter.ConditionData>
+    ): AlertExpression? {
+        if (conditions.isEmpty()) return null
+        
+        // Convert conditions to AlertRules
+        val rules = conditions.mapNotNull { condition ->
+            buildAlertRule(symbol, condition)
+        }
+        
+        if (rules.isEmpty()) return null
+        
+        // Start with first rule
+        var expression: AlertExpression = AlertExpression.Single(rules.first())
+        
+        // Combine with remaining rules using their operators
+        for (i in 1 until rules.size) {
+            val nextExpression = AlertExpression.Single(rules[i])
+            val operator = conditions[i].operator ?: "OCH"
+            val isAnd = operator.contains("OCH")
+            
+            expression = if (isAnd) {
+                AlertExpression.And(expression, nextExpression)
+            } else {
+                AlertExpression.Or(expression, nextExpression)
+            }
+        }
+        
+        return expression
+    }
+
+    /**
+     * Builds an AlertRule from a ConditionData and symbol.
+     */
+    private fun buildAlertRule(symbol: String, condition: ConditionBuilderAdapter.ConditionData): AlertRule? {
+        val value = condition.value.toDoubleOrNull() ?: return null
+        
+        return when (condition.conditionType) {
+            "Pris" -> {
+                val comparisonType = when (condition.direction) {
+                    "Över" -> AlertRule.PriceComparisonType.ABOVE
+                    "Under" -> AlertRule.PriceComparisonType.BELOW
+                    else -> return null
+                }
+                AlertRule.SinglePrice(symbol, comparisonType, value)
+            }
+            "P/E-tal" -> {
+                val direction = when (condition.direction) {
+                    "Över" -> AlertRule.PriceComparisonType.ABOVE
+                    "Under" -> AlertRule.PriceComparisonType.BELOW
+                    else -> return null
+                }
+                AlertRule.SingleKeyMetric(symbol, AlertRule.KeyMetricType.PE_RATIO, value, direction)
+            }
+            "P/S-tal" -> {
+                val direction = when (condition.direction) {
+                    "Över" -> AlertRule.PriceComparisonType.ABOVE
+                    "Under" -> AlertRule.PriceComparisonType.BELOW
+                    else -> return null
+                }
+                AlertRule.SingleKeyMetric(symbol, AlertRule.KeyMetricType.PS_RATIO, value, direction)
+            }
+            "Utdelningsprocent" -> {
+                val direction = when (condition.direction) {
+                    "Över" -> AlertRule.PriceComparisonType.ABOVE
+                    "Under" -> AlertRule.PriceComparisonType.BELOW
+                    else -> return null
+                }
+                AlertRule.SingleKeyMetric(symbol, AlertRule.KeyMetricType.DIVIDEND_YIELD, value, direction)
+            }
+            "52w High Drop" -> {
+                AlertRule.SingleDrawdownFromHigh(symbol, AlertRule.DrawdownDropType.PERCENTAGE, value)
+            }
+            "Dagsrörelse" -> {
+                AlertRule.SingleDailyMove(symbol, value, AlertRule.DailyMoveDirection.BOTH)
+            }
+            else -> null
+        }
+    }
+
+    /**
+     * Creates an adapter for displaying stock search results.
+     */
+    private fun createStockAdapter(): ArrayAdapter<StockSearchResult> {
+        return object : ArrayAdapter<StockSearchResult>(
+            requireContext(),
+            R.layout.dropdown_item_with_icon,
+            mutableListOf()
+        ) {
+            override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
+                return createAdapterItemView(position, convertView, parent)
+            }
+
+            override fun getDropDownView(position: Int, convertView: View?, parent: ViewGroup): View {
+                return createAdapterItemView(position, convertView, parent)
+            }
+
+            private fun createAdapterItemView(position: Int, convertView: View?, parent: ViewGroup): View {
+                val view: View = convertView ?: LayoutInflater.from(context)
+                    .inflate(R.layout.dropdown_item_with_icon, parent, false)
+                
+                val item: StockSearchResult? = getItem(position)
+                if (item != null) {
+                    val textView = view.findViewById<TextView>(R.id.text)
+                    val iconView = view.findViewById<ImageView>(R.id.icon)
+                    
+                    textView.text = "${item.symbol} - ${item.name}"
+                    
+                    if (item.isCrypto) {
+                        iconView.setImageResource(R.drawable.ic_crypto)
+                        iconView.visibility = View.VISIBLE
+                    } else {
+                        iconView.setImageResource(R.drawable.ic_stock)
+                        iconView.visibility = View.VISIBLE
+                    }
+                }
+                
+                return view
+            }
+
+            override fun getFilter(): android.widget.Filter {
+                return object : android.widget.Filter() {
+                    @Suppress("UNCHECKED_CAST")
+                    override fun performFiltering(constraint: CharSequence?): android.widget.Filter.FilterResults {
+                        val filterResults = android.widget.Filter.FilterResults()
+                        filterResults.values = mutableListOf<StockSearchResult>()
+                        filterResults.count = 0
+                        return filterResults
+                    }
+
+                    @Suppress("UNCHECKED_CAST")
+                    override fun publishResults(constraint: CharSequence?, results: android.widget.Filter.FilterResults?) {
+                        // Do nothing - we handle filtering through the ViewModel
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Sets up the stock search functionality for an input field.
+     */
+    private fun setupStockSearch(
+        input: MaterialAutoCompleteTextView,
+        adapter: ArrayAdapter<StockSearchResult>,
+        viewModel: StockSearchViewModel,
+        includeCrypto: Boolean = true
+    ) {
+        input.threshold = 2
+        input.setAdapter(adapter)
+        
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewModel.searchState.collect { state ->
+                when (state) {
+                    is SearchState.Loading -> {
+                        // Loading state
+                    }
+                    is SearchState.Success -> {
+                        adapter.clear()
+                        adapter.addAll(state.results)
+                        adapter.notifyDataSetChanged()
+                        
+                        if (state.results.isNotEmpty() && input.text.isNotEmpty()) {
+                            input.post {
+                                if (input.hasFocus()) {
+                                    input.showDropDown()
+                                }
+                            }
+                        }
+                    }
+                    is SearchState.Error -> {
+                        adapter.clear()
+                        adapter.notifyDataSetChanged()
+                    }
+                }
+            }
+        }
+
+        var textChangeJob: Job? = null
+        
+        input.doAfterTextChanged { text ->
+            textChangeJob?.cancel()
+            
+            if (text.isNullOrEmpty()) {
+                adapter.clear()
+                adapter.notifyDataSetChanged()
+                input.dismissDropDown()
+                return@doAfterTextChanged
+            }
+            
+            textChangeJob = viewLifecycleOwner.lifecycleScope.launch {
+                delay(300)
+                viewModel.search(text.toString(), includeCrypto)
+            }
+        }
+
+        input.setOnFocusChangeListener { _, hasFocus ->
+            if (hasFocus && input.text.isNotEmpty() && adapter.count > 0) {
+                input.post { input.showDropDown() }
+            }
+        }
     }
 
     override fun onDestroyView() {

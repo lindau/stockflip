@@ -22,9 +22,26 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Lägg till villkor och välj hur de ska kombineras (OCH/ELLER)"
+            android:text="Välj aktie och lägg till flera villkor"
             android:textSize="14sp"
             android:layout_marginBottom="16dp" />
+
+        <!-- Aktie-val (en gång för alla villkor) -->
+        <com.google.android.material.textfield.TextInputLayout
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            android:hint="Aktie">
+
+            <com.google.android.material.textfield.MaterialAutoCompleteTextView
+                android:id="@+id/symbolInput"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="text"
+                android:maxLines="1" />
+
+        </com.google.android.material.textfield.TextInputLayout>
 
         <!-- Lista med villkor -->
         <androidx.recyclerview.widget.RecyclerView
@@ -41,26 +58,6 @@
             android:layout_height="wrap_content"
             android:text="Lägg till villkor"
             android:layout_marginBottom="16dp" />
-
-        <!-- Operator mellan villkor -->
-        <com.google.android.material.textfield.TextInputLayout
-            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
-            android:hint="Kombinera med">
-
-            <com.google.android.material.textfield.MaterialAutoCompleteTextView
-                android:id="@+id/operatorInput"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:inputType="none"
-                android:focusable="true"
-                android:focusableInTouchMode="true"
-                android:clickable="true"
-                android:maxLines="1" />
-
-        </com.google.android.material.textfield.TextInputLayout>
 
         <!-- Förhandsvisning av uttrycket -->
         <com.google.android.material.card.MaterialCardView

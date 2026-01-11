@@ -375,18 +375,12 @@ class WatchItemAdapter(
             val symbols = combined.expression.getSymbols()
             val firstSymbol = symbols.firstOrNull() ?: item.ticker ?: "N/A"
             
-            // Display name - show first symbol or count
-            val displayName = if (symbols.size == 1) {
-                "${item.companyName ?: firstSymbol} ($firstSymbol)"
-            } else {
-                "${symbols.size} aktier: ${symbols.joinToString(", ")}"
-            }
-            
+            // Display name - show first symbol
+            val displayName = "${item.companyName ?: firstSymbol} ($firstSymbol)"
             binding.singleStockName.text = displayName
             
-            // Show expression description
-            val expressionDescription = combined.expression.getDescription()
-            binding.singlePriceInfo.text = "Villkor: $expressionDescription"
+            // Hide expression description - bara visa "Kombinerat larm"
+            binding.singlePriceInfo.visibility = android.view.View.GONE
 
             // Target info (visa "Kombinerat larm")
             binding.priceDifference.text = "Kombinerat larm"

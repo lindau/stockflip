@@ -436,8 +436,10 @@ class MainActivity : AppCompatActivity() {
                 navigateToStockDetail(symbol, companyName)
             }
             is WatchType.Combined -> {
-                // Combined alerts: visa dialog
-                showWatchItemDetailDialog(item)
+                // Combined alerts: navigera till StockDetailFragment
+                val symbol = item.ticker ?: return
+                val companyName = item.companyName
+                navigateToStockDetail(symbol, companyName)
             }
         }
     }
@@ -479,8 +481,7 @@ class MainActivity : AppCompatActivity() {
                 Toast.makeText(this, "Redigera via aktiedetaljvy", Toast.LENGTH_SHORT).show()
             }
             is WatchType.Combined -> {
-                // Combined alerts kan inte redigeras ännu
-                Toast.makeText(this, "Redigering av kombinerade larm kommer snart", Toast.LENGTH_SHORT).show()
+                showEditCombinedAlertDialog(item)
             }
         }
     }
@@ -500,7 +501,8 @@ class MainActivity : AppCompatActivity() {
             "Aktiepar" to WatchType.PricePair(0.0, false),
             "Prisbevakning" to WatchType.PriceTarget(0.0, WatchType.PriceDirection.ABOVE),
             "Nyckeltal" to WatchType.KeyMetrics(WatchType.MetricType.PE_RATIO, 0.0, WatchType.PriceDirection.ABOVE),
-            "ATH-bevakning" to WatchType.ATHBased(WatchType.DropType.PERCENTAGE, 0.0)
+            "ATH-bevakning" to WatchType.ATHBased(WatchType.DropType.PERCENTAGE, 0.0),
+            "Kombinerat larm" to WatchType.Combined(AlertExpression.Single(AlertRule.SinglePrice("", AlertRule.PriceComparisonType.BELOW, 0.0))) // Placeholder - kommer inte användas
         )
         val watchTypeNames = watchTypes.map { it.first }.toTypedArray()
 
@@ -896,63 +898,74 @@ class MainActivity : AppCompatActivity() {
      */
     private fun showAddCombinedAlertDialog(): Unit {
         val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_add_combined_alert, null)
+        val symbolInput = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.symbolInput)
         val conditionsRecyclerView = dialogView.findViewById<androidx.recyclerview.widget.RecyclerView>(R.id.conditionsRecyclerView)
         val addConditionButton = dialogView.findViewById<com.google.android.material.button.MaterialButton>(R.id.addConditionButton)
-        val operatorInput = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.operatorInput)
         val previewText = dialogView.findViewById<TextView>(R.id.previewText)
 
         // Setup RecyclerView
         conditionsRecyclerView.layoutManager = androidx.recyclerview.widget.LinearLayoutManager(this)
         
-        // Setup stock adapter
-        val stockAdapter = createStockAdapter()
-        
         // Create condition adapter (lateinit to use in lambdas)
         lateinit var conditionAdapter: com.stockflip.ui.builders.ConditionBuilderAdapter
         
         conditionAdapter = com.stockflip.ui.builders.ConditionBuilderAdapter(
-            stockAdapter = stockAdapter,
-            onStockSelected = { _, _ ->
-                updatePreview(conditionAdapter, operatorInput, previewText)
-            },
             onConditionTypeChanged = { _, _ ->
-                updatePreview(conditionAdapter, operatorInput, previewText)
+                val symbol = symbolInput.text.toString()
+                updatePreview(conditionAdapter, symbol, previewText)
             },
             onValueChanged = { _, _ ->
-                updatePreview(conditionAdapter, operatorInput, previewText)
+                val symbol = symbolInput.text.toString()
+                updatePreview(conditionAdapter, symbol, previewText)
+            },
+            onOperatorChanged = { _, _ ->
+                val symbol = symbolInput.text.toString()
+                updatePreview(conditionAdapter, symbol, previewText)
             },
             onRemove = { position ->
                 conditionAdapter.removeCondition(position)
-                updatePreview(conditionAdapter, operatorInput, previewText)
+                val symbol = symbolInput.text.toString()
+                updatePreview(conditionAdapter, symbol, previewText)
             }
         )
         
         conditionsRecyclerView.adapter = conditionAdapter
 
-        // Setup operator dropdown
-        val operators = arrayOf("OCH (AND)", "ELLER (OR)")
-        val operatorAdapter = ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line, operators)
-        operatorInput.setAdapter(operatorAdapter)
-        operatorInput.setText(operators[0], false) // Default to AND
-        operatorInput.setOnItemClickListener { _, _, _, _ ->
-            updatePreview(conditionAdapter, operatorInput, previewText)
+        // Setup stock adapter for symbol input
+        val stockAdapter = createStockAdapter()
+        symbolInput.setAdapter(stockAdapter)
+        
+        // Set up search functionality
+        setupStockSearch(symbolInput, stockAdapter, stockSearchViewModel, includeCrypto = true)
+        
+        symbolInput.setOnItemClickListener { _, _, itemPosition, _ ->
+            val item = stockAdapter.getItem(itemPosition)
+            val symbol = item?.symbol ?: symbolInput.text.toString()
+            updatePreview(conditionAdapter, symbol, previewText)
         }
 
         // Add condition button
         addConditionButton.setOnClickListener {
             conditionAdapter.addCondition()
-            updatePreview(conditionAdapter, operatorInput, previewText)
+            val symbol = symbolInput.text.toString()
+            updatePreview(conditionAdapter, symbol, previewText)
         }
 
         // Initial preview
-        updatePreview(conditionAdapter, operatorInput, previewText)
+        updatePreview(conditionAdapter, "", previewText)
 
         MaterialAlertDialogBuilder(this)
             .setTitle("Skapa kombinerat larm")
             .setView(dialogView)
             .setPositiveButton("Lägg till") { _, _ ->
+                val symbol = symbolInput.text.toString().trim()
                 val conditions = conditionAdapter.getConditions()
-                val operatorStr = operatorInput.text.toString()
+                
+                // Validate symbol
+                if (symbol.isEmpty()) {
+                    Toast.makeText(this, "Välj en aktie", Toast.LENGTH_SHORT).show()
+                    return@setPositiveButton
+                }
                 
                 if (conditions.isEmpty()) {
                     Toast.makeText(this, "Lägg till minst ett villkor", Toast.LENGTH_SHORT).show()
@@ -961,25 +974,21 @@ class MainActivity : AppCompatActivity() {
                 
                 // Validate all conditions
                 val validConditions = conditions.filter { 
-                    it.symbol?.isNotEmpty() == true && 
                     it.value.isNotEmpty() && 
                     it.value.toDoubleOrNull() != null 
                 }
                 
                 if (validConditions.size != conditions.size) {
-                    Toast.makeText(this, "Alla villkor måste ha aktie och giltigt värde", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, "Alla villkor måste ha giltigt värde", Toast.LENGTH_SHORT).show()
                     return@setPositiveButton
                 }
                 
                 // Build AlertExpression
-                val expression = buildAlertExpression(validConditions, operatorStr)
+                val expression = buildAlertExpression(symbol, validConditions)
                 if (expression == null) {
                     Toast.makeText(this, "Kunde inte skapa uttryck", Toast.LENGTH_SHORT).show()
                     return@setPositiveButton
                 }
-                
-                // Get first symbol for WatchItem
-                val firstSymbol = validConditions.first().symbol ?: return@setPositiveButton
                 
                 lifecycleScope.launch {
                     try {
@@ -987,7 +996,7 @@ class MainActivity : AppCompatActivity() {
                         
                         val watchItem = WatchItem(
                             watchType = WatchType.Combined(expression),
-                            ticker = firstSymbol,
+                            ticker = symbol,
                             companyName = null // Could be enhanced to fetch company name
                         )
                         
@@ -1005,21 +1014,273 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
+     * Shows a dialog for editing an existing combined alert.
+     */
+    private fun showEditCombinedAlertDialog(watchItem: WatchItem): Unit {
+        val combined = watchItem.watchType as? WatchType.Combined ?: return
+        val expression = combined.expression
+        
+        // Dekomponera uttrycket till villkor
+        val decompositionResult = decomposeExpression(expression)
+        if (decompositionResult == null) {
+            Toast.makeText(this, "Detta kombinerat larm kan inte redigeras (komplex struktur)", Toast.LENGTH_LONG).show()
+            return
+        }
+        
+        val (symbol, conditions) = decompositionResult
+        
+        val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_add_combined_alert, null)
+        val symbolInput = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.symbolInput)
+        val conditionsRecyclerView = dialogView.findViewById<androidx.recyclerview.widget.RecyclerView>(R.id.conditionsRecyclerView)
+        val addConditionButton = dialogView.findViewById<com.google.android.material.button.MaterialButton>(R.id.addConditionButton)
+        val previewText = dialogView.findViewById<TextView>(R.id.previewText)
+
+        // Setup RecyclerView
+        conditionsRecyclerView.layoutManager = androidx.recyclerview.widget.LinearLayoutManager(this)
+        
+        // Create condition adapter with existing conditions
+        lateinit var conditionAdapter: com.stockflip.ui.builders.ConditionBuilderAdapter
+        
+        conditionAdapter = com.stockflip.ui.builders.ConditionBuilderAdapter(
+            onConditionTypeChanged = { _, _ ->
+                val newSymbol = symbolInput.text.toString()
+                updatePreview(conditionAdapter, newSymbol, previewText)
+            },
+            onValueChanged = { _, _ ->
+                val newSymbol = symbolInput.text.toString()
+                updatePreview(conditionAdapter, newSymbol, previewText)
+            },
+            onOperatorChanged = { _, _ ->
+                val newSymbol = symbolInput.text.toString()
+                updatePreview(conditionAdapter, newSymbol, previewText)
+            },
+            onRemove = { position ->
+                conditionAdapter.removeCondition(position)
+                val newSymbol = symbolInput.text.toString()
+                updatePreview(conditionAdapter, newSymbol, previewText)
+            }
+        )
+        
+        // Lägg till befintliga villkor med värden
+        conditionAdapter.setConditions(conditions)
+        
+        conditionsRecyclerView.adapter = conditionAdapter
+
+        // Setup stock adapter for symbol input
+        val stockAdapter = createStockAdapter()
+        symbolInput.setAdapter(stockAdapter)
+        symbolInput.setText(symbol, false)
+        
+        // Set up search functionality
+        setupStockSearch(symbolInput, stockAdapter, stockSearchViewModel, includeCrypto = true)
+        
+        symbolInput.setOnItemClickListener { _, _, itemPosition, _ ->
+            val item = stockAdapter.getItem(itemPosition)
+            val newSymbol = item?.symbol ?: symbolInput.text.toString()
+            updatePreview(conditionAdapter, newSymbol, previewText)
+        }
+
+        // Add condition button
+        addConditionButton.setOnClickListener {
+            conditionAdapter.addCondition()
+            val newSymbol = symbolInput.text.toString()
+            updatePreview(conditionAdapter, newSymbol, previewText)
+        }
+
+        // Initial preview
+        updatePreview(conditionAdapter, symbol, previewText)
+
+        MaterialAlertDialogBuilder(this)
+            .setTitle("Redigera kombinerat larm")
+            .setView(dialogView)
+            .setPositiveButton("Spara") { _, _ ->
+                val newSymbol = symbolInput.text.toString().trim()
+                val newConditions = conditionAdapter.getConditions()
+                
+                // Validate symbol
+                if (newSymbol.isEmpty()) {
+                    Toast.makeText(this, "Välj en aktie", Toast.LENGTH_SHORT).show()
+                    return@setPositiveButton
+                }
+                
+                if (newConditions.isEmpty()) {
+                    Toast.makeText(this, "Lägg till minst ett villkor", Toast.LENGTH_SHORT).show()
+                    return@setPositiveButton
+                }
+                
+                // Validate all conditions
+                val validConditions = newConditions.filter { 
+                    it.value.isNotEmpty() && 
+                    it.value.toDoubleOrNull() != null 
+                }
+                
+                if (validConditions.size != newConditions.size) {
+                    Toast.makeText(this, "Alla villkor måste ha giltigt värde", Toast.LENGTH_SHORT).show()
+                    return@setPositiveButton
+                }
+                
+                // Build AlertExpression
+                val newExpression = buildAlertExpression(newSymbol, validConditions)
+                if (newExpression == null) {
+                    Toast.makeText(this, "Kunde inte skapa uttryck", Toast.LENGTH_SHORT).show()
+                    return@setPositiveButton
+                }
+                
+                lifecycleScope.launch {
+                    try {
+                        binding.progressBar.visibility = View.VISIBLE
+                        
+                        val updatedWatchItem = watchItem.copy(
+                            watchType = WatchType.Combined(newExpression),
+                            ticker = newSymbol
+                        )
+                        
+                        viewModel.updateWatchItem(updatedWatchItem)
+                        binding.progressBar.visibility = View.GONE
+                        Toast.makeText(this@MainActivity, "Kombinerat larm uppdaterat", Toast.LENGTH_SHORT).show()
+                    } catch (e: Exception) {
+                        binding.progressBar.visibility = View.GONE
+                        Toast.makeText(this@MainActivity, "Kunde inte uppdatera kombinerat larm: ${e.message}", Toast.LENGTH_LONG).show()
+                    }
+                }
+            }
+            .setNegativeButton("Avbryt", null)
+            .show()
+    }
+
+    /**
+     * Dekomponerar en AlertExpression till symbol och lista av villkor.
+     * Fungerar bara för "flat" uttryck (alla AND eller alla OR, inga parenteser).
+     * 
+     * @return Pair av (symbol, lista av ConditionData) eller null om uttrycket är för komplext
+     */
+    private fun decomposeExpression(expression: AlertExpression): Pair<String, List<com.stockflip.ui.builders.ConditionBuilderAdapter.ConditionData>>? {
+        val conditions = mutableListOf<com.stockflip.ui.builders.ConditionBuilderAdapter.ConditionData>()
+        var currentSymbol: String? = null
+        
+        fun extractRules(expr: AlertExpression, operator: String? = null): Boolean {
+            return when (expr) {
+                is AlertExpression.Single -> {
+                    val rule = expr.rule
+                    val symbol = when (rule) {
+                        is AlertRule.SinglePrice -> rule.symbol
+                        is AlertRule.SingleDrawdownFromHigh -> rule.symbol
+                        is AlertRule.SingleDailyMove -> rule.symbol
+                        is AlertRule.SingleKeyMetric -> rule.symbol
+                        is AlertRule.PairSpread -> return false // PairSpread stöds inte
+                    }
+                    
+                    // Kontrollera att alla villkor använder samma aktie
+                    if (currentSymbol == null) {
+                        currentSymbol = symbol
+                    } else if (currentSymbol != symbol) {
+                        return false // Olika aktier, kan inte dekomponeras
+                    }
+                    
+                    // Konvertera AlertRule till ConditionData
+                    val conditionData = when (rule) {
+                        is AlertRule.SinglePrice -> {
+                            com.stockflip.ui.builders.ConditionBuilderAdapter.ConditionData(
+                                conditionType = "Pris",
+                                direction = if (rule.comparisonType == AlertRule.PriceComparisonType.ABOVE) "Över" else "Under",
+                                value = rule.priceLimit.toString(),
+                                operator = operator
+                            )
+                        }
+                        is AlertRule.SingleDrawdownFromHigh -> {
+                            com.stockflip.ui.builders.ConditionBuilderAdapter.ConditionData(
+                                conditionType = "52w High Drop",
+                                direction = "Över", // Drawdown är alltid "över" tröskel
+                                value = rule.dropValue.toString(),
+                                operator = operator
+                            )
+                        }
+                        is AlertRule.SingleDailyMove -> {
+                            com.stockflip.ui.builders.ConditionBuilderAdapter.ConditionData(
+                                conditionType = "Dagsrörelse",
+                                direction = "Över", // Används inte för dagsrörelse
+                                value = rule.percentThreshold.toString(),
+                                operator = operator
+                            )
+                        }
+                        is AlertRule.SingleKeyMetric -> {
+                            val conditionType = when (rule.metricType) {
+                                AlertRule.KeyMetricType.PE_RATIO -> "P/E-tal"
+                                AlertRule.KeyMetricType.PS_RATIO -> "P/S-tal"
+                                AlertRule.KeyMetricType.DIVIDEND_YIELD -> "Utdelningsprocent"
+                            }
+                            com.stockflip.ui.builders.ConditionBuilderAdapter.ConditionData(
+                                conditionType = conditionType,
+                                direction = if (rule.direction == AlertRule.PriceComparisonType.ABOVE) "Över" else "Under",
+                                value = rule.targetValue.toString(),
+                                operator = operator
+                            )
+                        }
+                        else -> return false
+                    }
+                    
+                    conditions.add(conditionData)
+                    true
+                }
+                is AlertExpression.And -> {
+                    // Rekursivt extrahera från vänster och höger
+                    val leftOk = extractRules(expr.left, null) // Första villkoret har ingen operator
+                    if (!leftOk) return false
+                    
+                    // För höger sida, använd AND som operator
+                    val rightOk = extractRules(expr.right, "OCH")
+                    leftOk && rightOk
+                }
+                is AlertExpression.Or -> {
+                    // Rekursivt extrahera från vänster och höger
+                    val leftOk = extractRules(expr.left, null) // Första villkoret har ingen operator
+                    if (!leftOk) return false
+                    
+                    // För höger sida, använd OR som operator
+                    val rightOk = extractRules(expr.right, "ELLER")
+                    leftOk && rightOk
+                }
+                is AlertExpression.Not -> {
+                    false // NOT stöds inte för redigering
+                }
+            }
+        }
+        
+        val success = extractRules(expression)
+        if (!success || currentSymbol == null || conditions.isEmpty()) {
+            return null
+        }
+        
+        // Ta bort operator från första villkoret
+        if (conditions.isNotEmpty()) {
+            conditions[0].operator = null
+        }
+        
+        return Pair(currentSymbol!!, conditions.toList())
+    }
+
+    /**
      * Updates the preview text showing the current expression.
      */
     private fun updatePreview(
         adapter: com.stockflip.ui.builders.ConditionBuilderAdapter,
-        operatorInput: MaterialAutoCompleteTextView,
+        symbol: String,
         previewText: TextView
     ) {
         val conditions = adapter.getConditions()
+        if (symbol.isEmpty()) {
+            previewText.text = "Välj en aktie"
+            previewText.setTextColor(getColor(android.R.color.darker_gray))
+            return
+        }
+        
         if (conditions.isEmpty()) {
             previewText.text = "Lägg till minst ett villkor"
             previewText.setTextColor(getColor(android.R.color.darker_gray))
             return
         }
         
-        val expression = buildAlertExpression(conditions, operatorInput.text.toString())
+        val expression = buildAlertExpression(symbol, conditions)
         if (expression != null) {
             previewText.text = expression.getDescription()
             previewText.setTextColor(getColor(android.R.color.black))
@@ -1030,30 +1291,30 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * Builds an AlertExpression from a list of conditions and an operator.
+     * Builds an AlertExpression from a list of conditions with operators between them.
      */
     private fun buildAlertExpression(
-        conditions: List<com.stockflip.ui.builders.ConditionBuilderAdapter.ConditionData>,
-        operatorStr: String
+        symbol: String,
+        conditions: List<com.stockflip.ui.builders.ConditionBuilderAdapter.ConditionData>
     ): AlertExpression? {
         if (conditions.isEmpty()) return null
         
         // Convert conditions to AlertRules
         val rules = conditions.mapNotNull { condition ->
-            buildAlertRule(condition)
+            buildAlertRule(symbol, condition)
         }
         
         if (rules.isEmpty()) return null
         
-        // Build expression based on operator
-        val isAnd = operatorStr.contains("OCH") || operatorStr.contains("AND")
-        
         // Start with first rule
         var expression: AlertExpression = AlertExpression.Single(rules.first())
         
-        // Combine with remaining rules
+        // Combine with remaining rules using their operators
         for (i in 1 until rules.size) {
             val nextExpression = AlertExpression.Single(rules[i])
+            val operator = conditions[i].operator ?: "OCH"
+            val isAnd = operator.contains("OCH")
+            
             expression = if (isAnd) {
                 AlertExpression.And(expression, nextExpression)
             } else {
@@ -1065,10 +1326,9 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * Builds an AlertRule from a ConditionData.
+     * Builds an AlertRule from a ConditionData and symbol.
      */
-    private fun buildAlertRule(condition: com.stockflip.ui.builders.ConditionBuilderAdapter.ConditionData): AlertRule? {
-        val symbol = condition.symbol ?: return null
+    private fun buildAlertRule(symbol: String, condition: com.stockflip.ui.builders.ConditionBuilderAdapter.ConditionData): AlertRule? {
         val value = condition.value.toDoubleOrNull() ?: return null
         
         return when (condition.conditionType) {
@@ -1649,8 +1909,8 @@ class MainActivity : AppCompatActivity() {
                 Toast.makeText(this, "Redigera via aktiedetaljvy", Toast.LENGTH_SHORT).show()
             }
             is WatchType.Combined -> {
-                // Combined alerts kommer snart
-                Toast.makeText(this, "Redigering av kombinerade larm kommer snart", Toast.LENGTH_SHORT).show()
+                // Combined alerts navigeras till StockDetailFragment direkt
+                // Denna kod kommer inte användas
             }
         }
 

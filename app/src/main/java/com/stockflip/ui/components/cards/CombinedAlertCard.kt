@@ -70,24 +70,14 @@ fun CombinedAlertCard(
                     value = if (item.currentPrice > 0) "${priceFormat(item.currentPrice)} SEK" else "Kombinerat larm"
                 )
                 
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(8.dp))
                 
-                // Expression description
-                Column {
-                    Text(
-                        text = "Villkor:",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = expressionDescription,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.padding(start = 8.dp)
-                    )
-                }
+                // Visa bara "Kombinerat larm"
+                Text(
+                    text = "Kombinerat larm",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
         }
     }
