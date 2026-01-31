@@ -200,20 +200,6 @@ fun MetricAlertCard(
                     )
                 }
                 
-                // Status text - visas när showStatus är true
-                if (showStatus) {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.End
-                    ) {
-                        Text(
-                            text = com.stockflip.ui.components.cards.formatAlertStatus(item),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
                 
             }
         }

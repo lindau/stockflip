@@ -126,6 +126,7 @@ class MainActivity : AppCompatActivity() {
         stopAutoRefresh()
     }
 
+    @Deprecated("Deprecated in Java")
     override fun onBackPressed() {
         // Om vi är i StockDetailFragment, gå tillbaka till listan
         if (supportFragmentManager.backStackEntryCount > 0) {
@@ -133,6 +134,8 @@ class MainActivity : AppCompatActivity() {
             // Visa RecyclerView igen
             binding.swipeRefreshLayout.visibility = View.VISIBLE
             binding.addPairButton.visibility = View.VISIBLE
+            // Visa sorteringsmenyn igen
+            binding.topAppBar.menu.findItem(R.id.menu_sort)?.isVisible = true
         } else {
             @Suppress("DEPRECATION")
             super.onBackPressed()
@@ -458,6 +461,9 @@ class MainActivity : AppCompatActivity() {
         // Dölj RecyclerView och visa Fragment
         binding.swipeRefreshLayout.visibility = View.GONE
         binding.addPairButton.visibility = View.GONE
+        
+        // Dölj sorteringsmenyn
+        binding.topAppBar.menu.findItem(R.id.menu_sort)?.isVisible = false
     }
 
     private fun handleDeleteClick(item: WatchItem): Unit {

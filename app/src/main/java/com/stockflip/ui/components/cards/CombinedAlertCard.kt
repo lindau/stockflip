@@ -58,25 +58,22 @@ fun CombinedAlertCard(
                     .fillMaxWidth()
                     .padding(12.dp)
             ) {
-                // Stock info - show first symbol or all symbols
+                // Stock info - visa aktienamn endast en gång
                 val symbolText = if (symbols.size == 1) {
                     "${item.companyName ?: firstSymbol} ($firstSymbol)"
                 } else {
-                    "${symbols.size} aktier: ${symbols.joinToString(", ")}"
+                    // För flera aktier, visa bara första aktienamnet
+                    "${item.companyName ?: firstSymbol} ($firstSymbol)"
                 }
                 
                 MetricRow(
                     title = symbolText,
-                    value = if (item.currentPrice > 0) "${priceFormat(item.currentPrice)} SEK" else "Kombinerat larm"
-                )
-                
-                Spacer(modifier = Modifier.height(8.dp))
-                
-                // Visa bara "Kombinerat larm"
-                Text(
-                    text = "Kombinerat larm",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    value = if (item.currentPrice > 0) {
+                        val currency = com.stockflip.CurrencyHelper.getCurrencyFromSymbol(firstSymbol)
+                        com.stockflip.CurrencyHelper.formatPrice(item.currentPrice, currency)
+                    } else {
+                        "Laddar..."
+                    }
                 )
             }
         }

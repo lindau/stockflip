@@ -42,9 +42,10 @@ fun MultipleWatchesCard(
                 .padding(12.dp)
         ) {
             // Stock info
+            val currency = com.stockflip.CurrencyHelper.getCurrencyFromSymbol(symbol)
             MetricRow(
                 title = "${companyName ?: symbol} ($symbol)",
-                value = "${priceFormat(currentPrice)} SEK"
+                value = com.stockflip.CurrencyHelper.formatPrice(currentPrice, currency)
             )
             
             Spacer(modifier = Modifier.height(12.dp))

@@ -292,16 +292,25 @@ class MainViewModel(
                             }
                         }
                         is WatchType.Combined -> {
-                            // Combined WatchType hanteras separat i evaluateCombinedAlerts
-                            // Här behöver vi bara hämta data för alla symboler i uttrycket
-                            val expression = item.watchType.expression
-                            val symbols = expression.getSymbols()
-                            
-                            Log.d(TAG, "Fetching data for combined alert with symbols: $symbols")
-                            
-                            // Hämta data för alla symboler (hanteras i evaluateCombinedAlerts)
-                            // För nu, returnera item oförändrat
-                            item
+                            // Combined WatchType: använd item.ticker direkt (samma som för vanliga bevakningar)
+                            if (item.ticker != null) {
+                                Log.d(TAG, "Fetching price for combined alert ticker: ${item.ticker}")
+                                val price = yahooFinanceService.getStockPrice(item.ticker)
+                                
+                                if (price != null) {
+                                    Log.d(TAG, "Got price for combined alert ticker ${item.ticker}: $price")
+                                    val updatedItem = item.withCurrentPrice(price)
+                                    watchItemDao.update(updatedItem)
+                                    Log.d(TAG, "Updated database with new price for combined alert")
+                                    updatedItem
+                                } else {
+                                    Log.w(TAG, "Could not get price for combined alert ticker ${item.ticker}")
+                                    item
+                                }
+                            } else {
+                                Log.w(TAG, "Combined alert has no ticker set")
+                                item
+                            }
                         }
                     }
                 } catch (e: Exception) {

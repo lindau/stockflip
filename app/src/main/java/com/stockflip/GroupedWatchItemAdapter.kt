@@ -211,12 +211,12 @@ class GroupedWatchItemAdapter(
         val pricePairs = items.filter { it.watchType is WatchType.PricePair }
         val sortedPricePairs = SortHelper.sortWatchItems(pricePairs, sortMode, customOrder)
         
-        // Group single-stock items by ticker
+        // Group single-stock items by ticker (inklusive Combined)
         val singleStockItems = items.filter { 
             it.watchType !is WatchType.PricePair && it.ticker != null 
         }
         
-        // Group by ticker
+        // Group by ticker - kombinerade och vanliga bevakningar för samma ticker ska grupperas tillsammans
         val itemsByTicker = singleStockItems.groupBy { it.ticker!! }
         val sortedItemsByTicker = SortHelper.sortTickerGroups(itemsByTicker, sortMode, customOrder)
 
@@ -270,23 +270,74 @@ class GroupedWatchItemAdapter(
 
     inner class HeaderViewHolder(private val binding: ItemSectionHeaderBinding) : RecyclerView.ViewHolder(binding.root) {
         private var currentTitle: String? = null
+        private var currentIsExpanded: Boolean? = null // Use nullable to detect first bind
+        private var isAnimating: Boolean = false // Track if animation is in progress
         
         fun bind(title: String, isExpanded: Boolean, onToggle: () -> Unit) {
+            val titleChanged = currentTitle != title
+            val stateChanged = currentIsExpanded != null && currentIsExpanded != isExpanded
+            
             currentTitle = title
             binding.sectionHeaderText.text = title
             
-            // Update icon based on expansion state
-            binding.expandIcon.setImageResource(
-                if (isExpanded) R.drawable.ic_expand_less else R.drawable.ic_expand_more
-            )
+            // Always ensure icon is correct based on expansion state
+            // isExpanded = true (utfälld) → ic_expand_less (pekar uppåt ▲, kan fällas ihop)
+            // isExpanded = false (infälld) → ic_expand_more (pekar nedåt ▼, kan fällas ut)
+            // Always update icon to ensure it's correct
+            updateIcon(isExpanded)
+            
+            currentIsExpanded = isExpanded
+            isAnimating = false // Reset animation flag when bind is called
             
             // Remove any existing click listeners to avoid duplicates
             binding.root.setOnClickListener(null)
-            // Set click listener
+            // Set click listener - use currentIsExpanded to get the latest value
             binding.root.setOnClickListener {
-                Log.d(TAG, "Header clicked: $title, isExpanded: $isExpanded")
+                // Get current state from the ViewHolder's state, not from closure
+                val currentState = currentIsExpanded ?: isExpanded
+                Log.d(TAG, "Header clicked: $title, current isExpanded: $currentState")
+                // Animate immediately on click (before state change)
+                val newState = !currentState
+                Log.d(TAG, "Animating icon change: $currentState -> $newState")
+                isAnimating = true
+                animateIconChange(currentState, newState)
+                // Update local state immediately for smooth animation
+                currentIsExpanded = newState
                 onToggle()
             }
+        }
+        
+        private fun updateIcon(isExpanded: Boolean) {
+            val iconRes = if (isExpanded) R.drawable.ic_expand_less else R.drawable.ic_expand_more
+            binding.expandIcon.setImageResource(iconRes)
+            binding.expandIcon.rotation = 0f
+            Log.d(TAG, "Icon updated: isExpanded=$isExpanded, icon=${if (isExpanded) "expand_less (up)" else "expand_more (down)"}")
+        }
+        
+        private fun animateIconChange(fromExpanded: Boolean, toExpanded: Boolean) {
+            // Cancel any ongoing animation
+            binding.expandIcon.animate().cancel()
+            
+            // Ensure we start with the correct icon
+            val startIconRes = if (fromExpanded) R.drawable.ic_expand_less else R.drawable.ic_expand_more
+            binding.expandIcon.setImageResource(startIconRes)
+            binding.expandIcon.rotation = 0f
+            Log.d(TAG, "Animation starting: fromExpanded=$fromExpanded (${if (fromExpanded) "up" else "down"}) -> toExpanded=$toExpanded (${if (toExpanded) "up" else "down"})")
+            
+            // Animate rotation: rotate 180 degrees to flip the icon
+            binding.expandIcon.animate()
+                .rotation(180f)
+                .setDuration(200)
+                .withEndAction {
+                    // Update icon after animation completes to show correct direction
+                    val endIconRes = if (toExpanded) R.drawable.ic_expand_less else R.drawable.ic_expand_more
+                    binding.expandIcon.setImageResource(endIconRes)
+                    // Reset rotation for next animation
+                    binding.expandIcon.rotation = 0f
+                    isAnimating = false
+                    Log.d(TAG, "Animation complete: icon set to ${if (toExpanded) "expand_less (up)" else "expand_more (down)"}")
+                }
+                .start()
         }
     }
     

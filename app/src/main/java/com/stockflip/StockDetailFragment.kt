@@ -129,6 +129,7 @@ class StockDetailFragment : Fragment() {
         setupRecyclerView()
         setupQuickActions()
         setupObservers()
+        setupRefreshButton()
         
         // Ladda data
         viewModel.loadStockData()
@@ -154,6 +155,12 @@ class StockDetailFragment : Fragment() {
         binding.alertsRecyclerView.apply {
             layoutManager = LinearLayoutManager(requireContext())
             adapter = alertAdapter
+        }
+    }
+
+    private fun setupRefreshButton() {
+        binding.refreshButton.setOnClickListener {
+            viewModel.loadStockData()
         }
     }
 
@@ -234,6 +241,29 @@ class StockDetailFragment : Fragment() {
             CurrencyHelper.formatPrice(it, data.currency)
         } ?: "Laddar..."
         
+        // Kontrollera om börsen är öppen baserat på börs-kod
+        // Om exchange är null, försök gissa från symbol (t.ex. .ST för svenska, .OL för norska)
+        val exchangeToCheck = data.exchange ?: run {
+            when {
+                data.symbol.endsWith(".ST") || data.symbol.endsWith(".STO") -> "STO"
+                data.symbol.endsWith(".OL") || data.symbol.endsWith(".OSE") -> "OSE"
+                data.symbol.endsWith(".L") -> "LSE"
+                data.symbol.endsWith(".DE") || data.symbol.endsWith(".XETR") -> "XETR"
+                data.symbol.endsWith(".T") -> "TSE"
+                // För amerikanska aktier utan suffix, anta NASDAQ/NYSE
+                !data.symbol.contains(".") && data.currency == "USD" -> "NASDAQ"
+                else -> null
+            }
+        }
+        
+        val isMarketOpen = if (isCrypto) {
+            true // Krypto är alltid öppet
+        } else {
+            val marketOpen = StockMarketScheduler.isMarketOpenForExchange(exchangeToCheck)
+            Log.d(TAG, "Market status for ${data.symbol} (exchange: ${data.exchange}, checked: $exchangeToCheck, currency: ${data.currency}): $marketOpen")
+            marketOpen
+        }
+        
         binding.dailyChangePercent.text = when {
             data.dailyChangePercent != null -> {
                 val change = data.dailyChangePercent
@@ -249,8 +279,8 @@ class StockDetailFragment : Fragment() {
             data.lastPrice != null && data.previousClose != null -> {
                 // Beräkna förändringen direkt om vi har både pris och previousClose
                 val change = ((data.lastPrice - data.previousClose) / data.previousClose) * 100
-                if (kotlin.math.abs(change) < 0.001) {
-                    // Förändringen är i praktiken 0, börsen är förmodligen stängd
+                if (!isMarketOpen) {
+                    // Börsen är stängd enligt börsstatus
                     binding.dailyChangePercent.setTextColor(android.graphics.Color.parseColor("#757575")) // Gray
                     "Börsen stängd"
                 } else {
@@ -265,9 +295,16 @@ class StockDetailFragment : Fragment() {
                 }
             }
             data.lastPrice != null -> {
-                // Vi har nuvarande pris men ingen föregående stängning (t.ex. helger eller marknaden stängd)
-                binding.dailyChangePercent.setTextColor(android.graphics.Color.parseColor("#757575")) // Gray
-                "Börsen stängd"
+                // Vi har nuvarande pris men ingen föregående stängning
+                if (!isMarketOpen) {
+                    // Börsen är stängd enligt börsstatus
+                    binding.dailyChangePercent.setTextColor(android.graphics.Color.parseColor("#757575")) // Gray
+                    "Börsen stängd"
+                } else {
+                    // Börsen är öppen men vi saknar previousClose - visa 0%
+                    binding.dailyChangePercent.setTextColor(android.graphics.Color.parseColor("#757575")) // Gray
+                    "0,00%"
+                }
             }
             else -> {
                 // Inget pris ännu

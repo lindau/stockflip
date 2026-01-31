@@ -35,14 +35,16 @@ fun High52wCard(
 ) {
     val athBased = item.watchType as? WatchType.ATHBased ?: return
     
+    val currency = com.stockflip.CurrencyHelper.getCurrencyFromSymbol(item.ticker)
+    
     val currentDropText = when (athBased.dropType) {
         WatchType.DropType.PERCENTAGE -> "${priceFormat(item.currentDropPercentage)}%"
-        WatchType.DropType.ABSOLUTE -> "${priceFormat(item.currentDropAbsolute)} SEK"
+        WatchType.DropType.ABSOLUTE -> com.stockflip.CurrencyHelper.formatPrice(item.currentDropAbsolute, currency)
     }
     
     val targetDropText = when (athBased.dropType) {
         WatchType.DropType.PERCENTAGE -> "${priceFormat(athBased.dropValue)}%"
-        WatchType.DropType.ABSOLUTE -> "${priceFormat(athBased.dropValue)} SEK"
+        WatchType.DropType.ABSOLUTE -> com.stockflip.CurrencyHelper.formatPrice(athBased.dropValue, currency)
     }
     
     val isTriggered = when (athBased.dropType) {
@@ -96,6 +98,24 @@ fun High52wCard(
                 
                 Spacer(modifier = Modifier.height(12.dp))
                 
+                // Current price
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    Text(
+                        text = if (item.currentPrice > 0) {
+                            com.stockflip.CurrencyHelper.formatPrice(item.currentPrice, currency)
+                        } else {
+                            "Laddar..."
+                        },
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+                
+                Spacer(modifier = Modifier.height(8.dp))
+                
                 // Target text - aligned to the right
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -112,20 +132,6 @@ fun High52wCard(
                     )
                 }
                 
-                // Status text - visas när showStatus är true
-                if (showStatus) {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.End
-                    ) {
-                        Text(
-                            text = com.stockflip.ui.components.cards.formatAlertStatus(item),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
                 
             }
         }

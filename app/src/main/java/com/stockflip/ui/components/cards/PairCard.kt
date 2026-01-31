@@ -14,6 +14,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.stockflip.CurrencyHelper
 import com.stockflip.WatchItem
 import com.stockflip.WatchType
 import com.stockflip.ui.components.MetricRow
@@ -25,6 +26,11 @@ fun PairCard(
     modifier: Modifier = Modifier
 ) {
     val pricePair = item.watchType as? WatchType.PricePair ?: return
+    
+    // Hämta valuta för varje aktie
+    val currency1 = CurrencyHelper.getCurrencyFromSymbol(item.ticker1)
+    val currency2 = CurrencyHelper.getCurrencyFromSymbol(item.ticker2)
+    
     val targetText = buildString {
         val hasEqual = pricePair.notifyWhenEqual
         val hasDiff = pricePair.priceDifference > 0
@@ -55,7 +61,7 @@ fun PairCard(
             // First stock
             MetricRow(
                 title = "${item.companyName1 ?: item.ticker1} (${item.ticker1})",
-                value = "${priceFormat(item.currentPrice1)} SEK"
+                value = CurrencyHelper.formatPrice(item.currentPrice1, currency1)
             )
             
             Spacer(modifier = Modifier.height(8.dp))
@@ -63,7 +69,7 @@ fun PairCard(
             // Second stock
             MetricRow(
                 title = "${item.companyName2 ?: item.ticker2} (${item.ticker2})",
-                value = "${priceFormat(item.currentPrice2)} SEK"
+                value = CurrencyHelper.formatPrice(item.currentPrice2, currency2)
             )
             
             Spacer(modifier = Modifier.height(12.dp))

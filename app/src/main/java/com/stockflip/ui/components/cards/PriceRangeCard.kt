@@ -81,13 +81,32 @@ fun PriceRangeCard(
                 
                 Spacer(modifier = Modifier.height(12.dp))
                 
+                // Current price
+                val currency = com.stockflip.CurrencyHelper.getCurrencyFromSymbol(item.ticker)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    Text(
+                        text = if (item.currentPrice > 0) {
+                            com.stockflip.CurrencyHelper.formatPrice(item.currentPrice, currency)
+                        } else {
+                            "Laddar..."
+                        },
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+                
+                Spacer(modifier = Modifier.height(8.dp))
+                
                 // Target text - aligned to the right
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.End
                 ) {
                     Text(
-                        text = "Mål: Pris mellan ${priceFormat(priceRange.minPrice)} - ${priceFormat(priceRange.maxPrice)} SEK",
+                        text = "Mål: Pris mellan ${com.stockflip.CurrencyHelper.formatPrice(priceRange.minPrice, currency)} - ${com.stockflip.CurrencyHelper.formatPrice(priceRange.maxPrice, currency)}",
                         style = MaterialTheme.typography.bodyMedium,
                         color = if (isTriggered) {
                             MaterialTheme.colorScheme.error
@@ -97,20 +116,6 @@ fun PriceRangeCard(
                     )
                 }
                 
-                // Status text - visas när showStatus är true
-                if (showStatus) {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.End
-                    ) {
-                        Text(
-                            text = com.stockflip.ui.components.cards.formatAlertStatus(item),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
                 
             }
         }
