@@ -14,7 +14,7 @@ import kotlinx.coroutines.launch
  */
 class StockDetailViewModel(
     private val watchItemDao: WatchItemDao,
-    private val yahooFinanceService: YahooFinanceService,
+    private val yahooFinanceService: MarketDataService,
     private val symbol: String
 ) : ViewModel() {
 

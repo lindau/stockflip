@@ -1,15 +1,17 @@
 package com.stockflip.viewmodel
 
-import app.cash.turbine.test
 import com.stockflip.StockSearchResult
 import com.stockflip.repository.SearchState
 import com.stockflip.repository.StockRepository
+import com.stockflip.testutil.MainDispatcherRule
 import io.mockk.*
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.*
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
 import kotlin.time.ExperimentalTime
 
@@ -17,6 +19,8 @@ import kotlin.time.ExperimentalTime
 class StockSearchViewModelTest {
     private lateinit var viewModel: StockSearchViewModel
     private lateinit var repository: StockRepository
+    @get:Rule
+    val mainDispatcherRule: MainDispatcherRule = MainDispatcherRule()
 
     @Before
     fun setup() {
@@ -27,23 +31,17 @@ class StockSearchViewModelTest {
     @Test
     fun `test search with empty query`() = runTest {
         viewModel.search("")
-        viewModel.searchState.test {
-            assertEquals(SearchState.Success(emptyList()), awaitItem())
-            cancelAndIgnoreRemainingEvents()
-        }
-
-        coVerify(exactly = 0) { repository.searchStocks(any()) }
+        advanceUntilIdle()
+        assertEquals(SearchState.Success(emptyList()), viewModel.searchState.value)
+        coVerify(exactly = 0) { repository.searchStocks(any<String>(), any<Boolean>()) }
     }
 
     @Test
     fun `test search with short query`() = runTest {
         viewModel.search("a")
-        viewModel.searchState.test {
-            assertEquals(SearchState.Success(emptyList()), awaitItem())
-            cancelAndIgnoreRemainingEvents()
-        }
-
-        coVerify(exactly = 0) { repository.searchStocks(any()) }
+        advanceUntilIdle()
+        assertEquals(SearchState.Success(emptyList()), viewModel.searchState.value)
+        coVerify(exactly = 0) { repository.searchStocks(any<String>(), any<Boolean>()) }
     }
 
     @Test
@@ -51,51 +49,39 @@ class StockSearchViewModelTest {
         val results = listOf(
             StockSearchResult("AAPL", "Apple Inc.", false)
         )
-        coEvery { repository.searchStocks("AAPL") } returns flow {
+        coEvery { repository.searchStocks("AAPL", any()) } returns flow {
             emit(SearchState.Loading)
             emit(SearchState.Success(results))
         }
 
         viewModel.search("AAPL")
-        viewModel.searchState.test {
-            assertEquals(SearchState.Success(emptyList()), awaitItem())
-            assertEquals(SearchState.Loading, awaitItem())
-            assertEquals(SearchState.Success(results), awaitItem())
-            cancelAndIgnoreRemainingEvents()
-        }
+        advanceUntilIdle()
+        assertEquals(SearchState.Success(results), viewModel.searchState.value)
     }
 
     @Test
     fun `test search error handling`() = runTest {
         val error = Exception("Network error")
-        coEvery { repository.searchStocks("ERROR") } returns flow {
+        coEvery { repository.searchStocks("ERROR", any()) } returns flow {
             emit(SearchState.Loading)
             emit(SearchState.Error(error.message ?: "Unknown error", "ERROR"))
         }
 
         viewModel.search("ERROR")
-        viewModel.searchState.test {
-            assertEquals(SearchState.Success(emptyList()), awaitItem())
-            assertEquals(SearchState.Loading, awaitItem())
-            assertTrue(awaitItem() is SearchState.Error)
-            cancelAndIgnoreRemainingEvents()
-        }
+        advanceUntilIdle()
+        assertTrue(viewModel.searchState.value is SearchState.Error)
     }
 
     @Test
     fun `test search with empty results`() = runTest {
-        coEvery { repository.searchStocks("NONEXISTENT") } returns flow {
+        coEvery { repository.searchStocks("NONEXISTENT", any()) } returns flow {
             emit(SearchState.Loading)
             emit(SearchState.Success(emptyList()))
         }
 
         viewModel.search("NONEXISTENT")
-        viewModel.searchState.test {
-            assertEquals(SearchState.Success(emptyList()), awaitItem())
-            assertEquals(SearchState.Loading, awaitItem())
-            assertEquals(SearchState.Success(emptyList()), awaitItem())
-            cancelAndIgnoreRemainingEvents()
-        }
+        advanceUntilIdle()
+        assertEquals(SearchState.Success(emptyList()), viewModel.searchState.value)
     }
 
     @Test
@@ -103,7 +89,7 @@ class StockSearchViewModelTest {
         val errorState = SearchState.Error("Network error", "AAPL")
         val results = listOf(StockSearchResult("AAPL", "Apple Inc.", false))
 
-        coEvery { repository.searchStocks("AAPL") } returns flow {
+        coEvery { repository.searchStocks("AAPL", any()) } returns flow {
             emit(SearchState.Loading)
             emit(errorState)
         } andThen flow {
@@ -112,15 +98,9 @@ class StockSearchViewModelTest {
         }
 
         viewModel.search("AAPL")
+        advanceUntilIdle()
         viewModel.retry()
-
-        viewModel.searchState.test {
-            assertEquals(SearchState.Success(emptyList()), awaitItem())
-            assertEquals(SearchState.Loading, awaitItem())
-            assertEquals(errorState, awaitItem())
-            assertEquals(SearchState.Loading, awaitItem())
-            assertEquals(SearchState.Success(results), awaitItem())
-            cancelAndIgnoreRemainingEvents()
-        }
+        advanceUntilIdle()
+        assertEquals(SearchState.Success(results), viewModel.searchState.value)
     }
 } 

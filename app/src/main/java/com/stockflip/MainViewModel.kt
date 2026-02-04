@@ -12,7 +12,7 @@ import kotlinx.coroutines.launch
 class MainViewModel(
     private val stockPairDao: StockPairDao,
     private val watchItemDao: WatchItemDao,
-    private val yahooFinanceService: YahooFinanceService
+    private val yahooFinanceService: MarketDataService
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<UiState<List<StockPair>>>(UiState.Loading)

@@ -2,7 +2,6 @@ package com.stockflip.repository
 
 import android.util.Log
 import com.stockflip.StockSearchResult
-import com.stockflip.YahooFinanceService
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import java.util.concurrent.TimeUnit
@@ -13,7 +12,8 @@ import java.util.concurrent.TimeUnit
  */
 class StockRepository(
     private val timeProvider: () -> Long = { System.currentTimeMillis() },
-    private val cacheTTL: Long = TimeUnit.MINUTES.toMillis(5)
+    private val cacheTTL: Long = TimeUnit.MINUTES.toMillis(5),
+    private val stockSearchService: StockSearchService = YahooStockSearchService()
 ) {
     private val TAG = "StockRepository"
     private val cache = mutableMapOf<String, CacheEntry>()
@@ -57,7 +57,7 @@ class StockRepository(
             Log.d(TAG, "Modified search query: $searchQuery")
             
             // Perform search
-            val results = YahooFinanceService.searchStocks(searchQuery, includeCrypto)
+            val results = stockSearchService.searchStocks(searchQuery, includeCrypto)
             Log.d(TAG, "Received ${results.size} results from YahooFinanceService")
             
             // Enhanced sorting logic that handles both ticker and name searches

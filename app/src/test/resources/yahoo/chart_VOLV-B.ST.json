@@ -1,0 +1,31 @@
+{
+  "chart": {
+    "result": [
+      {
+        "meta": {
+          "currency": "SEK",
+          "symbol": "VOLV-B.ST",
+          "regularMarketPrice": 300.12,
+          "regularMarketTime": 1700000000,
+          "instrumentType": "EQUITY",
+          "shortName": "Volvo B",
+          "longName": "Volvo AB (publ) ser. B",
+          "exchangeName": "STO",
+          "regularMarketPreviousClose": 295.0,
+          "fiftyTwoWeekHigh": 320.0,
+          "fiftyTwoWeekLow": 200.0,
+          "regularMarketDayHigh": 301.0,
+          "regularMarketDayLow": 294.5
+        },
+        "timestamp": [],
+        "indicators": {
+          "quote": [
+            { "close": [] }
+          ]
+        }
+      }
+    ],
+    "error": null
+  }
+}
+

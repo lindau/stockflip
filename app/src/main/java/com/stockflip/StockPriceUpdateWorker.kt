@@ -18,6 +18,7 @@ import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.WorkManager
 import java.util.concurrent.TimeUnit
+import com.stockflip.usecase.UpdateStockPairsPricesUseCase
 
 class StockPriceUpdateWorker(
     private val context: Context,
@@ -33,32 +34,16 @@ class StockPriceUpdateWorker(
                 val database = StockPairDatabase.getDatabase(applicationContext)
                 val stockPairDao = database.stockPairDao()
                 val yahooFinanceService = YahooFinanceService
-                val pairs = stockPairDao.getAllStockPairs()
-                var updatedCount = 0
-                
-                pairs.forEach { pair ->
-                    try {
-                        Log.d(TAG, "Checking prices for ${pair.ticker1} and ${pair.ticker2}")
-                        val price1 = yahooFinanceService.getStockPrice(pair.ticker1)
-                        val price2 = yahooFinanceService.getStockPrice(pair.ticker2)
-                        
-                        if (price1 != null && price2 != null) {
-                            Log.d(TAG, "Got prices for ${pair.ticker1}: $price1, ${pair.ticker2}: $price2")
-                            val updatedPair = pair.withCurrentPrices(price1, price2)
-                            stockPairDao.update(updatedPair)
-                            Log.d(TAG, "Updated database with new prices for ${pair.ticker1}-${pair.ticker2}")
-                            updatedCount++
-
-                            if (shouldNotify(pair, price1, price2)) {
-                                val title = "Stock Price Alert"
-                                val message = buildNotificationMessage(pair, price1, price2)
-                                showNotification(title, message)
-                            }
-                        } else {
-                            Log.w(TAG, "Failed to get prices for ${pair.ticker1} or ${pair.ticker2}")
-                        }
-                    } catch (e: Exception) {
-                        Log.e(TAG, "Error checking prices for pair ${pair.companyName1} - ${pair.companyName2}: ${e.message}")
+                val useCase = UpdateStockPairsPricesUseCase(stockPairDao, yahooFinanceService)
+                val updatedPairs: List<StockPair> = useCase.executeUpdateStockPairsPrices()
+                val updatedCount: Int = updatedPairs.size
+                updatedPairs.forEach { pair: StockPair ->
+                    val price1: Double = pair.currentPrice1
+                    val price2: Double = pair.currentPrice2
+                    if (shouldNotify(pair, price1, price2)) {
+                        val title = "Stock Price Alert"
+                        val message = buildNotificationMessage(pair, price1, price2)
+                        showNotification(title, message)
                     }
                 }
 

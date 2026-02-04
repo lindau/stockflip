@@ -1,10 +1,12 @@
 package com.stockflip
 
 import kotlinx.coroutines.runBlocking
+import org.junit.Ignore
 import org.junit.Test
 import org.junit.Assert.*
 import org.junit.Before
 
+@Ignore("Live network smoke tests; run manually when needed.")
 class YahooFinanceServiceTest {
     
     @Test

@@ -1,0 +1,23 @@
+{
+  "chart": {
+    "result": [
+      {
+        "meta": {
+          "currency": "NOK",
+          "symbol": "EQNR.OL",
+          "regularMarketPrice": 250.0,
+          "regularMarketTime": 1700000000,
+          "instrumentType": "EQUITY",
+          "shortName": "Equinor",
+          "longName": "Equinor ASA",
+          "exchangeName": "OSE",
+          "regularMarketPreviousClose": 248.0,
+          "fiftyTwoWeekHigh": 300.0,
+          "fiftyTwoWeekLow": 180.0
+        }
+      }
+    ],
+    "error": null
+  }
+}
+

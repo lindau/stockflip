@@ -1,0 +1,23 @@
+{
+  "chart": {
+    "result": [
+      {
+        "meta": {
+          "currency": "USD",
+          "symbol": "BTC-USD",
+          "regularMarketPrice": 43000.0,
+          "regularMarketTime": 1700000000,
+          "instrumentType": "CRYPTOCURRENCY",
+          "shortName": "Bitcoin",
+          "longName": "Bitcoin USD",
+          "exchangeName": "CRYPTO",
+          "regularMarketPreviousClose": 42000.0,
+          "fiftyTwoWeekHigh": 50000.0,
+          "fiftyTwoWeekLow": 25000.0
+        }
+      }
+    ],
+    "error": null
+  }
+}
+

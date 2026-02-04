@@ -1,0 +1,25 @@
+{
+  "chart": {
+    "result": [
+      {
+        "meta": {
+          "currency": "USD",
+          "symbol": "AAPL",
+          "regularMarketPrice": 180.5,
+          "regularMarketTime": 1700000000,
+          "instrumentType": "EQUITY",
+          "shortName": "Apple",
+          "longName": "Apple Inc.",
+          "exchangeName": "NASDAQ",
+          "regularMarketPreviousClose": 179.0,
+          "fiftyTwoWeekHigh": 200.0,
+          "fiftyTwoWeekLow": 120.0,
+          "regularMarketDayHigh": 181.0,
+          "regularMarketDayLow": 178.5
+        }
+      }
+    ],
+    "error": null
+  }
+}
+

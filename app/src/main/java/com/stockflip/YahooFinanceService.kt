@@ -71,7 +71,7 @@ data class Quote(
     val close: List<Double>? = null
 )
 
-object YahooFinanceService {
+object YahooFinanceService : MarketDataService {
     private const val TAG = "YahooFinanceService"
     private const val BASE_URL = "https://query1.finance.yahoo.com/"
     private const val SEARCH_URL = "https://query1.finance.yahoo.com/v1/finance/search"
@@ -109,6 +109,7 @@ object YahooFinanceService {
         .build()
 
     private val api = retrofit.create(YahooFinanceApi::class.java)
+    private val chartMarketDataService: YahooMarketDataServiceImpl = YahooMarketDataServiceImpl(api)
 
     private var crumb: String? = null
     private var isFetchingCrumb = false
@@ -195,74 +196,12 @@ object YahooFinanceService {
         }
     }
 
-    suspend fun getStockPrice(symbol: String): Double? {
-        return try {
-            Log.d(TAG, "Fetching price for symbol: $symbol")
-            val response = api.getStockPrice(symbol)
-            
-            if (response.chart?.error != null) {
-                Log.e(TAG, "API Error for $symbol: ${response.chart.error.description}")
-                return null
-            }
-            
-            val result = response.chart?.result?.firstOrNull()
-            if (result == null) {
-                Log.e(TAG, "No result found for $symbol")
-                return null
-            }
-            
-            val price = result.meta?.regularMarketPrice
-            if (price == null || price.isNaN() || price <= 0) {
-                Log.e(TAG, "No valid price found for $symbol: $price")
-                return null
-            }
-            
-            Log.d(TAG, """
-                Stock data for $symbol:
-                Price: $price
-                Currency: ${result.meta?.currency}
-                Exchange: ${result.meta?.exchangeName}
-                Instrument Type: ${result.meta?.instrumentType}
-                Short Name: ${result.meta?.shortName}
-                Long Name: ${result.meta?.longName}
-            """.trimIndent())
-            
-            price
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to fetch price for $symbol: ${e.message}")
-            e.printStackTrace()
-            null
-        }
+    override suspend fun getStockPrice(symbol: String): Double? {
+        return chartMarketDataService.getStockPrice(symbol)
     }
     
-    suspend fun getCompanyName(symbol: String): String? {
-        return try {
-            Log.d(TAG, "Fetching company info for symbol: $symbol")
-            val response = api.getStockInfo(symbol)
-            
-            if (response.chart?.error != null) {
-                Log.e(TAG, "API Error for $symbol: ${response.chart.error.description}")
-                return null
-            }
-            
-            response.chart?.result?.firstOrNull()?.meta?.let { meta ->
-                val name = meta.longName ?: meta.shortName ?: meta.symbol
-                Log.d(TAG, """
-                    Company info for $symbol:
-                    Long name: ${meta.longName}
-                    Short name: ${meta.shortName}
-                    Exchange: ${meta.exchangeName}
-                    Type: ${meta.instrumentType}
-                """.trimIndent())
-                name
-            } ?: run {
-                Log.w(TAG, "No company info available for $symbol")
-                null
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Error fetching company info for $symbol: ${e.message}", e)
-            null
-        }
+    override suspend fun getCompanyName(symbol: String): String? {
+        return chartMarketDataService.getCompanyName(symbol)
     }
 
     /**
@@ -271,42 +210,8 @@ object YahooFinanceService {
      * @param symbol Aktiens symbol
      * @return Valuta-kod (t.ex. "SEK", "USD"), eller null om det inte kunde hämtas
      */
-    suspend fun getCurrency(symbol: String): String? = withContext(Dispatchers.IO) {
-        try {
-            Log.d(TAG, "Fetching currency for symbol: $symbol")
-            val response = api.getStockPrice(symbol)
-            
-            if (response.chart?.error != null) {
-                Log.e(TAG, "API Error for $symbol: ${response.chart.error.description}")
-                return@withContext null
-            }
-            
-            val result = response.chart?.result?.firstOrNull()
-            if (result == null) {
-                Log.e(TAG, "No result found for $symbol")
-                return@withContext null
-            }
-            
-            val currency = result.meta?.currency
-            if (currency != null && currency.isNotEmpty()) {
-                Log.d(TAG, "Got currency for $symbol: $currency")
-                return@withContext currency
-            }
-            
-            // Fallback: använd börs för att bestämma valuta
-            val exchange = result.meta?.exchangeName
-            if (exchange != null) {
-                val fallbackCurrency = CurrencyHelper.getCurrencyFromExchange(exchange)
-                Log.d(TAG, "Using fallback currency for $symbol based on exchange $exchange: $fallbackCurrency")
-                return@withContext fallbackCurrency
-            }
-            
-            Log.w(TAG, "Could not determine currency for $symbol")
-            null
-        } catch (e: Exception) {
-            Log.e(TAG, "Error fetching currency for $symbol: ${e.message}", e)
-            null
-        }
+    override suspend fun getCurrency(symbol: String): String? {
+        return chartMarketDataService.getCurrency(symbol)
     }
 
     /**
@@ -315,37 +220,11 @@ object YahooFinanceService {
      * @param symbol Aktiens symbol
      * @return Börs-kod (t.ex. "STO", "NASDAQ"), eller null om det inte kunde hämtas
      */
-    suspend fun getExchange(symbol: String): String? = withContext(Dispatchers.IO) {
-        try {
-            Log.d(TAG, "Fetching exchange for symbol: $symbol")
-            val response = api.getStockPrice(symbol)
-            
-            if (response.chart?.error != null) {
-                Log.e(TAG, "API Error for $symbol: ${response.chart.error.description}")
-                return@withContext null
-            }
-            
-            val result = response.chart?.result?.firstOrNull()
-            if (result == null) {
-                Log.e(TAG, "No result found for $symbol")
-                return@withContext null
-            }
-            
-            val exchange = result.meta?.exchangeName
-            if (exchange != null && exchange.isNotEmpty()) {
-                Log.d(TAG, "Got exchange for $symbol: $exchange")
-                return@withContext exchange
-            }
-            
-            Log.w(TAG, "Could not determine exchange for $symbol")
-            null
-        } catch (e: Exception) {
-            Log.e(TAG, "Error fetching exchange for $symbol: ${e.message}", e)
-            null
-        }
+    override suspend fun getExchange(symbol: String): String? {
+        return chartMarketDataService.getExchange(symbol)
     }
 
-    suspend fun getKeyMetric(symbol: String, metricType: WatchType.MetricType): Double? = withContext(Dispatchers.IO) {
+    override suspend fun getKeyMetric(symbol: String, metricType: WatchType.MetricType): Double? = withContext(Dispatchers.IO) {
         // Try Yahoo Finance first, unless circuit breaker is open
         try {
             if (consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {
@@ -461,48 +340,8 @@ object YahooFinanceService {
         }
     }
 
-    suspend fun getATH(symbol: String): Double? = withContext(Dispatchers.IO) {
-        try {
-            Log.d(TAG, "Fetching ATH for symbol: $symbol")
-            val response = api.getStockPrice(symbol)
-            
-            if (response.chart?.error != null) {
-                Log.e(TAG, "API Error for $symbol: ${response.chart.error.description}")
-                return@withContext null
-            }
-            
-            val result = response.chart?.result?.firstOrNull()
-            if (result == null) {
-                Log.e(TAG, "No result found for $symbol")
-                return@withContext null
-            }
-            
-            val meta = result.meta
-            if (meta == null) {
-                Log.e(TAG, "No meta found for $symbol")
-                return@withContext null
-            }
-            
-            // Try to get 52-week high first (this is the ATH)
-            val week52High = meta.fiftyTwoWeekHigh
-            if (week52High != null && !week52High.isNaN() && week52High > 0) {
-                Log.d(TAG, "Got 52-week high (ATH) for $symbol: $week52High")
-                return@withContext week52High
-            }
-            
-            // Fallback: try to get day high
-            val dayHigh = meta.regularMarketDayHigh
-            if (dayHigh != null && !dayHigh.isNaN() && dayHigh > 0) {
-                Log.d(TAG, "Got day high for $symbol: $dayHigh (using as fallback ATH)")
-                return@withContext dayHigh
-            }
-            
-            Log.w(TAG, "Could not find ATH for $symbol")
-            null
-        } catch (e: Exception) {
-            Log.e(TAG, "Error fetching ATH for $symbol: ${e.message}", e)
-            null
-        }
+    override suspend fun getATH(symbol: String): Double? {
+        return chartMarketDataService.getATH(symbol)
     }
 
     /**
@@ -511,40 +350,8 @@ object YahooFinanceService {
      * @param symbol Aktiens symbol
      * @return 52-veckors lägsta pris, eller null om det inte kunde hämtas
      */
-    suspend fun get52WeekLow(symbol: String): Double? = withContext(Dispatchers.IO) {
-        try {
-            Log.d(TAG, "Fetching 52-week low for symbol: $symbol")
-            val response = api.getStockPrice(symbol)
-            
-            if (response.chart?.error != null) {
-                Log.e(TAG, "API Error for $symbol: ${response.chart.error.description}")
-                return@withContext null
-            }
-            
-            val result = response.chart?.result?.firstOrNull()
-            if (result == null) {
-                Log.e(TAG, "No result found for $symbol")
-                return@withContext null
-            }
-            
-            val meta = result.meta
-            if (meta == null) {
-                Log.e(TAG, "No meta found for $symbol")
-                return@withContext null
-            }
-            
-            val week52Low = meta.fiftyTwoWeekLow
-            if (week52Low != null && !week52Low.isNaN() && week52Low > 0) {
-                Log.d(TAG, "Got 52-week low for $symbol: $week52Low")
-                return@withContext week52Low
-            }
-            
-            Log.w(TAG, "Could not find 52-week low for $symbol")
-            null
-        } catch (e: Exception) {
-            Log.e(TAG, "Error fetching 52-week low for $symbol: ${e.message}", e)
-            null
-        }
+    override suspend fun get52WeekLow(symbol: String): Double? {
+        return chartMarketDataService.get52WeekLow(symbol)
     }
 
     /**
@@ -554,40 +361,8 @@ object YahooFinanceService {
      * @param symbol Aktiens symbol
      * @return Föregående stängningspris, eller null om det inte kunde hämtas
      */
-    suspend fun getPreviousClose(symbol: String): Double? = withContext(Dispatchers.IO) {
-        try {
-            Log.d(TAG, "Fetching previous close for symbol: $symbol")
-            val response = api.getStockPrice(symbol)
-            
-            if (response.chart?.error != null) {
-                Log.e(TAG, "API Error for $symbol: ${response.chart.error.description}")
-                return@withContext null
-            }
-            
-            val result = response.chart?.result?.firstOrNull()
-            if (result == null) {
-                Log.e(TAG, "No result found for $symbol")
-                return@withContext null
-            }
-            
-            val meta = result.meta
-            if (meta == null) {
-                Log.e(TAG, "No meta found for $symbol")
-                return@withContext null
-            }
-            
-            val previousClose = meta.regularMarketPreviousClose
-            if (previousClose != null && !previousClose.isNaN() && previousClose > 0) {
-                Log.d(TAG, "Got previous close for $symbol: $previousClose")
-                return@withContext previousClose
-            }
-            
-            Log.w(TAG, "Could not find previous close for $symbol")
-            null
-        } catch (e: Exception) {
-            Log.e(TAG, "Error fetching previous close for $symbol: ${e.message}", e)
-            null
-        }
+    override suspend fun getPreviousClose(symbol: String): Double? {
+        return chartMarketDataService.getPreviousClose(symbol)
     }
 
     /**
@@ -597,29 +372,8 @@ object YahooFinanceService {
      * @param symbol Aktiens symbol
      * @return Dagsförändring i procent (positivt värde = upp, negativt värde = ned), eller null om det inte kunde beräknas
      */
-    suspend fun getDailyChangePercent(symbol: String): Double? = withContext(Dispatchers.IO) {
-        try {
-            Log.d(TAG, "Calculating daily change percent for symbol: $symbol")
-            val currentPrice = getStockPrice(symbol)
-            val previousClose = getPreviousClose(symbol)
-            
-            if (currentPrice == null || previousClose == null) {
-                Log.w(TAG, "Could not calculate daily change for $symbol: currentPrice=$currentPrice, previousClose=$previousClose")
-                return@withContext null
-            }
-            
-            if (previousClose <= 0) {
-                Log.w(TAG, "Previous close is invalid for $symbol: $previousClose")
-                return@withContext null
-            }
-            
-            val changePercent = ((currentPrice - previousClose) / previousClose) * 100
-            Log.d(TAG, "Daily change for $symbol: $changePercent% (current: $currentPrice, previous: $previousClose)")
-            return@withContext changePercent
-        } catch (e: Exception) {
-            Log.e(TAG, "Error calculating daily change percent for $symbol: ${e.message}", e)
-            null
-        }
+    override suspend fun getDailyChangePercent(symbol: String): Double? {
+        return chartMarketDataService.getDailyChangePercent(symbol)
     }
 
     @JvmStatic
