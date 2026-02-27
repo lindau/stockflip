@@ -97,6 +97,14 @@ class MainActivity : AppCompatActivity() {
         MetricHistoryService(repository)
     }
 
+    private enum class MainTab {
+        STOCKS,
+        PAIRS
+    }
+
+    private var currentMainTab: MainTab = MainTab.STOCKS
+    private var lastWatchItems: List<WatchItem> = emptyList()
+
     /**
      * Initializes the activity's UI components and starts data loading.
      * Sets up the view binding, initializes UI elements, and requests necessary permissions.
@@ -128,14 +136,11 @@ class MainActivity : AppCompatActivity() {
 
     @Deprecated("Deprecated in Java")
     override fun onBackPressed() {
-        // Om vi är i StockDetailFragment, gå tillbaka till listan
         if (supportFragmentManager.backStackEntryCount > 0) {
             supportFragmentManager.popBackStack()
-            // Visa RecyclerView igen
             binding.swipeRefreshLayout.visibility = View.VISIBLE
             binding.addPairButton.visibility = View.VISIBLE
-            // Visa sorteringsmenyn igen
-            binding.topAppBar.menu.findItem(R.id.menu_sort)?.isVisible = true
+            updateToolbarForCurrentTab()
         } else {
             @Suppress("DEPRECATION")
             super.onBackPressed()
@@ -148,12 +153,72 @@ class MainActivity : AppCompatActivity() {
         setupSwipeRefresh()
         setupAddButton()
         setupToolbar()
+        setupBottomNavigation()
+        showStocksToolbar()
+    }
+
+    private fun setupBottomNavigation(): Unit {
+        binding.bottomNavigation.setOnItemSelectedListener { item ->
+            when (item.itemId) {
+                R.id.menu_stocks -> {
+                    currentMainTab = MainTab.STOCKS
+                    binding.swipeRefreshLayout.visibility = View.VISIBLE
+                    binding.addPairButton.visibility = View.VISIBLE
+                    supportFragmentManager.popBackStack(
+                        null,
+                        androidx.fragment.app.FragmentManager.POP_BACK_STACK_INCLUSIVE
+                    )
+                    if (lastWatchItems.isNotEmpty()) {
+                        showWatchItemSuccess(lastWatchItems)
+                    }
+                    showStocksToolbar()
+                    true
+                }
+                R.id.menu_pairs -> {
+                    currentMainTab = MainTab.PAIRS
+                    binding.swipeRefreshLayout.visibility = View.VISIBLE
+                    binding.addPairButton.visibility = View.VISIBLE
+                    supportFragmentManager.popBackStack(
+                        null,
+                        androidx.fragment.app.FragmentManager.POP_BACK_STACK_INCLUSIVE
+                    )
+                    if (lastWatchItems.isNotEmpty()) {
+                        showWatchItemSuccess(lastWatchItems)
+                    }
+                    showPairsToolbar()
+                    true
+                }
+                R.id.menu_alerts -> {
+                    binding.swipeRefreshLayout.visibility = View.GONE
+                    binding.addPairButton.visibility = View.GONE
+                    supportFragmentManager.beginTransaction()
+                        .replace(R.id.fragmentContainer, AlertsFragment())
+                        .addToBackStack("alerts")
+                        .commit()
+                    showAlertsToolbar()
+                    true
+                }
+                else -> false
+            }
+        }
     }
 
     private fun setupToolbar() {
+        binding.topAppBar.menu.clear()
         binding.topAppBar.inflateMenu(R.menu.main_menu)
         binding.topAppBar.setOnMenuItemClickListener { item ->
             when (item.itemId) {
+                R.id.menu_add -> {
+                    when (currentMainTab) {
+                        MainTab.STOCKS -> {
+                            openAddStock()
+                        }
+                        MainTab.PAIRS -> {
+                            showAddStockPairDialog()
+                        }
+                    }
+                    true
+                }
                 R.id.menu_sort_alphabetical -> {
                     val adapter = binding.stockPairsList.adapter as? GroupedWatchItemAdapter
                     adapter?.setSortMode(SortHelper.SortMode.ALPHABETICAL)
@@ -176,6 +241,53 @@ class MainActivity : AppCompatActivity() {
                 else -> false
             }
         }
+    }
+
+    private fun openAddStock(): Unit {
+        binding.swipeRefreshLayout.visibility = View.GONE
+        binding.addPairButton.visibility = View.GONE
+        binding.topAppBar.title = getString(R.string.title_add_stock)
+        binding.topAppBar.navigationIcon = androidx.appcompat.content.res.AppCompatResources.getDrawable(
+            this,
+            R.drawable.ic_arrow_back
+        )
+        binding.topAppBar.setNavigationOnClickListener {
+            onBackPressedDispatcher.onBackPressed()
+        }
+        binding.topAppBar.menu.findItem(R.id.menu_sort)?.isVisible = false
+        binding.topAppBar.menu.findItem(R.id.menu_add)?.isVisible = false
+        supportFragmentManager.beginTransaction()
+            .replace(R.id.fragmentContainer, AddStockFragment())
+            .addToBackStack("add_stock")
+            .commit()
+    }
+
+    private fun updateToolbarForCurrentTab(): Unit {
+        when (currentMainTab) {
+            MainTab.STOCKS -> showStocksToolbar()
+            MainTab.PAIRS -> showPairsToolbar()
+        }
+    }
+
+    private fun showStocksToolbar(): Unit {
+        binding.topAppBar.title = getString(R.string.tab_stocks)
+        binding.topAppBar.navigationIcon = null
+        binding.topAppBar.menu.findItem(R.id.menu_add)?.isVisible = true
+        binding.topAppBar.menu.findItem(R.id.menu_sort)?.isVisible = true
+    }
+
+    private fun showPairsToolbar(): Unit {
+        binding.topAppBar.title = getString(R.string.tab_pairs)
+        binding.topAppBar.navigationIcon = null
+        binding.topAppBar.menu.findItem(R.id.menu_add)?.isVisible = true
+        binding.topAppBar.menu.findItem(R.id.menu_sort)?.isVisible = true
+    }
+
+    private fun showAlertsToolbar(): Unit {
+        binding.topAppBar.title = getString(R.string.tab_alerts)
+        binding.topAppBar.navigationIcon = null
+        binding.topAppBar.menu.findItem(R.id.menu_add)?.isVisible = false
+        binding.topAppBar.menu.findItem(R.id.menu_sort)?.isVisible = false
     }
 
     private fun setupDragAndDrop() {
@@ -378,7 +490,9 @@ class MainActivity : AppCompatActivity() {
 
     private fun showLoading(): Unit {
         Log.d(TAG, "Showing loading state")
-        binding.progressBar.visibility = View.VISIBLE
+        if (!binding.swipeRefreshLayout.isRefreshing) {
+            binding.progressBar.visibility = View.VISIBLE
+        }
     }
 
     private fun showWatchItemSuccess(data: List<WatchItem>): Unit {
@@ -388,14 +502,22 @@ class MainActivity : AppCompatActivity() {
         keyMetricsItems.forEach { item ->
             Log.d(TAG, "KeyMetrics item in showWatchItemSuccess: ${item.ticker}, currentMetricValue: ${item.currentMetricValue}")
         }
-        
+
+        lastWatchItems = data
+
+        val filteredData: List<WatchItem> = when (currentMainTab) {
+            MainTab.STOCKS -> data.filter { it.watchType !is WatchType.PricePair }
+            MainTab.PAIRS -> data.filter { it.watchType is WatchType.PricePair }
+        }
+        Log.d(TAG, "Filtered watch items for tab $currentMainTab: ${filteredData.size}")
+
         binding.progressBar.visibility = View.GONE
         Log.d(TAG, "Progress bar hidden")
         
         val adapter = binding.stockPairsList.adapter as? GroupedWatchItemAdapter
         if (adapter != null) {
-            Log.d(TAG, "Adapter found, calling submitGroupedList with ${data.size} items")
-            adapter.submitGroupedList(data)
+            Log.d(TAG, "Adapter found, calling submitGroupedList with ${filteredData.size} items")
+            adapter.submitGroupedList(filteredData)
             Log.d(TAG, "submitGroupedList called successfully")
         } else {
             Log.e(TAG, "CRITICAL: Adapter is null! Cannot update UI")
@@ -466,6 +588,10 @@ class MainActivity : AppCompatActivity() {
         binding.topAppBar.menu.findItem(R.id.menu_sort)?.isVisible = false
     }
 
+    internal fun navigateToStockDetailFromAlerts(symbol: String, companyName: String?): Unit {
+        navigateToStockDetail(symbol, companyName)
+    }
+
     private fun handleDeleteClick(item: WatchItem): Unit {
         Log.d(TAG, "Delete clicked for watch item: ${item.getDisplayName()}")
         showDeleteConfirmationDialog(item)
@@ -494,7 +620,14 @@ class MainActivity : AppCompatActivity() {
 
     private fun setupAddButton(): Unit {
         binding.addPairButton.setOnClickListener {
-            showWatchTypeSelectionDialog()
+            when (currentMainTab) {
+                MainTab.STOCKS -> {
+                    openAddStock()
+                }
+                MainTab.PAIRS -> {
+                    showAddStockPairDialog()
+                }
+            }
         }
     }
 

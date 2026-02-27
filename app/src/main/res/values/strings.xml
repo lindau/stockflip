@@ -3,4 +3,22 @@
     <string name="app_name">StockFlip</string>
     <string name="last_updated">Last updated: %1$s</string>
     <string name="icon_description">Icon</string>
-</resources> 
+
+    <string name="alerts_empty_state">Inga bevakningar ännu. Skapa en bevakning från en aktiesida för att se den här.</string>
+
+    <string name="alert_delete_title">Ta bort bevakning</string>
+    <string name="alert_delete_message">Är du säker på att du vill ta bort den här bevakningen?</string>
+    <string name="alert_delete_positive">Ta bort</string>
+    <string name="alert_delete_negative">Avbryt</string>
+    <string name="alert_deleted">Bevakning borttagen</string>
+
+    <string name="tab_stocks">Aktier</string>
+    <string name="tab_pairs">Par</string>
+    <string name="tab_alerts">Bevakningar</string>
+
+    <string name="menu_add">Lägg till</string>
+    <string name="title_add_stock">Lägg till aktie</string>
+    <string name="add_stock_search_hint">Sök aktie…</string>
+    <string name="add_stock_empty">Inga träffar. Prova att skriva minst två tecken.</string>
+    <string name="add_stock_error">Kunde inte söka aktier. Försök igen.</string>
+</resources>

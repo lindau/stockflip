@@ -1,10 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="24dp"
     android:height="24dp"
     android:viewportWidth="24"
     android:viewportHeight="24">
-    <!-- Line chart style icon for \"Aktier\" -->
     <path
         android:fillColor="@android:color/white"
-        android:pathData="M4,18h16v-2H6.41L11,11.41l3,3L20.59,8 19.17,6.59 14,11.76l-3,-3L4,15.76V18z" />
+        android:pathData="M20,11H7.83L13.41,5.41L12,4L4,12L12,20L13.41,18.59L7.83,13H20V11Z" />
 </vector>
+

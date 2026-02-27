@@ -381,6 +381,16 @@ class MainViewModel(
         }
     }
 
+    suspend fun toggleWatchItemActive(watchItem: WatchItem, isActive: Boolean) {
+        val updatedWatchItem: WatchItem = watchItem.setActive(isActive)
+        updateWatchItem(updatedWatchItem)
+    }
+
+    suspend fun reactivateWatchItem(watchItem: WatchItem) {
+        val updatedWatchItem: WatchItem = watchItem.reactivate()
+        updateWatchItem(updatedWatchItem)
+    }
+
     suspend fun updateWatchItem(watchItem: WatchItem) {
         try {
             Log.d(TAG, "Updating watch item: ${watchItem.getDisplayName()}")

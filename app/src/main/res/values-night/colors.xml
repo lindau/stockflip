@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Dark theme aliases to existing dark palette -->
+    <color name="pine_primary">@color/pine_primary_dark</color>
+    <color name="pine_on_primary">@color/pine_on_primary_dark</color>
+    <color name="pine_primary_container">@color/pine_primary_container_dark</color>
+    <color name="pine_on_primary_container">@color/pine_on_primary_container_dark</color>
+
+    <color name="sand_secondary">@color/sand_secondary_dark</color>
+    <color name="sand_on_secondary">@color/sand_on_secondary_dark</color>
+    <color name="sand_secondary_container">@color/sand_secondary_container_dark</color>
+    <color name="sand_on_secondary_container">@color/sand_on_secondary_container_dark</color>
+
+    <color name="pine_background">@color/pine_background_dark</color>
+    <color name="pine_on_background">@color/pine_on_background_dark</color>
+
+    <color name="pine_surface">@color/pine_surface_dark</color>
+    <color name="pine_on_surface">@color/pine_on_surface_dark</color>
+    <color name="pine_surface_variant">@color/pine_surface_variant_dark</color>
+    <color name="pine_on_surface_variant">@color/pine_on_surface_variant_dark</color>
+
+    <color name="pine_outline">@color/pine_outline_dark</color>
+    <color name="pine_error">@color/pine_error_dark</color>
+    <color name="pine_on_error">@color/pine_on_error_dark</color>
+    <color name="pine_error_container">@color/pine_error_container_dark</color>
+    <color name="pine_on_error_container">@color/pine_on_error_container_dark</color>
+
+    <!-- Status colors tuned for dark background -->
+    <color name="notification_highlight">#242937</color>
+    <color name="notification_active">@color/sand_secondary_dark</color>
+    <color name="notification_inactive">#727986</color>
+
+    <!-- Price colors for dark mode -->
+    <color name="price_down">#FF4A4A</color>
+    <color name="price_up">#3DDC84</color>
+</resources>
+

@@ -2,6 +2,105 @@
 <resources>
     <style name="Theme.StockFlip" parent="Theme.Material3.DayNight.NoActionBar">
         <!-- Pine & Sand ColorScheme - Dark -->
+        <item name="colorPrimary">@color/pine_primary</item>
+        <item name="colorOnPrimary">@color/pine_on_primary</item>
+        <item name="colorPrimaryContainer">@color/pine_primary_container</item>
+        <item name="colorOnPrimaryContainer">@color/pine_on_primary_container</item>
+
+        <item name="colorSecondary">@color/sand_secondary</item>
+        <item name="colorOnSecondary">@color/sand_on_secondary</item>
+        <item name="colorSecondaryContainer">@color/sand_secondary_container</item>
+        <item name="colorOnSecondaryContainer">@color/sand_on_secondary_container</item>
+
+        <item name="android:colorBackground">@color/pine_background</item>
+        <item name="colorOnBackground">@color/pine_on_background</item>
+
+        <item name="colorSurface">@color/pine_surface</item>
+        <item name="colorOnSurface">@color/pine_on_surface</item>
+        <item name="colorSurfaceVariant">@color/pine_surface_variant</item>
+        <item name="colorOnSurfaceVariant">@color/pine_on_surface_variant</item>
+
+        <item name="colorOutline">@color/pine_outline</item>
+        <item name="colorError">@color/pine_error</item>
+        <item name="colorOnError">@color/pine_on_error</item>
+        <item name="colorErrorContainer">@color/pine_error_container</item>
+        <item name="colorOnErrorContainer">@color/pine_on_error_container</item>
+
+        <!-- Status bar and navigation bar colors -->
+        <item name="android:statusBarColor">?attr/colorSurface</item>
+        <item name="android:navigationBarColor">?attr/colorSurface</item>
+
+        <!-- Card colors -->
+        <item name="materialCardViewStyle">@style/Widget.StockFlip.CardView</item>
+
+        <!-- Text Appearance -->
+        <item name="textAppearanceTitleMedium">@style/TextAppearance.StockFlip.TitleMedium</item>
+        <item name="textAppearanceBodyLarge">@style/TextAppearance.StockFlip.BodyLarge</item>
+        <item name="textAppearanceBodyMedium">@style/TextAppearance.StockFlip.BodyMedium</item>
+        <item name="textAppearanceLabelMedium">@style/TextAppearance.StockFlip.LabelMedium</item>
+    </style>
+
+    <style name="Widget.StockFlip.CardView" parent="Widget.Material3.CardView.Elevated">
+        <item name="cardBackgroundColor">?attr/colorSurface</item>
+        <item name="rippleColor">?attr/colorPrimary</item>
+        <item name="strokeColor">?attr/colorOutline</item>
+        <item name="strokeWidth">0dp</item>
+    </style>
+
+    <style name="TextAppearance.StockFlip.TitleMedium" parent="TextAppearance.Material3.TitleMedium">
+        <item name="android:textColor">?attr/colorOnSurface</item>
+    </style>
+
+    <style name="TextAppearance.StockFlip.BodyLarge" parent="TextAppearance.Material3.BodyLarge">
+        <item name="android:textColor">?attr/colorOnSurface</item>
+    </style>
+
+    <style name="TextAppearance.StockFlip.BodyMedium" parent="TextAppearance.Material3.BodyMedium">
+        <item name="android:textColor">?attr/colorOnSurface</item>
+    </style>
+
+    <style name="TextAppearance.StockFlip.LabelMedium" parent="TextAppearance.Material3.LabelMedium">
+        <item name="android:textColor">?attr/colorOnSurfaceVariant</item>
+    </style>
+
+    <!-- AppBar/Toolbar styling -->
+    <style name="Widget.StockFlip.Toolbar" parent="Widget.Material3.Toolbar">
+        <item name="android:background">?attr/colorSurface</item>
+        <item name="titleTextColor">?attr/colorOnSurface</item>
+    </style>
+
+    <!-- Chip styling for secondary container -->
+    <style name="Widget.StockFlip.AssistChip" parent="Widget.Material3.Chip.Assist">
+        <item name="chipBackgroundColor">?attr/colorSecondaryContainer</item>
+        <item name="android:textColor">?attr/colorOnSecondaryContainer</item>
+        <item name="chipStrokeColor">?attr/colorOutline</item>
+        <item name="chipStrokeWidth">1dp</item>
+    </style>
+
+    <style name="Widget.StockFlip.FilterChip" parent="Widget.Material3.Chip.Filter">
+        <item name="chipBackgroundColor">?attr/colorSecondaryContainer</item>
+        <item name="android:textColor">?attr/colorOnSecondaryContainer</item>
+        <item name="chipStrokeColor">?attr/colorOutline</item>
+        <item name="chipStrokeWidth">1dp</item>
+    </style>
+
+    <!-- Dialog styling -->
+    <style name="Theme.StockFlip.Dialog" parent="ThemeOverlay.Material3.Dialog">
+        <item name="colorSurface">?attr/colorSurface</item>
+        <item name="colorOnSurface">?attr/colorOnSurface</item>
+    </style>
+
+    <!-- BottomSheet styling -->
+    <style name="Theme.StockFlip.BottomSheet" parent="ThemeOverlay.Material3.BottomSheetDialog">
+        <item name="colorSurface">?attr/colorSurface</item>
+        <item name="colorOnSurface">?attr/colorOnSurface</item>
+    </style>
+</resources>
+
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.StockFlip" parent="Theme.Material3.DayNight.NoActionBar">
+        <!-- Pine & Sand ColorScheme - Dark -->
         <item name="colorPrimary">@color/pine_primary_dark</item>
         <item name="colorOnPrimary">@color/pine_on_primary_dark</item>
         <item name="colorPrimaryContainer">@color/pine_primary_container_dark</item>
