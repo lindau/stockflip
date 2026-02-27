@@ -1,4 +1,3 @@
-<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <style name="Theme.StockFlip" parent="Theme.Material3.DayNight.NoActionBar">
         <!-- Pine & Sand ColorScheme - Dark -->
@@ -94,49 +93,5 @@
     <style name="Theme.StockFlip.BottomSheet" parent="ThemeOverlay.Material3.BottomSheetDialog">
         <item name="colorSurface">?attr/colorSurface</item>
         <item name="colorOnSurface">?attr/colorOnSurface</item>
-    </style>
-</resources>
-
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <style name="Theme.StockFlip" parent="Theme.Material3.DayNight.NoActionBar">
-        <!-- Pine & Sand ColorScheme - Dark -->
-        <item name="colorPrimary">@color/pine_primary_dark</item>
-        <item name="colorOnPrimary">@color/pine_on_primary_dark</item>
-        <item name="colorPrimaryContainer">@color/pine_primary_container_dark</item>
-        <item name="colorOnPrimaryContainer">@color/pine_on_primary_container_dark</item>
-        
-        <item name="colorSecondary">@color/sand_secondary_dark</item>
-        <item name="colorOnSecondary">@color/sand_on_secondary_dark</item>
-        <item name="colorSecondaryContainer">@color/sand_secondary_container_dark</item>
-        <item name="colorOnSecondaryContainer">@color/sand_on_secondary_container_dark</item>
-        
-        <item name="android:colorBackground">@color/pine_background_dark</item>
-        <item name="colorOnBackground">@color/pine_on_background_dark</item>
-        
-        <item name="colorSurface">@color/pine_surface_dark</item>
-        <item name="colorOnSurface">@color/pine_on_surface_dark</item>
-        <item name="colorSurfaceVariant">@color/pine_surface_variant_dark</item>
-        <item name="colorOnSurfaceVariant">@color/pine_on_surface_variant_dark</item>
-        
-        <item name="colorOutline">@color/pine_outline_dark</item>
-        <item name="colorError">@color/pine_error_dark</item>
-        <item name="colorOnError">@color/pine_on_error_dark</item>
-        <item name="colorErrorContainer">@color/pine_error_container_dark</item>
-        <item name="colorOnErrorContainer">@color/pine_on_error_container_dark</item>
-        
-        <!-- Status bar color -->
-        <item name="android:statusBarColor">?attr/colorSurface</item>
-        <item name="android:navigationBarColor">?attr/colorSurface</item>
-        
-        <!-- Card colors -->
-        <item name="materialCardViewStyle">@style/Widget.StockFlip.CardView.Dark</item>
-    </style>
-
-    <style name="Widget.StockFlip.CardView.Dark" parent="Widget.Material3.CardView.Elevated">
-        <item name="cardBackgroundColor">?attr/colorSurface</item>
-        <item name="rippleColor">?attr/colorPrimary</item>
-        <item name="strokeColor">?attr/colorOutline</item>
-        <item name="strokeWidth">0dp</item>
     </style>
 </resources>
