@@ -32,35 +32,36 @@ class StockDetailViewModel(
     }
 
     /**
-     * Hämtar aktiedata: pris, 52w high, dagsförändring, drawdown.
+     * Hämtar aktiedata från ett enda chart-anrop: pris, 52w high/low, dagsförändring, drawdown.
+     * Dagsförändring beräknas endast när både lastPrice och previousClose finns i samma svar.
      */
     fun loadStockData() {
         viewModelScope.launch {
             try {
                 _stockDataState.value = UiState.Loading
-                
-                val lastPrice = yahooFinanceService.getStockPrice(symbol)
-                val previousClose = yahooFinanceService.getPreviousClose(symbol)
-                val week52High = yahooFinanceService.getATH(symbol) // getATH hämtar 52w high
-                val week52Low = yahooFinanceService.get52WeekLow(symbol)
-                val currency = yahooFinanceService.getCurrency(symbol) ?: "SEK"
-                val exchange = yahooFinanceService.getExchange(symbol)
-                var dailyChangePercent = yahooFinanceService.getDailyChangePercent(symbol)
-                
-                // Fallback-beräkning om API returnerar null men vi har både pris och previousClose
-                if (dailyChangePercent == null && lastPrice != null && previousClose != null && previousClose > 0) {
-                    dailyChangePercent = ((lastPrice - previousClose) / previousClose) * 100
-                    Log.d(TAG, "Calculated daily change as fallback: $dailyChangePercent%")
+                val snapshot: StockDetailSnapshot? = yahooFinanceService.getStockDetailSnapshot(symbol)
+                if (snapshot == null) {
+                    _stockDataState.value = UiState.Error("Kunde inte ladda aktiedata för $symbol")
+                    Log.e(TAG, "getStockDetailSnapshot returned null for $symbol")
+                    return@launch
                 }
-                
-                val companyName = yahooFinanceService.getCompanyName(symbol) ?: symbol
-                
-                val drawdownPercent = if (lastPrice != null && week52High != null && week52High > 0) {
+                val lastPrice: Double? = snapshot.lastPrice
+                val previousClose: Double? = snapshot.previousClose
+                val week52High: Double? = snapshot.week52High
+                val week52Low: Double? = snapshot.week52Low
+                val currency: String = snapshot.currency ?: "SEK"
+                val exchange: String? = snapshot.exchangeName
+                val companyName: String = snapshot.companyName ?: symbol
+                val dailyChangePercent: Double? = if (lastPrice != null && previousClose != null && previousClose > 0) {
+                    ((lastPrice - previousClose) / previousClose) * 100
+                } else {
+                    null
+                }
+                val drawdownPercent: Double? = if (lastPrice != null && week52High != null && week52High > 0) {
                     ((week52High - lastPrice) / week52High) * 100
                 } else {
                     null
                 }
-                
                 val stockData = StockDetailData(
                     symbol = symbol,
                     companyName = companyName,
@@ -73,7 +74,6 @@ class StockDetailViewModel(
                     dailyChangePercent = dailyChangePercent,
                     drawdownPercent = drawdownPercent
                 )
-                
                 _stockDataState.value = UiState.Success(stockData)
                 Log.d(TAG, "Loaded stock data for $symbol")
             } catch (e: Exception) {
@@ -118,8 +118,9 @@ class StockDetailViewModel(
                         is WatchType.DailyMove -> {
                             val ticker = item.ticker ?: symbol
                             val price = yahooFinanceService.getStockPrice(ticker)
+                            val changePercent = yahooFinanceService.getDailyChangePercent(ticker)
                             if (price != null) {
-                                item.withCurrentPrice(price)
+                                item.withCurrentPriceAndDailyChange(price, changePercent)
                             } else {
                                 item
                             }
@@ -128,10 +129,11 @@ class StockDetailViewModel(
                             val ticker = item.ticker ?: symbol
                             val ath = yahooFinanceService.getATH(ticker)
                             val price = yahooFinanceService.getStockPrice(ticker)
+                            val changePercent = yahooFinanceService.getDailyChangePercent(ticker)
                             if (ath != null && price != null) {
-                                item.withATHData(ath, price)
+                                item.withATHData(ath, price).withDailyChangePercent(changePercent)
                             } else if (price != null) {
-                                item.withCurrentPrice(price)
+                                item.withCurrentPriceAndDailyChange(price, changePercent)
                             } else {
                                 item
                             }
@@ -141,8 +143,16 @@ class StockDetailViewModel(
                             val metricType = (item.watchType as? WatchType.KeyMetrics)?.metricType
                             if (metricType != null) {
                                 val metricValue = yahooFinanceService.getKeyMetric(ticker, metricType)
+                                val price = yahooFinanceService.getStockPrice(ticker)
+                                val changePercent = yahooFinanceService.getDailyChangePercent(ticker)
                                 if (metricValue != null) {
-                                    item.withCurrentMetricValue(metricValue)
+                                    var updated = item.withCurrentMetricValue(metricValue)
+                                    if (price != null) {
+                                        updated = updated.withCurrentPriceAndDailyChange(price, changePercent)
+                                    }
+                                    updated
+                                } else if (price != null) {
+                                    item.withCurrentPriceAndDailyChange(price, changePercent)
                                 } else {
                                     item
                                 }

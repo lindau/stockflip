@@ -264,9 +264,19 @@ class StockDetailFragment : Fragment() {
             marketOpen
         }
         
-        binding.dailyChangePercent.text = when {
-            data.dailyChangePercent != null -> {
-                val change = data.dailyChangePercent
+        val canShowDailyChange: Boolean = data.dailyChangePercent != null ||
+            (data.lastPrice != null && data.previousClose != null && data.previousClose > 0)
+        if (canShowDailyChange) {
+            binding.dailyChangeRow.visibility = android.view.View.VISIBLE
+            val change: Double = data.dailyChangePercent ?: run {
+                val lp = requireNotNull(data.lastPrice)
+                val pc = requireNotNull(data.previousClose)
+                ((lp - pc) / pc) * 100
+            }
+            if (!isMarketOpen) {
+                binding.dailyChangePercent.setTextColor(android.graphics.Color.parseColor("#757575")) // Gray
+                binding.dailyChangePercent.text = "Börsen stängd"
+            } else {
                 val sign = if (change >= 0) "+" else ""
                 val color = if (change >= 0) {
                     android.graphics.Color.parseColor("#4CAF50") // Green
@@ -274,43 +284,10 @@ class StockDetailFragment : Fragment() {
                     android.graphics.Color.parseColor("#F44336") // Red
                 }
                 binding.dailyChangePercent.setTextColor(color)
-                "$sign${priceFormat.format(change)}%"
+                binding.dailyChangePercent.text = "$sign${priceFormat.format(change)}%"
             }
-            data.lastPrice != null && data.previousClose != null -> {
-                // Beräkna förändringen direkt om vi har både pris och previousClose
-                val change = ((data.lastPrice - data.previousClose) / data.previousClose) * 100
-                if (!isMarketOpen) {
-                    // Börsen är stängd enligt börsstatus
-                    binding.dailyChangePercent.setTextColor(android.graphics.Color.parseColor("#757575")) // Gray
-                    "Börsen stängd"
-                } else {
-                    val sign = if (change >= 0) "+" else ""
-                    val color = if (change >= 0) {
-                        android.graphics.Color.parseColor("#4CAF50") // Green
-                    } else {
-                        android.graphics.Color.parseColor("#F44336") // Red
-                    }
-                    binding.dailyChangePercent.setTextColor(color)
-                    "$sign${priceFormat.format(change)}%"
-                }
-            }
-            data.lastPrice != null -> {
-                // Vi har nuvarande pris men ingen föregående stängning
-                if (!isMarketOpen) {
-                    // Börsen är stängd enligt börsstatus
-                    binding.dailyChangePercent.setTextColor(android.graphics.Color.parseColor("#757575")) // Gray
-                    "Börsen stängd"
-                } else {
-                    // Börsen är öppen men vi saknar previousClose - visa 0%
-                    binding.dailyChangePercent.setTextColor(android.graphics.Color.parseColor("#757575")) // Gray
-                    "0,00%"
-                }
-            }
-            else -> {
-                // Inget pris ännu
-                binding.dailyChangePercent.setTextColor(android.graphics.Color.parseColor("#757575")) // Gray
-                "Laddar..."
-            }
+        } else {
+            binding.dailyChangeRow.visibility = android.view.View.GONE
         }
         
         binding.week52High.text = data.week52High?.let {

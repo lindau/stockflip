@@ -376,6 +376,10 @@ object YahooFinanceService : MarketDataService {
         return chartMarketDataService.getDailyChangePercent(symbol)
     }
 
+    override suspend fun getStockDetailSnapshot(symbol: String): StockDetailSnapshot? {
+        return chartMarketDataService.getStockDetailSnapshot(symbol)
+    }
+
     @JvmStatic
     suspend fun searchCrypto(query: String): List<StockSearchResult> = withContext(Dispatchers.IO) {
         try {

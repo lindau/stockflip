@@ -19,9 +19,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.stockflip.CurrencyHelper
 import com.stockflip.WatchItem
 import com.stockflip.WatchType
 import com.stockflip.ui.components.StatusStripe
+import com.stockflip.ui.components.StockSummaryRow
 
 @Composable
 fun High52wCard(
@@ -71,51 +73,26 @@ fun High52wCard(
                     .fillMaxWidth()
                     .padding(12.dp)
             ) {
-                // Header row med stock name och switch i övre högra hörnet
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.Top
-                ) {
-                    // Stock name
-                    Text(
-                        text = "${item.companyName ?: item.ticker} (${item.ticker})",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.weight(1f)
-                    )
-                    
-                    // Toggle switch - övre högra hörnet
-                    if (showControls && onToggleActive != null) {
+                StockSummaryRow(
+                    companyName = item.companyName,
+                    ticker = item.ticker,
+                    price = item.currentPrice,
+                    dailyChangePercent = item.currentDailyChangePercent,
+                    currency = currency
+                )
+                if (showControls && onToggleActive != null) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.End
+                    ) {
                         Switch(
                             checked = item.isActive,
                             onCheckedChange = { onToggleActive() },
-                            modifier = Modifier.scale(0.7f) // Gör switchen mindre
+                            modifier = Modifier.scale(0.7f)
                         )
                     }
                 }
-                
-                Spacer(modifier = Modifier.height(12.dp))
-                
-                // Current price
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End
-                ) {
-                    Text(
-                        text = if (item.currentPrice > 0) {
-                            com.stockflip.CurrencyHelper.formatPrice(item.currentPrice, currency)
-                        } else {
-                            "Laddar..."
-                        },
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                }
-                
                 Spacer(modifier = Modifier.height(8.dp))
-                
                 // Target text - aligned to the right
                 Row(
                     modifier = Modifier.fillMaxWidth(),

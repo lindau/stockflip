@@ -504,7 +504,8 @@ class WatchItemAdapter(
                    oldItem.currentMetricValue == newItem.currentMetricValue &&
                    oldItem.currentATH == newItem.currentATH &&
                    oldItem.currentDropPercentage == newItem.currentDropPercentage &&
-                   oldItem.currentDropAbsolute == newItem.currentDropAbsolute
+                   oldItem.currentDropAbsolute == newItem.currentDropAbsolute &&
+                   oldItem.currentDailyChangePercent == newItem.currentDailyChangePercent
         }
     }
 

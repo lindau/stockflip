@@ -14,7 +14,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.stockflip.ui.components.MetricRow
+import com.stockflip.CurrencyHelper
+import com.stockflip.ui.components.StockSummaryRow
 
 /**
  * Card för att visa att en aktie har flera bevakningar.
@@ -26,6 +27,7 @@ fun MultipleWatchesCard(
     companyName: String?,
     watchCount: Int,
     currentPrice: Double,
+    dailyChangePercent: Double? = null,
     priceFormat: (Double) -> String,
     modifier: Modifier = Modifier
 ) {
@@ -41,13 +43,14 @@ fun MultipleWatchesCard(
                 .fillMaxWidth()
                 .padding(12.dp)
         ) {
-            // Stock info
-            val currency = com.stockflip.CurrencyHelper.getCurrencyFromSymbol(symbol)
-            MetricRow(
-                title = "${companyName ?: symbol} ($symbol)",
-                value = com.stockflip.CurrencyHelper.formatPrice(currentPrice, currency)
+            val currency = CurrencyHelper.getCurrencyFromSymbol(symbol)
+            StockSummaryRow(
+                companyName = companyName,
+                ticker = symbol,
+                price = currentPrice,
+                dailyChangePercent = dailyChangePercent,
+                currency = currency
             )
-            
             Spacer(modifier = Modifier.height(12.dp))
             
             // Multiple watches text - aligned to the right

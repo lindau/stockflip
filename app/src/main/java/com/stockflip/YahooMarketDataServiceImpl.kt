@@ -127,12 +127,27 @@ class YahooMarketDataServiceImpl(
     }
 
     suspend fun getDailyChangePercent(symbol: String): Double? = withContext(Dispatchers.IO) {
-        val currentPrice: Double? = getStockPrice(symbol)
-        val previousClose: Double? = getPreviousClose(symbol)
-        if (currentPrice == null || previousClose == null || previousClose <= 0.0) {
-            return@withContext null
+        try {
+            val response: YahooFinanceResponse = api.getStockPrice(symbol)
+            if (response.chart?.error != null) {
+                Log.e(TAG, "API Error for $symbol: ${response.chart.error.description}")
+                return@withContext null
+            }
+            val result: Result = response.chart?.result?.firstOrNull() ?: run {
+                Log.e(TAG, "No result found for $symbol")
+                return@withContext null
+            }
+            val currentPrice: Double? = result.meta?.regularMarketPrice
+            val previousClose: Double? = result.meta?.regularMarketPreviousClose
+            if (currentPrice == null || previousClose == null || previousClose <= 0.0) {
+                Log.w(TAG, "Cannot compute daily change for $symbol: price=$currentPrice, previousClose=$previousClose")
+                return@withContext null
+            }
+            ((currentPrice - previousClose) / previousClose) * 100.0
+        } catch (e: Exception) {
+            Log.e(TAG, "Error fetching daily change for $symbol: ${e.message}", e)
+            null
         }
-        ((currentPrice - previousClose) / previousClose) * 100.0
     }
 
     suspend fun getATH(symbol: String): Double? = withContext(Dispatchers.IO) {
@@ -175,6 +190,43 @@ class YahooMarketDataServiceImpl(
             low
         } catch (e: Exception) {
             Log.e(TAG, "Error fetching 52w low for $symbol: ${e.message}", e)
+            null
+        }
+    }
+
+    suspend fun getStockDetailSnapshot(symbol: String): StockDetailSnapshot? = withContext(Dispatchers.IO) {
+        try {
+            Log.d(TAG, "Fetching stock detail snapshot for symbol: $symbol")
+            val response: YahooFinanceResponse = api.getStockPrice(symbol)
+            if (response.chart?.error != null) {
+                Log.e(TAG, "API Error for $symbol: ${response.chart.error.description}")
+                return@withContext null
+            }
+            val result: Result = response.chart?.result?.firstOrNull() ?: run {
+                Log.e(TAG, "No result found for $symbol")
+                return@withContext null
+            }
+            val meta: Meta = result.meta ?: run {
+                Log.e(TAG, "No meta for $symbol")
+                return@withContext null
+            }
+            val currency: String? = meta.currency
+            val fallbackCurrency: String? = if (currency.isNullOrBlank()) {
+                CurrencyHelper.getCurrencyFromExchange(meta.exchangeName)
+            } else {
+                null
+            }
+            StockDetailSnapshot(
+                lastPrice = meta.regularMarketPrice?.takeIf { !it.isNaN() && it > 0.0 },
+                previousClose = meta.regularMarketPreviousClose?.takeIf { !it.isNaN() && it > 0.0 },
+                week52High = meta.fiftyTwoWeekHigh?.takeIf { !it.isNaN() && it > 0.0 },
+                week52Low = meta.fiftyTwoWeekLow?.takeIf { !it.isNaN() && it > 0.0 },
+                currency = currency?.takeIf { it.isNotBlank() } ?: fallbackCurrency,
+                exchangeName = meta.exchangeName?.takeIf { it.isNotBlank() },
+                companyName = meta.longName ?: meta.shortName ?: meta.symbol
+            )
+        } catch (e: Exception) {
+            Log.e(TAG, "Error fetching stock detail snapshot for $symbol: ${e.message}", e)
             null
         }
     }

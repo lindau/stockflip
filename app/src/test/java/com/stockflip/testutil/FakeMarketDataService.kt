@@ -1,6 +1,7 @@
 package com.stockflip.testutil
 
 import com.stockflip.MarketDataService
+import com.stockflip.StockDetailSnapshot
 import com.stockflip.WatchType
 
 class FakeMarketDataService(
@@ -32,5 +33,18 @@ class FakeMarketDataService(
     override suspend fun getCompanyName(symbol: String): String? = companyNameBySymbol[symbol]
 
     override suspend fun getKeyMetric(symbol: String, metricType: WatchType.MetricType): Double? = null
+
+    override suspend fun getStockDetailSnapshot(symbol: String): StockDetailSnapshot? {
+        val lastPrice: Double? = pricesBySymbol[symbol] ?: return null
+        return StockDetailSnapshot(
+            lastPrice = lastPrice,
+            previousClose = previousCloseBySymbol[symbol],
+            week52High = null,
+            week52Low = null,
+            currency = currencyBySymbol[symbol],
+            exchangeName = exchangeBySymbol[symbol],
+            companyName = companyNameBySymbol[symbol]
+        )
+    }
 }
 

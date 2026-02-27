@@ -67,8 +67,7 @@ class YahooMarketDataServiceImplTest {
     }
 
     @Test
-    fun `getDailyChangePercent calculates change percent`() = kotlinx.coroutines.runBlocking {
-        mockWebServer.enqueue(okResponse(readResource("yahoo/chart_VOLV-B.ST.json")))
+    fun `getDailyChangePercent calculates change percent from single chart response`() = kotlinx.coroutines.runBlocking {
         mockWebServer.enqueue(okResponse(readResource("yahoo/chart_VOLV-B.ST.json")))
         val actualChangePercent: Double? = service.getDailyChangePercent("VOLV-B.ST")
         val expectedChangePercent: Double = ((300.12 - 295.0) / 295.0) * 100.0

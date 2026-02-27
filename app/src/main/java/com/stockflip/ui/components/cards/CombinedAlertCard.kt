@@ -16,10 +16,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.stockflip.AlertExpression
+import com.stockflip.CurrencyHelper
 import com.stockflip.WatchItem
 import com.stockflip.WatchType
-import com.stockflip.ui.components.MetricRow
 import com.stockflip.ui.components.StatusStripe
+import com.stockflip.ui.components.StockSummaryRow
 
 @Composable
 fun CombinedAlertCard(
@@ -58,22 +59,13 @@ fun CombinedAlertCard(
                     .fillMaxWidth()
                     .padding(12.dp)
             ) {
-                // Stock info - visa aktienamn endast en gång
-                val symbolText = if (symbols.size == 1) {
-                    "${item.companyName ?: firstSymbol} ($firstSymbol)"
-                } else {
-                    // För flera aktier, visa bara första aktienamnet
-                    "${item.companyName ?: firstSymbol} ($firstSymbol)"
-                }
-                
-                MetricRow(
-                    title = symbolText,
-                    value = if (item.currentPrice > 0) {
-                        val currency = com.stockflip.CurrencyHelper.getCurrencyFromSymbol(firstSymbol)
-                        com.stockflip.CurrencyHelper.formatPrice(item.currentPrice, currency)
-                    } else {
-                        "Laddar..."
-                    }
+                val currency = CurrencyHelper.getCurrencyFromSymbol(firstSymbol)
+                StockSummaryRow(
+                    companyName = item.companyName,
+                    ticker = firstSymbol,
+                    price = item.currentPrice,
+                    dailyChangePercent = item.currentDailyChangePercent,
+                    currency = currency
                 )
             }
         }

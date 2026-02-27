@@ -42,10 +42,11 @@ object CurrencyHelper {
             "CHF" -> "CHF"
             "CAD" -> "C$"
             "AUD" -> "A$"
+            "SEK" -> "kr"
             "NOK" -> "kr"
             "DKK" -> "kr"
             "BTC", "ETH", "BNB", "ADA", "SOL", "XRP", "DOT", "DOGE", "USDT", "USDC", "DAI" -> currency.uppercase() // Krypto-symboler
-            else -> currency.uppercase() // Default: använd valuta-koden som symbol (t.ex. SEK)
+            else -> currency.uppercase() // Default: använd valuta-koden som symbol
         }
     }
 

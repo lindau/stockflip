@@ -188,12 +188,13 @@ class MainViewModel(
                         }
                         is WatchType.PriceTarget -> {
                             if (item.ticker != null) {
-                                Log.d(TAG, "Fetching price for ${item.ticker}")
+                                Log.d(TAG, "Fetching price and daily change for ${item.ticker}")
                                 val price = yahooFinanceService.getStockPrice(item.ticker)
+                                val changePercent = yahooFinanceService.getDailyChangePercent(item.ticker)
 
                                 if (price != null) {
-                                    Log.d(TAG, "Got price for ${item.ticker}: $price")
-                                    val updatedItem = item.withCurrentPrice(price)
+                                    Log.d(TAG, "Got price for ${item.ticker}: $price, changePercent: $changePercent")
+                                    val updatedItem = item.withCurrentPriceAndDailyChange(price, changePercent)
                                     watchItemDao.update(updatedItem)
                                     Log.d(TAG, "Updated database with new price for ${item.ticker}")
                                     updatedItem
@@ -208,20 +209,31 @@ class MainViewModel(
                         is WatchType.KeyMetrics -> {
                             if (item.ticker != null) {
                                 val keyMetrics = item.watchType
-                                Log.d(TAG, "Fetching key metric ${keyMetrics.metricType.name} for ${item.ticker}")
+                                Log.d(TAG, "Fetching key metric ${keyMetrics.metricType.name} and price for ${item.ticker}")
                                 try {
                                     val metricValue = yahooFinanceService.getKeyMetric(item.ticker, keyMetrics.metricType)
+                                    val price = yahooFinanceService.getStockPrice(item.ticker)
+                                    val changePercent = yahooFinanceService.getDailyChangePercent(item.ticker)
                                     Log.d(TAG, "getKeyMetric returned: $metricValue for ${item.ticker}")
 
                                     if (metricValue != null) {
                                         Log.d(TAG, "Got metric value for ${item.ticker}: $metricValue")
-                                        val updatedItem = item.withCurrentMetricValue(metricValue)
+                                        var updatedItem = item.withCurrentMetricValue(metricValue)
+                                        if (price != null) {
+                                            updatedItem = updatedItem.withCurrentPriceAndDailyChange(price, changePercent)
+                                        }
                                         watchItemDao.update(updatedItem)
                                         Log.d(TAG, "Updated database with new metric value for ${item.ticker}: ${updatedItem.currentMetricValue}")
                                         updatedItem
                                     } else {
-                                        Log.w(TAG, "Could not get metric value for ${item.ticker} (returned null), keeping existing value: ${item.currentMetricValue}")
-                                        item
+                                        if (price != null) {
+                                            val updatedItem = item.withCurrentPriceAndDailyChange(price, changePercent)
+                                            watchItemDao.update(updatedItem)
+                                            updatedItem
+                                        } else {
+                                            Log.w(TAG, "Could not get metric value for ${item.ticker} (returned null), keeping existing value: ${item.currentMetricValue}")
+                                            item
+                                        }
                                     }
                                 } catch (e: Exception) {
                                     Log.e(TAG, "Exception while fetching key metric for ${item.ticker}: ${e.message}", e)
@@ -234,13 +246,14 @@ class MainViewModel(
                         }
                         is WatchType.ATHBased -> {
                             if (item.ticker != null) {
-                                Log.d(TAG, "Fetching ATH and price for ${item.ticker}")
+                                Log.d(TAG, "Fetching ATH, price and daily change for ${item.ticker}")
                                 val ath = yahooFinanceService.getATH(item.ticker)
                                 val price = yahooFinanceService.getStockPrice(item.ticker)
+                                val changePercent = yahooFinanceService.getDailyChangePercent(item.ticker)
 
                                 if (ath != null && price != null) {
-                                    Log.d(TAG, "Got ATH for ${item.ticker}: $ath, Price: $price")
-                                    val updatedItem = item.withATHData(ath, price)
+                                    Log.d(TAG, "Got ATH for ${item.ticker}: $ath, Price: $price, changePercent: $changePercent")
+                                    val updatedItem = item.withATHData(ath, price).withDailyChangePercent(changePercent)
                                     watchItemDao.update(updatedItem)
                                     Log.d(TAG, "Updated database with new ATH data for ${item.ticker}")
                                     updatedItem
@@ -254,12 +267,13 @@ class MainViewModel(
                         }
                         is WatchType.PriceRange -> {
                             if (item.ticker != null) {
-                                Log.d(TAG, "Fetching price for ${item.ticker} (PriceRange)")
+                                Log.d(TAG, "Fetching price and daily change for ${item.ticker} (PriceRange)")
                                 val price = yahooFinanceService.getStockPrice(item.ticker)
+                                val changePercent = yahooFinanceService.getDailyChangePercent(item.ticker)
 
                                 if (price != null) {
-                                    Log.d(TAG, "Got price for ${item.ticker}: $price")
-                                    val updatedItem = item.withCurrentPrice(price)
+                                    Log.d(TAG, "Got price for ${item.ticker}: $price, changePercent: $changePercent")
+                                    val updatedItem = item.withCurrentPriceAndDailyChange(price, changePercent)
                                     watchItemDao.update(updatedItem)
                                     Log.d(TAG, "Updated database with new price for ${item.ticker}")
                                     updatedItem
@@ -273,13 +287,13 @@ class MainViewModel(
                         }
                         is WatchType.DailyMove -> {
                             if (item.ticker != null) {
-                                Log.d(TAG, "Fetching price and previousClose for ${item.ticker} (DailyMove)")
+                                Log.d(TAG, "Fetching price and daily change for ${item.ticker} (DailyMove)")
                                 val price = yahooFinanceService.getStockPrice(item.ticker)
-                                val previousClose = yahooFinanceService.getPreviousClose(item.ticker)
+                                val changePercent = yahooFinanceService.getDailyChangePercent(item.ticker)
 
                                 if (price != null) {
-                                    Log.d(TAG, "Got price for ${item.ticker}: $price, previousClose: $previousClose")
-                                    val updatedItem = item.withCurrentPrice(price)
+                                    Log.d(TAG, "Got price for ${item.ticker}: $price, changePercent: $changePercent")
+                                    val updatedItem = item.withCurrentPriceAndDailyChange(price, changePercent)
                                     watchItemDao.update(updatedItem)
                                     Log.d(TAG, "Updated database with new price for ${item.ticker}")
                                     updatedItem
@@ -294,12 +308,13 @@ class MainViewModel(
                         is WatchType.Combined -> {
                             // Combined WatchType: använd item.ticker direkt (samma som för vanliga bevakningar)
                             if (item.ticker != null) {
-                                Log.d(TAG, "Fetching price for combined alert ticker: ${item.ticker}")
+                                Log.d(TAG, "Fetching price and daily change for combined alert ticker: ${item.ticker}")
                                 val price = yahooFinanceService.getStockPrice(item.ticker)
-                                
+                                val changePercent = yahooFinanceService.getDailyChangePercent(item.ticker)
+
                                 if (price != null) {
-                                    Log.d(TAG, "Got price for combined alert ticker ${item.ticker}: $price")
-                                    val updatedItem = item.withCurrentPrice(price)
+                                    Log.d(TAG, "Got price for combined alert ticker ${item.ticker}: $price, changePercent: $changePercent")
+                                    val updatedItem = item.withCurrentPriceAndDailyChange(price, changePercent)
                                     watchItemDao.update(updatedItem)
                                     Log.d(TAG, "Updated database with new price for combined alert")
                                     updatedItem

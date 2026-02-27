@@ -1,6 +1,20 @@
 package com.stockflip
 
 /**
+ * Snapshot of chart data from a single API response, used for stock detail header
+ * so that price and previousClose always come from the same response.
+ */
+data class StockDetailSnapshot(
+    val lastPrice: Double?,
+    val previousClose: Double?,
+    val week52High: Double?,
+    val week52Low: Double?,
+    val currency: String?,
+    val exchangeName: String?,
+    val companyName: String?
+)
+
+/**
  * Abstraction for market data retrieval.
  *
  * This enables deterministic tests by injecting a fake implementation.
@@ -15,5 +29,6 @@ interface MarketDataService {
     suspend fun getExchange(symbol: String): String?
     suspend fun getCompanyName(symbol: String): String?
     suspend fun getKeyMetric(symbol: String, metricType: WatchType.MetricType): Double?
+    suspend fun getStockDetailSnapshot(symbol: String): StockDetailSnapshot?
 }
 

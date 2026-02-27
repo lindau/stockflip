@@ -38,6 +38,29 @@ class StockDetailViewModelTest {
         assertEquals(295.0, data.previousClose!!, 0.0001)
         assertEquals("SEK", data.currency)
         assertEquals("STO", data.exchange)
+        val expectedChangePercent: Double = ((300.0 - 295.0) / 295.0) * 100
+        assertEquals(expectedChangePercent, data.dailyChangePercent!!, 0.0001)
+    }
+
+    @Test
+    fun `loadStockData sets dailyChangePercent null when snapshot has no previousClose`() = runTest {
+        val watchItemDao: WatchItemDao = InMemoryWatchItemDao(emptyList())
+        val marketDataService: MarketDataService = FakeMarketDataService(
+            pricesBySymbol = mapOf("DELIA.OL" to 413.0),
+            previousCloseBySymbol = emptyMap(),
+            currencyBySymbol = mapOf("DELIA.OL" to "NOK"),
+            exchangeBySymbol = mapOf("DELIA.OL" to "OSE"),
+            companyNameBySymbol = mapOf("DELIA.OL" to "DELLIA GROUP")
+        )
+        val viewModel = StockDetailViewModel(watchItemDao, marketDataService, "DELIA.OL")
+        viewModel.loadStockData()
+        advanceUntilIdle()
+        val state: UiState<StockDetailData> = viewModel.stockDataState.value
+        val success: UiState.Success<StockDetailData> = state as UiState.Success<StockDetailData>
+        val data: StockDetailData = success.data
+        assertEquals(413.0, data.lastPrice!!, 0.0001)
+        assertEquals(null, data.previousClose)
+        assertEquals(null, data.dailyChangePercent)
     }
 }
 

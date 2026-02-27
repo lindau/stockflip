@@ -41,6 +41,7 @@ sealed class GroupedListItem {
         val companyName: String?,
         val watchCount: Int,
         val currentPrice: Double,
+        val dailyChangePercent: Double?,
         val watchItems: List<WatchItem>
     ) : GroupedListItem()
 }
@@ -175,8 +176,8 @@ class GroupedWatchItemAdapter(
         if (pricePairs.isNotEmpty() && !expandedSections.contains("Aktiepar")) {
             expandedSections.add("Aktiepar")
         }
-        if (singleStockItems.isNotEmpty() && !expandedSections.contains("Enskilda Aktier/Krypto")) {
-            expandedSections.add("Enskilda Aktier/Krypto")
+        if (singleStockItems.isNotEmpty() && !expandedSections.contains("Aktier - Krypto")) {
+            expandedSections.add("Aktier - Krypto")
         }
 
         // Build the filtered list grouped by stock
@@ -232,9 +233,9 @@ class GroupedWatchItemAdapter(
 
         // Add header for single stocks if there are any
         if (sortedItemsByTicker.isNotEmpty()) {
-            groupedList.add(GroupedListItem.Header("Enskilda Aktier/Krypto"))
-            val isExpanded = expandedSections.contains("Enskilda Aktier/Krypto")
-            Log.d(TAG, "Enskilda Aktier/Krypto section: isExpanded=$isExpanded, items=${sortedItemsByTicker.size} stocks")
+            groupedList.add(GroupedListItem.Header("Aktier - Krypto"))
+            val isExpanded = expandedSections.contains("Aktier - Krypto")
+            Log.d(TAG, "Aktier - Krypto section: isExpanded=$isExpanded, items=${sortedItemsByTicker.size} stocks")
             
             if (isExpanded) {
                 // Process single-stock items grouped by ticker (sorted according to sortMode)
@@ -247,11 +248,13 @@ class GroupedWatchItemAdapter(
                         groupedList.add(GroupedListItem.WatchItemWrapper(watchItemsForTicker.first()))
                     } else {
                         // Multiple watch types - show "multiple watches" card
+                        val dailyChangePercent = watchItemsForTicker.firstOrNull()?.currentDailyChangePercent
                         groupedList.add(GroupedListItem.MultipleWatchesWrapper(
                             symbol = ticker,
                             companyName = companyName,
                             watchCount = watchItemsForTicker.size,
                             currentPrice = currentPrice,
+                            dailyChangePercent = dailyChangePercent,
                             watchItems = watchItemsForTicker
                         ))
                     }
@@ -372,6 +375,7 @@ class GroupedWatchItemAdapter(
                         companyName = wrapper.companyName,
                         watchCount = wrapper.watchCount,
                         currentPrice = wrapper.currentPrice,
+                        dailyChangePercent = wrapper.dailyChangePercent,
                         priceFormat = { value -> priceFormat.format(value) },
                         modifier = Modifier
                             .fillMaxWidth()
@@ -414,13 +418,15 @@ class GroupedWatchItemAdapter(
                     old.currentMetricValue == new.currentMetricValue &&
                     old.currentATH == new.currentATH &&
                     old.currentDropPercentage == new.currentDropPercentage &&
-                    old.currentDropAbsolute == new.currentDropAbsolute
+                    old.currentDropAbsolute == new.currentDropAbsolute &&
+                    old.currentDailyChangePercent == new.currentDailyChangePercent
                 }
                 oldItem is GroupedListItem.MultipleWatchesWrapper && newItem is GroupedListItem.MultipleWatchesWrapper -> {
                     oldItem.symbol == newItem.symbol &&
                     oldItem.companyName == newItem.companyName &&
                     oldItem.watchCount == newItem.watchCount &&
-                    oldItem.currentPrice == newItem.currentPrice
+                    oldItem.currentPrice == newItem.currentPrice &&
+                    oldItem.dailyChangePercent == newItem.dailyChangePercent
                 }
                 else -> false
             }

@@ -208,17 +208,6 @@ class MainActivity : AppCompatActivity() {
         binding.topAppBar.inflateMenu(R.menu.main_menu)
         binding.topAppBar.setOnMenuItemClickListener { item ->
             when (item.itemId) {
-                R.id.menu_add -> {
-                    when (currentMainTab) {
-                        MainTab.STOCKS -> {
-                            openAddStock()
-                        }
-                        MainTab.PAIRS -> {
-                            showAddStockPairDialog()
-                        }
-                    }
-                    true
-                }
                 R.id.menu_sort_alphabetical -> {
                     val adapter = binding.stockPairsList.adapter as? GroupedWatchItemAdapter
                     adapter?.setSortMode(SortHelper.SortMode.ALPHABETICAL)
@@ -255,7 +244,6 @@ class MainActivity : AppCompatActivity() {
             onBackPressedDispatcher.onBackPressed()
         }
         binding.topAppBar.menu.findItem(R.id.menu_sort)?.isVisible = false
-        binding.topAppBar.menu.findItem(R.id.menu_add)?.isVisible = false
         supportFragmentManager.beginTransaction()
             .replace(R.id.fragmentContainer, AddStockFragment())
             .addToBackStack("add_stock")
@@ -272,21 +260,18 @@ class MainActivity : AppCompatActivity() {
     private fun showStocksToolbar(): Unit {
         binding.topAppBar.title = getString(R.string.tab_stocks)
         binding.topAppBar.navigationIcon = null
-        binding.topAppBar.menu.findItem(R.id.menu_add)?.isVisible = true
         binding.topAppBar.menu.findItem(R.id.menu_sort)?.isVisible = true
     }
 
     private fun showPairsToolbar(): Unit {
         binding.topAppBar.title = getString(R.string.tab_pairs)
         binding.topAppBar.navigationIcon = null
-        binding.topAppBar.menu.findItem(R.id.menu_add)?.isVisible = true
         binding.topAppBar.menu.findItem(R.id.menu_sort)?.isVisible = true
     }
 
     private fun showAlertsToolbar(): Unit {
         binding.topAppBar.title = getString(R.string.tab_alerts)
         binding.topAppBar.navigationIcon = null
-        binding.topAppBar.menu.findItem(R.id.menu_add)?.isVisible = false
         binding.topAppBar.menu.findItem(R.id.menu_sort)?.isVisible = false
     }
 

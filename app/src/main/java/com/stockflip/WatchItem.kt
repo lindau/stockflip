@@ -64,6 +64,10 @@ data class WatchItem(
     var currentDropAbsolute: Double = 0.0
         private set
 
+    @Ignore
+    var currentDailyChangePercent: Double? = null
+        private set
+
     fun withCurrentPrices(price1: Double?, price2: Double?): WatchItem {
         Log.d(TAG, "Updating prices for watch item $id: $price1, $price2")
         if (price1 == null || price2 == null) {
@@ -86,6 +90,25 @@ data class WatchItem(
         return copy().also {
             it.currentPrice = price
             Log.d(TAG, "Updated price for watch item $id: ${it.currentPrice}")
+        }
+    }
+
+    fun withCurrentPriceAndDailyChange(price: Double?, changePercent: Double?): WatchItem {
+        Log.d(TAG, "Updating price and daily change for watch item $id: price=$price, changePercent=$changePercent")
+        if (price == null) {
+            Log.w(TAG, "Received null price for watch item $id")
+            return this
+        }
+        return copy().also {
+            it.currentPrice = price
+            it.currentDailyChangePercent = changePercent
+            Log.d(TAG, "Updated price and daily change for watch item $id: ${it.currentPrice}, ${it.currentDailyChangePercent}%")
+        }
+    }
+
+    fun withDailyChangePercent(changePercent: Double?): WatchItem {
+        return copy().also {
+            it.currentDailyChangePercent = changePercent
         }
     }
 
