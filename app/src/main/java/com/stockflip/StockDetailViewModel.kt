@@ -28,7 +28,7 @@ class StockDetailViewModel(
 
     init {
         loadStockData()
-        loadAlerts()
+        observeAlerts()
     }
 
     /**
@@ -84,91 +84,88 @@ class StockDetailViewModel(
     }
 
     /**
-     * Hämtar alla alerts för denna aktie och uppdaterar med aktuella priser.
+     * Observerar bevakningar för denna aktie reaktivt via Room Flow.
+     * Uppdateras automatiskt när databasen ändras (insert/delete/update).
+     */
+    private fun observeAlerts() {
+        viewModelScope.launch {
+            watchItemDao.getWatchItemsBySymbolFlow(symbol).collect { items ->
+                try {
+                    val updatedAlerts = fetchPricesForItems(items)
+                    _alertsState.value = UiState.Success(updatedAlerts)
+                    Log.d(TAG, "Reactive update: ${updatedAlerts.size} alerts for $symbol")
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error updating alerts: ${e.message}", e)
+                    _alertsState.value = UiState.Error("Kunde inte ladda alerts: ${e.message}")
+                }
+            }
+        }
+    }
+
+    /**
+     * Hämtar aktuella priser för en lista bevakningar.
+     */
+    private suspend fun fetchPricesForItems(items: List<WatchItem>): List<WatchItem> {
+        return items.map { item ->
+            when (item.watchType) {
+                is WatchType.PricePair -> {
+                    if (item.ticker1 != null && item.ticker2 != null) {
+                        val price1 = yahooFinanceService.getStockPrice(item.ticker1)
+                        val price2 = yahooFinanceService.getStockPrice(item.ticker2)
+                        if (price1 != null && price2 != null) item.withCurrentPrices(price1, price2) else item
+                    } else item
+                }
+                is WatchType.PriceTarget,
+                is WatchType.PriceRange,
+                is WatchType.DailyMove -> {
+                    val ticker = item.ticker ?: symbol
+                    val price = yahooFinanceService.getStockPrice(ticker)
+                    val changePercent = yahooFinanceService.getDailyChangePercent(ticker)
+                    if (price != null) item.withCurrentPriceAndDailyChange(price, changePercent) else item
+                }
+                is WatchType.ATHBased -> {
+                    val ticker = item.ticker ?: symbol
+                    val ath = yahooFinanceService.getATH(ticker)
+                    val price = yahooFinanceService.getStockPrice(ticker)
+                    val changePercent = yahooFinanceService.getDailyChangePercent(ticker)
+                    when {
+                        ath != null && price != null -> item.withATHData(ath, price).withDailyChangePercent(changePercent)
+                        price != null -> item.withCurrentPriceAndDailyChange(price, changePercent)
+                        else -> item
+                    }
+                }
+                is WatchType.KeyMetrics -> {
+                    val ticker = item.ticker ?: symbol
+                    val metricType = (item.watchType as? WatchType.KeyMetrics)?.metricType
+                    if (metricType != null) {
+                        val metricValue = yahooFinanceService.getKeyMetric(ticker, metricType)
+                        val price = yahooFinanceService.getStockPrice(ticker)
+                        val changePercent = yahooFinanceService.getDailyChangePercent(ticker)
+                        when {
+                            metricValue != null && price != null -> item.withCurrentMetricValue(metricValue).withCurrentPriceAndDailyChange(price, changePercent)
+                            metricValue != null -> item.withCurrentMetricValue(metricValue)
+                            price != null -> item.withCurrentPriceAndDailyChange(price, changePercent)
+                            else -> item
+                        }
+                    } else item
+                }
+                is WatchType.Combined -> item
+            }
+        }
+    }
+
+    /**
+     * Uppdaterar priser manuellt (används av refresh-knappen).
      */
     fun loadAlerts() {
         viewModelScope.launch {
             try {
-                _alertsState.value = UiState.Loading
-                val allAlerts = watchItemDao.getAllWatchItems()
-                
-                // Filtrera alerts för denna aktie
-                val stockAlerts = allAlerts.filter { watchItem ->
+                val items = watchItemDao.getAllWatchItems().filter { watchItem ->
                     watchItem.ticker == symbol || watchItem.ticker1 == symbol || watchItem.ticker2 == symbol
                 }
-                
-                // Uppdatera med aktuella priser
-                val updatedAlerts = stockAlerts.map { item ->
-                    when (item.watchType) {
-                        is WatchType.PricePair -> {
-                            if (item.ticker1 != null && item.ticker2 != null) {
-                                val price1 = yahooFinanceService.getStockPrice(item.ticker1)
-                                val price2 = yahooFinanceService.getStockPrice(item.ticker2)
-                                if (price1 != null && price2 != null) {
-                                    item.withCurrentPrices(price1, price2)
-                                } else {
-                                    item
-                                }
-                            } else {
-                                item
-                            }
-                        }
-                        is WatchType.PriceTarget,
-                        is WatchType.PriceRange,
-                        is WatchType.DailyMove -> {
-                            val ticker = item.ticker ?: symbol
-                            val price = yahooFinanceService.getStockPrice(ticker)
-                            val changePercent = yahooFinanceService.getDailyChangePercent(ticker)
-                            if (price != null) {
-                                item.withCurrentPriceAndDailyChange(price, changePercent)
-                            } else {
-                                item
-                            }
-                        }
-                        is WatchType.ATHBased -> {
-                            val ticker = item.ticker ?: symbol
-                            val ath = yahooFinanceService.getATH(ticker)
-                            val price = yahooFinanceService.getStockPrice(ticker)
-                            val changePercent = yahooFinanceService.getDailyChangePercent(ticker)
-                            if (ath != null && price != null) {
-                                item.withATHData(ath, price).withDailyChangePercent(changePercent)
-                            } else if (price != null) {
-                                item.withCurrentPriceAndDailyChange(price, changePercent)
-                            } else {
-                                item
-                            }
-                        }
-                        is WatchType.KeyMetrics -> {
-                            val ticker = item.ticker ?: symbol
-                            val metricType = (item.watchType as? WatchType.KeyMetrics)?.metricType
-                            if (metricType != null) {
-                                val metricValue = yahooFinanceService.getKeyMetric(ticker, metricType)
-                                val price = yahooFinanceService.getStockPrice(ticker)
-                                val changePercent = yahooFinanceService.getDailyChangePercent(ticker)
-                                if (metricValue != null) {
-                                    var updated = item.withCurrentMetricValue(metricValue)
-                                    if (price != null) {
-                                        updated = updated.withCurrentPriceAndDailyChange(price, changePercent)
-                                    }
-                                    updated
-                                } else if (price != null) {
-                                    item.withCurrentPriceAndDailyChange(price, changePercent)
-                                } else {
-                                    item
-                                }
-                            } else {
-                                item
-                            }
-                        }
-                        is WatchType.Combined -> {
-                            // Combined alerts behöver inte uppdateras här
-                            item
-                        }
-                    }
-                }
-                
+                val updatedAlerts = fetchPricesForItems(items)
                 _alertsState.value = UiState.Success(updatedAlerts)
-                Log.d(TAG, "Loaded ${updatedAlerts.size} alerts for $symbol")
+                Log.d(TAG, "Manual refresh: ${updatedAlerts.size} alerts for $symbol")
             } catch (e: Exception) {
                 Log.e(TAG, "Error loading alerts: ${e.message}", e)
                 _alertsState.value = UiState.Error("Kunde inte ladda alerts: ${e.message}")
@@ -192,7 +189,6 @@ class StockDetailViewModel(
                 )
                 
                 watchItemDao.insertWatchItem(watchItem)
-                loadAlerts() // Reload alerts
                 Log.d(TAG, "Created alert for $symbol")
             } catch (e: Exception) {
                 Log.e(TAG, "Error creating alert: ${e.message}", e)
@@ -207,7 +203,6 @@ class StockDetailViewModel(
         viewModelScope.launch {
             try {
                 watchItemDao.deleteWatchItem(watchItem)
-                loadAlerts() // Reload alerts
                 Log.d(TAG, "Deleted alert ${watchItem.id}")
             } catch (e: Exception) {
                 Log.e(TAG, "Error deleting alert: ${e.message}", e)
@@ -223,7 +218,6 @@ class StockDetailViewModel(
             try {
                 val updated = watchItem.reactivate()
                 watchItemDao.update(updated)
-                loadAlerts() // Reload alerts
                 Log.d(TAG, "Reactivated alert ${watchItem.id}")
             } catch (e: Exception) {
                 Log.e(TAG, "Error reactivating alert: ${e.message}", e)
@@ -239,7 +233,6 @@ class StockDetailViewModel(
             try {
                 val updated = watchItem.setActive(!watchItem.isActive)
                 watchItemDao.update(updated)
-                loadAlerts() // Reload alerts
                 Log.d(TAG, "Toggled alert ${watchItem.id} to ${updated.isActive}")
             } catch (e: Exception) {
                 Log.e(TAG, "Error toggling alert: ${e.message}", e)
@@ -254,7 +247,6 @@ class StockDetailViewModel(
         viewModelScope.launch {
             try {
                 watchItemDao.update(watchItem)
-                loadAlerts() // Reload alerts
                 Log.d(TAG, "Updated alert ${watchItem.id}")
             } catch (e: Exception) {
                 Log.e(TAG, "Error updating alert: ${e.message}", e)

@@ -11,6 +11,9 @@ interface WatchItemDao {
     @Query("SELECT * FROM watch_items")
     fun getAllWatchItemsFlow(): Flow<List<WatchItem>>
 
+    @Query("SELECT * FROM watch_items WHERE ticker = :symbol OR ticker1 = :symbol OR ticker2 = :symbol")
+    fun getWatchItemsBySymbolFlow(symbol: String): Flow<List<WatchItem>>
+
     @Insert
     suspend fun insertWatchItem(item: WatchItem)
 

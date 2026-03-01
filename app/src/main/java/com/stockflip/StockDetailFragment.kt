@@ -87,6 +87,13 @@ class StockDetailFragment : Fragment() {
         return binding.root
     }
 
+    override fun onResume() {
+        super.onResume()
+        if (::viewModel.isInitialized) {
+            viewModel.refresh()
+        }
+    }
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
@@ -133,7 +140,6 @@ class StockDetailFragment : Fragment() {
         
         // Ladda data
         viewModel.loadStockData()
-        viewModel.loadAlerts()
     }
 
     private fun setupRecyclerView() {
