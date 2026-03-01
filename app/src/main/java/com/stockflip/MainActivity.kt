@@ -1697,10 +1697,10 @@ class MainActivity : AppCompatActivity() {
 
                 if (finalTicker.isNotEmpty() && targetPriceStr.isNotEmpty()) {
                     val targetPrice = targetPriceStr.toDoubleOrNull()
-                    val direction = if (item.currentPrice > 0.0 && item.currentPrice >= (targetPrice ?: 0.0))
-                        WatchType.PriceDirection.BELOW else WatchType.PriceDirection.ABOVE
 
                     if (targetPrice != null && targetPrice > 0) {
+                        val direction = if (item.currentPrice > 0.0 && item.currentPrice >= targetPrice)
+                            WatchType.PriceDirection.BELOW else WatchType.PriceDirection.ABOVE
                         lifecycleScope.launch {
                             try {
                                 binding.progressBar.visibility = View.VISIBLE

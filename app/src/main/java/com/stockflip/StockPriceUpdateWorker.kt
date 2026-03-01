@@ -14,10 +14,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlin.math.abs
 import kotlinx.coroutines.delay
-import androidx.work.PeriodicWorkRequestBuilder
-import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.WorkManager
-import java.util.concurrent.TimeUnit
 import com.stockflip.usecase.UpdateStockPairsPricesUseCase
 
 class StockPriceUpdateWorker(
@@ -134,22 +131,6 @@ class StockPriceUpdateWorker(
         val notificationId = System.currentTimeMillis().toInt()
         notificationManager.notify(notificationId, notification)
         Log.d(TAG, "Sent notification: $title - $message")
-    }
-
-    private fun scheduleNextUpdate(intervalMinutes: Long) {
-        val workRequest = PeriodicWorkRequestBuilder<StockPriceUpdateWorker>(
-            intervalMinutes, TimeUnit.MINUTES,
-            intervalMinutes / 2, TimeUnit.MINUTES  // Flex period half of the interval
-        ).build()
-        
-        WorkManager.getInstance(applicationContext)
-            .enqueueUniquePeriodicWork(
-                "StockPriceUpdate",
-                ExistingPeriodicWorkPolicy.UPDATE,
-                workRequest
-            )
-        
-        Log.d(TAG, "Scheduled next update with $intervalMinutes minute interval")
     }
 
     companion object {
