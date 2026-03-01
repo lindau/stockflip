@@ -274,56 +274,67 @@
                     android:padding="12dp">
 
                     <TextView
+                        android:id="@+id/addWatchHeaderText"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Lägg till"
+                        android:text="Lägg till bevakning av"
                         android:textAppearance="?attr/textAppearanceTitleMedium"
                         android:textStyle="bold"
                         android:textColor="?attr/colorOnSurface"
                         android:layout_marginBottom="8dp" />
 
-                    <!-- Create Price Target Alert -->
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/createPriceTargetButton"
+                    <!-- Rad 1 -->
+                    <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginBottom="6dp"
-                        android:minHeight="40dp"
-                        android:paddingVertical="8dp"
-                        android:text="Målpris-bevakning"
-                        style="@style/Widget.Material3.Button.OutlinedButton" />
+                        android:orientation="horizontal">
 
-                    <!-- Create Drawdown Alert -->
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/createDrawdownButton"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginBottom="6dp"
-                        android:minHeight="40dp"
-                        android:paddingVertical="8dp"
-                        android:text="Drawdown-bevakning"
-                        style="@style/Widget.Material3.Button.OutlinedButton" />
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/createPriceTargetButton"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:layout_marginEnd="3dp"
+                            android:text="Målpris"
+                            style="@style/Widget.Material3.Button.TonalButton" />
 
-                    <!-- Create Daily Move Alert -->
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/createDailyMoveButton"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginBottom="6dp"
-                        android:minHeight="40dp"
-                        android:paddingVertical="8dp"
-                        android:text="Dagsrörelse-bevakning"
-                        style="@style/Widget.Material3.Button.OutlinedButton" />
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/createDrawdownButton"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:layout_marginStart="3dp"
+                            android:text="Drawdown"
+                            style="@style/Widget.Material3.Button.TonalButton" />
 
-                    <!-- Create Key Metrics Alert -->
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/createKeyMetricsButton"
+                    </LinearLayout>
+
+                    <!-- Rad 2 -->
+                    <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:minHeight="40dp"
-                        android:paddingVertical="8dp"
-                        android:text="Nyckeltalsbevakning"
-                        style="@style/Widget.Material3.Button.OutlinedButton" />
+                        android:orientation="horizontal"
+                        android:layout_marginTop="6dp">
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/createDailyMoveButton"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:layout_marginEnd="3dp"
+                            android:text="Dagsrörelse"
+                            style="@style/Widget.Material3.Button.TonalButton" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/createKeyMetricsButton"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:layout_marginStart="3dp"
+                            android:text="Nyckeltal"
+                            style="@style/Widget.Material3.Button.TonalButton" />
+
+                    </LinearLayout>
 
                 </LinearLayout>
 

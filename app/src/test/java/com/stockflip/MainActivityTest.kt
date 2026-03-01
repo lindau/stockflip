@@ -243,20 +243,6 @@ class MainActivityTest {
     }
 
     @Test
-    fun `test auto refresh functionality`() = runTest {
-        scenario.onActivity { activity ->
-            // Start auto refresh
-            activity.startAutoRefresh()
-            
-            // Advance virtual time
-            testDispatcher.scheduler.advanceTimeBy(60000L)
-            
-            // Verify refresh was triggered
-            coVerify(timeout = 5000) { mainViewModel.refreshStockPairs() }
-        }
-    }
-
-    @Test
     fun `test UI state handling`() = runTest {
         scenario.onActivity { activity ->
             // Test loading state

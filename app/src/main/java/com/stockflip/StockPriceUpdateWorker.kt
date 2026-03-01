@@ -57,10 +57,6 @@ class StockPriceUpdateWorker(
                     Log.w(TAG, "No prices were updated")
                 }
                 
-                // Schedule next update based on market hours
-                val interval = StockMarketScheduler.getUpdateInterval()
-                scheduleNextUpdate(interval)
-                
                 return Result.success()
                 
             } catch (e: Exception) {

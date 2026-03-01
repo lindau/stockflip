@@ -184,6 +184,10 @@ class StockDetailFragment : Fragment() {
     }
 
     private fun setupQuickActions() {
+        val companyName = arguments?.getString(ARG_COMPANY_NAME)
+        val symbol = arguments?.getString(ARG_SYMBOL)
+        binding.addWatchHeaderText.text = "Lägg till bevakning av ${companyName ?: symbol ?: ""}"
+
         binding.createPriceTargetButton.setOnClickListener {
             showCreatePriceTargetDialog()
         }

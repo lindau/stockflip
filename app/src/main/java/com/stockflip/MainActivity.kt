@@ -1,7 +1,6 @@
 package com.stockflip
 
 import android.Manifest
-import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
@@ -47,6 +46,7 @@ import com.stockflip.ui.presets.PresetType
 import android.widget.ProgressBar
 import androidx.cardview.widget.CardView
 import androidx.recyclerview.widget.ItemTouchHelper
+import androidx.work.WorkManager
 import com.stockflip.ui.SwipeToDeleteCallback
 
 /**
@@ -65,8 +65,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
     private lateinit var binding: ActivityMainBinding
-    private val priceUpdateReceiver = PriceUpdateReceiver()
-    private var refreshJob: Job? = null
     private var selectedStock1: StockSearchResult? = null
     private var selectedStock2: StockSearchResult? = null
     private var selectedStock: StockSearchResult? = null
@@ -119,21 +117,6 @@ class MainActivity : AppCompatActivity() {
         initializeUpdates()
         requestPermissions()
         loadInitialData()
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        unregisterPriceUpdateReceiver()
-    }
-
-    override fun onResume() {
-        super.onResume()
-        startAutoRefresh()
-    }
-
-    override fun onPause() {
-        super.onPause()
-        stopAutoRefresh()
     }
 
     @Deprecated("Deprecated in Java")
@@ -345,12 +328,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun initializeUpdates() {
-        StockPriceUpdater.startPeriodicUpdate(this)
-        
-        // Schemalägg nattlig uppdatering av historik för nyckeltal
-        com.stockflip.workers.MetricHistoryUpdateWorker.scheduleNightlyUpdate(this)
-        registerPriceUpdateReceiver()
-        StockPriceUpdater.requestBatteryOptimizationExemption(this)
+        WorkManager.getInstance(this).cancelAllWork()
     }
 
     private fun requestPermissions() {
@@ -368,57 +346,6 @@ class MainActivity : AppCompatActivity() {
             // This ensures KeyMetrics values are loaded correctly
             viewModel.refreshWatchItems()
         }
-    }
-
-    private fun registerPriceUpdateReceiver() {
-        try {
-            registerReceiver(
-                priceUpdateReceiver,
-                PriceUpdateReceiver.createIntentFilter(),
-                Context.RECEIVER_NOT_EXPORTED
-            )
-            Log.d(TAG, "Successfully registered price update receiver")
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to register price update receiver: ${e.message}")
-        }
-    }
-
-    private fun unregisterPriceUpdateReceiver() {
-        try {
-            unregisterReceiver(priceUpdateReceiver)
-            Log.d(TAG, "Successfully unregistered price update receiver")
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to unregister price update receiver: ${e.message}")
-        }
-    }
-
-    /**
-     * Starts automatic refresh of stock prices.
-     * Cancels any existing refresh job before starting a new one.
-     */
-    internal fun startAutoRefresh(): Unit {
-        refreshJob?.cancel()
-        refreshJob = lifecycleScope.launch {
-            while (isActive) {
-                try {
-                    Log.d(TAG, "Auto-refreshing stock prices")
-                    viewModel.refreshWatchItems()
-                    updateLastUpdateTime()
-                } catch (e: Exception) {
-                    Log.e(TAG, "Error during auto-refresh: ${e.message}")
-                }
-                delay(AUTO_REFRESH_INTERVAL)
-            }
-        }
-    }
-
-    /**
-     * Stops the automatic refresh of stock prices.
-     * Cancels the refresh job if it exists.
-     */
-    private fun stopAutoRefresh(): Unit {
-        refreshJob?.cancel()
-        refreshJob = null
     }
 
     /**
@@ -1749,13 +1676,6 @@ class MainActivity : AppCompatActivity() {
         val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_add_price_target, null)
         val tickerInput = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.tickerInput).apply { setText(item.ticker) }
         val targetPriceInput = dialogView.findViewById<TextInputEditText>(R.id.targetPriceInput).apply { setText(priceTarget.targetPrice.toString()) }
-        val directionInput = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.directionInput).apply {
-            setText(when (priceTarget.direction) {
-                WatchType.PriceDirection.ABOVE -> "Över"
-                WatchType.PriceDirection.BELOW -> "Under"
-            })
-        }
-
         // Set up adapter for stock search
         val adapter = createStockAdapter()
         tickerInput.setAdapter(adapter)
@@ -1766,31 +1686,19 @@ class MainActivity : AppCompatActivity() {
             Log.d(TAG, "Selected stock: $selectedStock")
         }
 
-        // Set up direction dropdown
-        val directions = arrayOf("Över", "Under")
-        val directionAdapter = ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line, directions)
-        directionInput.setAdapter(directionAdapter)
-        directionInput.setOnItemClickListener { _, _, position, _ ->
-            Log.d(TAG, "Selected direction: ${directions[position]}")
-        }
-
         MaterialAlertDialogBuilder(this)
             .setTitle("Redigera prisbevakning")
             .setView(dialogView)
             .setPositiveButton("Uppdatera") { _, _ ->
                 val tickerStr = tickerInput.text.toString().trim()
                 val targetPriceStr = targetPriceInput.text.toString()
-                val directionStr = directionInput.text.toString()
 
                 val finalTicker = selectedStock?.symbol ?: tickerStr
 
-                if (finalTicker.isNotEmpty() && targetPriceStr.isNotEmpty() && directionStr.isNotEmpty()) {
+                if (finalTicker.isNotEmpty() && targetPriceStr.isNotEmpty()) {
                     val targetPrice = targetPriceStr.toDoubleOrNull()
-                    val direction = when (directionStr) {
-                        "Över" -> WatchType.PriceDirection.ABOVE
-                        "Under" -> WatchType.PriceDirection.BELOW
-                        else -> WatchType.PriceDirection.ABOVE
-                    }
+                    val direction = if (item.currentPrice > 0.0 && item.currentPrice >= (targetPrice ?: 0.0))
+                        WatchType.PriceDirection.BELOW else WatchType.PriceDirection.ABOVE
 
                     if (targetPrice != null && targetPrice > 0) {
                         lifecycleScope.launch {
@@ -1842,13 +1750,6 @@ class MainActivity : AppCompatActivity() {
         val targetValueInput = dialogView.findViewById<TextInputEditText>(R.id.targetValueInput).apply {
             setText(keyMetrics.targetValue.toString())
         }
-        val directionInput = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.directionInput).apply {
-            setText(when (keyMetrics.direction) {
-                WatchType.PriceDirection.ABOVE -> "Över"
-                WatchType.PriceDirection.BELOW -> "Under"
-            })
-        }
-        
         // History UI elements - hidden
         val historyCard = dialogView.findViewById<CardView>(R.id.historyCard)
         historyCard.visibility = View.GONE
@@ -1871,14 +1772,6 @@ class MainActivity : AppCompatActivity() {
             Log.d(TAG, "Selected metric type: ${metricTypes[position]}")
         }
 
-        // Set up direction dropdown
-        val directions = arrayOf("Över", "Under")
-        val directionAdapter = ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line, directions)
-        directionInput.setAdapter(directionAdapter)
-        directionInput.setOnItemClickListener { _, _, position, _ ->
-            Log.d(TAG, "Selected direction: ${directions[position]}")
-        }
-
         MaterialAlertDialogBuilder(this)
             .setTitle("Redigera nyckeltalsbevakning")
             .setView(dialogView)
@@ -1886,11 +1779,10 @@ class MainActivity : AppCompatActivity() {
                 val tickerStr = tickerInput.text.toString().trim()
                 val metricTypeStr = metricTypeInput.text.toString()
                 val targetValueStr = targetValueInput.text.toString()
-                val directionStr = directionInput.text.toString()
 
                 val finalTicker = selectedStock?.symbol ?: tickerStr
 
-                if (finalTicker.isNotEmpty() && metricTypeStr.isNotEmpty() && targetValueStr.isNotEmpty() && directionStr.isNotEmpty()) {
+                if (finalTicker.isNotEmpty() && metricTypeStr.isNotEmpty() && targetValueStr.isNotEmpty()) {
                     val metricType = when (metricTypeStr) {
                         "P/E-tal" -> WatchType.MetricType.PE_RATIO
                         "P/S-tal" -> WatchType.MetricType.PS_RATIO
@@ -1898,39 +1790,34 @@ class MainActivity : AppCompatActivity() {
                         else -> null
                     }
                     val targetValue = targetValueStr.toDoubleOrNull()
-                    val direction = when (directionStr) {
-                        "Över" -> WatchType.PriceDirection.ABOVE
-                        "Under" -> WatchType.PriceDirection.BELOW
-                        else -> null
-                    }
 
-                    if (metricType != null && targetValue != null && targetValue > 0 && direction != null) {
+                    if (metricType != null && targetValue != null && targetValue > 0) {
+                        val direction = if (item.currentMetricValue > 0.0 && item.currentMetricValue >= targetValue)
+                            WatchType.PriceDirection.BELOW else WatchType.PriceDirection.ABOVE
                         lifecycleScope.launch {
                             try {
                                 binding.progressBar.visibility = View.VISIBLE
-
                                 val updatedItem = item.copy(
                                     watchType = WatchType.KeyMetrics(metricType, targetValue, direction),
                                     ticker = finalTicker,
                                     companyName = selectedStock?.name ?: item.companyName
                                 )
-
                                 viewModel.updateWatchItem(updatedItem)
                                 viewModel.refreshWatchItems()
-                            updateLastUpdateTime()
-                            binding.progressBar.visibility = View.GONE
+                                updateLastUpdateTime()
+                                binding.progressBar.visibility = View.GONE
                                 Toast.makeText(this@MainActivity, "Nyckeltalsbevakning uppdaterad", Toast.LENGTH_SHORT).show()
-                        } catch (e: Exception) {
-                            binding.progressBar.visibility = View.GONE
+                            } catch (e: Exception) {
+                                binding.progressBar.visibility = View.GONE
                                 Toast.makeText(this@MainActivity, "Kunde inte uppdatera nyckeltalsbevakning: ${e.message}", Toast.LENGTH_LONG).show()
+                            }
                         }
+                    } else {
+                        Toast.makeText(this, "Ange giltiga värden för alla fält", Toast.LENGTH_SHORT).show()
                     }
                 } else {
-                        Toast.makeText(this, "Ange giltiga värden för alla fält", Toast.LENGTH_SHORT).show()
-                }
-                } else {
                     Toast.makeText(this, "Fyll i alla fält", Toast.LENGTH_SHORT).show()
-            }
+                }
             }
             .setNegativeButton("Avbryt", null)
             .show()
@@ -2421,8 +2308,6 @@ class MainActivity : AppCompatActivity() {
     companion object {
         /** Tag for logging purposes */
         private const val TAG = "MainActivity"
-        /** Interval for automatic price refresh in milliseconds */
-        private const val AUTO_REFRESH_INTERVAL = 60000L // 1 minute
         /** Format pattern for time display */
         private const val TIME_FORMAT = "HH:mm:ss"
         /** Price format with Swedish locale */
