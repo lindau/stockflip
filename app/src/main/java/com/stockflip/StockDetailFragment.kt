@@ -327,8 +327,7 @@ class StockDetailFragment : Fragment() {
         val dialogView = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_add_price_target, null)
         val tickerInput = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.tickerInput)
         val targetPriceInput = dialogView.findViewById<TextInputEditText>(R.id.targetPriceInput)
-        val directionInput = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.directionInput)
-        
+
         // Dölj aktie/krypto-fältet eftersom vi redan är på denna akties/kryptos sida
         // TextInputLayout är parent till MaterialAutoCompleteTextView
         tickerInput?.parent?.let { parent ->
@@ -338,31 +337,23 @@ class StockDetailFragment : Fragment() {
                 parent.visibility = android.view.View.GONE
             }
         }
-        
-        // Set up direction dropdown
-        val directions = arrayOf("Över", "Under")
-        val directionAdapter = ArrayAdapter(requireContext(), android.R.layout.simple_dropdown_item_1line, directions)
-        directionInput.setAdapter(directionAdapter)
 
         MaterialAlertDialogBuilder(requireContext())
             .setTitle("Skapa målpris-bevakning")
             .setView(dialogView)
             .setPositiveButton("Skapa") { _, _ ->
                 val targetPriceStr = targetPriceInput.text.toString()
-                val directionStr = directionInput.text.toString()
 
-                if (targetPriceStr.isNotEmpty() && directionStr.isNotEmpty()) {
+                if (targetPriceStr.isNotEmpty()) {
                     val targetPrice = targetPriceStr.toDoubleOrNull()
-                    val direction = when (directionStr) {
-                        "Över" -> WatchType.PriceDirection.ABOVE
-                        "Under" -> WatchType.PriceDirection.BELOW
-                        else -> WatchType.PriceDirection.BELOW
-                    }
 
                     if (targetPrice != null && targetPrice > 0) {
+                        val currentPrice = (viewModel.stockDataState.value as? UiState.Success<StockDetailData>)?.data?.lastPrice ?: 0.0
+                        val direction = if (currentPrice > 0.0 && currentPrice >= targetPrice)
+                            WatchType.PriceDirection.BELOW else WatchType.PriceDirection.ABOVE
                         val currentCompanyName = (viewModel.stockDataState.value as? UiState.Success<StockDetailData>)?.data?.companyName
                             ?: arguments?.getString(ARG_COMPANY_NAME) ?: ""
-                        
+
                         viewModel.createAlert(
                             WatchType.PriceTarget(targetPrice, direction),
                             currentCompanyName
@@ -372,7 +363,7 @@ class StockDetailFragment : Fragment() {
                         Toast.makeText(requireContext(), "Ange ett giltigt målpris", Toast.LENGTH_SHORT).show()
                     }
                 } else {
-                    Toast.makeText(requireContext(), "Fyll i alla fält", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(requireContext(), "Ange ett målpris", Toast.LENGTH_SHORT).show()
                 }
             }
             .setNegativeButton("Avbryt", null)
@@ -548,12 +539,11 @@ class StockDetailFragment : Fragment() {
             val tickerInput = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.tickerInput)
             val metricTypeInput = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.metricTypeInput)
             val targetValueInput = dialogView.findViewById<TextInputEditText>(R.id.targetValueInput)
-            val directionInput = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.directionInput)
-            
+
             // Förifyll aktie/krypto-slaget
             tickerInput.setText("$symbol - $companyName", false)
             tickerInput.isEnabled = false // Gör det read-only eftersom vi redan är på denna akties/kryptos sida
-            
+
             // History UI elements - hidden
             val historyCard = dialogView.findViewById<CardView>(R.id.historyCard)
             historyCard.visibility = android.view.View.GONE
@@ -563,20 +553,14 @@ class StockDetailFragment : Fragment() {
             val metricTypeAdapter = ArrayAdapter(requireContext(), android.R.layout.simple_dropdown_item_1line, metricTypes)
             metricTypeInput.setAdapter(metricTypeAdapter)
 
-            // Set up direction dropdown
-            val directions = arrayOf("Över", "Under")
-            val directionAdapter = ArrayAdapter(requireContext(), android.R.layout.simple_dropdown_item_1line, directions)
-            directionInput.setAdapter(directionAdapter)
-
             MaterialAlertDialogBuilder(requireContext())
                 .setTitle("Skapa nyckeltalsbevakning")
                 .setView(dialogView)
                 .setPositiveButton("Skapa") { _, _ ->
                     val metricTypeStr = metricTypeInput.text.toString()
                     val targetValueStr = targetValueInput.text.toString()
-                    val directionStr = directionInput.text.toString()
 
-                    if (metricTypeStr.isNotEmpty() && targetValueStr.isNotEmpty() && directionStr.isNotEmpty()) {
+                    if (metricTypeStr.isNotEmpty() && targetValueStr.isNotEmpty()) {
                         val metricType = when (metricTypeStr) {
                             "P/E-tal" -> WatchType.MetricType.PE_RATIO
                             "P/S-tal" -> WatchType.MetricType.PS_RATIO
@@ -584,15 +568,10 @@ class StockDetailFragment : Fragment() {
                             else -> null
                         }
                         val targetValue = targetValueStr.toDoubleOrNull()
-                        val direction = when (directionStr) {
-                            "Över" -> WatchType.PriceDirection.ABOVE
-                            "Under" -> WatchType.PriceDirection.BELOW
-                            else -> null
-                        }
 
-                        if (metricType != null && targetValue != null && targetValue > 0 && direction != null) {
+                        if (metricType != null && targetValue != null && targetValue > 0) {
                             viewModel.createAlert(
-                                WatchType.KeyMetrics(metricType, targetValue, direction),
+                                WatchType.KeyMetrics(metricType, targetValue, WatchType.PriceDirection.ABOVE),
                                 companyName
                             )
                             Toast.makeText(requireContext(), "Nyckeltalsbevakning skapad", Toast.LENGTH_SHORT).show()
@@ -651,16 +630,6 @@ class StockDetailFragment : Fragment() {
         val targetPriceInput = dialogView.findViewById<TextInputEditText>(R.id.targetPriceInput).apply {
             setText(priceFormat.format(priceTarget.targetPrice))
         }
-        val directionInput = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.directionInput).apply {
-            setText(when (priceTarget.direction) {
-                WatchType.PriceDirection.ABOVE -> "Över"
-                WatchType.PriceDirection.BELOW -> "Under"
-            })
-        }
-
-        val directions = arrayOf("Över", "Under")
-        val directionAdapter = ArrayAdapter(requireContext(), android.R.layout.simple_dropdown_item_1line, directions)
-        directionInput.setAdapter(directionAdapter)
 
         val dialog = MaterialAlertDialogBuilder(requireContext())
             .setTitle("Redigera prisbevakning")
@@ -671,17 +640,13 @@ class StockDetailFragment : Fragment() {
             }
             .setPositiveButton("Uppdatera") { _, _ ->
                 val targetPriceStr = targetPriceInput.text.toString()
-                val directionStr = directionInput.text.toString()
 
-                if (targetPriceStr.isNotEmpty() && directionStr.isNotEmpty()) {
+                if (targetPriceStr.isNotEmpty()) {
                     val targetPrice = targetPriceStr.toDoubleOrNull()
-                    val direction = when (directionStr) {
-                        "Över" -> WatchType.PriceDirection.ABOVE
-                        "Under" -> WatchType.PriceDirection.BELOW
-                        else -> WatchType.PriceDirection.ABOVE
-                    }
 
                     if (targetPrice != null && targetPrice > 0) {
+                        val direction = if (item.currentPrice > 0.0 && item.currentPrice >= targetPrice)
+                            WatchType.PriceDirection.BELOW else WatchType.PriceDirection.ABOVE
                         val updatedItem = item.copy(
                             watchType = WatchType.PriceTarget(targetPrice, direction)
                         )
@@ -691,7 +656,7 @@ class StockDetailFragment : Fragment() {
                         Toast.makeText(requireContext(), "Ange ett giltigt målpris", Toast.LENGTH_SHORT).show()
                     }
                 } else {
-                    Toast.makeText(requireContext(), "Fyll i alla fält", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(requireContext(), "Ange ett målpris", Toast.LENGTH_SHORT).show()
                 }
             }
             .setNeutralButton("Ta bort") { _, _ ->
@@ -911,13 +876,7 @@ class StockDetailFragment : Fragment() {
         val targetValueInput = dialogView.findViewById<TextInputEditText>(R.id.targetValueInput).apply {
             setText(priceFormat.format(keyMetrics.targetValue))
         }
-        val directionInput = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.directionInput).apply {
-            setText(when (keyMetrics.direction) {
-                WatchType.PriceDirection.ABOVE -> "Över"
-                WatchType.PriceDirection.BELOW -> "Under"
-            })
-        }
-        
+
         // History UI elements - hidden
         val historyCard = dialogView.findViewById<CardView>(R.id.historyCard)
         historyCard.visibility = android.view.View.GONE
@@ -930,11 +889,6 @@ class StockDetailFragment : Fragment() {
             // Metric type changed - no history loading
         }
 
-        // Set up direction dropdown
-        val directions = arrayOf("Över", "Under")
-        val directionAdapter = ArrayAdapter(requireContext(), android.R.layout.simple_dropdown_item_1line, directions)
-        directionInput.setAdapter(directionAdapter)
-
         val dialog = MaterialAlertDialogBuilder(requireContext())
             .setTitle("Redigera nyckeltalsbevakning")
             .setView(dialogView)
@@ -945,9 +899,8 @@ class StockDetailFragment : Fragment() {
             .setPositiveButton("Uppdatera") { _, _ ->
                 val metricTypeStr = metricTypeInput.text.toString()
                 val targetValueStr = targetValueInput.text.toString()
-                val directionStr = directionInput.text.toString()
 
-                if (metricTypeStr.isNotEmpty() && targetValueStr.isNotEmpty() && directionStr.isNotEmpty()) {
+                if (metricTypeStr.isNotEmpty() && targetValueStr.isNotEmpty()) {
                     val metricType = when (metricTypeStr) {
                         "P/E-tal" -> WatchType.MetricType.PE_RATIO
                         "P/S-tal" -> WatchType.MetricType.PS_RATIO
@@ -955,13 +908,10 @@ class StockDetailFragment : Fragment() {
                         else -> null
                     }
                     val targetValue = targetValueStr.toDoubleOrNull()
-                    val direction = when (directionStr) {
-                        "Över" -> WatchType.PriceDirection.ABOVE
-                        "Under" -> WatchType.PriceDirection.BELOW
-                        else -> null
-                    }
 
-                    if (metricType != null && targetValue != null && targetValue > 0 && direction != null) {
+                    if (metricType != null && targetValue != null && targetValue > 0) {
+                        val direction = if (item.currentMetricValue > 0.0 && item.currentMetricValue >= targetValue)
+                            WatchType.PriceDirection.BELOW else WatchType.PriceDirection.ABOVE
                         val updatedItem = item.copy(
                             watchType = WatchType.KeyMetrics(metricType, targetValue, direction)
                         )

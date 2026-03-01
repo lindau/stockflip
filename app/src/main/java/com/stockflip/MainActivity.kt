@@ -585,10 +585,17 @@ class MainActivity : AppCompatActivity() {
 
     /**
      * Hanterar klick på WatchItem.
-     * Öppnar redigeringsdialog för bevakningen.
+     * På aktierfliken navigeras till StockDetailFragment.
+     * På bevakningsfliken öppnas redigeringsdialog.
      */
     private fun handleItemClick(item: WatchItem): Unit {
-        handleEditClick(item)
+        when (currentMainTab) {
+            MainTab.STOCKS -> {
+                val symbol = item.ticker ?: return
+                navigateToStockDetail(symbol, item.companyName)
+            }
+            MainTab.PAIRS -> handleEditClick(item)
+        }
     }
 
     /**
@@ -612,6 +619,10 @@ class MainActivity : AppCompatActivity() {
 
     internal fun navigateToStockDetailFromAlerts(symbol: String, companyName: String?): Unit {
         navigateToStockDetail(symbol, companyName)
+    }
+
+    internal fun showEditDialogFromAlerts(item: WatchItem): Unit {
+        handleEditClick(item)
     }
 
     private fun handleDeleteClick(item: WatchItem): Unit {
@@ -764,7 +775,6 @@ class MainActivity : AppCompatActivity() {
         val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_add_price_target, null)
         val tickerInput = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.tickerInput)
         val targetPriceInput = dialogView.findViewById<TextInputEditText>(R.id.targetPriceInput)
-        val directionInput = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.directionInput)
 
         // Set up adapter for stock search
         val adapter = createStockAdapter()
@@ -793,28 +803,14 @@ class MainActivity : AppCompatActivity() {
             Log.d(TAG, "Selected stock: $selectedStock")
         }
 
-        // Set up direction dropdown
-        val directions = arrayOf("Över", "Under")
-        val directionAdapter = ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line, directions)
-        directionInput.setAdapter(directionAdapter)
-        directionInput.setOnItemClickListener { _, _, position, _ ->
-            Log.d(TAG, "Selected direction: ${directions[position]}")
-        }
-
         MaterialAlertDialogBuilder(this)
             .setTitle("Lägg till prisbevakning")
             .setView(dialogView)
             .setPositiveButton("Lägg till") { _, _ ->
                 val targetPriceStr = targetPriceInput.text.toString()
-                val directionStr = directionInput.text.toString()
 
-                if (selectedStock != null && targetPriceStr.isNotEmpty() && directionStr.isNotEmpty()) {
+                if (selectedStock != null && targetPriceStr.isNotEmpty()) {
                     val targetPrice = targetPriceStr.toDoubleOrNull()
-                    val direction = when (directionStr) {
-                        "Över" -> WatchType.PriceDirection.ABOVE
-                        "Under" -> WatchType.PriceDirection.BELOW
-                        else -> WatchType.PriceDirection.ABOVE
-                    }
 
                     if (targetPrice != null && targetPrice > 0) {
                         lifecycleScope.launch {
@@ -822,7 +818,7 @@ class MainActivity : AppCompatActivity() {
                                 binding.progressBar.visibility = View.VISIBLE
 
                                 val watchItem = WatchItem(
-                                    watchType = WatchType.PriceTarget(targetPrice, direction),
+                                    watchType = WatchType.PriceTarget(targetPrice, WatchType.PriceDirection.ABOVE),
                                     ticker = selectedStock!!.symbol,
                                     companyName = selectedStock!!.name
                                 )
@@ -839,7 +835,7 @@ class MainActivity : AppCompatActivity() {
                         Toast.makeText(this, "Ange ett giltigt målpris", Toast.LENGTH_SHORT).show()
                     }
                 } else {
-                    Toast.makeText(this, "Välj aktie, ange målpris och riktning", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, "Välj aktie och ange målpris", Toast.LENGTH_SHORT).show()
                 }
             }
             .setNegativeButton("Avbryt", null)
@@ -857,8 +853,7 @@ class MainActivity : AppCompatActivity() {
         val tickerInput = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.tickerInput)
         val metricTypeInput = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.metricTypeInput)
         val targetValueInput = dialogView.findViewById<TextInputEditText>(R.id.targetValueInput)
-        val directionInput = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.directionInput)
-        
+
         // History UI elements - hidden
         val historyCard = dialogView.findViewById<CardView>(R.id.historyCard)
         historyCard.visibility = View.GONE
@@ -903,14 +898,6 @@ class MainActivity : AppCompatActivity() {
             Log.d(TAG, "Selected metric type: ${metricTypes[position]}")
         }
 
-        // Set up direction dropdown
-        val directions = arrayOf("Över", "Under")
-        val directionAdapter = ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line, directions)
-        directionInput.setAdapter(directionAdapter)
-        directionInput.setOnItemClickListener { _, _, position, _ ->
-            Log.d(TAG, "Selected direction: ${directions[position]}")
-        }
-
         MaterialAlertDialogBuilder(this)
             .setTitle("Lägg till nyckeltalsbevakning")
             .setView(dialogView)
@@ -918,11 +905,10 @@ class MainActivity : AppCompatActivity() {
                 val tickerStr = tickerInput.text.toString().trim()
                 val metricTypeStr = metricTypeInput.text.toString()
                 val targetValueStr = targetValueInput.text.toString()
-                val directionStr = directionInput.text.toString()
 
                 val finalTicker = selectedStock?.symbol ?: tickerStr
 
-                if (finalTicker.isNotEmpty() && metricTypeStr.isNotEmpty() && targetValueStr.isNotEmpty() && directionStr.isNotEmpty()) {
+                if (finalTicker.isNotEmpty() && metricTypeStr.isNotEmpty() && targetValueStr.isNotEmpty()) {
                     val metricType = when (metricTypeStr) {
                         "P/E-tal" -> WatchType.MetricType.PE_RATIO
                         "P/S-tal" -> WatchType.MetricType.PS_RATIO
@@ -930,19 +916,14 @@ class MainActivity : AppCompatActivity() {
                         else -> null
                     }
                     val targetValue = targetValueStr.toDoubleOrNull()
-                    val direction = when (directionStr) {
-                        "Över" -> WatchType.PriceDirection.ABOVE
-                        "Under" -> WatchType.PriceDirection.BELOW
-                        else -> null
-                    }
 
-                    if (metricType != null && targetValue != null && targetValue > 0 && direction != null) {
+                    if (metricType != null && targetValue != null && targetValue > 0) {
                         lifecycleScope.launch {
                             try {
                                 binding.progressBar.visibility = View.VISIBLE
 
                                 val watchItem = WatchItem(
-                                    watchType = WatchType.KeyMetrics(metricType, targetValue, direction),
+                                    watchType = WatchType.KeyMetrics(metricType, targetValue, WatchType.PriceDirection.ABOVE),
                                     ticker = finalTicker,
                                     companyName = selectedStock?.name
                                 )
@@ -2224,21 +2205,12 @@ class MainActivity : AppCompatActivity() {
         val detailStockName = dialogView.findViewById<TextView>(R.id.detailStockName)
         val detailCurrentPrice = dialogView.findViewById<TextView>(R.id.detailCurrentPrice)
         val detailTargetPrice = dialogView.findViewById<TextInputEditText>(R.id.detailTargetPrice)
-        val detailDirection = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.detailDirection)
 
         val priceTarget = item.watchType as WatchType.PriceTarget
 
         detailStockName.text = "${item.companyName ?: item.ticker} (${item.ticker})"
         detailCurrentPrice.text = item.formatPrice()
         detailTargetPrice.setText(priceTarget.targetPrice.toString())
-        
-        val directions = arrayOf("Över", "Under")
-        val directionAdapter = ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line, directions)
-        detailDirection.setAdapter(directionAdapter)
-        detailDirection.setText(when (priceTarget.direction) {
-            WatchType.PriceDirection.ABOVE -> "Över"
-            WatchType.PriceDirection.BELOW -> "Under"
-        }, false)
     }
 
     private fun showKeyMetricsDetail(dialogView: android.view.View, item: WatchItem) {
@@ -2249,33 +2221,24 @@ class MainActivity : AppCompatActivity() {
         val detailCurrentMetricValue = dialogView.findViewById<TextView>(R.id.detailCurrentMetricValue)
         val detailMetricType = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.detailMetricType)
         val detailTargetValue = dialogView.findViewById<TextInputEditText>(R.id.detailTargetValue)
-        val detailKeyMetricsDirection = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.detailKeyMetricsDirection)
 
         val keyMetrics = item.watchType as WatchType.KeyMetrics
 
         detailKeyMetricsStockName.text = "${item.companyName ?: item.ticker} (${item.ticker})"
-        
+
         val metricTypeName = when (keyMetrics.metricType) {
             WatchType.MetricType.PE_RATIO -> "P/E-tal"
             WatchType.MetricType.PS_RATIO -> "P/S-tal"
             WatchType.MetricType.DIVIDEND_YIELD -> "Utdelningsprocent"
         }
         detailCurrentMetricValue.text = "$metricTypeName: ${item.formatMetricValue()}"
-        
+
         val metricTypes = arrayOf("P/E-tal", "P/S-tal", "Utdelningsprocent")
         val metricTypeAdapter = ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line, metricTypes)
         detailMetricType.setAdapter(metricTypeAdapter)
         detailMetricType.setText(metricTypeName, false)
-        
+
         detailTargetValue.setText(keyMetrics.targetValue.toString())
-        
-        val directions = arrayOf("Över", "Under")
-        val directionAdapter = ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line, directions)
-        detailKeyMetricsDirection.setAdapter(directionAdapter)
-        detailKeyMetricsDirection.setText(when (keyMetrics.direction) {
-            WatchType.PriceDirection.ABOVE -> "Över"
-            WatchType.PriceDirection.BELOW -> "Under"
-        }, false)
     }
 
     private fun showATHBasedDetail(dialogView: android.view.View, item: WatchItem) {
@@ -2328,15 +2291,11 @@ class MainActivity : AppCompatActivity() {
                     }
                     is WatchType.PriceTarget -> {
                         val targetPriceInput = dialogView.findViewById<TextInputEditText>(R.id.detailTargetPrice)
-                        val directionInput = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.detailDirection)
-                        
+
                         val targetPrice = targetPriceInput.text.toString().toDoubleOrNull() ?: 0.0
-                        val direction = when (directionInput.text.toString()) {
-                            "Över" -> WatchType.PriceDirection.ABOVE
-                            "Under" -> WatchType.PriceDirection.BELOW
-                            else -> WatchType.PriceDirection.ABOVE
-                        }
-                        
+                        val direction = if (item.currentPrice > 0.0 && item.currentPrice >= targetPrice)
+                            WatchType.PriceDirection.BELOW else WatchType.PriceDirection.ABOVE
+
                         item.copy(
                             watchType = WatchType.PriceTarget(targetPrice, direction)
                         )
@@ -2352,8 +2311,7 @@ class MainActivity : AppCompatActivity() {
                     is WatchType.KeyMetrics -> {
                         val metricTypeInput = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.detailMetricType)
                         val targetValueInput = dialogView.findViewById<TextInputEditText>(R.id.detailTargetValue)
-                        val directionInput = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.detailKeyMetricsDirection)
-                        
+
                         val metricType = when (metricTypeInput.text.toString()) {
                             "P/E-tal" -> WatchType.MetricType.PE_RATIO
                             "P/S-tal" -> WatchType.MetricType.PS_RATIO
@@ -2364,12 +2322,9 @@ class MainActivity : AppCompatActivity() {
                             }
                         }
                         val targetValue = targetValueInput.text.toString().toDoubleOrNull() ?: 0.0
-                        val direction = when (directionInput.text.toString()) {
-                            "Över" -> WatchType.PriceDirection.ABOVE
-                            "Under" -> WatchType.PriceDirection.BELOW
-                            else -> WatchType.PriceDirection.ABOVE
-                        }
-                        
+                        val direction = if (item.currentMetricValue > 0.0 && item.currentMetricValue >= targetValue)
+                            WatchType.PriceDirection.BELOW else WatchType.PriceDirection.ABOVE
+
                         item.copy(
                             watchType = WatchType.KeyMetrics(metricType, targetValue, direction)
                         )

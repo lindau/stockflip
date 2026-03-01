@@ -2,7 +2,6 @@ package com.stockflip
 
 import android.content.Context
 import android.os.Bundle
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -82,38 +81,7 @@ class AlertsFragment : Fragment() {
                 showDeleteConfirmation(watchItem)
             },
             onEdit = { watchItem ->
-                val symbol: String = when (watchItem.watchType) {
-                    is WatchType.PricePair -> {
-                        watchItem.ticker1 ?: watchItem.ticker2 ?: watchItem.ticker
-                    }
-                    is WatchType.Combined -> {
-                        watchItem.ticker
-                    }
-                    else -> {
-                        watchItem.ticker ?: watchItem.ticker1 ?: watchItem.ticker2
-                    }
-                } ?: return@AlertAdapter
-
-                val companyName: String? = when (watchItem.watchType) {
-                    is WatchType.PricePair -> {
-                        watchItem.companyName1 ?: watchItem.companyName2 ?: watchItem.companyName
-                    }
-                    is WatchType.Combined -> {
-                        watchItem.companyName
-                    }
-                    else -> {
-                        watchItem.companyName ?: watchItem.companyName1 ?: watchItem.companyName2
-                    }
-                }
-
-                Log.d(
-                    TAG,
-                    "Opening detail from alerts: id=${watchItem.id}, ticker=${watchItem.ticker}, " +
-                        "ticker1=${watchItem.ticker1}, ticker2=${watchItem.ticker2}, " +
-                        "selectedSymbol=$symbol, companyName=$companyName"
-                )
-
-                (requireActivity() as? MainActivity)?.navigateToStockDetailFromAlerts(symbol, companyName)
+                (requireActivity() as? MainActivity)?.showEditDialogFromAlerts(watchItem)
             }
         )
 
