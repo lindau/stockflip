@@ -138,8 +138,8 @@ class StockDetailFragment : Fragment() {
         setupRecyclerView()
         setupQuickActions()
         setupObservers()
-        setupRefreshButton()
-        
+        setupSwipeRefresh()
+
         // Ladda data
         viewModel.loadStockData()
     }
@@ -177,8 +177,8 @@ class StockDetailFragment : Fragment() {
         ItemTouchHelper(swipeCallback).attachToRecyclerView(binding.alertsRecyclerView)
     }
 
-    private fun setupRefreshButton() {
-        binding.refreshButton.setOnClickListener {
+    private fun setupSwipeRefresh() {
+        binding.swipeRefreshLayout.setOnRefreshListener {
             viewModel.loadStockData()
         }
     }
@@ -210,10 +210,12 @@ class StockDetailFragment : Fragment() {
                     }
                     is UiState.Success -> {
                         binding.loadingIndicator.isVisible = false
+                        binding.swipeRefreshLayout.isRefreshing = false
                         displayStockData(state.data)
                     }
                     is UiState.Error -> {
                         binding.loadingIndicator.isVisible = false
+                        binding.swipeRefreshLayout.isRefreshing = false
                         Toast.makeText(requireContext(), state.message, Toast.LENGTH_LONG).show()
                     }
                 }

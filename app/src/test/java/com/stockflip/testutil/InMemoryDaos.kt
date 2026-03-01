@@ -6,6 +6,7 @@ import com.stockflip.WatchItem
 import com.stockflip.WatchItemDao
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.map
 
 class InMemoryStockPairDao(
     initialPairs: List<StockPair> = emptyList()
@@ -38,6 +39,11 @@ class InMemoryWatchItemDao(
 
     override fun getAllWatchItemsFlow(): Flow<List<WatchItem>> = state
 
+    override fun getWatchItemsBySymbolFlow(symbol: String): Flow<List<WatchItem>> =
+        state.map { list ->
+            list.filter { it.ticker == symbol || it.ticker1 == symbol || it.ticker2 == symbol }
+        }
+
     override suspend fun insertWatchItem(item: WatchItem) {
         state.value = state.value + item
     }
@@ -50,6 +56,12 @@ class InMemoryWatchItemDao(
 
     override suspend fun deleteWatchItem(item: WatchItem) {
         state.value = state.value.filterNot { it.id == item.id }
+    }
+
+    override suspend fun deleteBySymbol(symbol: String) {
+        state.value = state.value.filterNot {
+            it.ticker == symbol || it.ticker1 == symbol || it.ticker2 == symbol
+        }
     }
 
     override suspend fun getWatchItemById(id: Int): WatchItem? = state.value.firstOrNull { it.id == id }

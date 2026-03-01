@@ -5,6 +5,11 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
+    <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+        android:id="@+id/swipeRefreshLayout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
     <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent">
@@ -58,33 +63,15 @@
                             tools:text="Apple Inc." />
                     </LinearLayout>
 
-                    <!-- Symbol and Refresh Button -->
-                    <LinearLayout
-                        android:layout_width="match_parent"
+                    <!-- Symbol -->
+                    <TextView
+                        android:id="@+id/symbol"
+                        android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical"
-                        android:layout_marginTop="4dp">
-
-                        <TextView
-                            android:id="@+id/symbol"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:textAppearance="?attr/textAppearanceBodyMedium"
-                            android:textColor="?attr/colorOnSurfaceVariant"
-                            tools:text="AAPL" />
-
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/refreshButton"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Uppdatera"
-                            style="@style/Widget.Material3.Button.TextButton"
-                            android:minWidth="0dp"
-                            android:paddingStart="8dp"
-                            android:paddingEnd="8dp" />
-                    </LinearLayout>
+                        android:layout_marginTop="4dp"
+                        android:textAppearance="?attr/textAppearanceBodyMedium"
+                        android:textColor="?attr/colorOnSurfaceVariant"
+                        tools:text="AAPL" />
 
                     <com.google.android.material.divider.MaterialDivider
                         android:layout_width="match_parent"
@@ -345,6 +332,8 @@
         </LinearLayout>
 
     </androidx.core.widget.NestedScrollView>
+
+    </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
     <!-- Loading Indicator -->
     <ProgressBar
