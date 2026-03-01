@@ -36,6 +36,7 @@ fun MetricAlertCard(
     priceFormat: (Double) -> String,
     showStatus: Boolean = false,
     showControls: Boolean = false,
+    showPrice: Boolean = true,
     onToggleActive: (() -> Unit)? = null,
     onClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier
@@ -109,7 +110,8 @@ fun MetricAlertCard(
                     ticker = item.ticker,
                     price = item.currentPrice,
                     dailyChangePercent = item.currentDailyChangePercent,
-                    currency = currency
+                    currency = currency,
+                    showPrice = showPrice
                 )
                 if (showControls && onToggleActive != null) {
                     Row(
@@ -123,7 +125,7 @@ fun MetricAlertCard(
                         )
                     }
                 }
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(if (showPrice) 8.dp else 4.dp))
                 // Metric row
                 Column {
                     Row(

@@ -34,6 +34,7 @@ fun StockSummaryRow(
     price: Double,
     dailyChangePercent: Double?,
     currency: String,
+    showPrice: Boolean = true,
     modifier: Modifier = Modifier
 ) {
     val priceFormat = DecimalFormat("#,##0.00", DecimalFormatSymbols(Locale("sv", "SE")))
@@ -60,35 +61,37 @@ fun StockSummaryRow(
                 )
             }
         }
-        Column(
-            horizontalAlignment = Alignment.End,
-            modifier = Modifier.padding(start = 8.dp)
-        ) {
-            Text(
-                text = if (price > 0) CurrencyHelper.formatPrice(price, currency) else "—",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-            if (dailyChangePercent != null) {
-                val isPositive = dailyChangePercent >= 0
-                val trendColor = if (isPositive) PriceUp else PriceDown
-                val arrowRes = if (isPositive) R.drawable.ic_arrow_upward else R.drawable.ic_arrow_downward
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.End
-                ) {
-                    Icon(
-                        painter = painterResource(id = arrowRes),
-                        contentDescription = null,
-                        tint = trendColor,
-                        modifier = Modifier.size(16.dp)
-                    )
-                    Text(
-                        text = "${if (dailyChangePercent >= 0) "+" else ""}${priceFormat.format(dailyChangePercent)}%",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = trendColor
-                    )
+        if (showPrice) {
+            Column(
+                horizontalAlignment = Alignment.End,
+                modifier = Modifier.padding(start = 8.dp)
+            ) {
+                Text(
+                    text = if (price > 0) CurrencyHelper.formatPrice(price, currency) else "—",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                if (dailyChangePercent != null) {
+                    val isPositive = dailyChangePercent >= 0
+                    val trendColor = if (isPositive) PriceUp else PriceDown
+                    val arrowRes = if (isPositive) R.drawable.ic_arrow_upward else R.drawable.ic_arrow_downward
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.End
+                    ) {
+                        Icon(
+                            painter = painterResource(id = arrowRes),
+                            contentDescription = null,
+                            tint = trendColor,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Text(
+                            text = "${if (dailyChangePercent >= 0) "+" else ""}${priceFormat.format(dailyChangePercent)}%",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = trendColor
+                        )
+                    }
                 }
             }
         }

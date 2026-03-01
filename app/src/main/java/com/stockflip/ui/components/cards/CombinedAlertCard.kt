@@ -26,6 +26,7 @@ import com.stockflip.ui.components.StockSummaryRow
 fun CombinedAlertCard(
     item: WatchItem,
     priceFormat: (Double) -> String,
+    showPrice: Boolean = true,
     modifier: Modifier = Modifier
 ) {
     val combined = item.watchType as? WatchType.Combined ?: return
@@ -65,7 +66,8 @@ fun CombinedAlertCard(
                     ticker = firstSymbol,
                     price = item.currentPrice,
                     dailyChangePercent = item.currentDailyChangePercent,
-                    currency = currency
+                    currency = currency,
+                    showPrice = showPrice
                 )
             }
         }

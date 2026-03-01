@@ -585,31 +585,10 @@ class MainActivity : AppCompatActivity() {
 
     /**
      * Hanterar klick på WatchItem.
-     * För single-stock alerts öppnas StockDetailFragment, för par-alerts visas dialog.
+     * Öppnar redigeringsdialog för bevakningen.
      */
     private fun handleItemClick(item: WatchItem): Unit {
-        when (item.watchType) {
-            is WatchType.PricePair -> {
-                // Par-alerts: visa dialog som tidigare
-                showWatchItemDetailDialog(item)
-            }
-            is WatchType.PriceTarget,
-            is WatchType.PriceRange,
-            is WatchType.ATHBased,
-            is WatchType.DailyMove,
-            is WatchType.KeyMetrics -> {
-                // Single-stock alerts: öppna StockDetailFragment
-                val symbol = item.ticker ?: return
-                val companyName = item.companyName
-                navigateToStockDetail(symbol, companyName)
-            }
-            is WatchType.Combined -> {
-                // Combined alerts: navigera till StockDetailFragment
-                val symbol = item.ticker ?: return
-                val companyName = item.companyName
-                navigateToStockDetail(symbol, companyName)
-            }
-        }
+        handleEditClick(item)
     }
 
     /**
@@ -645,16 +624,10 @@ class MainActivity : AppCompatActivity() {
         when (item.watchType) {
             is WatchType.PricePair -> showEditStockPairDialog(item)
             is WatchType.PriceTarget -> showEditPriceTargetDialog(item)
-            is WatchType.PriceRange -> {
-                // PriceRange kan redigeras via StockDetailFragment
-                Toast.makeText(this, "Redigera via aktiedetaljvy", Toast.LENGTH_SHORT).show()
-            }
+            is WatchType.PriceRange -> showEditPriceRangeDialog(item)
             is WatchType.KeyMetrics -> showEditKeyMetricsDialog(item)
             is WatchType.ATHBased -> showEditATHBasedDialog(item)
-            is WatchType.DailyMove -> {
-                // DailyMove kan redigeras via StockDetailFragment
-                Toast.makeText(this, "Redigera via aktiedetaljvy", Toast.LENGTH_SHORT).show()
-            }
+            is WatchType.DailyMove -> showEditDailyMoveDialog(item)
             is WatchType.Combined -> {
                 showEditCombinedAlertDialog(item)
             }
@@ -2058,6 +2031,123 @@ class MainActivity : AppCompatActivity() {
                         }
                     } else {
                         Toast.makeText(this, "Ange giltiga värden för alla fält", Toast.LENGTH_SHORT).show()
+                    }
+                } else {
+                    Toast.makeText(this, "Fyll i alla fält", Toast.LENGTH_SHORT).show()
+                }
+            }
+            .setNegativeButton("Avbryt", null)
+            .show()
+    }
+
+    private fun showEditPriceRangeDialog(item: WatchItem) {
+        if (item.watchType !is WatchType.PriceRange) return
+        val priceRange = item.watchType
+        val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_add_price_range, null)
+        val minPriceInput = dialogView.findViewById<TextInputEditText>(R.id.minPriceInput).apply {
+            setText(priceRange.minPrice.toString())
+        }
+        val maxPriceInput = dialogView.findViewById<TextInputEditText>(R.id.maxPriceInput).apply {
+            setText(priceRange.maxPrice.toString())
+        }
+
+        MaterialAlertDialogBuilder(this)
+            .setTitle("Redigera prisintervall-bevakning")
+            .setView(dialogView)
+            .setPositiveButton("Uppdatera") { _, _ ->
+                val minPriceStr = minPriceInput.text.toString()
+                val maxPriceStr = maxPriceInput.text.toString()
+
+                if (minPriceStr.isNotEmpty() && maxPriceStr.isNotEmpty()) {
+                    val minPrice = minPriceStr.toDoubleOrNull()
+                    val maxPrice = maxPriceStr.toDoubleOrNull()
+
+                    if (minPrice != null && maxPrice != null && minPrice > 0 && maxPrice > minPrice) {
+                        lifecycleScope.launch {
+                            try {
+                                binding.progressBar.visibility = View.VISIBLE
+                                val updatedItem = item.copy(
+                                    watchType = WatchType.PriceRange(minPrice, maxPrice)
+                                )
+                                viewModel.updateWatchItem(updatedItem)
+                                viewModel.refreshWatchItems()
+                                updateLastUpdateTime()
+                                binding.progressBar.visibility = View.GONE
+                                Toast.makeText(this@MainActivity, "Prisintervall-bevakning uppdaterad", Toast.LENGTH_SHORT).show()
+                            } catch (e: Exception) {
+                                binding.progressBar.visibility = View.GONE
+                                Toast.makeText(this@MainActivity, "Kunde inte uppdatera bevakning: ${e.message}", Toast.LENGTH_LONG).show()
+                            }
+                        }
+                    } else {
+                        Toast.makeText(this, "Ange giltiga prisintervall (min < max)", Toast.LENGTH_SHORT).show()
+                    }
+                } else {
+                    Toast.makeText(this, "Fyll i alla fält", Toast.LENGTH_SHORT).show()
+                }
+            }
+            .setNegativeButton("Avbryt", null)
+            .show()
+    }
+
+    private fun showEditDailyMoveDialog(item: WatchItem) {
+        if (item.watchType !is WatchType.DailyMove) return
+        val dailyMove = item.watchType
+        val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_add_daily_move, null)
+        val tickerInput = dialogView.findViewById<MaterialAutoCompleteTextView?>(R.id.tickerInput)
+        val tickerInputLayout = tickerInput?.parent as? com.google.android.material.textfield.TextInputLayout
+        tickerInputLayout?.visibility = View.GONE
+
+        val thresholdInput = dialogView.findViewById<TextInputEditText>(R.id.thresholdInput).apply {
+            setText(dailyMove.percentThreshold.toString())
+        }
+        val directionInput = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.directionInput).apply {
+            setText(when (dailyMove.direction) {
+                WatchType.DailyMoveDirection.UP -> "Upp"
+                WatchType.DailyMoveDirection.DOWN -> "Ned"
+                WatchType.DailyMoveDirection.BOTH -> "Båda"
+            })
+        }
+
+        val directions = arrayOf("Upp", "Ned", "Båda")
+        val directionAdapter = ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line, directions)
+        directionInput.setAdapter(directionAdapter)
+
+        MaterialAlertDialogBuilder(this)
+            .setTitle("Redigera dagsrörelse-bevakning")
+            .setView(dialogView)
+            .setPositiveButton("Uppdatera") { _, _ ->
+                val thresholdStr = thresholdInput.text.toString()
+                val directionStr = directionInput.text.toString()
+
+                if (thresholdStr.isNotEmpty() && directionStr.isNotEmpty()) {
+                    val threshold = thresholdStr.toDoubleOrNull()
+                    val direction = when (directionStr) {
+                        "Upp" -> WatchType.DailyMoveDirection.UP
+                        "Ned" -> WatchType.DailyMoveDirection.DOWN
+                        "Båda" -> WatchType.DailyMoveDirection.BOTH
+                        else -> WatchType.DailyMoveDirection.BOTH
+                    }
+
+                    if (threshold != null && threshold > 0) {
+                        lifecycleScope.launch {
+                            try {
+                                binding.progressBar.visibility = View.VISIBLE
+                                val updatedItem = item.copy(
+                                    watchType = WatchType.DailyMove(threshold, direction)
+                                )
+                                viewModel.updateWatchItem(updatedItem)
+                                viewModel.refreshWatchItems()
+                                updateLastUpdateTime()
+                                binding.progressBar.visibility = View.GONE
+                                Toast.makeText(this@MainActivity, "Dagsrörelse-bevakning uppdaterad", Toast.LENGTH_SHORT).show()
+                            } catch (e: Exception) {
+                                binding.progressBar.visibility = View.GONE
+                                Toast.makeText(this@MainActivity, "Kunde inte uppdatera bevakning: ${e.message}", Toast.LENGTH_LONG).show()
+                            }
+                        }
+                    } else {
+                        Toast.makeText(this, "Ange ett giltigt tröskelvärde", Toast.LENGTH_SHORT).show()
                     }
                 } else {
                     Toast.makeText(this, "Fyll i alla fält", Toast.LENGTH_SHORT).show()

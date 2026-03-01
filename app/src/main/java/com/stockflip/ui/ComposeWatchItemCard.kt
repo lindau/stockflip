@@ -51,6 +51,7 @@ fun ComposeWatchItemCard(
                     priceFormat = priceFormat,
                     showStatus = showStatus,
                     showControls = showControls,
+                    showPrice = !showControls,
                     onToggleActive = onToggleActive,
                     onClick = if (showControls) onItemClick else null,
                     modifier = Modifier.fillMaxWidth()
@@ -62,6 +63,7 @@ fun ComposeWatchItemCard(
                     priceFormat = priceFormat,
                     showStatus = showStatus,
                     showControls = showControls,
+                    showPrice = !showControls,
                     onToggleActive = onToggleActive,
                     onClick = if (showControls) onItemClick else null,
                     modifier = Modifier.fillMaxWidth()
@@ -73,6 +75,7 @@ fun ComposeWatchItemCard(
                     priceFormat = priceFormat,
                     showStatus = showStatus,
                     showControls = showControls,
+                    showPrice = !showControls,
                     onToggleActive = onToggleActive,
                     onClick = if (showControls) onItemClick else null,
                     modifier = Modifier.fillMaxWidth()
@@ -84,6 +87,7 @@ fun ComposeWatchItemCard(
                     priceFormat = priceFormat,
                     showStatus = showStatus,
                     showControls = showControls,
+                    showPrice = !showControls,
                     onToggleActive = onToggleActive,
                     onClick = if (showControls) onItemClick else null,
                     modifier = Modifier.fillMaxWidth()
@@ -95,6 +99,7 @@ fun ComposeWatchItemCard(
                     priceFormat = priceFormat,
                     showStatus = showStatus,
                     showControls = showControls,
+                    showPrice = !showControls,
                     onToggleActive = onToggleActive,
                     onClick = if (showControls) onItemClick else null,
                     modifier = Modifier.fillMaxWidth()
@@ -104,6 +109,7 @@ fun ComposeWatchItemCard(
                 CombinedAlertCard(
                     item = item,
                     priceFormat = priceFormat,
+                    showPrice = !showControls,
                     modifier = Modifier.fillMaxWidth()
                 )
             }

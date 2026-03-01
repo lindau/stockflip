@@ -31,6 +31,7 @@ fun High52wCard(
     priceFormat: (Double) -> String,
     showStatus: Boolean = false,
     showControls: Boolean = false,
+    showPrice: Boolean = true,
     onToggleActive: (() -> Unit)? = null,
     onClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier
@@ -78,7 +79,8 @@ fun High52wCard(
                     ticker = item.ticker,
                     price = item.currentPrice,
                     dailyChangePercent = item.currentDailyChangePercent,
-                    currency = currency
+                    currency = currency,
+                    showPrice = showPrice
                 )
                 if (showControls && onToggleActive != null) {
                     Row(
@@ -92,7 +94,7 @@ fun High52wCard(
                         )
                     }
                 }
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(if (showPrice) 8.dp else 4.dp))
                 // Target text - aligned to the right
                 Row(
                     modifier = Modifier.fillMaxWidth(),
