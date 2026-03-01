@@ -45,7 +45,7 @@ This is injected as `BuildConfig.FINNHUB_API_KEY` at build time.
 **`WatchType`** (sealed class) — defines the type of an alert:
 - `PricePair` — spread between two tickers
 - `PriceTarget` — single stock above/below a price
-- `PriceRange` — price within [min, max]
+- `PriceRange` — price within [min, max] (**UI-deprecated**: removed from quick-actions panel; existing watches still evaluate correctly)
 - `DailyMove` — daily % change threshold (UP/DOWN/BOTH)
 - `ATHBased` — drawdown from 52-week high (percentage or absolute SEK)
 - `KeyMetrics` — fundamental metric (PE, PS, Dividend Yield)
@@ -89,3 +89,5 @@ The app uses a **hybrid View/Compose** approach:
 - Stock tickers for the Swedish market use the `.ST` suffix (e.g. `VOLV-B.ST`).
 - Price formatting uses Swedish locale (`sv_SE`) with `#,##0.00` pattern.
 - Code comments are mixed Swedish/English (Swedish is common in business logic).
+- Direction for `PriceTarget` and `KeyMetrics` is **auto-inferred at save**: if current value ≥ target → `BELOW`, else `ABOVE`. No direction field exists in the dialogs.
+- Pull-to-refresh uses `SwipeRefreshLayout` in both `MainActivity` and `StockDetailFragment`. Always set `isRefreshing = false` in both `Success` and `Error` branches of the `stockDataState` observer.
