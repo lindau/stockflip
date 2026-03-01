@@ -326,12 +326,6 @@ class StockDetailFragment : Fragment() {
             }
         }
         
-        // Förifyll med 10-15% under dagens pris enligt PRD
-        (viewModel.stockDataState.value as? UiState.Success<StockDetailData>)?.data?.lastPrice?.let { currentPrice ->
-            val suggestedPrice = currentPrice * 0.90 // 10% under
-            targetPriceInput.setText(priceFormat.format(suggestedPrice))
-        }
-
         // Set up direction dropdown
         val directions = arrayOf("Över", "Under")
         val directionAdapter = ArrayAdapter(requireContext(), android.R.layout.simple_dropdown_item_1line, directions)
@@ -394,12 +388,6 @@ class StockDetailFragment : Fragment() {
         dropTypeInput.setAdapter(dropTypeAdapter)
         dropTypeInput.setText("Procent", false) // Default to percentage
         
-        // Visa aktuell drawdown från 52w high enligt PRD
-        (viewModel.stockDataState.value as? UiState.Success<StockDetailData>)?.data?.drawdownPercent?.let { currentDrawdown ->
-            val suggestedDrop = currentDrawdown + 5.0 // 5% mer än nuvarande
-            dropValueInput.setText(priceFormat.format(suggestedDrop))
-        }
-
         MaterialAlertDialogBuilder(requireContext())
             .setTitle("Skapa drawdown-bevakning")
             .setView(dialogView)
@@ -497,14 +485,6 @@ class StockDetailFragment : Fragment() {
         val minPriceInput = dialogView.findViewById<TextInputEditText>(R.id.minPriceInput)
         val maxPriceInput = dialogView.findViewById<TextInputEditText>(R.id.maxPriceInput)
         
-        // Förifyll med 10-15% under/över dagens pris enligt PRD
-        (viewModel.stockDataState.value as? UiState.Success<StockDetailData>)?.data?.lastPrice?.let { currentPrice ->
-            val suggestedMinPrice = currentPrice * 0.90 // 10% under
-            val suggestedMaxPrice = currentPrice * 1.10 // 10% över
-            minPriceInput.setText(priceFormat.format(suggestedMinPrice))
-            maxPriceInput.setText(priceFormat.format(suggestedMaxPrice))
-        }
-
         MaterialAlertDialogBuilder(requireContext())
             .setTitle("Skapa prisintervall-bevakning")
             .setView(dialogView)

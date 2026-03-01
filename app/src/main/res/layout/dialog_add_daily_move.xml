@@ -40,8 +40,7 @@
             android:layout_height="wrap_content"
             android:inputType="numberDecimal"
             android:imeOptions="actionDone"
-            android:maxLines="1"
-            android:text="5.0" />
+            android:maxLines="1" />
 
     </com.google.android.material.textfield.TextInputLayout>
 
