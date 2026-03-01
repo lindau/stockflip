@@ -35,7 +35,8 @@ fun StockSummaryRow(
     dailyChangePercent: Double?,
     currency: String,
     showPrice: Boolean = true,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    action: (@Composable () -> Unit)? = null
 ) {
     val priceFormat = DecimalFormat("#,##0.00", DecimalFormatSymbols(Locale("sv", "SE")))
     Row(
@@ -95,5 +96,6 @@ fun StockSummaryRow(
                 }
             }
         }
+        action?.invoke()
     }
 }

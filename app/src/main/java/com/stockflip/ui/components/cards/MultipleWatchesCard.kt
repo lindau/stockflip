@@ -26,6 +26,7 @@ fun MultipleWatchesCard(
     symbol: String,
     companyName: String?,
     watchCount: Int,
+    triggeredCount: Int = 0,
     currentPrice: Double,
     dailyChangePercent: Double? = null,
     priceFormat: (Double) -> String,
@@ -34,14 +35,17 @@ fun MultipleWatchesCard(
     Card(
         modifier = modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
+            containerColor = if (triggeredCount > 0)
+                MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.25f)
+            else
+                MaterialTheme.colorScheme.surface
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(12.dp)
+                .padding(8.dp)
         ) {
             val currency = CurrencyHelper.getCurrencyFromSymbol(symbol)
             StockSummaryRow(
@@ -51,9 +55,8 @@ fun MultipleWatchesCard(
                 dailyChangePercent = dailyChangePercent,
                 currency = currency
             )
-            Spacer(modifier = Modifier.height(12.dp))
-            
-            // Multiple watches text - aligned to the right
+            Spacer(modifier = Modifier.height(8.dp))
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.End
@@ -63,8 +66,14 @@ fun MultipleWatchesCard(
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+                if (triggeredCount > 0) {
+                    Text(
+                        text = " • $triggeredCount nådd",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
             }
         }
     }
 }
-

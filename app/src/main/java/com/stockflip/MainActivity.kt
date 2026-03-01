@@ -478,7 +478,8 @@ class MainActivity : AppCompatActivity() {
 
     private fun showLoading(): Unit {
         Log.d(TAG, "Showing loading state")
-        if (!binding.swipeRefreshLayout.isRefreshing) {
+        val isOnAlertsTab = binding.bottomNavigation.selectedItemId == R.id.menu_alerts
+        if (!binding.swipeRefreshLayout.isRefreshing && !isOnAlertsTab) {
             binding.progressBar.visibility = View.VISIBLE
         }
     }

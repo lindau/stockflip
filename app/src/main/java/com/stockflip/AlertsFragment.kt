@@ -90,6 +90,16 @@ class AlertsFragment : Fragment() {
             adapter = alertAdapter
         }
 
+        binding.swipeRefreshLayout.setOnRefreshListener {
+            viewLifecycleOwner.lifecycleScope.launch {
+                try {
+                    viewModel.refreshWatchItems()
+                } catch (e: Exception) {
+                    binding.swipeRefreshLayout.isRefreshing = false
+                }
+            }
+        }
+
         val swipeCallback = SwipeToDeleteCallback(
             context = requireContext(),
             onSwiped = { position ->
@@ -118,6 +128,7 @@ class AlertsFragment : Fragment() {
                         }
                         is UiState.Success -> {
                             binding.alertsProgressBar.visibility = View.GONE
+                            binding.swipeRefreshLayout.isRefreshing = false
                             val items = state.data
                             alertAdapter.submitList(items)
                             binding.emptyStateText.visibility = if (items.isEmpty()) {
@@ -128,6 +139,7 @@ class AlertsFragment : Fragment() {
                         }
                         is UiState.Error -> {
                             binding.alertsProgressBar.visibility = View.GONE
+                            binding.swipeRefreshLayout.isRefreshing = false
                             binding.emptyStateText.visibility = View.VISIBLE
                             binding.emptyStateText.text = state.message
                         }

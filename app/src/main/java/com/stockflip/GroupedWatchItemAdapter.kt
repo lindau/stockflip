@@ -40,6 +40,7 @@ sealed class GroupedListItem {
         val symbol: String,
         val companyName: String?,
         val watchCount: Int,
+        val triggeredCount: Int,
         val currentPrice: Double,
         val dailyChangePercent: Double?,
         val watchItems: List<WatchItem>
@@ -249,10 +250,12 @@ class GroupedWatchItemAdapter(
                     } else {
                         // Multiple watch types - show "multiple watches" card
                         val dailyChangePercent = watchItemsForTicker.firstOrNull()?.currentDailyChangePercent
+                        val triggeredCount = watchItemsForTicker.count { it.isTriggered }
                         groupedList.add(GroupedListItem.MultipleWatchesWrapper(
                             symbol = ticker,
                             companyName = companyName,
                             watchCount = watchItemsForTicker.size,
+                            triggeredCount = triggeredCount,
                             currentPrice = currentPrice,
                             dailyChangePercent = dailyChangePercent,
                             watchItems = watchItemsForTicker
@@ -374,6 +377,7 @@ class GroupedWatchItemAdapter(
                         symbol = wrapper.symbol,
                         companyName = wrapper.companyName,
                         watchCount = wrapper.watchCount,
+                        triggeredCount = wrapper.triggeredCount,
                         currentPrice = wrapper.currentPrice,
                         dailyChangePercent = wrapper.dailyChangePercent,
                         priceFormat = { value -> priceFormat.format(value) },
@@ -425,6 +429,7 @@ class GroupedWatchItemAdapter(
                     oldItem.symbol == newItem.symbol &&
                     oldItem.companyName == newItem.companyName &&
                     oldItem.watchCount == newItem.watchCount &&
+                    oldItem.triggeredCount == newItem.triggeredCount &&
                     oldItem.currentPrice == newItem.currentPrice &&
                     oldItem.dailyChangePercent == newItem.dailyChangePercent
                 }

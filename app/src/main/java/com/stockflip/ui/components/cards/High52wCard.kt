@@ -14,7 +14,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.text.font.FontWeight
@@ -37,19 +36,14 @@ fun High52wCard(
     modifier: Modifier = Modifier
 ) {
     val athBased = item.watchType as? WatchType.ATHBased ?: return
-    
+
     val currency = com.stockflip.CurrencyHelper.getCurrencyFromSymbol(item.ticker)
-    
-    val currentDropText = when (athBased.dropType) {
-        WatchType.DropType.PERCENTAGE -> "${priceFormat(item.currentDropPercentage)}%"
-        WatchType.DropType.ABSOLUTE -> com.stockflip.CurrencyHelper.formatPrice(item.currentDropAbsolute, currency)
-    }
-    
+
     val targetDropText = when (athBased.dropType) {
         WatchType.DropType.PERCENTAGE -> "${priceFormat(athBased.dropValue)}%"
         WatchType.DropType.ABSOLUTE -> com.stockflip.CurrencyHelper.formatPrice(athBased.dropValue, currency)
     }
-    
+
     val isTriggered = when (athBased.dropType) {
         WatchType.DropType.PERCENTAGE -> item.currentDropPercentage >= athBased.dropValue
         WatchType.DropType.ABSOLUTE -> item.currentDropAbsolute >= athBased.dropValue
@@ -60,7 +54,10 @@ fun High52wCard(
             .fillMaxWidth()
             .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
+            containerColor = if (isTriggered)
+                MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.25f)
+            else
+                MaterialTheme.colorScheme.surface
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
@@ -68,11 +65,11 @@ fun High52wCard(
             modifier = Modifier.fillMaxWidth()
         ) {
             StatusStripe(isTriggered = isTriggered)
-            
+
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(12.dp)
+                    .padding(8.dp)
             ) {
                 StockSummaryRow(
                     companyName = item.companyName,
@@ -80,22 +77,18 @@ fun High52wCard(
                     price = item.currentPrice,
                     dailyChangePercent = item.currentDailyChangePercent,
                     currency = currency,
-                    showPrice = showPrice
+                    showPrice = showPrice,
+                    action = if (showControls && onToggleActive != null) {
+                        {
+                            Switch(
+                                checked = item.isActive,
+                                onCheckedChange = { onToggleActive() },
+                                modifier = Modifier.scale(0.7f)
+                            )
+                        }
+                    } else null
                 )
-                if (showControls && onToggleActive != null) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.End
-                    ) {
-                        Switch(
-                            checked = item.isActive,
-                            onCheckedChange = { onToggleActive() },
-                            modifier = Modifier.scale(0.7f)
-                        )
-                    }
-                }
-                Spacer(modifier = Modifier.height(if (showPrice) 8.dp else 4.dp))
-                // Target text - aligned to the right
+                Spacer(modifier = Modifier.height(if (showPrice) 4.dp else 2.dp))
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.End
@@ -110,10 +103,7 @@ fun High52wCard(
                         }
                     )
                 }
-                
-                
             }
         }
     }
 }
-

@@ -42,33 +42,33 @@ fun MetricAlertCard(
     modifier: Modifier = Modifier
 ) {
     val keyMetrics = item.watchType as? WatchType.KeyMetrics ?: return
-    
+
     val metricTypeName = when (keyMetrics.metricType) {
         WatchType.MetricType.PE_RATIO -> "P/E-tal"
         WatchType.MetricType.PS_RATIO -> "P/S-tal"
         WatchType.MetricType.DIVIDEND_YIELD -> "Direktavkastning"
     }
-    
+
     val directionText = when (keyMetrics.direction) {
         WatchType.PriceDirection.ABOVE -> "Över"
         WatchType.PriceDirection.BELOW -> "Under"
     }
-    
+
     val targetValueText = when (keyMetrics.metricType) {
         WatchType.MetricType.DIVIDEND_YIELD -> "${priceFormat(keyMetrics.targetValue)}%"
         else -> priceFormat(keyMetrics.targetValue)
     }
-    
+
     val currentValueText = when (keyMetrics.metricType) {
         WatchType.MetricType.DIVIDEND_YIELD -> "${priceFormat(item.currentMetricValue)}%"
         else -> priceFormat(item.currentMetricValue)
     }
-    
+
     val isTriggered = item.currentMetricValue != 0.0 && when (keyMetrics.direction) {
         WatchType.PriceDirection.ABOVE -> item.currentMetricValue >= keyMetrics.targetValue
         WatchType.PriceDirection.BELOW -> item.currentMetricValue <= keyMetrics.targetValue
     }
-    
+
     // Beräkna trend jämfört med värde vid skapande
     val hasValueAtCreation = item.metricValueAtCreation > 0.0
     val trendDirection = if (hasValueAtCreation && item.currentMetricValue > 0.0) {
@@ -78,7 +78,7 @@ fun MetricAlertCard(
             else -> "SAME"
         }
     } else null
-    
+
     val trendChange = if (hasValueAtCreation && item.currentMetricValue > 0.0) {
         val change = item.currentMetricValue - item.metricValueAtCreation
         val changePercent = (change / item.metricValueAtCreation) * 100
@@ -90,7 +90,10 @@ fun MetricAlertCard(
             .fillMaxWidth()
             .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
+            containerColor = if (isTriggered)
+                MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.25f)
+            else
+                MaterialTheme.colorScheme.surface
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
@@ -98,11 +101,11 @@ fun MetricAlertCard(
             modifier = Modifier.fillMaxWidth()
         ) {
             StatusStripe(isTriggered = isTriggered)
-            
+
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(12.dp)
+                    .padding(8.dp)
             ) {
                 val currency = CurrencyHelper.getCurrencyFromSymbol(item.ticker)
                 StockSummaryRow(
@@ -111,21 +114,18 @@ fun MetricAlertCard(
                     price = item.currentPrice,
                     dailyChangePercent = item.currentDailyChangePercent,
                     currency = currency,
-                    showPrice = showPrice
+                    showPrice = showPrice,
+                    action = if (showControls && onToggleActive != null) {
+                        {
+                            Switch(
+                                checked = item.isActive,
+                                onCheckedChange = { onToggleActive() },
+                                modifier = Modifier.scale(0.7f)
+                            )
+                        }
+                    } else null
                 )
-                if (showControls && onToggleActive != null) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.End
-                    ) {
-                        Switch(
-                            checked = item.isActive,
-                            onCheckedChange = { onToggleActive() },
-                            modifier = Modifier.scale(0.7f)
-                        )
-                    }
-                }
-                Spacer(modifier = Modifier.height(if (showPrice) 8.dp else 4.dp))
+                Spacer(modifier = Modifier.height(if (showPrice) 4.dp else 2.dp))
                 // Metric row
                 Column {
                     Row(
@@ -179,9 +179,9 @@ fun MetricAlertCard(
                         )
                     }
                 }
-                
-                Spacer(modifier = Modifier.height(12.dp))
-                
+
+                Spacer(modifier = Modifier.height(8.dp))
+
                 // Target text - aligned to the right
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -197,10 +197,7 @@ fun MetricAlertCard(
                         }
                     )
                 }
-                
-                
             }
         }
     }
 }
-

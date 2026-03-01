@@ -14,7 +14,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.unit.dp
@@ -36,15 +35,14 @@ fun DailyMoveCard(
     modifier: Modifier = Modifier
 ) {
     val dailyMove = item.watchType as? WatchType.DailyMove ?: return
-    
+
     val directionText = when (dailyMove.direction) {
         WatchType.DailyMoveDirection.UP -> "upp"
         WatchType.DailyMoveDirection.DOWN -> "ned"
         WatchType.DailyMoveDirection.BOTH -> "båda"
     }
-    
+
     // Note: DailyMove kan inte highlightas baserat på currentPrice, behöver dailyChangePercent
-    // För nu antar vi att det inte är triggat om vi inte har dailyChangePercent
     val isTriggered = false
 
     Card(
@@ -60,11 +58,11 @@ fun DailyMoveCard(
             modifier = Modifier.fillMaxWidth()
         ) {
             StatusStripe(isTriggered = isTriggered)
-            
+
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(12.dp)
+                    .padding(8.dp)
             ) {
                 val currency = CurrencyHelper.getCurrencyFromSymbol(item.ticker)
                 StockSummaryRow(
@@ -73,22 +71,18 @@ fun DailyMoveCard(
                     price = item.currentPrice,
                     dailyChangePercent = item.currentDailyChangePercent,
                     currency = currency,
-                    showPrice = showPrice
+                    showPrice = showPrice,
+                    action = if (showControls && onToggleActive != null) {
+                        {
+                            Switch(
+                                checked = item.isActive,
+                                onCheckedChange = { onToggleActive() },
+                                modifier = Modifier.scale(0.7f)
+                            )
+                        }
+                    } else null
                 )
-                if (showControls && onToggleActive != null) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.End
-                    ) {
-                        Switch(
-                            checked = item.isActive,
-                            onCheckedChange = { onToggleActive() },
-                            modifier = Modifier.scale(0.7f)
-                        )
-                    }
-                }
-                Spacer(modifier = Modifier.height(if (showPrice) 8.dp else 4.dp))
-                // Target text - aligned to the right
+                Spacer(modifier = Modifier.height(if (showPrice) 4.dp else 2.dp))
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.End
@@ -99,10 +93,7 @@ fun DailyMoveCard(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
-                
-                
             }
         }
     }
 }
-
