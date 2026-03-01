@@ -255,6 +255,20 @@ class StockDetailViewModel(
     }
 
     /**
+     * Tar bort alla bevakningar för denna aktie.
+     */
+    fun deleteStock() {
+        viewModelScope.launch {
+            try {
+                watchItemDao.deleteBySymbol(symbol)
+                Log.d(TAG, "Deleted all watches for $symbol")
+            } catch (e: Exception) {
+                Log.e(TAG, "Error deleting stock watches: ${e.message}", e)
+            }
+        }
+    }
+
+    /**
      * Uppdaterar aktiedata (refresh).
      */
     fun refresh() {

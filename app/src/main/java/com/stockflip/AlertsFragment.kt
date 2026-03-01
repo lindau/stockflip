@@ -14,7 +14,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.stockflip.ui.SwipeToDeleteCallback
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.stockflip.databinding.FragmentAlertsBinding
 import kotlinx.coroutines.launch
@@ -119,6 +121,23 @@ class AlertsFragment : Fragment() {
             layoutManager = LinearLayoutManager(requireContext())
             adapter = alertAdapter
         }
+
+        val swipeCallback = SwipeToDeleteCallback(
+            context = requireContext(),
+            onSwiped = { position ->
+                val item = alertAdapter.currentList.getOrNull(position) ?: return@SwipeToDeleteCallback
+                alertAdapter.notifyItemChanged(position)
+                viewLifecycleOwner.lifecycleScope.launch {
+                    try {
+                        viewModel.deleteWatchItem(item)
+                        Toast.makeText(requireContext(), R.string.alert_deleted, Toast.LENGTH_SHORT).show()
+                    } catch (e: Exception) {
+                        Toast.makeText(requireContext(), e.message ?: "Kunde inte ta bort bevakning", Toast.LENGTH_LONG).show()
+                    }
+                }
+            }
+        )
+        ItemTouchHelper(swipeCallback).attachToRecyclerView(binding.alertsRecyclerView)
     }
 
     private fun setupObservers() {

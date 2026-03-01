@@ -25,5 +25,8 @@ interface WatchItemDao {
 
     @Query("SELECT * FROM watch_items WHERE id = :id")
     suspend fun getWatchItemById(id: Int): WatchItem?
+
+    @Query("DELETE FROM watch_items WHERE ticker = :symbol OR ticker1 = :symbol OR ticker2 = :symbol")
+    suspend fun deleteBySymbol(symbol: String)
 }
 

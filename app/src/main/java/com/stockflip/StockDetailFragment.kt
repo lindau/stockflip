@@ -13,7 +13,9 @@ import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
+import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.stockflip.ui.SwipeToDeleteCallback
 import androidx.core.widget.doAfterTextChanged
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -162,6 +164,17 @@ class StockDetailFragment : Fragment() {
             layoutManager = LinearLayoutManager(requireContext())
             adapter = alertAdapter
         }
+
+        val swipeCallback = SwipeToDeleteCallback(
+            context = requireContext(),
+            onSwiped = { position ->
+                val item = alertAdapter.currentList.getOrNull(position) ?: return@SwipeToDeleteCallback
+                alertAdapter.notifyItemChanged(position)
+                viewModel.deleteAlert(item)
+                Toast.makeText(requireContext(), "Bevakning borttagen", Toast.LENGTH_SHORT).show()
+            }
+        )
+        ItemTouchHelper(swipeCallback).attachToRecyclerView(binding.alertsRecyclerView)
     }
 
     private fun setupRefreshButton() {

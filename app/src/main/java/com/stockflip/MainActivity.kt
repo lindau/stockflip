@@ -46,6 +46,8 @@ import com.stockflip.ui.presets.MetricPresets
 import com.stockflip.ui.presets.PresetType
 import android.widget.ProgressBar
 import androidx.cardview.widget.CardView
+import androidx.recyclerview.widget.ItemTouchHelper
+import com.stockflip.ui.SwipeToDeleteCallback
 
 /**
  * Main activity for the StockFlip application.
@@ -149,6 +151,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun initializeUI(): Unit {
         setupRecyclerView()
+        setupSwipeToDelete()
         setupObservers()
         setupSwipeRefresh()
         setupAddButton()
@@ -523,6 +526,61 @@ class MainActivity : AppCompatActivity() {
             onEditClick = { item: WatchItem -> handleEditClick(item) },
             onItemClick = { item: WatchItem -> handleItemClick(item) }
         )
+    }
+
+    private fun setupSwipeToDelete(): Unit {
+        val callback = SwipeToDeleteCallback(
+            context = this,
+            canSwipe = { position ->
+                val adapter = binding.stockPairsList.adapter as? GroupedWatchItemAdapter ?: return@SwipeToDeleteCallback false
+                val item = adapter.currentList.getOrNull(position) ?: return@SwipeToDeleteCallback false
+                item !is GroupedListItem.Header
+            },
+            onSwiped = { position ->
+                val adapter = binding.stockPairsList.adapter as? GroupedWatchItemAdapter ?: return@SwipeToDeleteCallback
+                val item = adapter.currentList.getOrNull(position) ?: return@SwipeToDeleteCallback
+                when (item) {
+                    is GroupedListItem.MultipleWatchesWrapper -> {
+                        adapter.notifyItemChanged(position) // snap back while dialog shows
+                        showDeleteStockDialog(item.symbol, item.watchCount)
+                    }
+                    is GroupedListItem.WatchItemWrapper -> {
+                        if (item.item.watchType is WatchType.PricePair) {
+                            adapter.notifyItemChanged(position)
+                            showDeleteConfirmationDialog(item.item)
+                        } else {
+                            adapter.notifyItemChanged(position)
+                            val symbol = item.item.ticker ?: return@SwipeToDeleteCallback
+                            showDeleteStockDialog(symbol, 1)
+                        }
+                    }
+                    is GroupedListItem.Header -> {}
+                }
+            }
+        )
+        ItemTouchHelper(callback).attachToRecyclerView(binding.stockPairsList)
+    }
+
+    private fun showDeleteStockDialog(symbol: String, watchCount: Int): Unit {
+        val message = if (watchCount == 1)
+            "Detta tar bort 1 bevakning för $symbol."
+        else
+            "Detta tar bort $watchCount bevakningar för $symbol."
+        MaterialAlertDialogBuilder(this)
+            .setTitle("Ta bort $symbol")
+            .setMessage(message)
+            .setPositiveButton("Ta bort") { _, _ ->
+                lifecycleScope.launch {
+                    try {
+                        viewModel.deleteStockBySymbol(symbol)
+                        Toast.makeText(this@MainActivity, "$symbol borttagen", Toast.LENGTH_SHORT).show()
+                    } catch (e: Exception) {
+                        Toast.makeText(this@MainActivity, "Kunde inte ta bort: ${e.message}", Toast.LENGTH_LONG).show()
+                    }
+                }
+            }
+            .setNegativeButton("Avbryt", null)
+            .show()
     }
 
     /**

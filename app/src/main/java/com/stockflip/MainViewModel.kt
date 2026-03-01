@@ -385,6 +385,17 @@ class MainViewModel(
         }
     }
 
+    suspend fun deleteStockBySymbol(symbol: String) {
+        try {
+            Log.d(TAG, "Deleting all watches for symbol: $symbol")
+            watchItemDao.deleteBySymbol(symbol)
+            loadWatchItems()
+        } catch (e: Exception) {
+            Log.e(TAG, "Error deleting watches for $symbol: ${e.message}")
+            _watchItemUiState.value = UiState.Error("Failed to delete watches: ${e.message}")
+        }
+    }
+
     suspend fun deleteWatchItem(watchItem: WatchItem) {
         try {
             Log.d(TAG, "Deleting watch item: ${watchItem.getDisplayName()}")
