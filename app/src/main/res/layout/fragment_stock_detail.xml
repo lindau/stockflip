@@ -328,17 +328,6 @@
                         android:text="Dagsrörelse-bevakning"
                         style="@style/Widget.Material3.Button.OutlinedButton" />
 
-                    <!-- Create Price Range Alert -->
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/createPriceRangeButton"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginBottom="6dp"
-                        android:minHeight="40dp"
-                        android:paddingVertical="8dp"
-                        android:text="Prisintervall-bevakning"
-                        style="@style/Widget.Material3.Button.OutlinedButton" />
-
                     <!-- Create Key Metrics Alert -->
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/createKeyMetricsButton"

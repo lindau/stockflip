@@ -196,10 +196,6 @@ class StockDetailFragment : Fragment() {
             showCreateDailyMoveDialog()
         }
 
-        binding.createPriceRangeButton.setOnClickListener {
-            showCreatePriceRangeDialog()
-        }
-
         binding.createKeyMetricsButton.setOnClickListener {
             showCreateKeyMetricsDialog()
         }
