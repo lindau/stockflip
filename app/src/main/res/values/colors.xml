@@ -25,30 +25,30 @@
     <color name="pine_error_container">#F9DEDC</color>
     <color name="pine_on_error_container">#410E0B</color>
     
-    <!-- Pine & Sand Theme Colors - Dark -->
-    <color name="pine_primary_dark">#B7D7CC</color>
-    <color name="pine_on_primary_dark">#123027</color>
-    <color name="pine_primary_container_dark">#1F4439</color>
-    <color name="pine_on_primary_container_dark">#DDEBE5</color>
-    
-    <color name="sand_secondary_dark">#D4C5AE</color>
-    <color name="sand_on_secondary_dark">#1A1612</color>
-    <color name="sand_secondary_container_dark">#3C342B</color>
-    <color name="sand_on_secondary_container_dark">#F0E9DE</color>
-    
-    <color name="pine_background_dark">#12100D</color>
-    <color name="pine_on_background_dark">#EDE7DE</color>
-    
-    <color name="pine_surface_dark">#171411</color>
-    <color name="pine_on_surface_dark">#EDE7DE</color>
-    <color name="pine_surface_variant_dark">#231E18</color>
-    <color name="pine_on_surface_variant_dark">#CFC3B3</color>
-    
-    <color name="pine_outline_dark">#3C342B</color>
-    <color name="pine_error_dark">#F2B8B5</color>
-    <color name="pine_on_error_dark">#601410</color>
-    <color name="pine_error_container_dark">#8C1D18</color>
-    <color name="pine_on_error_container_dark">#F9DEDC</color>
+    <!-- Dark Theme Colors - Navy Blue + Bright Green -->
+    <color name="pine_primary_dark">#2ECC71</color>
+    <color name="pine_on_primary_dark">#003912</color>
+    <color name="pine_primary_container_dark">#0A2B18</color>
+    <color name="pine_on_primary_container_dark">#A0EAB5</color>
+
+    <color name="sand_secondary_dark">#8B9BB4</color>
+    <color name="sand_on_secondary_dark">#0D1426</color>
+    <color name="sand_secondary_container_dark">#1E2E44</color>
+    <color name="sand_on_secondary_container_dark">#C8D8EC</color>
+
+    <color name="pine_background_dark">#0D1426</color>
+    <color name="pine_on_background_dark">#FFFFFF</color>
+
+    <color name="pine_surface_dark">#192438</color>
+    <color name="pine_on_surface_dark">#FFFFFF</color>
+    <color name="pine_surface_variant_dark">#1C2840</color>
+    <color name="pine_on_surface_variant_dark">#8B9BB4</color>
+
+    <color name="pine_outline_dark">#253347</color>
+    <color name="pine_error_dark">#FF4A4A</color>
+    <color name="pine_on_error_dark">#FFFFFF</color>
+    <color name="pine_error_container_dark">#5C1A1A</color>
+    <color name="pine_on_error_container_dark">#FFB4AB</color>
     
     <!-- Legacy colors (kept for compatibility) -->
     <color name="black">#FF000000</color>

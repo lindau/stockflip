@@ -322,6 +322,15 @@ class StockDetailFragment : Fragment() {
         binding.drawdownPercent.text = data.drawdownPercent?.let {
             "${priceFormat.format(it)}%"
         } ?: "Laddar..."
+        val dropValue = data.drawdownPercent ?: 0.0
+        val dropColor = if (dropValue > 0)
+            android.graphics.Color.parseColor("#F44336")
+        else
+            com.google.android.material.color.MaterialColors.getColor(
+                binding.drawdownPercent,
+                com.google.android.material.R.attr.colorOnSurface
+            )
+        binding.drawdownPercent.setTextColor(dropColor)
     }
 
 

@@ -17,8 +17,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.stockflip.CurrencyHelper
 import com.stockflip.R
-import com.stockflip.ui.theme.PriceDown
-import com.stockflip.ui.theme.PriceUp
+import com.stockflip.ui.theme.LocalPriceDown
+import com.stockflip.ui.theme.LocalPriceUp
 import java.text.DecimalFormat
 import java.text.DecimalFormatSymbols
 import java.util.Locale
@@ -75,7 +75,7 @@ fun StockSummaryRow(
                 )
                 if (dailyChangePercent != null) {
                     val isPositive = dailyChangePercent >= 0
-                    val trendColor = if (isPositive) PriceUp else PriceDown
+                    val trendColor = if (isPositive) LocalPriceUp.current else LocalPriceDown.current
                     val arrowRes = if (isPositive) R.drawable.ic_arrow_upward else R.drawable.ic_arrow_downward
                     Row(
                         verticalAlignment = Alignment.CenterVertically,

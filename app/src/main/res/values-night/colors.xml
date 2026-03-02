@@ -31,6 +31,6 @@
 
     <!-- Price colors for dark mode -->
     <color name="price_down">#FF4A4A</color>
-    <color name="price_up">#3DDC84</color>
+    <color name="price_up">#2ECC71</color>
 </resources>
 

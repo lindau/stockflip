@@ -78,134 +78,157 @@
                         android:layout_height="wrap_content"
                         android:layout_marginVertical="16dp" />
 
-                    <!-- Last Price -->
+                    <!-- 2×2 Stat Grid -->
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="horizontal"
-                        android:gravity="center_vertical"
-                        android:layout_marginBottom="8dp">
+                        android:layout_marginHorizontal="-4dp">
 
-                        <TextView
+                        <!-- Left column -->
+                        <LinearLayout
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:text="Senaste pris:"
-                            android:textAppearance="?attr/textAppearanceBodyLarge"
-                            android:textColor="?attr/colorOnSurface" />
+                            android:orientation="vertical"
+                            android:layout_marginHorizontal="4dp">
 
-                        <TextView
-                            android:id="@+id/lastPrice"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:textAppearance="?attr/textAppearanceBodyLarge"
-                            android:textStyle="bold"
-                            android:textColor="?attr/colorOnSurface"
-                            tools:text="180.50 SEK" />
-                    </LinearLayout>
+                            <!-- Cell 1: Senaste pris (top-left) — price always visible -->
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="vertical"
+                                android:background="@drawable/bg_stat_cell"
+                                android:padding="12dp"
+                                android:layout_marginBottom="8dp">
 
-                    <!-- Daily Change -->
-                    <LinearLayout
-                        android:id="@+id/dailyChangeRow"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical"
-                        android:layout_marginBottom="8dp">
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Senaste pris"
+                                    android:textAppearance="?attr/textAppearanceLabelSmall"
+                                    android:textColor="?attr/colorOnSurfaceVariant" />
 
-                        <TextView
+                                <!-- lastPrice is OUTSIDE dailyChangeRow — always visible -->
+                                <TextView
+                                    android:id="@+id/lastPrice"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:textAppearance="?attr/textAppearanceTitleMedium"
+                                    android:textStyle="bold"
+                                    android:textColor="?attr/colorOnSurface"
+                                    tools:text="180.50 SEK" />
+
+                                <!-- dailyChangeRow only wraps dailyChangePercent — hides when no change data -->
+                                <LinearLayout
+                                    android:id="@+id/dailyChangeRow"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:orientation="horizontal">
+
+                                    <TextView
+                                        android:id="@+id/dailyChangePercent"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:textAppearance="?attr/textAppearanceLabelSmall"
+                                        android:textColor="?attr/colorOnSurface"
+                                        tools:text="+2.5%" />
+
+                                </LinearLayout>
+
+                            </LinearLayout>
+
+                            <!-- Cell 3: 52v lägsta -->
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="vertical"
+                                android:background="@drawable/bg_stat_cell"
+                                android:padding="12dp">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="52v lägsta"
+                                    android:textAppearance="?attr/textAppearanceLabelSmall"
+                                    android:textColor="?attr/colorOnSurfaceVariant" />
+
+                                <TextView
+                                    android:id="@+id/week52Low"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:textAppearance="?attr/textAppearanceTitleMedium"
+                                    android:textStyle="bold"
+                                    android:textColor="?attr/colorOnSurface"
+                                    tools:text="150.00 SEK" />
+
+                            </LinearLayout>
+
+                        </LinearLayout>
+
+                        <!-- Right column -->
+                        <LinearLayout
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:text="Dagens förändring:"
-                            android:textAppearance="?attr/textAppearanceBodyLarge"
-                            android:textColor="?attr/colorOnSurface" />
+                            android:orientation="vertical"
+                            android:layout_marginHorizontal="4dp">
 
-                        <TextView
-                            android:id="@+id/dailyChangePercent"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:textAppearance="?attr/textAppearanceBodyLarge"
-                            android:textStyle="bold"
-                            android:textColor="?attr/colorOnSurface"
-                            tools:text="+2.5%" />
-                    </LinearLayout>
+                            <!-- Cell 2: Nedgång från topp (top-right) -->
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="vertical"
+                                android:background="@drawable/bg_stat_cell"
+                                android:padding="12dp"
+                                android:layout_marginBottom="8dp">
 
-                    <!-- 52 Week High -->
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical"
-                        android:layout_marginBottom="8dp">
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Nedgång från topp"
+                                    android:textAppearance="?attr/textAppearanceLabelSmall"
+                                    android:textColor="?attr/colorOnSurfaceVariant" />
 
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:text="52-veckors högsta:"
-                            android:textAppearance="?attr/textAppearanceBodyLarge"
-                            android:textColor="?attr/colorOnSurface" />
+                                <TextView
+                                    android:id="@+id/drawdownPercent"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:textAppearance="?attr/textAppearanceTitleMedium"
+                                    android:textStyle="bold"
+                                    android:textColor="?attr/colorOnSurface"
+                                    tools:text="9.75%" />
 
-                        <TextView
-                            android:id="@+id/week52High"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:textAppearance="?attr/textAppearanceBodyLarge"
-                            android:textStyle="bold"
-                            android:textColor="?attr/colorOnSurface"
-                            tools:text="200.00 SEK" />
-                    </LinearLayout>
+                            </LinearLayout>
 
-                    <!-- 52 Week Low -->
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical"
-                        android:layout_marginBottom="8dp">
+                            <!-- Cell 4: 52v högsta (bottom-right) -->
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="vertical"
+                                android:background="@drawable/bg_stat_cell"
+                                android:padding="12dp">
 
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:text="52-veckors lägsta:"
-                            android:textAppearance="?attr/textAppearanceBodyLarge"
-                            android:textColor="?attr/colorOnSurface" />
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="52v högsta"
+                                    android:textAppearance="?attr/textAppearanceLabelSmall"
+                                    android:textColor="?attr/colorOnSurfaceVariant" />
 
-                        <TextView
-                            android:id="@+id/week52Low"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:textAppearance="?attr/textAppearanceBodyLarge"
-                            android:textStyle="bold"
-                            android:textColor="?attr/colorOnSurface"
-                            tools:text="150.00 SEK" />
-                    </LinearLayout>
+                                <TextView
+                                    android:id="@+id/week52High"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:textAppearance="?attr/textAppearanceTitleMedium"
+                                    android:textStyle="bold"
+                                    android:textColor="?attr/colorOnSurface"
+                                    tools:text="200.00 SEK" />
 
-                    <!-- Drawdown -->
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical">
+                            </LinearLayout>
 
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:text="Drawdown från 52w high:"
-                            android:textAppearance="?attr/textAppearanceBodyLarge"
-                            android:textColor="?attr/colorOnSurface" />
+                        </LinearLayout>
 
-                        <TextView
-                            android:id="@+id/drawdownPercent"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:textAppearance="?attr/textAppearanceBodyLarge"
-                            android:textStyle="bold"
-                            android:textColor="?attr/colorOnSurface"
-                            tools:text="9.75%" />
                     </LinearLayout>
 
                 </LinearLayout>

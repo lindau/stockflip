@@ -1,7 +1,6 @@
 package com.stockflip.ui.components.cards
 
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -22,13 +21,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.layout.offset
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.stockflip.CurrencyHelper
 import com.stockflip.WatchItem
 import com.stockflip.WatchType
 import com.stockflip.ui.components.StatusStripe
-import com.stockflip.ui.components.StockSummaryRow
 
 @Composable
 fun MetricAlertCard(
@@ -97,9 +95,7 @@ fun MetricAlertCard(
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth()
-        ) {
+        Row(modifier = Modifier.fillMaxWidth()) {
             StatusStripe(isTriggered = isTriggered)
 
             Column(
@@ -107,28 +103,46 @@ fun MetricAlertCard(
                     .fillMaxWidth()
                     .padding(8.dp)
             ) {
-                val currency = CurrencyHelper.getCurrencyFromSymbol(item.ticker)
-                StockSummaryRow(
-                    companyName = item.companyName,
-                    ticker = item.ticker,
-                    price = item.currentPrice,
-                    dailyChangePercent = item.currentDailyChangePercent,
-                    currency = currency,
-                    showPrice = showPrice,
-                    action = if (showControls && onToggleActive != null) {
-                        {
-                            Switch(
-                                checked = item.isActive,
-                                onCheckedChange = { onToggleActive() },
-                                modifier = Modifier.scale(0.7f)
+                // Top row: name + toggle top-aligned
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.Top
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = item.companyName ?: item.ticker ?: "",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        if (item.ticker != null) {
+                            Text(
+                                text = item.ticker,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
-                    } else null
-                )
-                Spacer(modifier = Modifier.height(if (showPrice) 4.dp else 2.dp))
-                // Metric row
-                Column {
+                    }
+                    if (showControls && onToggleActive != null) {
+                        Switch(
+                            checked = item.isActive,
+                            onCheckedChange = { onToggleActive() },
+                            modifier = Modifier
+                                .scale(0.7f)
+                                .offset(y = (-6).dp)
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                // Metric + target on same row
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     Row(
+                        modifier = Modifier.weight(1f),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
@@ -147,8 +161,8 @@ fun MetricAlertCard(
                                 },
                                 contentDescription = null,
                                 tint = when (direction) {
-                                    "UP" -> Color(0xFF4CAF50) // Green
-                                    "DOWN" -> Color(0xFFF44336) // Red
+                                    "UP" -> Color(0xFF4CAF50)
+                                    "DOWN" -> Color(0xFFF44336)
                                     else -> MaterialTheme.colorScheme.onSurfaceVariant
                                 },
                                 modifier = Modifier.padding(start = 4.dp)
@@ -166,27 +180,6 @@ fun MetricAlertCard(
                             }
                         }
                     }
-                    // Visa värde vid skapande om det finns
-                    if (hasValueAtCreation) {
-                        val valueAtCreationText = when (keyMetrics.metricType) {
-                            WatchType.MetricType.DIVIDEND_YIELD -> "${priceFormat(item.metricValueAtCreation)}%"
-                            else -> priceFormat(item.metricValueAtCreation)
-                        }
-                        Text(
-                            text = "Vid skapande: $valueAtCreationText",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                // Target text - aligned to the right
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End
-                ) {
                     Text(
                         text = "Mål: $directionText $targetValueText",
                         style = MaterialTheme.typography.bodyMedium,
@@ -196,6 +189,24 @@ fun MetricAlertCard(
                             MaterialTheme.colorScheme.onSurfaceVariant
                         }
                     )
+                }
+
+                // Visa värde vid skapande om det finns
+                if (hasValueAtCreation) {
+                    val valueAtCreationText = when (keyMetrics.metricType) {
+                        WatchType.MetricType.DIVIDEND_YIELD -> "${priceFormat(item.metricValueAtCreation)}%"
+                        else -> priceFormat(item.metricValueAtCreation)
+                    }
+                    Text(
+                        text = "Vid skapande: $valueAtCreationText",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
+                if (item.isTriggered) {
+                    Spacer(modifier = Modifier.height(6.dp))
+                    TriggeredBadge()
                 }
             }
         }

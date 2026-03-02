@@ -1,7 +1,6 @@
 package com.stockflip.ui.components.cards
 
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -14,14 +13,16 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.layout.offset
 import com.stockflip.CurrencyHelper
 import com.stockflip.WatchItem
 import com.stockflip.WatchType
 import com.stockflip.ui.components.StatusStripe
-import com.stockflip.ui.components.StockSummaryRow
 
 @Composable
 fun PriceRangeCard(
@@ -50,9 +51,7 @@ fun PriceRangeCard(
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth()
-        ) {
+        Row(modifier = Modifier.fillMaxWidth()) {
             StatusStripe(isTriggered = isTriggered)
 
             Column(
@@ -61,37 +60,52 @@ fun PriceRangeCard(
                     .padding(8.dp)
             ) {
                 val currency = CurrencyHelper.getCurrencyFromSymbol(item.ticker)
-                StockSummaryRow(
-                    companyName = item.companyName,
-                    ticker = item.ticker,
-                    price = item.currentPrice,
-                    dailyChangePercent = item.currentDailyChangePercent,
-                    currency = currency,
-                    showPrice = showPrice,
-                    action = if (showControls && onToggleActive != null) {
-                        {
-                            Switch(
-                                checked = item.isActive,
-                                onCheckedChange = { onToggleActive() },
-                                modifier = Modifier.scale(0.7f)
-                            )
-                        }
-                    } else null
-                )
-                Spacer(modifier = Modifier.height(if (showPrice) 4.dp else 2.dp))
+
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End
+                    verticalAlignment = Alignment.Top
                 ) {
-                    Text(
-                        text = "Mål: Pris mellan ${CurrencyHelper.formatPrice(priceRange.minPrice, currency)} - ${CurrencyHelper.formatPrice(priceRange.maxPrice, currency)}",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = if (isTriggered) {
-                            MaterialTheme.colorScheme.error
-                        } else {
-                            MaterialTheme.colorScheme.onSurfaceVariant
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = item.companyName ?: item.ticker ?: "",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        if (item.ticker != null) {
+                            Text(
+                                text = item.ticker,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
                         }
-                    )
+                    }
+                    if (showControls && onToggleActive != null) {
+                        Switch(
+                            checked = item.isActive,
+                            onCheckedChange = { onToggleActive() },
+                            modifier = Modifier
+                                .scale(0.7f)
+                                .offset(y = (-6).dp)
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                Text(
+                    text = "Mål: Pris mellan ${CurrencyHelper.formatPrice(priceRange.minPrice, currency)} - ${CurrencyHelper.formatPrice(priceRange.maxPrice, currency)}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = if (isTriggered) {
+                        MaterialTheme.colorScheme.error
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    }
+                )
+
+                if (item.isTriggered) {
+                    Spacer(modifier = Modifier.height(6.dp))
+                    TriggeredBadge()
                 }
             }
         }
