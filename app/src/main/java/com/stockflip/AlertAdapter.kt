@@ -19,7 +19,8 @@ class AlertAdapter(
     private val onToggleActive: (WatchItem) -> Unit,
     private val onReactivate: (WatchItem) -> Unit,
     private val onDelete: (WatchItem) -> Unit,
-    private val onEdit: (WatchItem) -> Unit
+    private val onEdit: (WatchItem) -> Unit,
+    private val useVariantBackground: Boolean = false
 ) : ListAdapter<WatchItem, AlertAdapter.AlertViewHolder>(AlertDiffCallback()) {
 
     private val priceFormat = DecimalFormat("#,##0.00", DecimalFormatSymbols(Locale("sv", "SE")))
@@ -40,13 +41,18 @@ class AlertAdapter(
         fun bind(watchItem: WatchItem) {
             composeView.setContent {
                 StockFlipTheme {
+                    val containerColor = if (useVariantBackground)
+                        androidx.compose.material3.MaterialTheme.colorScheme.surfaceVariant
+                    else
+                        androidx.compose.material3.MaterialTheme.colorScheme.surface
                     ComposeWatchItemCardWithControls(
                         item = watchItem,
                         priceFormat = { value -> priceFormat.format(value) },
                         onToggleActive = { onToggleActive(watchItem) },
                         onReactivate = { onReactivate(watchItem) },
                         onDelete = { onDelete(watchItem) },
-                        onEdit = { onEdit(watchItem) }
+                        onEdit = { onEdit(watchItem) },
+                        containerColor = containerColor
                     )
                 }
             }

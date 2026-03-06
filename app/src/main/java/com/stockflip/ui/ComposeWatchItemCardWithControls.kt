@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.ui.graphics.Color
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
@@ -38,6 +39,7 @@ fun ComposeWatchItemCardWithControls(
     onReactivate: (WatchItem) -> Unit,
     onDelete: (WatchItem) -> Unit,
     onEdit: (WatchItem) -> Unit,
+    containerColor: Color = MaterialTheme.colorScheme.surface,
     modifier: Modifier = Modifier
 ) {
     // Visa kortet med full information (inklusive status och kontroller)
@@ -48,6 +50,7 @@ fun ComposeWatchItemCardWithControls(
         showStatus = true, // Visa status i kortet
         showControls = true, // Visa kontroller i kortet
         onToggleActive = { onToggleActive(item) },
+        containerColor = containerColor,
         modifier = modifier.fillMaxWidth()
     )
 }

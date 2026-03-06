@@ -20,7 +20,10 @@ class MainViewModel(
 
     private val _watchItemUiState = MutableStateFlow<UiState<List<WatchItem>>>(UiState.Loading)
     val watchItemUiState: StateFlow<UiState<List<WatchItem>>> = _watchItemUiState.asStateFlow()
-    
+
+    private val _alertSortMode = MutableStateFlow(SortHelper.SortMode.ADDITION_ORDER)
+    val alertSortMode: StateFlow<SortHelper.SortMode> = _alertSortMode.asStateFlow()
+
     private var isRefreshing = false
 
     init {
@@ -405,6 +408,10 @@ class MainViewModel(
             Log.e(TAG, "Error deleting watch item: ${e.message}")
             _watchItemUiState.value = UiState.Error("Failed to delete watch item: ${e.message}")
         }
+    }
+
+    fun setAlertSortMode(mode: SortHelper.SortMode) {
+        _alertSortMode.value = mode
     }
 
     suspend fun toggleWatchItemActive(watchItem: WatchItem, isActive: Boolean) {

@@ -18,6 +18,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.stockflip.ui.SwipeToDeleteCallback
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.stockflip.databinding.FragmentAlertsBinding
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 
 class AlertsFragment : Fragment() {
@@ -129,7 +130,15 @@ class AlertsFragment : Fragment() {
     private fun setupObservers() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.watchItemUiState.collect { state ->
+                combine(
+                    viewModel.watchItemUiState,
+                    viewModel.alertSortMode
+                ) { state, sortMode ->
+                    when (state) {
+                        is UiState.Success -> UiState.Success(SortHelper.sortWatchItems(state.data, sortMode))
+                        else -> state
+                    }
+                }.collect { state ->
                     when (state) {
                         is UiState.Loading -> {
                             if (!binding.swipeRefreshLayout.isRefreshing) {

@@ -16,9 +16,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.foundation.layout.offset
 import com.stockflip.WatchItem
 import com.stockflip.WatchType
 import com.stockflip.ui.components.StatusStripe
@@ -32,6 +32,7 @@ fun High52wCard(
     showPrice: Boolean = true,
     onToggleActive: (() -> Unit)? = null,
     onClick: (() -> Unit)? = null,
+    containerColor: Color = MaterialTheme.colorScheme.surface,
     modifier: Modifier = Modifier
 ) {
     val athBased = item.watchType as? WatchType.ATHBased ?: return
@@ -56,7 +57,7 @@ fun High52wCard(
             containerColor = if (isTriggered)
                 MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.25f)
             else
-                MaterialTheme.colorScheme.surface
+                containerColor
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
@@ -93,7 +94,8 @@ fun High52wCard(
                             onCheckedChange = { onToggleActive() },
                             modifier = Modifier
                                 .scale(0.7f)
-                                .offset(y = (-6).dp)
+                                .align(Alignment.Top)
+                                .offset(y = (-12).dp)
                         )
                     }
                 }

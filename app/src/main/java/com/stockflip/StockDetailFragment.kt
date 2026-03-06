@@ -157,7 +157,8 @@ class StockDetailFragment : Fragment() {
             },
             onEdit = { watchItem ->
                 showEditWatchItemDialog(watchItem)
-            }
+            },
+            useVariantBackground = true
         )
 
         binding.alertsRecyclerView.apply {

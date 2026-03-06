@@ -99,7 +99,8 @@ class MainActivity : AppCompatActivity() {
 
     private enum class MainTab {
         STOCKS,
-        PAIRS
+        PAIRS,
+        ALERTS
     }
 
     private var currentMainTab: MainTab = MainTab.STOCKS
@@ -175,6 +176,7 @@ class MainActivity : AppCompatActivity() {
                     true
                 }
                 R.id.menu_alerts -> {
+                    currentMainTab = MainTab.ALERTS
                     binding.swipeRefreshLayout.visibility = View.GONE
                     binding.addPairButton.visibility = View.GONE
                     supportFragmentManager.beginTransaction()
@@ -195,14 +197,22 @@ class MainActivity : AppCompatActivity() {
         binding.topAppBar.setOnMenuItemClickListener { item ->
             when (item.itemId) {
                 R.id.menu_sort_alphabetical -> {
-                    val adapter = binding.stockPairsList.adapter as? GroupedWatchItemAdapter
-                    adapter?.setSortMode(SortHelper.SortMode.ALPHABETICAL)
+                    if (currentMainTab == MainTab.ALERTS) {
+                        viewModel.setAlertSortMode(SortHelper.SortMode.ALPHABETICAL)
+                    } else {
+                        val adapter = binding.stockPairsList.adapter as? GroupedWatchItemAdapter
+                        adapter?.setSortMode(SortHelper.SortMode.ALPHABETICAL)
+                    }
                     Toast.makeText(this, "Sortering: Bokstavsordning", Toast.LENGTH_SHORT).show()
                     true
                 }
                 R.id.menu_sort_addition -> {
-                    val adapter = binding.stockPairsList.adapter as? GroupedWatchItemAdapter
-                    adapter?.setSortMode(SortHelper.SortMode.ADDITION_ORDER)
+                    if (currentMainTab == MainTab.ALERTS) {
+                        viewModel.setAlertSortMode(SortHelper.SortMode.ADDITION_ORDER)
+                    } else {
+                        val adapter = binding.stockPairsList.adapter as? GroupedWatchItemAdapter
+                        adapter?.setSortMode(SortHelper.SortMode.ADDITION_ORDER)
+                    }
                     Toast.makeText(this, "Sortering: Tilläggsordning", Toast.LENGTH_SHORT).show()
                     true
                 }
@@ -233,6 +243,7 @@ class MainActivity : AppCompatActivity() {
         when (currentMainTab) {
             MainTab.STOCKS -> showStocksToolbar()
             MainTab.PAIRS -> showPairsToolbar()
+            MainTab.ALERTS -> showAlertsToolbar()
         }
     }
 
@@ -251,7 +262,7 @@ class MainActivity : AppCompatActivity() {
     private fun showAlertsToolbar(): Unit {
         binding.topAppBar.title = getString(R.string.tab_alerts)
         binding.topAppBar.navigationIcon = null
-        binding.topAppBar.menu.findItem(R.id.menu_sort)?.isVisible = false
+        binding.topAppBar.menu.findItem(R.id.menu_sort)?.isVisible = true
     }
 
     private fun initializeUpdates() {
@@ -351,6 +362,7 @@ class MainActivity : AppCompatActivity() {
         val filteredData: List<WatchItem> = when (currentMainTab) {
             MainTab.STOCKS -> data.filter { it.watchType !is WatchType.PricePair }
             MainTab.PAIRS -> data.filter { it.watchType is WatchType.PricePair }
+            MainTab.ALERTS -> emptyList()
         }
         Log.d(TAG, "Filtered watch items for tab $currentMainTab: ${filteredData.size}")
 
@@ -450,6 +462,7 @@ class MainActivity : AppCompatActivity() {
                 navigateToStockDetail(symbol, item.companyName)
             }
             MainTab.PAIRS -> handleEditClick(item)
+            MainTab.ALERTS -> { /* No-op, managed by AlertsFragment */ }
         }
     }
 
@@ -509,6 +522,7 @@ class MainActivity : AppCompatActivity() {
                 MainTab.PAIRS -> {
                     showAddStockPairDialog()
                 }
+                MainTab.ALERTS -> { /* No-op, button hidden */ }
             }
         }
     }

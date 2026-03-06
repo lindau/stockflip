@@ -4,8 +4,10 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.stockflip.WatchItem
 import com.stockflip.ui.components.cards.High52wCard
@@ -29,6 +31,7 @@ fun ComposeWatchItemCard(
     showStatus: Boolean = false,
     showControls: Boolean = false,
     onToggleActive: (() -> Unit)? = null,
+    containerColor: Color = MaterialTheme.colorScheme.surface,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -54,6 +57,7 @@ fun ComposeWatchItemCard(
                     showPrice = !showControls,
                     onToggleActive = onToggleActive,
                     onClick = if (showControls) onItemClick else null,
+                    containerColor = containerColor,
                     modifier = Modifier.fillMaxWidth()
                 )
             }
@@ -66,6 +70,7 @@ fun ComposeWatchItemCard(
                     showPrice = !showControls,
                     onToggleActive = onToggleActive,
                     onClick = if (showControls) onItemClick else null,
+                    containerColor = containerColor,
                     modifier = Modifier.fillMaxWidth()
                 )
             }
@@ -90,6 +95,7 @@ fun ComposeWatchItemCard(
                     showPrice = !showControls,
                     onToggleActive = onToggleActive,
                     onClick = if (showControls) onItemClick else null,
+                    containerColor = containerColor,
                     modifier = Modifier.fillMaxWidth()
                 )
             }
@@ -102,6 +108,7 @@ fun ComposeWatchItemCard(
                     showPrice = !showControls,
                     onToggleActive = onToggleActive,
                     onClick = if (showControls) onItemClick else null,
+                    containerColor = containerColor,
                     modifier = Modifier.fillMaxWidth()
                 )
             }

@@ -16,9 +16,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.foundation.layout.offset
 import com.stockflip.WatchItem
 import com.stockflip.WatchType
 import com.stockflip.ui.components.StatusStripe
@@ -32,6 +32,7 @@ fun DailyMoveCard(
     showPrice: Boolean = true,
     onToggleActive: (() -> Unit)? = null,
     onClick: (() -> Unit)? = null,
+    containerColor: Color = MaterialTheme.colorScheme.surface,
     modifier: Modifier = Modifier
 ) {
     val dailyMove = item.watchType as? WatchType.DailyMove ?: return
@@ -50,7 +51,7 @@ fun DailyMoveCard(
             .fillMaxWidth()
             .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
+            containerColor = containerColor
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
@@ -87,7 +88,8 @@ fun DailyMoveCard(
                             onCheckedChange = { onToggleActive() },
                             modifier = Modifier
                                 .scale(0.7f)
-                                .offset(y = (-6).dp)
+                                .align(Alignment.Top)
+                                .offset(y = (-12).dp)
                         )
                     }
                 }

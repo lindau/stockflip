@@ -21,7 +21,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
-import androidx.compose.foundation.layout.offset
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.stockflip.WatchItem
@@ -37,6 +36,7 @@ fun MetricAlertCard(
     showPrice: Boolean = true,
     onToggleActive: (() -> Unit)? = null,
     onClick: (() -> Unit)? = null,
+    containerColor: Color = MaterialTheme.colorScheme.surface,
     modifier: Modifier = Modifier
 ) {
     val keyMetrics = item.watchType as? WatchType.KeyMetrics ?: return
@@ -91,7 +91,7 @@ fun MetricAlertCard(
             containerColor = if (isTriggered)
                 MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.25f)
             else
-                MaterialTheme.colorScheme.surface
+                containerColor
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
@@ -129,7 +129,8 @@ fun MetricAlertCard(
                             onCheckedChange = { onToggleActive() },
                             modifier = Modifier
                                 .scale(0.7f)
-                                .offset(y = (-6).dp)
+                                .align(Alignment.Top)
+                                .offset(y = (-12).dp)
                         )
                     }
                 }
