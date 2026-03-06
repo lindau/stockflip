@@ -113,6 +113,14 @@ class AlertsFragment : Fragment() {
                         Toast.makeText(requireContext(), e.message ?: "Kunde inte ta bort bevakning", Toast.LENGTH_LONG).show()
                     }
                 }
+            },
+            onSwipedRight = { position ->
+                val item = alertAdapter.currentList.getOrNull(position) ?: return@SwipeToDeleteCallback
+                alertAdapter.notifyItemChanged(position)
+                (requireActivity() as? MainActivity)?.navigateToStockDetailFromAlerts(
+                    symbol = item.ticker ?: item.ticker1 ?: return@SwipeToDeleteCallback,
+                    companyName = item.companyName
+                )
             }
         )
         ItemTouchHelper(swipeCallback).attachToRecyclerView(binding.alertsRecyclerView)
@@ -124,7 +132,9 @@ class AlertsFragment : Fragment() {
                 viewModel.watchItemUiState.collect { state ->
                     when (state) {
                         is UiState.Loading -> {
-                            binding.alertsProgressBar.visibility = View.VISIBLE
+                            if (!binding.swipeRefreshLayout.isRefreshing) {
+                                binding.alertsProgressBar.visibility = View.VISIBLE
+                            }
                         }
                         is UiState.Success -> {
                             binding.alertsProgressBar.visibility = View.GONE

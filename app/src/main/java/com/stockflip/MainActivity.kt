@@ -206,13 +206,6 @@ class MainActivity : AppCompatActivity() {
                     Toast.makeText(this, "Sortering: Tilläggsordning", Toast.LENGTH_SHORT).show()
                     true
                 }
-                R.id.menu_sort_custom -> {
-                    val adapter = binding.stockPairsList.adapter as? GroupedWatchItemAdapter
-                    adapter?.setSortMode(SortHelper.SortMode.CUSTOM)
-                    setupDragAndDrop()
-                    Toast.makeText(this, "Sortering: Anpassningsbar (dra för att ändra ordning)", Toast.LENGTH_SHORT).show()
-                    true
-                }
                 else -> false
             }
         }
@@ -259,72 +252,6 @@ class MainActivity : AppCompatActivity() {
         binding.topAppBar.title = getString(R.string.tab_alerts)
         binding.topAppBar.navigationIcon = null
         binding.topAppBar.menu.findItem(R.id.menu_sort)?.isVisible = false
-    }
-
-    private fun setupDragAndDrop() {
-        val adapter = binding.stockPairsList.adapter as? GroupedWatchItemAdapter ?: return
-        val itemTouchHelper = androidx.recyclerview.widget.ItemTouchHelper(object : androidx.recyclerview.widget.ItemTouchHelper.SimpleCallback(
-            androidx.recyclerview.widget.ItemTouchHelper.UP or androidx.recyclerview.widget.ItemTouchHelper.DOWN,
-            0
-        ) {
-            override fun onMove(
-                recyclerView: androidx.recyclerview.widget.RecyclerView,
-                viewHolder: androidx.recyclerview.widget.RecyclerView.ViewHolder,
-                target: androidx.recyclerview.widget.RecyclerView.ViewHolder
-            ): Boolean {
-                val fromPosition = viewHolder.adapterPosition
-                val toPosition = target.adapterPosition
-                
-                if (fromPosition == androidx.recyclerview.widget.RecyclerView.NO_POSITION || 
-                    toPosition == androidx.recyclerview.widget.RecyclerView.NO_POSITION) {
-                    return false
-                }
-                
-                // Hämta aktuell lista
-                val currentList = adapter.currentList.toMutableList()
-                
-                // Flytta objekt
-                if (fromPosition < toPosition) {
-                    for (i in fromPosition until toPosition) {
-                        java.util.Collections.swap(currentList, i, i + 1)
-                    }
-                } else {
-                    for (i in fromPosition downTo toPosition + 1) {
-                        java.util.Collections.swap(currentList, i, i - 1)
-                    }
-                }
-                
-                // Uppdatera custom order baserat på nya positioner
-                val newCustomOrder = mutableMapOf<String, Int>()
-                currentList.forEachIndexed { index, item ->
-                    when (item) {
-                        is GroupedListItem.WatchItemWrapper -> {
-                            val ticker = item.item.ticker ?: item.item.ticker1 ?: ""
-                            if (ticker.isNotEmpty()) {
-                                newCustomOrder[ticker] = index
-                            }
-                        }
-                        is GroupedListItem.MultipleWatchesWrapper -> {
-                            newCustomOrder[item.symbol] = index
-                        }
-                        else -> {}
-                    }
-                }
-                
-                adapter.setCustomOrder(newCustomOrder)
-                adapter.submitList(currentList)
-                return true
-            }
-
-            override fun onSwiped(viewHolder: androidx.recyclerview.widget.RecyclerView.ViewHolder, direction: Int) {
-                // Ingen swipe-funktionalitet
-            }
-
-            override fun isLongPressDragEnabled(): Boolean {
-                return true
-            }
-        })
-        itemTouchHelper.attachToRecyclerView(binding.stockPairsList)
     }
 
     private fun initializeUpdates() {

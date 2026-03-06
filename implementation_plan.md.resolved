@@ -1,0 +1,82 @@
+# Implementation Plan - Bug Fixes and UI Polish
+
+This plan addresses several issues including missing system notifications, navigation enhancements, sorting capabilities, and UI alignment.
+
+## User Review Required
+
+> [!IMPORTANT]
+> **Sorting Button Relocation**: The plan replaces the section header collapse/expand button with the sorting button. This means sections will no longer be collapsible.
+> **Notification Logic**: I will be integrating [WatchItem](file:///Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/src/main/java/com/stockflip/WatchItem.kt#16-304) evaluation into the background [StockPriceUpdateWorker](file:///Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/src/main/java/com/stockflip/StockPriceUpdateWorker.kt#20-142). This will increase the background work load slightly as it now evaluates all active watches.
+
+## Proposed Changes
+
+### 1. Notifications Fix
+Integrate [WatchItem](file:///Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/src/main/java/com/stockflip/WatchItem.kt#16-304) alerts into the background update cycle.
+
+#### [MODIFY] [StockPriceUpdateWorker.kt](file:///Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/src/main/java/com/stockflip/StockPriceUpdateWorker.kt)
+- Fetch all active [WatchItem](file:///Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/src/main/java/com/stockflip/WatchItem.kt#16-304)s from the database.
+- Evaluate each [WatchItem](file:///Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/src/main/java/com/stockflip/WatchItem.kt#16-304) using `AlertEvaluator.evaluate`.
+- Check [canTrigger()](file:///Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/src/main/java/com/stockflip/WatchItem.kt#230-255) for spam protection.
+- Trigger system notifications for met conditions.
+- Mark triggered watches as triggered in the database.
+
+---
+
+### 2. Swipe Navigation on Alerts
+Allow users to swipe right on a watch item to go to the stock's detail page.
+
+#### [MODIFY] [SwipeToDeleteCallback.kt](file:///Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/src/main/java/com/stockflip/ui/SwipeToDeleteCallback.kt)
+- Update to support both `LEFT` (delete) and `RIGHT` (custom action) swipe directions.
+- Add a callback for `onSwipedRight`.
+
+#### [MODIFY] [AlertsFragment.kt](file:///Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/src/main/java/com/stockflip/AlertsFragment.kt)
+- Configure `SwipeToDeleteCallback` to handle right swipes.
+- On right swipe, call [navigateToStockDetailFromAlerts](file:///Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/src/main/java/com/stockflip/MainActivity.kt#548-551) on [MainActivity](file:///Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/src/main/java/com/stockflip/MainActivity.kt#57-2317).
+
+---
+
+### 3. Sorting and Header UI
+Add sorting to the Alerts page and relocate the sorting button.
+
+#### [MODIFY] [SortHelper.kt](file:///Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/src/main/java/com/stockflip/SortHelper.kt)
+- Remove `CUSTOM` sort mode and associated logic.
+
+#### [MODIFY] [GroupedWatchItemAdapter.kt](file:///Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/src/main/java/com/stockflip/GroupedWatchItemAdapter.kt)
+- Remove expansion/collapse logic and `expandedSections`.
+- Update [HeaderViewHolder](file:///Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/src/main/java/com/stockflip/GroupedWatchItemAdapter.kt#277-349) to remove the expand icon and replace it with a sorting icon (or handle it in [MainActivity](file:///Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/src/main/java/com/stockflip/MainActivity.kt#57-2317)).
+- Remove `SortMode.CUSTOM` usage.
+
+#### [MODIFY] [AlertAdapter.kt](file:///Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/src/main/java/com/stockflip/AlertAdapter.kt)
+- Add sorting logic similar to [GroupedWatchItemAdapter](file:///Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/src/main/java/com/stockflip/GroupedWatchItemAdapter.kt#53-441) but simplified for a flat list if necessary.
+
+#### [MODIFY] [MainActivity.kt](file:///Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/src/main/java/com/stockflip/MainActivity.kt)
+- Update the sorting menu in the toolbar for the Alerts tab.
+- Remove "Anpassningsbar" (Custom) sorting option from menus.
+
+---
+
+### 4. UI Polish
+Fix alignment and colors.
+
+#### [MODIFY] [fragment_alerts.xml](file:///Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/src/main/res/layout/fragment_alerts.xml) and [activity_main.xml](file:///Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/src/main/res/layout/activity_main.xml)
+- Set `ProgressBar` visibility to `GONE` during pull-to-refresh to avoid double indicators.
+
+#### [MODIFY] [MainActivity.kt](file:///Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/src/main/java/com/stockflip/MainActivity.kt)
+- Change `FloatingActionButton` (plus button) background tint to `@color/pine_primary_dark` (the bright green used in switches).
+
+#### [MODIFY] [Many files in ui/components/cards/](file:///Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/src/main/java/com/stockflip/ui/components/cards/)
+- Update [StockSummaryRow](file:///Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/src/main/java/com/stockflip/ui/components/StockSummaryRow.kt#30-102), [PriceTargetCard](file:///Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/src/main/java/com/stockflip/ui/components/cards/PriceTargetCard.kt#27-122), `MetricAlertCard`, `High52wCard`, `DailyMoveCard`, `CombinedAlertCard` to use `Alignment.Top` for right-aligned content.
+- Ensure consistent top-padding and vertical alignment across all card types.
+
+## Verification Plan
+
+### Automated Tests
+- Run `AlertEvaluatorTest` to ensure evaluation logic is still sound.
+- Create or update `StockPriceUpdateWorkerTest` to verify that notifications are triggered for [WatchItem](file:///Users/johanlindau/SynologyDrive/Kodprojekt/StockFlip/app/src/main/java/com/stockflip/WatchItem.kt#16-304)s.
+
+### Manual Verification
+1. **Notifications**: Add a watch with a condition already met (or very close), ensure it triggers a system notification when background work runs (can be forced via ADB or by shortening interval).
+2. **Swipe**: Go to "Bevakningar", swipe right on an item, verify it opens the correct stock detail page.
+3. **Sorting**: Verify sorting works on both main lists and the Alerts page. Verify "Anpassningsbar" is gone.
+4. **UI**: Check plus button color. Check card alignment (especially tickers vs prices). Verify no double indicators during refresh.
+5. **Headers**: Verify headers are no longer collapsible and the icon is changed/removed as requested.

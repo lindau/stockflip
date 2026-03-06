@@ -16,6 +16,9 @@ import kotlin.math.abs
 import kotlinx.coroutines.delay
 import androidx.work.WorkManager
 import com.stockflip.usecase.UpdateStockPairsPricesUseCase
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 class StockPriceUpdateWorker(
     private val context: Context,
@@ -53,7 +56,9 @@ class StockPriceUpdateWorker(
                 } else {
                     Log.w(TAG, "No prices were updated")
                 }
-                
+
+                evaluateWatchItemAlerts(database, yahooFinanceService)
+
                 return Result.success()
                 
             } catch (e: Exception) {
@@ -131,6 +136,107 @@ class StockPriceUpdateWorker(
         val notificationId = System.currentTimeMillis().toInt()
         notificationManager.notify(notificationId, notification)
         Log.d(TAG, "Sent notification: $title - $message")
+    }
+
+    private suspend fun evaluateWatchItemAlerts(
+        database: StockPairDatabase,
+        marketDataService: MarketDataService
+    ) {
+        val watchItemDao = database.watchItemDao()
+        val activeItems = watchItemDao.getAllWatchItems().filter { it.isActive }
+        if (activeItems.isEmpty()) return
+
+        val today = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
+
+        // Collect unique tickers and which key metrics are needed per ticker
+        val tickers = mutableSetOf<String>()
+        val keyMetricNeeds = mutableMapOf<String, MutableSet<WatchType.MetricType>>()
+        for (item in activeItems) {
+            item.ticker?.let { tickers.add(it) }
+            item.ticker1?.let { tickers.add(it) }
+            item.ticker2?.let { tickers.add(it) }
+            if (item.watchType is WatchType.KeyMetrics) {
+                val ticker = item.ticker ?: continue
+                val metricType = (item.watchType as WatchType.KeyMetrics).metricType
+                keyMetricNeeds.getOrPut(ticker) { mutableSetOf() }.add(metricType)
+            }
+        }
+
+        // Fetch market snapshots for all tickers
+        val snapshots = mutableMapOf<String, MarketSnapshot>()
+        for (ticker in tickers) {
+            try {
+                val price = marketDataService.getStockPrice(ticker)
+                val prevClose = marketDataService.getPreviousClose(ticker)
+                val week52High = marketDataService.getATH(ticker)
+                val metricsMap = mutableMapOf<AlertRule.KeyMetricType, Double>()
+                keyMetricNeeds[ticker]?.forEach { metricType ->
+                    val alertMetricType = when (metricType) {
+                        WatchType.MetricType.PE_RATIO -> AlertRule.KeyMetricType.PE_RATIO
+                        WatchType.MetricType.PS_RATIO -> AlertRule.KeyMetricType.PS_RATIO
+                        WatchType.MetricType.DIVIDEND_YIELD -> AlertRule.KeyMetricType.DIVIDEND_YIELD
+                    }
+                    marketDataService.getKeyMetric(ticker, metricType)?.let { metricsMap[alertMetricType] = it }
+                }
+                snapshots[ticker] = MarketSnapshot.forSingleStock(price, prevClose, week52High, metricsMap)
+            } catch (e: Exception) {
+                Log.w(TAG, "Failed to fetch snapshot for $ticker: ${e.message}")
+            }
+        }
+
+        // Evaluate each active watch item
+        for (item in activeItems) {
+            try {
+                if (!item.canTrigger(today)) continue
+                val triggered = evaluateWatchItem(item, snapshots) ?: continue
+                if (triggered) {
+                    val name = item.companyName ?: item.ticker ?: item.ticker1 ?: "Bevakning"
+                    showNotification("Larm triggat", name)
+                    watchItemDao.update(item.markAsTriggered(today))
+                    Log.d(TAG, "WatchItem ${item.id} triggered: $name")
+                }
+            } catch (e: Exception) {
+                Log.w(TAG, "Failed to evaluate watch item ${item.id}: ${e.message}")
+            }
+        }
+    }
+
+    private fun evaluateWatchItem(
+        item: WatchItem,
+        snapshots: Map<String, MarketSnapshot>
+    ): Boolean? {
+        return when (item.watchType) {
+            is WatchType.Combined -> {
+                val expression = AlertRuleConverter.toAlertExpression(item) ?: return null
+                ExpressionEvaluator.evaluateExpression(expression, snapshots)
+            }
+            else -> {
+                val rule = AlertRuleConverter.toAlertRule(item) ?: return null
+                when (rule) {
+                    is AlertRule.PairSpread -> {
+                        val snapshotA = snapshots[rule.symbolA] ?: return null
+                        val snapshotB = snapshots[rule.symbolB] ?: return null
+                        AlertEvaluator.evaluate(rule, snapshotA, snapshotB)
+                    }
+                    is AlertRule.SinglePrice -> {
+                        val snapshot = snapshots[rule.symbol] ?: return null
+                        AlertEvaluator.evaluate(rule, snapshot)
+                    }
+                    is AlertRule.SingleDrawdownFromHigh -> {
+                        val snapshot = snapshots[rule.symbol] ?: return null
+                        AlertEvaluator.evaluate(rule, snapshot)
+                    }
+                    is AlertRule.SingleDailyMove -> {
+                        val snapshot = snapshots[rule.symbol] ?: return null
+                        AlertEvaluator.evaluate(rule, snapshot)
+                    }
+                    is AlertRule.SingleKeyMetric -> {
+                        val snapshot = snapshots[rule.symbol] ?: return null
+                        AlertEvaluator.evaluate(rule, snapshot)
+                    }
+                }
+            }
+        }
     }
 
     companion object {

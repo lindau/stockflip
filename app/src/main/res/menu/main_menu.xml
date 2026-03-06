@@ -14,9 +14,6 @@
             <item
                 android:id="@+id/menu_sort_addition"
                 android:title="Tilläggsordning" />
-            <item
-                android:id="@+id/menu_sort_custom"
-                android:title="Anpassningsbar" />
         </menu>
     </item>
 

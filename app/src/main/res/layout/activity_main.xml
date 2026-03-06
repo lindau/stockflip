@@ -56,6 +56,7 @@
         android:layout_margin="16dp"
         android:contentDescription="Add stock pair"
         android:src="@android:drawable/ic_input_add"
+        app:backgroundTint="@color/pine_primary_dark"
         app:layout_constraintBottom_toTopOf="@id/bottomNavigation"
         app:layout_constraintEnd_toEndOf="parent" />
 
