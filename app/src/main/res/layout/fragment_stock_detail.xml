@@ -18,23 +18,26 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:paddingHorizontal="8dp"
-            android:paddingTop="8dp"
+            android:paddingTop="12dp"
             android:paddingBottom="16dp">
 
-            <!-- Stock Info Card -->
+            <!-- Stock Info Card — behåller kortstrukturen för pris + nyckeltal -->
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_marginStart="12dp"
+                android:layout_marginEnd="12dp"
                 android:layout_marginBottom="16dp"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="4dp">
+                app:cardCornerRadius="10dp"
+                app:cardElevation="0dp"
+                app:strokeWidth="1dp"
+                app:strokeColor="?attr/colorOutlineVariant">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:padding="16dp">
+                    android:padding="12dp">
 
                     <!-- Company Name with Flag -->
                     <LinearLayout
@@ -47,7 +50,7 @@
                             android:id="@+id/countryFlag"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:textSize="24sp"
+                            android:textSize="18sp"
                             android:layout_marginEnd="8dp"
                             android:text="🇸🇪"
                             tools:text="🇸🇪" />
@@ -57,8 +60,7 @@
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:textAppearance="?attr/textAppearanceHeadline5"
-                            android:textStyle="bold"
+                            android:textAppearance="?attr/textAppearanceTitleMedium"
                             android:textColor="?attr/colorOnSurface"
                             tools:text="Apple Inc." />
                     </LinearLayout>
@@ -68,15 +70,15 @@
                         android:id="@+id/symbol"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="4dp"
-                        android:textAppearance="?attr/textAppearanceBodyMedium"
+                        android:layout_marginTop="2dp"
+                        android:textAppearance="?attr/textAppearanceLabelMedium"
                         android:textColor="?attr/colorOnSurfaceVariant"
                         tools:text="AAPL" />
 
                     <com.google.android.material.divider.MaterialDivider
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginVertical="16dp" />
+                        android:layout_marginVertical="6dp" />
 
                     <!-- 2×2 Stat Grid -->
                     <LinearLayout
@@ -93,13 +95,13 @@
                             android:orientation="vertical"
                             android:layout_marginHorizontal="4dp">
 
-                            <!-- Cell 1: Senaste pris (top-left) — price always visible -->
+                            <!-- Cell 1: Senaste pris -->
                             <LinearLayout
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
                                 android:orientation="vertical"
                                 android:background="@drawable/bg_stat_cell"
-                                android:padding="12dp"
+                                android:padding="8dp"
                                 android:layout_marginBottom="8dp">
 
                                 <TextView
@@ -109,17 +111,14 @@
                                     android:textAppearance="?attr/textAppearanceLabelSmall"
                                     android:textColor="?attr/colorOnSurfaceVariant" />
 
-                                <!-- lastPrice is OUTSIDE dailyChangeRow — always visible -->
                                 <TextView
                                     android:id="@+id/lastPrice"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
                                     android:textAppearance="?attr/textAppearanceTitleMedium"
-                                    android:textStyle="bold"
                                     android:textColor="?attr/colorOnSurface"
                                     tools:text="180.50 SEK" />
 
-                                <!-- dailyChangeRow only wraps dailyChangePercent — hides when no change data -->
                                 <LinearLayout
                                     android:id="@+id/dailyChangeRow"
                                     android:layout_width="match_parent"
@@ -144,7 +143,7 @@
                                 android:layout_height="wrap_content"
                                 android:orientation="vertical"
                                 android:background="@drawable/bg_stat_cell"
-                                android:padding="12dp">
+                                android:padding="8dp">
 
                                 <TextView
                                     android:layout_width="wrap_content"
@@ -158,7 +157,6 @@
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
                                     android:textAppearance="?attr/textAppearanceTitleMedium"
-                                    android:textStyle="bold"
                                     android:textColor="?attr/colorOnSurface"
                                     tools:text="150.00 SEK" />
 
@@ -174,13 +172,13 @@
                             android:orientation="vertical"
                             android:layout_marginHorizontal="4dp">
 
-                            <!-- Cell 2: Nedgång från topp (top-right) -->
+                            <!-- Cell 2: Nedgång från topp -->
                             <LinearLayout
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
                                 android:orientation="vertical"
                                 android:background="@drawable/bg_stat_cell"
-                                android:padding="12dp"
+                                android:padding="8dp"
                                 android:layout_marginBottom="8dp">
 
                                 <TextView
@@ -195,19 +193,18 @@
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
                                     android:textAppearance="?attr/textAppearanceTitleMedium"
-                                    android:textStyle="bold"
                                     android:textColor="?attr/colorOnSurface"
                                     tools:text="9.75%" />
 
                             </LinearLayout>
 
-                            <!-- Cell 4: 52v högsta (bottom-right) -->
+                            <!-- Cell 4: 52v högsta -->
                             <LinearLayout
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
                                 android:orientation="vertical"
                                 android:background="@drawable/bg_stat_cell"
-                                android:padding="12dp">
+                                android:padding="8dp">
 
                                 <TextView
                                     android:layout_width="wrap_content"
@@ -221,7 +218,6 @@
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
                                     android:textAppearance="?attr/textAppearanceTitleMedium"
-                                    android:textStyle="bold"
                                     android:textColor="?attr/colorOnSurface"
                                     tools:text="200.00 SEK" />
 
@@ -235,133 +231,91 @@
 
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- Alerts List Card -->
-            <com.google.android.material.card.MaterialCardView
+            <!-- Bevakningar — inline sektionsetikett, inga kort-wrapper -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Bevakningar"
+                android:textAppearance="?attr/textAppearanceLabelLarge"
+                android:textColor="?attr/colorOnSurfaceVariant"
+                android:layout_marginStart="12dp"
+                android:layout_marginBottom="4dp" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/alertsRecyclerView"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="4dp">
+                android:nestedScrollingEnabled="false"
+                tools:listitem="@layout/item_alert" />
 
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:paddingHorizontal="8dp"
-                    android:paddingVertical="16dp">
+            <TextView
+                android:id="@+id/noAlertsText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Inga bevakningar för denna aktie/krypto"
+                android:textAppearance="?attr/textAppearanceBodyMedium"
+                android:textColor="?attr/colorOnSurfaceVariant"
+                android:gravity="center"
+                android:padding="16dp"
+                android:visibility="gone"
+                tools:visibility="visible" />
 
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Befintliga bevakningar"
-                        android:textAppearance="?attr/textAppearanceTitleMedium"
-                        android:textStyle="bold"
-                        android:textColor="?attr/colorOnSurface"
-                        android:layout_marginBottom="12dp" />
-
-                    <androidx.recyclerview.widget.RecyclerView
-                        android:id="@+id/alertsRecyclerView"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:nestedScrollingEnabled="false"
-                        tools:listitem="@layout/item_alert" />
-
-                    <TextView
-                        android:id="@+id/noAlertsText"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="Inga bevakningar för denna aktie/krypto"
-                        android:textAppearance="?attr/textAppearanceBodyMedium"
-                        android:textColor="?attr/colorOnSurfaceVariant"
-                        android:gravity="center"
-                        android:padding="16dp"
-                        android:visibility="gone"
-                        tools:visibility="visible" />
-
-                </LinearLayout>
-
-            </com.google.android.material.card.MaterialCardView>
-
-            <!-- Quick Actions Card -->
-            <com.google.android.material.card.MaterialCardView
+            <!-- Quick Actions — inline chiprad, ingen kort-wrapper -->
+            <LinearLayout
                 android:id="@+id/quickActionsCard"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="4dp">
+                android:orientation="vertical"
+                android:paddingHorizontal="12dp"
+                android:paddingTop="12dp"
+                android:paddingBottom="4dp">
 
-                <LinearLayout
+                <TextView
+                    android:id="@+id/addWatchHeaderText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Lägg till bevakning av"
+                    android:textAppearance="?attr/textAppearanceLabelLarge"
+                    android:textColor="?attr/colorOnSurfaceVariant"
+                    android:layout_marginBottom="6dp" />
+
+                <com.google.android.material.chip.ChipGroup
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="12dp">
+                    app:chipSpacingVertical="4dp"
+                    app:chipSpacingHorizontal="4dp">
 
-                    <TextView
-                        android:id="@+id/addWatchHeaderText"
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/createPriceTargetButton"
+                        style="@style/Widget.Material3.Chip.Assist"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Lägg till bevakning av"
-                        android:textAppearance="?attr/textAppearanceTitleMedium"
-                        android:textStyle="bold"
-                        android:textColor="?attr/colorOnSurface"
-                        android:layout_marginBottom="8dp" />
+                        android:text="Målpris" />
 
-                    <!-- Rad 1 -->
-                    <LinearLayout
-                        android:layout_width="match_parent"
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/createDrawdownButton"
+                        style="@style/Widget.Material3.Chip.Assist"
+                        android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:orientation="horizontal">
+                        android:text="Drawdown" />
 
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/createPriceTargetButton"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:layout_marginEnd="3dp"
-                            android:text="Målpris"
-                            style="@style/Widget.Material3.Button.TonalButton" />
-
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/createDrawdownButton"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:layout_marginStart="3dp"
-                            android:text="Drawdown"
-                            style="@style/Widget.Material3.Button.TonalButton" />
-
-                    </LinearLayout>
-
-                    <!-- Rad 2 -->
-                    <LinearLayout
-                        android:layout_width="match_parent"
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/createDailyMoveButton"
+                        style="@style/Widget.Material3.Chip.Assist"
+                        android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:layout_marginTop="6dp">
+                        android:text="Dagsrörelse" />
 
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/createDailyMoveButton"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:layout_marginEnd="3dp"
-                            android:text="Dagsrörelse"
-                            style="@style/Widget.Material3.Button.TonalButton" />
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/createKeyMetricsButton"
+                        style="@style/Widget.Material3.Chip.Assist"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Nyckeltal" />
 
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/createKeyMetricsButton"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:layout_marginStart="3dp"
-                            android:text="Nyckeltal"
-                            style="@style/Widget.Material3.Button.TonalButton" />
+                </com.google.android.material.chip.ChipGroup>
 
-                    </LinearLayout>
-
-                </LinearLayout>
-
-            </com.google.android.material.card.MaterialCardView>
+            </LinearLayout>
 
         </LinearLayout>
 
@@ -379,4 +333,3 @@
         tools:visibility="visible" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
-

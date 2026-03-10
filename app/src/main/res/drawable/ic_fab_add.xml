@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Bold plus icon: 4dp bar width (vs. standard 2dp) for clear visibility on teal FAB.
+     Fill is baked in as pine_on_primary_dark (#09111D) — bypasses FAB's internal icon-tint
+     override which would otherwise apply colorOnPrimaryContainer (same teal as background). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M19,14H14V19H10V14H5V10H10V5H14V10H19Z" />
+</vector>

@@ -55,7 +55,8 @@
         android:layout_height="wrap_content"
         android:layout_margin="16dp"
         android:contentDescription="Add stock pair"
-        android:src="@android:drawable/ic_input_add"
+        android:src="@drawable/ic_fab_add"
+        app:maxImageSize="28dp"
         app:backgroundTint="@color/pine_primary_dark"
         app:layout_constraintBottom_toTopOf="@id/bottomNavigation"
         app:layout_constraintEnd_toEndOf="parent" />
@@ -70,6 +71,16 @@
         app:layout_constraintBottom_toTopOf="@id/bottomNavigation"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- Tunn separator ovanför bottom nav — subtil tonalnivå-markering -->
+    <View
+        android:id="@+id/navDivider"
+        android:layout_width="0dp"
+        android:layout_height="1dp"
+        android:background="?attr/colorOutline"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/bottomNavigation" />
 
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:id="@+id/bottomNavigation"

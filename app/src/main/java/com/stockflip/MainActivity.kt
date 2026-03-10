@@ -145,6 +145,9 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setupBottomNavigation(): Unit {
+        // Pill-indikator: primaryContainer (teal-ton) för tydligare active state
+        binding.bottomNavigation.itemActiveIndicatorColor =
+            androidx.core.content.ContextCompat.getColorStateList(this, R.color.selector_bottom_nav_indicator)
         binding.bottomNavigation.setOnItemSelectedListener { item ->
             when (item.itemId) {
                 R.id.menu_stocks -> {
@@ -389,6 +392,8 @@ class MainActivity : AppCompatActivity() {
         Log.d(TAG, "Setting up RecyclerView")
         binding.stockPairsList.layoutManager = LinearLayoutManager(this)
         binding.stockPairsList.adapter = GroupedWatchItemAdapter(
+            onToggleActive = {},
+            onReactivate = {},
             onDeleteClick = { item: WatchItem -> handleDeleteClick(item) },
             onEditClick = { item: WatchItem -> handleEditClick(item) },
             onItemClick = { item: WatchItem -> handleItemClick(item) }
@@ -412,13 +417,16 @@ class MainActivity : AppCompatActivity() {
                         showDeleteStockDialog(item.symbol, item.watchCount)
                     }
                     is GroupedListItem.WatchItemWrapper -> {
+                        adapter.notifyItemChanged(position)
                         if (item.item.watchType is WatchType.PricePair) {
-                            adapter.notifyItemChanged(position)
                             showDeleteConfirmationDialog(item.item)
-                        } else {
-                            adapter.notifyItemChanged(position)
+                        } else if (item.groupPosition == com.stockflip.ui.theme.GroupPosition.ONLY) {
+                            // Enda bevakning för symbol — ta bort hela symbolen
                             val symbol = item.item.ticker ?: return@SwipeToDeleteCallback
                             showDeleteStockDialog(symbol, 1)
+                        } else {
+                            // En av flera bevakningar — ta bort bara denna enskilda bevakning
+                            showDeleteSingleWatchDialog(item.item)
                         }
                     }
                     is GroupedListItem.Header -> {}
@@ -441,6 +449,25 @@ class MainActivity : AppCompatActivity() {
                     try {
                         viewModel.deleteStockBySymbol(symbol)
                         Toast.makeText(this@MainActivity, "$symbol borttagen", Toast.LENGTH_SHORT).show()
+                    } catch (e: Exception) {
+                        Toast.makeText(this@MainActivity, "Kunde inte ta bort: ${e.message}", Toast.LENGTH_LONG).show()
+                    }
+                }
+            }
+            .setNegativeButton("Avbryt", null)
+            .show()
+    }
+
+    private fun showDeleteSingleWatchDialog(watchItem: WatchItem): Unit {
+        val label = watchItem.companyName ?: watchItem.ticker ?: "bevakning"
+        MaterialAlertDialogBuilder(this)
+            .setTitle("Ta bort bevakning")
+            .setMessage("Ta bort denna bevakning för $label?")
+            .setPositiveButton("Ta bort") { _, _ ->
+                lifecycleScope.launch {
+                    try {
+                        viewModel.deleteWatchItem(watchItem)
+                        Toast.makeText(this@MainActivity, "Bevakning borttagen", Toast.LENGTH_SHORT).show()
                     } catch (e: Exception) {
                         Toast.makeText(this@MainActivity, "Kunde inte ta bort: ${e.message}", Toast.LENGTH_LONG).show()
                     }
@@ -514,6 +541,9 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setupAddButton(): Unit {
+        // Neutralisera style-driven tint som Material FAB applicerar via setImageTintList()
+        // under initialisering — utan detta skriver colorOnPrimaryContainer (teal) över ikonfärgen.
+        binding.addPairButton.imageTintList = null
         binding.addPairButton.setOnClickListener {
             when (currentMainTab) {
                 MainTab.STOCKS -> {

@@ -614,7 +614,7 @@ class StockDetailFragment : Fragment() {
 
     private fun showEditWatchItemDialog(item: WatchItem) {
         // Dölj snabbvalen när man redigerar
-        binding.root.findViewById<com.google.android.material.card.MaterialCardView>(R.id.quickActionsCard)?.visibility = android.view.View.GONE
+        binding.root.findViewById<android.view.View>(R.id.quickActionsCard)?.visibility = android.view.View.GONE
         
         when (item.watchType) {
             is WatchType.PriceTarget -> showEditPriceTargetDialog(item)
@@ -648,7 +648,7 @@ class StockDetailFragment : Fragment() {
             .setView(dialogView)
             .setOnDismissListener {
                 // Visa snabbvalen igen när dialogen stängs
-                binding.root.findViewById<com.google.android.material.card.MaterialCardView>(R.id.quickActionsCard)?.visibility = android.view.View.VISIBLE
+                binding.root.findViewById<android.view.View>(R.id.quickActionsCard)?.visibility = android.view.View.VISIBLE
             }
             .setPositiveButton("Uppdatera") { _, _ ->
                 val targetPriceStr = targetPriceInput.text.toString()
@@ -701,7 +701,7 @@ class StockDetailFragment : Fragment() {
             .setView(dialogView)
             .setOnDismissListener {
                 // Visa snabbvalen igen när dialogen stängs
-                binding.root.findViewById<com.google.android.material.card.MaterialCardView>(R.id.quickActionsCard)?.visibility = android.view.View.VISIBLE
+                binding.root.findViewById<android.view.View>(R.id.quickActionsCard)?.visibility = android.view.View.VISIBLE
             }
             .setPositiveButton("Uppdatera") { _, _ ->
                 val minPriceStr = minPriceInput.text.toString()
@@ -762,7 +762,7 @@ class StockDetailFragment : Fragment() {
             .setView(dialogView)
             .setOnDismissListener {
                 // Visa snabbvalen igen när dialogen stängs
-                binding.root.findViewById<com.google.android.material.card.MaterialCardView>(R.id.quickActionsCard)?.visibility = android.view.View.VISIBLE
+                binding.root.findViewById<android.view.View>(R.id.quickActionsCard)?.visibility = android.view.View.VISIBLE
             }
             .setPositiveButton("Uppdatera") { _, _ ->
                 val thresholdStr = thresholdInput.text.toString()
@@ -827,7 +827,7 @@ class StockDetailFragment : Fragment() {
             .setView(dialogView)
             .setOnDismissListener {
                 // Visa snabbvalen igen när dialogen stängs
-                binding.root.findViewById<com.google.android.material.card.MaterialCardView>(R.id.quickActionsCard)?.visibility = android.view.View.VISIBLE
+                binding.root.findViewById<android.view.View>(R.id.quickActionsCard)?.visibility = android.view.View.VISIBLE
             }
             .setPositiveButton("Uppdatera") { _, _ ->
                 val dropTypeStr = dropTypeInput.text.toString()
@@ -906,7 +906,7 @@ class StockDetailFragment : Fragment() {
             .setView(dialogView)
             .setOnDismissListener {
                 // Visa snabbvalen igen när dialogen stängs
-                binding.root.findViewById<com.google.android.material.card.MaterialCardView>(R.id.quickActionsCard)?.visibility = android.view.View.VISIBLE
+                binding.root.findViewById<android.view.View>(R.id.quickActionsCard)?.visibility = android.view.View.VISIBLE
             }
             .setPositiveButton("Uppdatera") { _, _ ->
                 val metricTypeStr = metricTypeInput.text.toString()

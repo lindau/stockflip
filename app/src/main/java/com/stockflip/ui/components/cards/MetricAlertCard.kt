@@ -1,5 +1,6 @@
 package com.stockflip.ui.components.cards
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -8,11 +9,14 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
@@ -22,29 +26,39 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.stockflip.CurrencyHelper
 import com.stockflip.WatchItem
 import com.stockflip.WatchType
 import com.stockflip.ui.components.StatusStripe
+import com.stockflip.ui.components.StockSummaryRow
+import com.stockflip.ui.theme.GroupPosition
+import com.stockflip.ui.theme.LocalCardBorder
+import com.stockflip.ui.theme.LocalTextTertiary
+import com.stockflip.ui.theme.LocalTrendDown
+import com.stockflip.ui.theme.LocalTrendUp
+import com.stockflip.ui.theme.NordikNumericSecondaryStyle
+import com.stockflip.ui.theme.NordikNumericStyle
+import com.stockflip.ui.theme.groupShape
 
 @Composable
 fun MetricAlertCard(
     item: WatchItem,
     priceFormat: (Double) -> String,
+    groupPosition: GroupPosition = GroupPosition.ONLY,
     showStatus: Boolean = false,
     showControls: Boolean = false,
     showPrice: Boolean = true,
     onToggleActive: (() -> Unit)? = null,
     onClick: (() -> Unit)? = null,
     containerColor: Color = MaterialTheme.colorScheme.surface,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     val keyMetrics = item.watchType as? WatchType.KeyMetrics ?: return
 
     val metricTypeName = when (keyMetrics.metricType) {
-        WatchType.MetricType.PE_RATIO -> "P/E-tal"
-        WatchType.MetricType.PS_RATIO -> "P/S-tal"
+        WatchType.MetricType.PE_RATIO       -> "P/E"
+        WatchType.MetricType.PS_RATIO       -> "P/S"
         WatchType.MetricType.DIVIDEND_YIELD -> "Direktavkastning"
     }
 
@@ -55,12 +69,12 @@ fun MetricAlertCard(
 
     val targetValueText = when (keyMetrics.metricType) {
         WatchType.MetricType.DIVIDEND_YIELD -> "${priceFormat(keyMetrics.targetValue)}%"
-        else -> priceFormat(keyMetrics.targetValue)
+        else                                -> priceFormat(keyMetrics.targetValue)
     }
 
     val currentValueText = when (keyMetrics.metricType) {
         WatchType.MetricType.DIVIDEND_YIELD -> "${priceFormat(item.currentMetricValue)}%"
-        else -> priceFormat(item.currentMetricValue)
+        else                                -> priceFormat(item.currentMetricValue)
     }
 
     val isTriggered = item.currentMetricValue != 0.0 && when (keyMetrics.direction) {
@@ -68,13 +82,12 @@ fun MetricAlertCard(
         WatchType.PriceDirection.BELOW -> item.currentMetricValue <= keyMetrics.targetValue
     }
 
-    // Beräkna trend jämfört med värde vid skapande
     val hasValueAtCreation = item.metricValueAtCreation > 0.0
     val trendDirection = if (hasValueAtCreation && item.currentMetricValue > 0.0) {
         when {
             item.currentMetricValue > item.metricValueAtCreation -> "UP"
             item.currentMetricValue < item.metricValueAtCreation -> "DOWN"
-            else -> "SAME"
+            else                                                 -> "SAME"
         }
     } else null
 
@@ -84,17 +97,25 @@ fun MetricAlertCard(
         Pair(change, changePercent)
     } else null
 
+    val trendUp = LocalTrendUp.current
+    val trendDown = LocalTrendDown.current
+    val cardBorder = LocalCardBorder.current
+    val currency = CurrencyHelper.getCurrencyFromSymbol(item.ticker)
+    val showStockHeader = showControls || groupPosition == GroupPosition.ONLY || groupPosition == GroupPosition.FIRST
+
     Card(
         modifier = modifier
             .fillMaxWidth()
             .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier),
         colors = CardDefaults.cardColors(
-            containerColor = if (isTriggered)
-                MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.25f)
-            else
-                containerColor
+            containerColor = if (isTriggered) MaterialTheme.colorScheme.tertiaryContainer else containerColor,
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        shape = groupShape(groupPosition),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        border = BorderStroke(
+            width = 1.dp,
+            color = if (isTriggered) MaterialTheme.colorScheme.tertiary.copy(alpha = 0.35f) else cardBorder,
+        ),
     ) {
         Row(modifier = Modifier.fillMaxWidth()) {
             StatusStripe(isTriggered = isTriggered)
@@ -102,107 +123,116 @@ fun MetricAlertCard(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(8.dp)
+                    .padding(horizontal = 12.dp, vertical = if (showStockHeader) 12.dp else 8.dp),
             ) {
-                // Top row: name + toggle top-aligned
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.Top
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = item.companyName ?: item.ticker ?: "",
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        if (item.ticker != null) {
+                if (showControls) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.Top,
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = item.ticker,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                text = item.companyName ?: item.ticker ?: "",
+                                style = MaterialTheme.typography.titleMedium,
+                                color = MaterialTheme.colorScheme.onSurface,
+                            )
+                            if (item.ticker != null) {
+                                Text(
+                                    text = item.ticker,
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                        }
+                        if (onToggleActive != null) {
+                            Switch(
+                                checked = item.isActive,
+                                onCheckedChange = { onToggleActive() },
+                                modifier = Modifier
+                                    .scale(0.7f)
+                                    .align(Alignment.Top)
+                                    .offset(y = (-12).dp),
                             )
                         }
                     }
-                    if (showControls && onToggleActive != null) {
-                        Switch(
-                            checked = item.isActive,
-                            onCheckedChange = { onToggleActive() },
-                            modifier = Modifier
-                                .scale(0.7f)
-                                .align(Alignment.Top)
-                                .offset(y = (-12).dp)
-                        )
-                    }
+                    Spacer(modifier = Modifier.height(6.dp))
+                } else if (groupPosition == GroupPosition.ONLY || groupPosition == GroupPosition.FIRST) {
+                    StockSummaryRow(
+                        companyName = item.companyName,
+                        ticker = item.ticker,
+                        price = item.currentPrice,
+                        dailyChangePercent = item.currentDailyChangePercent,
+                        currency = currency,
+                        showPrice = item.currentPrice > 0,
+                    )
+                    HorizontalDivider(
+                        modifier = Modifier.padding(vertical = 8.dp),
+                        color = MaterialTheme.colorScheme.outlineVariant,
+                    )
                 }
 
-                Spacer(modifier = Modifier.height(4.dp))
-
-                // Metric + target on same row
+                // Metric data row
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Row(
                         modifier = Modifier.weight(1f),
-                        verticalAlignment = Alignment.CenterVertically
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Text(
-                            text = "$metricTypeName: $currentValueText",
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSurface
+                            text = "$metricTypeName  ",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
-                        // Trend-indikator
+                        Text(
+                            text = currentValueText,
+                            style = NordikNumericStyle,
+                            color = MaterialTheme.colorScheme.onSurface,
+                        )
                         trendDirection?.let { direction ->
-                            Spacer(modifier = Modifier.padding(horizontal = 4.dp))
+                            val trendColor = when (direction) {
+                                "UP"   -> trendUp
+                                "DOWN" -> trendDown
+                                else   -> MaterialTheme.colorScheme.onSurfaceVariant
+                            }
+                            Spacer(modifier = Modifier.width(4.dp))
                             Icon(
                                 imageVector = when (direction) {
-                                    "UP" -> Icons.Default.ArrowUpward
-                                    "DOWN" -> Icons.Default.ArrowDownward
-                                    else -> Icons.Default.ArrowUpward
+                                    "UP"  -> Icons.Default.ArrowUpward
+                                    else  -> Icons.Default.ArrowDownward
                                 },
                                 contentDescription = null,
-                                tint = when (direction) {
-                                    "UP" -> Color(0xFF4CAF50)
-                                    "DOWN" -> Color(0xFFF44336)
-                                    else -> MaterialTheme.colorScheme.onSurfaceVariant
-                                },
-                                modifier = Modifier.padding(start = 4.dp)
+                                tint = trendColor,
+                                modifier = Modifier.size(12.dp),
                             )
                             trendChange?.let { (change, changePercent) ->
                                 Text(
                                     text = "${if (change >= 0) "+" else ""}${priceFormat(changePercent)}%",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = when (direction) {
-                                        "UP" -> Color(0xFF4CAF50)
-                                        "DOWN" -> Color(0xFFF44336)
-                                        else -> MaterialTheme.colorScheme.onSurfaceVariant
-                                    }
+                                    style = NordikNumericSecondaryStyle,
+                                    color = trendColor,
                                 )
                             }
                         }
                     }
                     Text(
                         text = "Mål: $directionText $targetValueText",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = if (isTriggered) {
-                            MaterialTheme.colorScheme.error
-                        } else {
-                            MaterialTheme.colorScheme.onSurfaceVariant
-                        }
+                        style = MaterialTheme.typography.bodySmall,
+                        color = if (isTriggered) MaterialTheme.colorScheme.tertiary
+                                else MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
 
-                // Visa värde vid skapande om det finns
                 if (hasValueAtCreation) {
                     val valueAtCreationText = when (keyMetrics.metricType) {
                         WatchType.MetricType.DIVIDEND_YIELD -> "${priceFormat(item.metricValueAtCreation)}%"
-                        else -> priceFormat(item.metricValueAtCreation)
+                        else                                -> priceFormat(item.metricValueAtCreation)
                     }
+                    Spacer(modifier = Modifier.height(2.dp))
                     Text(
                         text = "Vid skapande: $valueAtCreationText",
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = LocalTextTertiary.current,
                     )
                 }
 

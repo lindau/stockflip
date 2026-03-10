@@ -41,7 +41,7 @@ class AlertsFragment : Fragment() {
         }
     }
 
-    private lateinit var alertAdapter: AlertAdapter
+    private lateinit var groupedAdapter: GroupedWatchItemAdapter
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -59,7 +59,7 @@ class AlertsFragment : Fragment() {
     }
 
     private fun setupRecyclerView() {
-        alertAdapter = AlertAdapter(
+        groupedAdapter = GroupedWatchItemAdapter(
             onToggleActive = { watchItem ->
                 viewLifecycleOwner.lifecycleScope.launch {
                     try {
@@ -78,17 +78,24 @@ class AlertsFragment : Fragment() {
                     }
                 }
             },
-            onDelete = { watchItem ->
+            onDeleteClick = { watchItem ->
                 showDeleteConfirmation(watchItem)
             },
-            onEdit = { watchItem ->
+            onEditClick = { watchItem ->
                 (requireActivity() as? MainActivity)?.showEditDialogFromAlerts(watchItem)
+            },
+            onItemClick = { watchItem ->
+                val symbol = watchItem.ticker ?: watchItem.ticker1 ?: return@GroupedWatchItemAdapter
+                (requireActivity() as? MainActivity)?.navigateToStockDetailFromAlerts(
+                    symbol = symbol,
+                    companyName = watchItem.companyName
+                )
             }
         )
 
         binding.alertsRecyclerView.apply {
             layoutManager = LinearLayoutManager(requireContext())
-            adapter = alertAdapter
+            adapter = groupedAdapter
         }
 
         binding.swipeRefreshLayout.setOnRefreshListener {
@@ -103,12 +110,20 @@ class AlertsFragment : Fragment() {
 
         val swipeCallback = SwipeToDeleteCallback(
             context = requireContext(),
+            canSwipe = { position ->
+                groupedAdapter.currentList.getOrNull(position) is GroupedListItem.WatchItemWrapper
+            },
             onSwiped = { position ->
-                val item = alertAdapter.currentList.getOrNull(position) ?: return@SwipeToDeleteCallback
-                alertAdapter.notifyItemChanged(position)
+                val listItem = groupedAdapter.currentList.getOrNull(position) as? GroupedListItem.WatchItemWrapper
+                    ?: run {
+                        groupedAdapter.notifyItemChanged(position)
+                        return@SwipeToDeleteCallback
+                    }
+                // Återställ ItemTouchHelper-state direkt — DiffUtil animerar bort raden när Room uppdaterar
+                groupedAdapter.notifyItemChanged(position)
                 viewLifecycleOwner.lifecycleScope.launch {
                     try {
-                        viewModel.deleteWatchItem(item)
+                        viewModel.deleteWatchItem(listItem.item)
                         Toast.makeText(requireContext(), R.string.alert_deleted, Toast.LENGTH_SHORT).show()
                     } catch (e: Exception) {
                         Toast.makeText(requireContext(), e.message ?: "Kunde inte ta bort bevakning", Toast.LENGTH_LONG).show()
@@ -116,12 +131,19 @@ class AlertsFragment : Fragment() {
                 }
             },
             onSwipedRight = { position ->
-                val item = alertAdapter.currentList.getOrNull(position) ?: return@SwipeToDeleteCallback
-                alertAdapter.notifyItemChanged(position)
-                (requireActivity() as? MainActivity)?.navigateToStockDetailFromAlerts(
-                    symbol = item.ticker ?: item.ticker1 ?: return@SwipeToDeleteCallback,
-                    companyName = item.companyName
-                )
+                val listItem = groupedAdapter.currentList.getOrNull(position) as? GroupedListItem.WatchItemWrapper
+                    ?: return@SwipeToDeleteCallback
+                // Snap row back first, then navigate after animation completes
+                groupedAdapter.notifyItemChanged(position)
+                val item = listItem.item
+                val symbol = item.ticker ?: item.ticker1 ?: return@SwipeToDeleteCallback
+                val companyName = item.companyName
+                binding.alertsRecyclerView.postDelayed({
+                    (requireActivity() as? MainActivity)?.navigateToStockDetailFromAlerts(
+                        symbol = symbol,
+                        companyName = companyName
+                    )
+                }, 120)
             }
         )
         ItemTouchHelper(swipeCallback).attachToRecyclerView(binding.alertsRecyclerView)
@@ -134,11 +156,8 @@ class AlertsFragment : Fragment() {
                     viewModel.watchItemUiState,
                     viewModel.alertSortMode
                 ) { state, sortMode ->
-                    when (state) {
-                        is UiState.Success -> UiState.Success(SortHelper.sortWatchItems(state.data, sortMode))
-                        else -> state
-                    }
-                }.collect { state ->
+                    Pair(state, sortMode)
+                }.collect { (state, sortMode) ->
                     when (state) {
                         is UiState.Loading -> {
                             if (!binding.swipeRefreshLayout.isRefreshing) {
@@ -149,7 +168,7 @@ class AlertsFragment : Fragment() {
                             binding.alertsProgressBar.visibility = View.GONE
                             binding.swipeRefreshLayout.isRefreshing = false
                             val items = state.data
-                            alertAdapter.submitList(items)
+                            groupedAdapter.submitGroupedList(items, sortMode)
                             binding.emptyStateText.visibility = if (items.isEmpty()) {
                                 View.VISIBLE
                             } else {

@@ -1,5 +1,6 @@
 package com.stockflip.ui.components.cards
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -17,40 +18,48 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import androidx.compose.foundation.layout.offset
 import com.stockflip.CurrencyHelper
 import com.stockflip.WatchItem
 import com.stockflip.WatchType
 import com.stockflip.ui.components.StatusStripe
+import com.stockflip.ui.theme.GroupPosition
+import com.stockflip.ui.theme.LocalCardBorder
+import com.stockflip.ui.theme.groupShape
 
 @Composable
 fun PriceRangeCard(
     item: WatchItem,
     priceFormat: (Double) -> String,
+    groupPosition: GroupPosition = GroupPosition.ONLY,
     showStatus: Boolean = false,
     showControls: Boolean = false,
     showPrice: Boolean = true,
     onToggleActive: (() -> Unit)? = null,
     onClick: (() -> Unit)? = null,
-    modifier: Modifier = Modifier
+    containerColor: Color = MaterialTheme.colorScheme.surface,
+    modifier: Modifier = Modifier,
 ) {
     val priceRange = item.watchType as? WatchType.PriceRange ?: return
 
     val isTriggered = item.currentPrice >= priceRange.minPrice && item.currentPrice <= priceRange.maxPrice
+
+    val cardBorder = LocalCardBorder.current
 
     Card(
         modifier = modifier
             .fillMaxWidth()
             .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier),
         colors = CardDefaults.cardColors(
-            containerColor = if (isTriggered)
-                MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.25f)
-            else
-                MaterialTheme.colorScheme.surface
+            containerColor = if (isTriggered) MaterialTheme.colorScheme.tertiaryContainer else containerColor,
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        shape = groupShape(groupPosition),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        border = BorderStroke(
+            width = 1.dp,
+            color = if (isTriggered) MaterialTheme.colorScheme.tertiary.copy(alpha = 0.35f) else cardBorder,
+        ),
     ) {
         Row(modifier = Modifier.fillMaxWidth()) {
             StatusStripe(isTriggered = isTriggered)
@@ -58,26 +67,25 @@ fun PriceRangeCard(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(8.dp)
+                    .padding(12.dp),
             ) {
                 val currency = CurrencyHelper.getCurrencyFromSymbol(item.ticker)
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.Top
+                    verticalAlignment = Alignment.Top,
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
                             text = item.companyName ?: item.ticker ?: "",
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.onSurface,
                         )
                         if (item.ticker != null) {
                             Text(
                                 text = item.ticker,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
                     }
@@ -87,21 +95,19 @@ fun PriceRangeCard(
                             onCheckedChange = { onToggleActive() },
                             modifier = Modifier
                                 .scale(0.7f)
-                                .offset(y = (-6).dp)
+                                .align(Alignment.Top)
+                                .offset(y = (-12).dp),
                         )
                     }
                 }
 
-                Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(6.dp))
 
                 Text(
-                    text = "Mål: Pris mellan ${CurrencyHelper.formatPrice(priceRange.minPrice, currency)} - ${CurrencyHelper.formatPrice(priceRange.maxPrice, currency)}",
+                    text = "Mål: Pris mellan ${CurrencyHelper.formatPrice(priceRange.minPrice, currency)} – ${CurrencyHelper.formatPrice(priceRange.maxPrice, currency)}",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = if (isTriggered) {
-                        MaterialTheme.colorScheme.error
-                    } else {
-                        MaterialTheme.colorScheme.onSurfaceVariant
-                    }
+                    color = if (isTriggered) MaterialTheme.colorScheme.tertiary
+                            else MaterialTheme.colorScheme.onSurfaceVariant,
                 )
 
                 if (item.isTriggered) {

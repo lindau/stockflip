@@ -1,63 +1,63 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Pine & Sand Theme Colors - Light -->
-    <color name="pine_primary">#2F5D50</color>
+    <!-- Nordisk Precision — Light palette (View-lager) -->
+    <color name="pine_primary">#1F8A7A</color>
     <color name="pine_on_primary">#FFFFFF</color>
-    <color name="pine_primary_container">#DDEBE5</color>
-    <color name="pine_on_primary_container">#0E1F1A</color>
-    
-    <color name="sand_secondary">#6B5E4B</color>
+    <color name="pine_primary_container">#D8ECE8</color>
+    <color name="pine_on_primary_container">#10202E</color>
+
+    <color name="sand_secondary">#5E7FA3</color>
     <color name="sand_on_secondary">#FFFFFF</color>
-    <color name="sand_secondary_container">#F0E9DE</color>
-    <color name="sand_on_secondary_container">#1A1612</color>
-    
-    <color name="pine_background">#F6F2EA</color>
-    <color name="pine_on_background">#1A1612</color>
-    
-    <color name="pine_surface">#FFFCF7</color>
-    <color name="pine_on_surface">#1A1612</color>
-    <color name="pine_surface_variant">#EFE7DB</color>
-    <color name="pine_on_surface_variant">#4A4034</color>
-    
-    <color name="pine_outline">#CFC3B3</color>
-    <color name="pine_error">#B3261E</color>
+    <color name="sand_secondary_container">#EAF1F6</color>
+    <color name="sand_on_secondary_container">#10202E</color>
+
+    <color name="pine_background">#F5F8FB</color>
+    <color name="pine_on_background">#10202E</color>
+
+    <color name="pine_surface">#FFFFFF</color>
+    <color name="pine_on_surface">#10202E</color>
+    <color name="pine_surface_variant">#F0F4F8</color>
+    <color name="pine_on_surface_variant">#516273</color>
+
+    <color name="pine_outline">#D5DEE7</color>
+    <color name="pine_error">#B94A5A</color>
     <color name="pine_on_error">#FFFFFF</color>
-    <color name="pine_error_container">#F9DEDC</color>
-    <color name="pine_on_error_container">#410E0B</color>
-    
-    <!-- Dark Theme Colors - Navy Blue + Bright Green -->
-    <color name="pine_primary_dark">#2ECC71</color>
-    <color name="pine_on_primary_dark">#003912</color>
-    <color name="pine_primary_container_dark">#0A2B18</color>
-    <color name="pine_on_primary_container_dark">#A0EAB5</color>
+    <color name="pine_error_container">#F9E0E3</color>
+    <color name="pine_on_error_container">#10202E</color>
 
-    <color name="sand_secondary_dark">#8B9BB4</color>
-    <color name="sand_on_secondary_dark">#0D1426</color>
-    <color name="sand_secondary_container_dark">#1E2E44</color>
-    <color name="sand_on_secondary_container_dark">#C8D8EC</color>
+    <!-- Nordisk Precision — Dark palette (View-lager) -->
+    <color name="pine_primary_dark">#3AB7A4</color>
+    <color name="pine_on_primary_dark">#09111D</color>
+    <color name="pine_primary_container_dark">#1B3C44</color>
+    <color name="pine_on_primary_container_dark">#3AB7A4</color>
 
-    <color name="pine_background_dark">#0D1426</color>
-    <color name="pine_on_background_dark">#FFFFFF</color>
+    <color name="sand_secondary_dark">#7FA8C9</color>
+    <color name="sand_on_secondary_dark">#09111D</color>
+    <color name="sand_secondary_container_dark">#132131</color>
+    <color name="sand_on_secondary_container_dark">#B5C0CB</color>
 
-    <color name="pine_surface_dark">#192438</color>
-    <color name="pine_on_surface_dark">#FFFFFF</color>
-    <color name="pine_surface_variant_dark">#1C2840</color>
-    <color name="pine_on_surface_variant_dark">#8B9BB4</color>
+    <color name="pine_background_dark">#09111D</color>
+    <color name="pine_on_background_dark">#F2F5F7</color>
 
-    <color name="pine_outline_dark">#253347</color>
-    <color name="pine_error_dark">#FF4A4A</color>
-    <color name="pine_on_error_dark">#FFFFFF</color>
-    <color name="pine_error_container_dark">#5C1A1A</color>
-    <color name="pine_on_error_container_dark">#FFB4AB</color>
-    
+    <color name="pine_surface_dark">#101A27</color>
+    <color name="pine_on_surface_dark">#F2F5F7</color>
+    <color name="pine_surface_variant_dark">#152233</color>
+    <color name="pine_on_surface_variant_dark">#B5C0CB</color>
+
+    <color name="pine_outline_dark">#263648</color>
+    <color name="pine_error_dark">#E06C75</color>
+    <color name="pine_on_error_dark">#09111D</color>
+    <color name="pine_error_container_dark">#3D1A1D</color>
+    <color name="pine_on_error_container_dark">#E06C75</color>
+
     <!-- Legacy colors (kept for compatibility) -->
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
-    
-    <!-- Status colors -->
-    <color name="notification_highlight">#F0E9DE</color>
-    <color name="notification_active">#6B5E4B</color>
-    <color name="notification_inactive">#9E9E9E</color>
-    <color name="price_down">#B3261E</color>
-    <color name="price_up">#2F5D50</color>
+
+    <!-- Status colors — NP semantic -->
+    <color name="notification_highlight">#EAF1F6</color>
+    <color name="notification_active">#1F8A7A</color>
+    <color name="notification_inactive">#7A8897</color>
+    <color name="price_down">#B94A5A</color>
+    <color name="price_up">#238B57</color>
 </resources>

@@ -7,22 +7,30 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 
+/**
+ * Vertikal statusindikator på kortets vänsterkant.
+ *
+ * Alltid renderad med fast bredd (5 dp) för att förhindra layouthopp när triggered-tillståndet
+ * ändras. Färgen går från transparent (inaktiv) till [MaterialTheme.colorScheme.tertiary]
+ * (amber/warning) när bevakningen är utlöst — lågmält men distinkt.
+ *
+ * Intentionellt: använder tertiary (amber) snarare än error (röd) eftersom ett triggat
+ * larm inte indikerar ett fel, utan att bevakningsvillkoret är uppfyllt.
+ */
 @Composable
 fun StatusStripe(
     isTriggered: Boolean,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
-    if (isTriggered) {
-        Box(
-            modifier = modifier
-                .width(4.dp)
-                .fillMaxHeight()
-                .background(MaterialTheme.colorScheme.error)
-        )
-    } else {
-        Box(modifier = modifier.width(4.dp))
-    }
+    Box(
+        modifier = modifier
+            .width(5.dp)
+            .fillMaxHeight()
+            .background(
+                color = if (isTriggered) MaterialTheme.colorScheme.tertiary else Color.Transparent
+            )
+    )
 }
-

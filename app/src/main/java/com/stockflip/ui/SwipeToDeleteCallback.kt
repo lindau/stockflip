@@ -7,6 +7,7 @@ import android.graphics.drawable.ColorDrawable
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.color.MaterialColors
 import com.stockflip.R
 
 /**
@@ -21,8 +22,12 @@ class SwipeToDeleteCallback(
     private val onSwipedRight: ((position: Int) -> Unit)? = null
 ) : ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT or ItemTouchHelper.RIGHT) {
 
-    private val deleteBackground = ColorDrawable(Color.parseColor("#F44336"))
-    private val navigateBackground = ColorDrawable(Color.parseColor("#2196F3"))
+    private val deleteBackground = ColorDrawable(
+        MaterialColors.getColor(context, com.google.android.material.R.attr.colorError, Color.RED)
+    )
+    private val navigateBackground = ColorDrawable(
+        MaterialColors.getColor(context, com.google.android.material.R.attr.colorPrimary, Color.BLUE)
+    )
     private val deleteIcon = ContextCompat.getDrawable(context, R.drawable.ic_delete)
     private val navigateIcon = ContextCompat.getDrawable(context, R.drawable.ic_stock)
 
@@ -57,8 +62,12 @@ class SwipeToDeleteCallback(
         isCurrentlyActive: Boolean
     ) {
         val itemView = viewHolder.itemView
+        // Icon size fixed at 28dp for consistent affordance regardless of drawable intrinsic size
+        val iconSizePx = (28 * itemView.context.resources.displayMetrics.density).toInt()
+        val iconMarginV = (itemView.height - iconSizePx) / 2
+
         if (dX < 0) {
-            // Left swipe — delete (red background, trash icon on right)
+            // Left swipe — delete (red background covering full item height, trash icon on right)
             deleteBackground.setBounds(
                 itemView.right + dX.toInt(),
                 itemView.top,
@@ -68,17 +77,17 @@ class SwipeToDeleteCallback(
             deleteBackground.draw(c)
 
             deleteIcon?.let { icon ->
-                val iconMargin = (itemView.height - icon.intrinsicHeight) / 2
-                val iconTop = itemView.top + iconMargin
-                val iconLeft = itemView.right - iconMargin - icon.intrinsicWidth
-                val iconRight = itemView.right - iconMargin
-                val iconBottom = iconTop + icon.intrinsicHeight
+                val iconMarginH = iconSizePx + (8 * itemView.context.resources.displayMetrics.density).toInt()
+                val iconTop = itemView.top + iconMarginV
+                val iconLeft = itemView.right - iconMarginH
+                val iconRight = iconLeft + iconSizePx
+                val iconBottom = iconTop + iconSizePx
                 icon.setBounds(iconLeft, iconTop, iconRight, iconBottom)
                 icon.setTint(Color.WHITE)
                 icon.draw(c)
             }
         } else if (dX > 0) {
-            // Right swipe — navigate (blue background, stock icon on left)
+            // Right swipe — navigate (primary background, chart/stock icon on left)
             navigateBackground.setBounds(
                 itemView.left,
                 itemView.top,
@@ -88,11 +97,11 @@ class SwipeToDeleteCallback(
             navigateBackground.draw(c)
 
             navigateIcon?.let { icon ->
-                val iconMargin = (itemView.height - icon.intrinsicHeight) / 2
-                val iconTop = itemView.top + iconMargin
-                val iconLeft = itemView.left + iconMargin
-                val iconRight = iconLeft + icon.intrinsicWidth
-                val iconBottom = iconTop + icon.intrinsicHeight
+                val iconMarginH = (8 * itemView.context.resources.displayMetrics.density).toInt()
+                val iconTop = itemView.top + iconMarginV
+                val iconLeft = itemView.left + iconMarginH
+                val iconRight = iconLeft + iconSizePx
+                val iconBottom = iconTop + iconSizePx
                 icon.setBounds(iconLeft, iconTop, iconRight, iconBottom)
                 icon.setTint(Color.WHITE)
                 icon.draw(c)
