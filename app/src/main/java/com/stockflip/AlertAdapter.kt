@@ -25,6 +25,13 @@ class AlertAdapter(
 
     private val priceFormat = DecimalFormat("#,##0.00", DecimalFormatSymbols(Locale("sv", "SE")))
 
+    private var triggerHistory: Map<Int, List<Long>> = emptyMap()
+
+    fun updateTriggerHistory(history: Map<Int, List<Long>>) {
+        triggerHistory = history
+        notifyItemRangeChanged(0, itemCount)
+    }
+
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): AlertViewHolder {
         val composeView = ComposeView(parent.context)
         return AlertViewHolder(composeView)
@@ -52,7 +59,8 @@ class AlertAdapter(
                         onReactivate = { onReactivate(watchItem) },
                         onDelete = { onDelete(watchItem) },
                         onEdit = { onEdit(watchItem) },
-                        containerColor = containerColor
+                        containerColor = containerColor,
+                        triggerHistory = triggerHistory[watchItem.id] ?: emptyList()
                     )
                 }
             }

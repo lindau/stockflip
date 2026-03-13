@@ -24,6 +24,7 @@ import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import com.stockflip.databinding.FragmentStockDetailBinding
 import com.stockflip.repository.MetricHistoryRepository
+import com.stockflip.repository.TriggerHistoryRepository
 import com.stockflip.MetricHistoryService
 import com.stockflip.viewmodel.StockSearchViewModel
 import com.stockflip.repository.StockRepository
@@ -115,7 +116,8 @@ class StockDetailFragment : Fragment() {
                     return StockDetailViewModel(
                         database.watchItemDao(),
                         YahooFinanceService,
-                        symbol
+                        symbol,
+                        TriggerHistoryRepository(database.triggerHistoryDao())
                     ) as T
                 }
                 throw IllegalArgumentException("Unknown ViewModel class")
@@ -242,6 +244,12 @@ class StockDetailFragment : Fragment() {
                         Toast.makeText(requireContext(), state.message, Toast.LENGTH_SHORT).show()
                     }
                 }
+            }
+        }
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewModel.triggerHistoryState.collect { history ->
+                alertAdapter.updateTriggerHistory(history)
             }
         }
     }

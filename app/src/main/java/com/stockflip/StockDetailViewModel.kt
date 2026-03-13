@@ -3,6 +3,7 @@ package com.stockflip
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.stockflip.repository.TriggerHistoryRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -15,7 +16,8 @@ import kotlinx.coroutines.launch
 class StockDetailViewModel(
     private val watchItemDao: WatchItemDao,
     private val yahooFinanceService: MarketDataService,
-    private val symbol: String
+    private val symbol: String,
+    private val triggerHistoryRepository: TriggerHistoryRepository
 ) : ViewModel() {
 
     private val TAG = "StockDetailViewModel"
@@ -25,6 +27,9 @@ class StockDetailViewModel(
 
     private val _alertsState = MutableStateFlow<UiState<List<WatchItem>>>(UiState.Loading)
     val alertsState: StateFlow<UiState<List<WatchItem>>> = _alertsState.asStateFlow()
+
+    private val _triggerHistoryState = MutableStateFlow<Map<Int, List<Long>>>(emptyMap())
+    val triggerHistoryState: StateFlow<Map<Int, List<Long>>> = _triggerHistoryState.asStateFlow()
 
     init {
         loadStockData()
@@ -93,6 +98,10 @@ class StockDetailViewModel(
                 try {
                     val updatedAlerts = fetchPricesForItems(items)
                     _alertsState.value = UiState.Success(updatedAlerts)
+                    val history = items.associate { item ->
+                        item.id to triggerHistoryRepository.getLatest(item.id)
+                    }
+                    _triggerHistoryState.value = history
                     Log.d(TAG, "Reactive update: ${updatedAlerts.size} alerts for $symbol")
                 } catch (e: Exception) {
                     Log.e(TAG, "Error updating alerts: ${e.message}", e)

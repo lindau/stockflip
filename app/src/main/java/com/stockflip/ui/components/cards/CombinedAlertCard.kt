@@ -38,6 +38,7 @@ fun CombinedAlertCard(
     onToggleActive: (() -> Unit)? = null,
     onClick: (() -> Unit)? = null,
     containerColor: Color = MaterialTheme.colorScheme.surface,
+    triggerHistory: List<Long> = emptyList(),
     modifier: Modifier = Modifier,
 ) {
     val combined = item.watchType as? WatchType.Combined ?: return
@@ -108,6 +109,8 @@ fun CombinedAlertCard(
                         )
                     }
                 }
+
+                TriggerHistoryRow(triggerHistory)
 
                 if (item.isTriggered) {
                     Spacer(modifier = Modifier.height(6.dp))

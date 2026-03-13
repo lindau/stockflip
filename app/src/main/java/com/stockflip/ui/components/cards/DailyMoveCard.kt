@@ -41,6 +41,7 @@ fun DailyMoveCard(
     onToggleActive: (() -> Unit)? = null,
     onClick: (() -> Unit)? = null,
     containerColor: Color = MaterialTheme.colorScheme.surface,
+    triggerHistory: List<Long> = emptyList(),
     modifier: Modifier = Modifier,
 ) {
     val dailyMove = item.watchType as? WatchType.DailyMove ?: return
@@ -131,6 +132,8 @@ fun DailyMoveCard(
                     color = if (isTriggered) MaterialTheme.colorScheme.tertiary
                             else MaterialTheme.colorScheme.onSurfaceVariant,
                 )
+
+                TriggerHistoryRow(triggerHistory)
 
                 if (item.isTriggered) {
                     Spacer(modifier = Modifier.height(6.dp))

@@ -41,6 +41,7 @@ fun PairCard(
     onToggleActive: (() -> Unit)? = null,
     onClick: (() -> Unit)? = null,
     containerColor: Color = MaterialTheme.colorScheme.surface,
+    triggerHistory: List<Long> = emptyList(),
     modifier: Modifier = Modifier,
 ) {
     val pricePair = item.watchType as? WatchType.PricePair ?: return
@@ -175,6 +176,8 @@ fun PairCard(
                         }
                     }
                 }
+
+                TriggerHistoryRow(triggerHistory)
 
                 if (item.isTriggered) {
                     Spacer(modifier = Modifier.height(6.dp))

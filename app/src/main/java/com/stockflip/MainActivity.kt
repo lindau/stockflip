@@ -431,6 +431,24 @@ class MainActivity : AppCompatActivity() {
                     }
                     is GroupedListItem.Header -> {}
                 }
+            },
+            onSwipedRight = { position ->
+                val adapter = binding.stockPairsList.adapter as? GroupedWatchItemAdapter
+                    ?: return@SwipeToDeleteCallback
+                val listItem = adapter.currentList.getOrNull(position)
+                    ?: return@SwipeToDeleteCallback
+                adapter.notifyItemChanged(position) // snap back
+                val (symbol, companyName) = when (listItem) {
+                    is GroupedListItem.MultipleWatchesWrapper ->
+                        Pair(listItem.symbol, null)
+                    is GroupedListItem.WatchItemWrapper ->
+                        Pair(listItem.item.ticker ?: listItem.item.ticker1, listItem.item.companyName)
+                    else -> return@SwipeToDeleteCallback
+                }
+                if (symbol == null) return@SwipeToDeleteCallback
+                binding.stockPairsList.postDelayed({
+                    navigateToStockDetail(symbol, companyName)
+                }, 120)
             }
         )
         ItemTouchHelper(callback).attachToRecyclerView(binding.stockPairsList)

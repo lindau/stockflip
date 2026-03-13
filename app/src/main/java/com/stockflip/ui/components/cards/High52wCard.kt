@@ -41,6 +41,7 @@ fun High52wCard(
     onToggleActive: (() -> Unit)? = null,
     onClick: (() -> Unit)? = null,
     containerColor: Color = MaterialTheme.colorScheme.surface,
+    triggerHistory: List<Long> = emptyList(),
     modifier: Modifier = Modifier,
 ) {
     val athBased = item.watchType as? WatchType.ATHBased ?: return
@@ -134,6 +135,8 @@ fun High52wCard(
                     color = if (isTriggered) MaterialTheme.colorScheme.tertiary
                             else MaterialTheme.colorScheme.onSurfaceVariant,
                 )
+
+                TriggerHistoryRow(triggerHistory)
 
                 if (item.isTriggered) {
                     Spacer(modifier = Modifier.height(6.dp))

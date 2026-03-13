@@ -1,15 +1,21 @@
 package com.stockflip.ui.components.cards
 
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.stockflip.WatchItem
 import com.stockflip.ui.theme.LocalOnTriggeredBadge
 import com.stockflip.ui.theme.LocalTriggeredBadge
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 /**
  * Hjälpfunktioner för kortkomponenter.
@@ -20,6 +26,25 @@ internal fun formatAlertStatus(watchItem: WatchItem): String {
         watchItem.isTriggered -> "Status: Triggad (${watchItem.lastTriggeredDate ?: "idag"})"
         else -> "Status: Aktiv"
     }
+}
+
+/**
+ * Kompakt textrad med de senaste utlösningstidpunkterna för en bevakning.
+ * Visas bara om listan inte är tom.
+ */
+@Composable
+internal fun TriggerHistoryRow(timestamps: List<Long>) {
+    if (timestamps.isEmpty()) return
+    val format = remember { SimpleDateFormat("d MMM", Locale("sv", "SE")) }
+    val dateStr = remember(timestamps) {
+        timestamps.take(5).joinToString(" · ") { format.format(Date(it)) }
+    }
+    Spacer(modifier = Modifier.height(4.dp))
+    Text(
+        text = "Utlöst: $dateStr",
+        style = MaterialTheme.typography.labelSmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
 }
 
 /**

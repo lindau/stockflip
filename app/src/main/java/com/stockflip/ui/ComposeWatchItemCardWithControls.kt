@@ -40,6 +40,7 @@ fun ComposeWatchItemCardWithControls(
     onDelete: (WatchItem) -> Unit,
     onEdit: (WatchItem) -> Unit,
     containerColor: Color = MaterialTheme.colorScheme.surface,
+    triggerHistory: List<Long> = emptyList(),
     modifier: Modifier = Modifier
 ) {
     // Visa kortet med full information (inklusive status och kontroller)
@@ -51,6 +52,7 @@ fun ComposeWatchItemCardWithControls(
         showControls = true, // Visa kontroller i kortet
         onToggleActive = { onToggleActive(item) },
         containerColor = containerColor,
+        triggerHistory = triggerHistory,
         modifier = modifier.fillMaxWidth()
     )
 }

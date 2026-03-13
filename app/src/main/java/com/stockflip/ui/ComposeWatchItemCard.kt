@@ -36,6 +36,7 @@ fun ComposeWatchItemCard(
     showControls: Boolean = false,
     onToggleActive: (() -> Unit)? = null,
     containerColor: Color = MaterialTheme.colorScheme.surface,
+    triggerHistory: List<Long> = emptyList(),
     modifier: Modifier = Modifier,
 ) {
     // Vertical outer padding: group items connect tightly — only ONLY/FIRST get top spacing,
@@ -59,6 +60,7 @@ fun ComposeWatchItemCard(
                     onToggleActive = onToggleActive,
                     onClick = if (showControls) onItemClick else null,
                     containerColor = containerColor,
+                    triggerHistory = triggerHistory,
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
@@ -73,6 +75,7 @@ fun ComposeWatchItemCard(
                     onToggleActive = onToggleActive,
                     onClick = if (showControls) onItemClick else null,
                     containerColor = containerColor,
+                    triggerHistory = triggerHistory,
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
@@ -87,6 +90,7 @@ fun ComposeWatchItemCard(
                     onToggleActive = onToggleActive,
                     onClick = if (showControls) onItemClick else null,
                     containerColor = containerColor,
+                    triggerHistory = triggerHistory,
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
@@ -101,6 +105,7 @@ fun ComposeWatchItemCard(
                     onToggleActive = onToggleActive,
                     onClick = if (showControls) onItemClick else null,
                     containerColor = containerColor,
+                    triggerHistory = triggerHistory,
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
@@ -115,6 +120,7 @@ fun ComposeWatchItemCard(
                     onToggleActive = onToggleActive,
                     onClick = if (showControls) onItemClick else null,
                     containerColor = containerColor,
+                    triggerHistory = triggerHistory,
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
@@ -129,6 +135,7 @@ fun ComposeWatchItemCard(
                     onToggleActive = onToggleActive,
                     onClick = if (showControls) onItemClick else null,
                     containerColor = containerColor,
+                    triggerHistory = triggerHistory,
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
@@ -142,6 +149,7 @@ fun ComposeWatchItemCard(
                     onToggleActive = onToggleActive,
                     onClick = if (showControls) onItemClick else null,
                     containerColor = containerColor,
+                    triggerHistory = triggerHistory,
                     modifier = Modifier.fillMaxWidth(),
                 )
             }

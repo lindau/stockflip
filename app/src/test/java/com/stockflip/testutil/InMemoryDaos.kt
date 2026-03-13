@@ -2,6 +2,8 @@ package com.stockflip.testutil
 
 import com.stockflip.StockPair
 import com.stockflip.StockPairDao
+import com.stockflip.TriggerHistoryDao
+import com.stockflip.TriggerHistoryEntity
 import com.stockflip.WatchItem
 import com.stockflip.WatchItemDao
 import kotlinx.coroutines.flow.Flow
@@ -65,5 +67,22 @@ class InMemoryWatchItemDao(
     }
 
     override suspend fun getWatchItemById(id: Int): WatchItem? = state.value.firstOrNull { it.id == id }
+}
+
+class InMemoryTriggerHistoryDao : TriggerHistoryDao {
+    private val entries = mutableListOf<TriggerHistoryEntity>()
+
+    override suspend fun insert(entity: TriggerHistoryEntity) {
+        if (entries.none { it.id == entity.id }) entries.add(entity)
+    }
+
+    override suspend fun getLatest(id: Int, limit: Int): List<TriggerHistoryEntity> =
+        entries.filter { it.watchItemId == id }
+            .sortedByDescending { it.triggeredAt }
+            .take(limit)
+
+    override suspend fun deleteOlderThan(before: Long) {
+        entries.removeAll { it.triggeredAt < before }
+    }
 }
 

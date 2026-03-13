@@ -9,8 +9,8 @@ import androidx.room.TypeConverters
 import androidx.sqlite.db.SupportSQLiteDatabase
 
 @Database(
-    entities = [StockPair::class, WatchItem::class, MetricHistoryEntity::class],
-    version = 8,
+    entities = [StockPair::class, WatchItem::class, MetricHistoryEntity::class, TriggerHistoryEntity::class],
+    version = 9,
     exportSchema = true
 )
 @TypeConverters(WatchTypeConverter::class)
@@ -18,6 +18,7 @@ abstract class StockPairDatabase : RoomDatabase() {
     abstract fun stockPairDao(): StockPairDao
     abstract fun watchItemDao(): WatchItemDao
     abstract fun metricHistoryDao(): MetricHistoryDao
+    abstract fun triggerHistoryDao(): TriggerHistoryDao
 
     companion object {
         private val MIGRATION_4_5 = object : Migration(4, 5) {
@@ -160,6 +161,20 @@ abstract class StockPairDatabase : RoomDatabase() {
             }
         }
 
+        private val MIGRATION_8_9 = object : Migration(8, 9) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL("""
+                    CREATE TABLE IF NOT EXISTS trigger_history (
+                        id TEXT NOT NULL PRIMARY KEY,
+                        watchItemId INTEGER NOT NULL,
+                        triggeredAt INTEGER NOT NULL
+                    )
+                """)
+                database.execSQL("CREATE INDEX IF NOT EXISTS `index_trigger_history_watchItemId` ON `trigger_history` (`watchItemId`)")
+                database.execSQL("CREATE INDEX IF NOT EXISTS `index_trigger_history_triggeredAt` ON `trigger_history` (`triggeredAt`)")
+            }
+        }
+
         @Volatile
         private var INSTANCE: StockPairDatabase? = null
 
@@ -170,7 +185,7 @@ abstract class StockPairDatabase : RoomDatabase() {
                     StockPairDatabase::class.java,
                     "stock_pair_database"
                 )
-                .addMigrations(MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8)
+                .addMigrations(MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9)
                 .fallbackToDestructiveMigrationOnDowngrade()
                 .addCallback(object : RoomDatabase.Callback() {
                     override fun onOpen(db: SupportSQLiteDatabase) {

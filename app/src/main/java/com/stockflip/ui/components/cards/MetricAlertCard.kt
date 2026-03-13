@@ -52,6 +52,7 @@ fun MetricAlertCard(
     onToggleActive: (() -> Unit)? = null,
     onClick: (() -> Unit)? = null,
     containerColor: Color = MaterialTheme.colorScheme.surface,
+    triggerHistory: List<Long> = emptyList(),
     modifier: Modifier = Modifier,
 ) {
     val keyMetrics = item.watchType as? WatchType.KeyMetrics ?: return
@@ -235,6 +236,8 @@ fun MetricAlertCard(
                         color = LocalTextTertiary.current,
                     )
                 }
+
+                TriggerHistoryRow(triggerHistory)
 
                 if (item.isTriggered) {
                     Spacer(modifier = Modifier.height(6.dp))

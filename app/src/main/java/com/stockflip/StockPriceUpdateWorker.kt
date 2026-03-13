@@ -15,6 +15,7 @@ import kotlinx.coroutines.withContext
 import kotlin.math.abs
 import kotlinx.coroutines.delay
 import androidx.work.WorkManager
+import com.stockflip.repository.TriggerHistoryRepository
 import com.stockflip.usecase.UpdateStockPairsPricesUseCase
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -143,6 +144,7 @@ class StockPriceUpdateWorker(
         marketDataService: MarketDataService
     ) {
         val watchItemDao = database.watchItemDao()
+        val triggerHistoryRepository = TriggerHistoryRepository(database.triggerHistoryDao())
         val activeItems = watchItemDao.getAllWatchItems().filter { it.isActive }
         if (activeItems.isEmpty()) return
 
@@ -193,6 +195,7 @@ class StockPriceUpdateWorker(
                     val name = item.companyName ?: item.ticker ?: item.ticker1 ?: "Bevakning"
                     showNotification("Larm triggat", name)
                     watchItemDao.update(item.markAsTriggered(today))
+                    triggerHistoryRepository.record(item.id)
                     Log.d(TAG, "WatchItem ${item.id} triggered: $name")
                 }
             } catch (e: Exception) {
