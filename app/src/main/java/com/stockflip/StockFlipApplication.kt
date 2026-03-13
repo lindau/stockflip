@@ -14,5 +14,6 @@ class StockFlipApplication : Application() {
             .build()
             
         WorkManager.initialize(this, config)
+        StockPriceUpdater.startPeriodicUpdate(this)
     }
 } 

@@ -46,7 +46,6 @@ import com.stockflip.ui.presets.PresetType
 import android.widget.ProgressBar
 import androidx.cardview.widget.CardView
 import androidx.recyclerview.widget.ItemTouchHelper
-import androidx.work.WorkManager
 import com.stockflip.ui.SwipeToDeleteCallback
 
 /**
@@ -269,10 +268,11 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun initializeUpdates() {
-        WorkManager.getInstance(this).cancelAllWork()
+        StockPriceUpdater.startPeriodicUpdate(this)
     }
 
     private fun requestPermissions() {
+        StockPriceUpdater.requestBatteryOptimizationExemption(this)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             requestNotificationPermission()
         }
