@@ -184,6 +184,7 @@ class AlertsFragment : Fragment() {
                             if (!binding.swipeRefreshLayout.isRefreshing) {
                                 binding.skeletonLoadingView.visibility = View.VISIBLE
                             }
+                            binding.sortModeLabel.visibility = View.GONE
                         }
                         is UiState.Success -> {
                             binding.skeletonLoadingView.visibility = View.GONE
@@ -195,12 +196,23 @@ class AlertsFragment : Fragment() {
                             } else {
                                 View.GONE
                             }
+                            // Update sort mode label
+                            when (sortMode) {
+                                SortHelper.SortMode.ALPHABETICAL -> {
+                                    binding.sortModeLabel.text = "Sorterat: Bokstavsordning"
+                                    binding.sortModeLabel.visibility = View.VISIBLE
+                                }
+                                SortHelper.SortMode.ADDITION_ORDER -> {
+                                    binding.sortModeLabel.visibility = View.GONE
+                                }
+                            }
                         }
                         is UiState.Error -> {
                             binding.skeletonLoadingView.visibility = View.GONE
                             binding.swipeRefreshLayout.isRefreshing = false
                             binding.emptyStateContainer.visibility = View.VISIBLE
                             binding.emptyStateText.text = state.message
+                            binding.sortModeLabel.visibility = View.GONE
                         }
                     }
                 }
