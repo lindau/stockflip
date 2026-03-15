@@ -46,7 +46,6 @@ fun ComposeWatchItemCard(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .alpha(if (item.isActive) 1f else 0.45f)
             .clickable(onClick = onItemClick)
             .padding(start = NP.cardOuterH, end = NP.cardOuterH, top = paddingTop, bottom = paddingBottom),
     ) {

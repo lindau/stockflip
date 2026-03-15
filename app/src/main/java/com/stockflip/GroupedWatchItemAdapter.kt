@@ -170,13 +170,14 @@ class GroupedWatchItemAdapter(
      */
     private fun buildFilteredList(items: List<WatchItem>) {
         val groupedList = mutableListOf<GroupedListItem>()
+        val activeItems = items.filter { it.isActive }
 
         // Separate PricePairs (they have two stocks, handle separately)
-        val pricePairs = items.filter { it.watchType is WatchType.PricePair }
+        val pricePairs = activeItems.filter { it.watchType is WatchType.PricePair }
         val sortedPricePairs = SortHelper.sortWatchItems(pricePairs, sortMode)
 
         // Group single-stock items by ticker (inklusive Combined)
-        val singleStockItems = items.filter {
+        val singleStockItems = activeItems.filter {
             it.watchType !is WatchType.PricePair && it.ticker != null
         }
 

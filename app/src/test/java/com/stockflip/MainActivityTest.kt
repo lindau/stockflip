@@ -205,7 +205,7 @@ class MainActivityTest {
             // Set up expectations
             every { input.id } returns 1
             every { input.threshold = any() } just Runs
-            every { input.setAdapter(any()) } just Runs
+            every { input.setAdapter(any<ArrayAdapter<*>>()) } just Runs
             every { input.text } returns mockk {
                 every { isNotEmpty() } returns true
                 every { toString() } returns "AAPL"

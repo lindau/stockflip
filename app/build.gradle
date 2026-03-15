@@ -1,12 +1,12 @@
 plugins {
     id 'com.android.application'
-    id 'org.jetbrains.kotlin.android'
-    id 'kotlin-kapt'
+    id 'com.google.devtools.ksp'
+    id 'org.jetbrains.kotlin.plugin.compose'
 }
 
 android {
-    namespace 'com.stockflip'
-    compileSdk 35
+    namespace = 'com.stockflip'
+    compileSdk = 35
 
     defaultConfig {
         applicationId "com.stockflip"
@@ -26,18 +26,6 @@ android {
         def finnhubApiKey = localProperties.getProperty("FINNHUB_API_KEY", "")
         buildConfigField "String", "FINNHUB_API_KEY", "\"$finnhubApiKey\""
 
-        // Room schema export - configured in kapt block below
-        // Also configure for javaCompileOptions for compatibility
-        javaCompileOptions {
-            annotationProcessorOptions {
-                arguments += [
-                    "room.schemaLocation": "$projectDir/schemas".toString(),
-                    "room.incremental": "true",
-                    "room.expandProjection": "true"
-                ]
-            }
-        }
-        
         testOptions {
             unitTests {
                 returnDefaultValues = true
@@ -58,45 +46,18 @@ android {
         targetCompatibility JavaVersion.VERSION_17
     }
     
-    kotlinOptions {
-        jvmTarget = '17'
-    }
-    
     buildFeatures {
-        viewBinding true
-        buildConfig true
-        compose true
+        viewBinding = true
+        buildConfig = true
+        compose = true
     }
-    
-    composeOptions {
-        kotlinCompilerExtensionVersion = '1.5.14'
-    }
+
 }
 
-// Configure kapt (Kotlin Annotation Processing Tool) for Room
-// 
-// IMPORTANT: You may see warnings about unrecognized options when compiling androidTest:
-// "warning: The following options were not recognized by any processor: '[room.schemaLocation, ...]'"
-//
-// This warning is EXPECTED and HARMLESS. It occurs because:
-// 1. Room processor only runs when there are Room entities (@Entity, @Dao, @Database) to process
-// 2. androidTest variant doesn't contain any Room entities, so the processor doesn't run
-// 3. kapt still passes Room options to the processor, which then warns about unused options
-//
-// This warning does NOT affect:
-// - App functionality
-// - Room database operations
-// - Test execution
-// - Build process
-//
-// The warning can be safely ignored. It's a known limitation of kapt + Room + androidTest.
-kapt {
-    arguments {
-        arg("room.schemaLocation", "$projectDir/schemas")
-        arg("room.incremental", "true")
-        arg("room.expandProjection", "true")
-    }
-    correctErrorTypes = true
+ksp {
+    arg("room.schemaLocation", "$projectDir/schemas")
+    arg("room.incremental", "true")
+    arg("room.expandProjection", "true")
 }
 
 dependencies {
@@ -110,8 +71,8 @@ dependencies {
     implementation 'androidx.lifecycle:lifecycle-livedata-ktx:2.8.7'
     implementation 'androidx.fragment:fragment-ktx:1.8.5'
     implementation 'androidx.work:work-runtime-ktx:2.9.1'
-    implementation 'androidx.room:room-runtime:2.6.1'
-    implementation 'androidx.room:room-ktx:2.6.1'
+    implementation 'androidx.room:room-runtime:2.7.0-alpha11'
+    implementation 'androidx.room:room-ktx:2.7.0-alpha11'
     implementation 'com.squareup.retrofit2:retrofit:2.11.0'
     implementation 'com.squareup.retrofit2:converter-gson:2.11.0'
     implementation 'com.squareup.okhttp3:okhttp:4.12.0'
@@ -132,7 +93,7 @@ dependencies {
     implementation 'androidx.compose.runtime:runtime-livedata'
     debugImplementation 'androidx.compose.ui:ui-tooling'
     
-    kapt 'androidx.room:room-compiler:2.6.1'
+    ksp 'androidx.room:room-compiler:2.7.0-alpha11'
     androidTestImplementation 'androidx.work:work-testing:2.9.0'
     testImplementation 'junit:junit:4.13.2'
     testImplementation 'org.jetbrains.kotlin:kotlin-reflect:1.9.22'
