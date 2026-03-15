@@ -15,9 +15,6 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.color.MaterialColors
 import com.stockflip.databinding.ItemStockPairBinding
-import java.text.DecimalFormat
-import java.text.DecimalFormatSymbols
-import java.util.Locale
 import kotlin.math.abs
 
 class StockPairAdapter(
@@ -25,7 +22,6 @@ class StockPairAdapter(
     private val onEditClick: (StockPair) -> Unit
 ) : ListAdapter<StockPair, StockPairAdapter.ViewHolder>(StockPairDiffCallback()) {
 
-    private val priceFormat = DecimalFormat("#,##0.00", DecimalFormatSymbols(Locale("sv", "SE")))
     private val highlightedPairs = mutableSetOf<Int>() // Track which pairs are highlighted
     private val PRICE_EQUALITY_THRESHOLD = 0.01
 
@@ -58,7 +54,7 @@ class StockPairAdapter(
             
             // First stock
             binding.stockNames.text = "${pair.companyName1} (${pair.ticker1})"
-            binding.priceInfo.text = "${priceFormat.format(pair.currentPrice1)} SEK"
+            binding.priceInfo.text = "${CurrencyHelper.formatDecimal(pair.currentPrice1)} SEK"
             binding.priceIndicator1.setImageResource(
                 if (pair.currentPrice1 > 0) R.drawable.ic_arrow_upward else R.drawable.ic_arrow_downward
             )
@@ -71,7 +67,7 @@ class StockPairAdapter(
 
             // Second stock
             binding.stockNames2.text = "${pair.companyName2} (${pair.ticker2})"
-            binding.priceInfo2.text = "${priceFormat.format(pair.currentPrice2)} SEK"
+            binding.priceInfo2.text = "${CurrencyHelper.formatDecimal(pair.currentPrice2)} SEK"
             binding.priceIndicator2.setImageResource(
                 if (pair.currentPrice2 > 0) R.drawable.ic_arrow_upward else R.drawable.ic_arrow_downward
             )
@@ -85,7 +81,7 @@ class StockPairAdapter(
             // Price difference and notification info
             val actualPriceDiff = abs(pair.currentPrice1 - pair.currentPrice2)
             // targetLabel is already set in XML with "Mål: "
-            binding.priceDifference.text = "Diff: ${priceFormat.format(actualPriceDiff)} SEK"
+            binding.priceDifference.text = "Diff: ${CurrencyHelper.formatDecimal(actualPriceDiff)} SEK"
             
             // Set up notification chip with improved visualization
             binding.notificationInfo.apply {
@@ -95,7 +91,7 @@ class StockPairAdapter(
                     }
                     if (pair.priceDifference > 0) {
                         if (pair.notifyWhenEqual) append("  ")  // Extra mellanrum för separation
-                        append("∆ ${priceFormat.format(pair.priceDifference)}")  // Delta-symbol för skillnad
+                        append("∆ ${CurrencyHelper.formatDecimal(pair.priceDifference)}")  // Delta-symbol för skillnad
                     }
                 }
                 
@@ -152,9 +148,9 @@ class StockPairAdapter(
         private fun buildNotificationMessage(pair: StockPair, priceDiff: Double): String {
             return when {
                 pair.notifyWhenEqual && priceDiff <= 0.01 ->
-                    "${pair.companyName1} and ${pair.companyName2} prices are now equal at ${priceFormat.format(pair.currentPrice1)} SEK"
+                    "${pair.companyName1} and ${pair.companyName2} prices are now equal at ${CurrencyHelper.formatDecimal(pair.currentPrice1)} SEK"
                 priceDiff >= pair.priceDifference ->
-                    "Price difference between ${pair.companyName1} and ${pair.companyName2} has reached ${priceFormat.format(priceDiff)} SEK"
+                    "Price difference between ${pair.companyName1} and ${pair.companyName2} has reached ${CurrencyHelper.formatDecimal(priceDiff)} SEK"
                 else -> ""
             }
         }

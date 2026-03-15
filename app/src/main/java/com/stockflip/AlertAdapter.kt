@@ -6,10 +6,8 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.stockflip.ui.ComposeWatchItemCardWithControls
+import com.stockflip.CurrencyHelper
 import com.stockflip.ui.theme.StockFlipTheme
-import java.text.DecimalFormat
-import java.text.DecimalFormatSymbols
-import java.util.Locale
 
 /**
  * Adapter för att visa alerts i StockDetailFragment.
@@ -22,8 +20,6 @@ class AlertAdapter(
     private val onEdit: (WatchItem) -> Unit,
     private val useVariantBackground: Boolean = false
 ) : ListAdapter<WatchItem, AlertAdapter.AlertViewHolder>(AlertDiffCallback()) {
-
-    private val priceFormat = DecimalFormat("#,##0.00", DecimalFormatSymbols(Locale("sv", "SE")))
 
     private var triggerHistory: Map<Int, List<Long>> = emptyMap()
 
@@ -54,7 +50,7 @@ class AlertAdapter(
                         androidx.compose.material3.MaterialTheme.colorScheme.surface
                     ComposeWatchItemCardWithControls(
                         item = watchItem,
-                        priceFormat = { value -> priceFormat.format(value) },
+                        priceFormat = { value -> CurrencyHelper.formatDecimal(value) },
                         onToggleActive = { onToggleActive(watchItem) },
                         onReactivate = { onReactivate(watchItem) },
                         onDelete = { onDelete(watchItem) },

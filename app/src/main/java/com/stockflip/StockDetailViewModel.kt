@@ -96,7 +96,9 @@ class StockDetailViewModel(
         viewModelScope.launch {
             watchItemDao.getWatchItemsBySymbolFlow(symbol).collect { items ->
                 try {
-                    val updatedAlerts = fetchPricesForItems(items.filter { it.isActive })
+                    val activeItems = fetchPricesForItems(items.filter { it.isActive })
+                    val inactiveItems = items.filter { !it.isActive }
+                    val updatedAlerts = activeItems + inactiveItems
                     _alertsState.value = UiState.Success(updatedAlerts)
                     val history = items.associate { item ->
                         item.id to triggerHistoryRepository.getLatest(item.id)

@@ -33,8 +33,6 @@ import com.google.android.material.textfield.TextInputEditText
 import com.stockflip.databinding.ActivityMainBinding
 import kotlinx.coroutines.*
 import java.text.SimpleDateFormat
-import java.text.DecimalFormat
-import java.text.DecimalFormatSymbols
 import java.util.*
 import com.stockflip.viewmodel.StockSearchViewModel
 import com.stockflip.repository.StockRepository
@@ -113,22 +111,25 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        onBackPressedDispatcher.addCallback(this, backPressCallback)
         initializeUI()
         initializeUpdates()
         requestPermissions()
         loadInitialData()
     }
 
-    @Deprecated("Deprecated in Java")
-    override fun onBackPressed() {
-        if (supportFragmentManager.backStackEntryCount > 0) {
-            supportFragmentManager.popBackStack()
-            binding.swipeRefreshLayout.visibility = View.VISIBLE
-            binding.addPairButton.visibility = View.VISIBLE
-            updateToolbarForCurrentTab()
-        } else {
-            @Suppress("DEPRECATION")
-            super.onBackPressed()
+    private val backPressCallback = object : androidx.activity.OnBackPressedCallback(true) {
+        override fun handleOnBackPressed() {
+            if (supportFragmentManager.backStackEntryCount > 0) {
+                supportFragmentManager.popBackStack()
+                binding.swipeRefreshLayout.visibility = View.VISIBLE
+                binding.addPairButton.visibility = View.VISIBLE
+                updateToolbarForCurrentTab()
+            } else {
+                isEnabled = false
+                onBackPressedDispatcher.onBackPressed()
+                isEnabled = true
+            }
         }
     }
 
@@ -1906,53 +1907,27 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showEditPriceRangeDialog(item: WatchItem) {
-        if (item.watchType !is WatchType.PriceRange) return
-        val priceRange = item.watchType
-        val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_add_price_range, null)
-        val minPriceInput = dialogView.findViewById<TextInputEditText>(R.id.minPriceInput).apply {
-            setText(priceRange.minPrice.toString())
-        }
-        val maxPriceInput = dialogView.findViewById<TextInputEditText>(R.id.maxPriceInput).apply {
-            setText(priceRange.maxPrice.toString())
-        }
-
-        MaterialAlertDialogBuilder(this)
-            .setTitle("Redigera prisintervall-bevakning")
-            .setView(dialogView)
-            .setPositiveButton("Uppdatera") { _, _ ->
-                val minPriceStr = minPriceInput.text.toString()
-                val maxPriceStr = maxPriceInput.text.toString()
-
-                if (minPriceStr.isNotEmpty() && maxPriceStr.isNotEmpty()) {
-                    val minPrice = minPriceStr.toDoubleOrNull()
-                    val maxPrice = maxPriceStr.toDoubleOrNull()
-
-                    if (minPrice != null && maxPrice != null && minPrice > 0 && maxPrice > minPrice) {
-                        lifecycleScope.launch {
-                            try {
-                                binding.progressBar.visibility = View.VISIBLE
-                                val updatedItem = item.copy(
-                                    watchType = WatchType.PriceRange(minPrice, maxPrice)
-                                )
-                                viewModel.updateWatchItem(updatedItem)
-                                viewModel.refreshWatchItems()
-                                updateLastUpdateTime()
-                                binding.progressBar.visibility = View.GONE
-                                Toast.makeText(this@MainActivity, "Prisintervall-bevakning uppdaterad", Toast.LENGTH_SHORT).show()
-                            } catch (e: Exception) {
-                                binding.progressBar.visibility = View.GONE
-                                Toast.makeText(this@MainActivity, "Kunde inte uppdatera bevakning: ${e.message}", Toast.LENGTH_LONG).show()
-                            }
-                        }
-                    } else {
-                        Toast.makeText(this, "Ange giltiga prisintervall (min < max)", Toast.LENGTH_SHORT).show()
+        com.stockflip.ui.dialogs.showEditPriceRangeDialog(
+            context = this,
+            item = item,
+            onUpdate = { minPrice, maxPrice ->
+                lifecycleScope.launch {
+                    try {
+                        binding.progressBar.visibility = View.VISIBLE
+                        val updatedItem = item.copy(watchType = WatchType.PriceRange(minPrice, maxPrice))
+                        viewModel.updateWatchItem(updatedItem)
+                        viewModel.refreshWatchItems()
+                        updateLastUpdateTime()
+                        binding.progressBar.visibility = View.GONE
+                        Toast.makeText(this@MainActivity, getString(R.string.toast_price_range_updated), Toast.LENGTH_SHORT).show()
+                    } catch (e: Exception) {
+                        binding.progressBar.visibility = View.GONE
+                        Toast.makeText(this@MainActivity, getString(R.string.toast_watch_update_failed, e.message.orEmpty()), Toast.LENGTH_LONG).show()
                     }
-                } else {
-                    Toast.makeText(this, "Fyll i alla fält", Toast.LENGTH_SHORT).show()
                 }
-            }
-            .setNegativeButton("Avbryt", null)
-            .show()
+            },
+            onDelete = null
+        )
     }
 
     private fun showEditDailyMoveDialog(item: WatchItem) {
@@ -2139,7 +2114,7 @@ class MainActivity : AppCompatActivity() {
         detailATHStockName.text = "${item.companyName ?: item.ticker} (${item.ticker})"
         
         val athInfoText = if (item.currentATH > 0.0) {
-            "ATH: ${priceFormat.format(item.currentATH)} SEK | Nedgång: ${item.formatATHDrop()}"
+            "ATH: ${CurrencyHelper.formatDecimal(item.currentATH)} SEK | Nedgång: ${item.formatATHDrop()}"
         } else {
             "ATH: Loading... | Nedgång: ${item.formatATHDrop()}"
         }
@@ -2306,7 +2281,5 @@ class MainActivity : AppCompatActivity() {
         private const val TAG = "MainActivity"
         /** Format pattern for time display */
         private const val TIME_FORMAT = "HH:mm:ss"
-        /** Price format with Swedish locale */
-        private val priceFormat = DecimalFormat("#,##0.00", DecimalFormatSymbols(Locale("sv", "SE")))
     }
 } 

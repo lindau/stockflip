@@ -36,9 +36,6 @@ import android.text.Editable
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import java.text.DecimalFormat
-import java.text.DecimalFormatSymbols
-import java.util.Locale
 
 /**
  * Fragment för att visa detaljer om en enskild aktie/krypto.
@@ -60,8 +57,6 @@ class StockDetailFragment : Fragment() {
     private lateinit var viewModel: StockDetailViewModel
     private lateinit var alertAdapter: AlertAdapter
     private lateinit var stockSearchViewModel: StockSearchViewModel
-
-    private val priceFormat = DecimalFormat("#,##0.00", DecimalFormatSymbols(Locale("sv", "SE")))
 
     companion object {
         private const val TAG = "StockDetailFragment"
@@ -314,7 +309,7 @@ class StockDetailFragment : Fragment() {
                     android.graphics.Color.parseColor("#F44336") // Red
                 }
                 binding.dailyChangePercent.setTextColor(color)
-                binding.dailyChangePercent.text = "$sign${priceFormat.format(change)}%"
+                binding.dailyChangePercent.text = "$sign${CurrencyHelper.formatDecimal(change)}%"
             }
         } else {
             binding.dailyChangeRow.visibility = android.view.View.GONE
@@ -329,7 +324,7 @@ class StockDetailFragment : Fragment() {
         } ?: "Laddar..."
         
         binding.drawdownPercent.text = data.drawdownPercent?.let {
-            "${priceFormat.format(it)}%"
+            "${CurrencyHelper.formatDecimal(it)}%"
         } ?: "Laddar..."
         val dropValue = data.drawdownPercent ?: 0.0
         val dropColor = if (dropValue > 0)
@@ -648,7 +643,7 @@ class StockDetailFragment : Fragment() {
         tickerInput.isEnabled = false
         
         val targetPriceInput = dialogView.findViewById<TextInputEditText>(R.id.targetPriceInput).apply {
-            setText(priceFormat.format(priceTarget.targetPrice))
+            setText(CurrencyHelper.formatDecimal(priceTarget.targetPrice))
         }
 
         val dialog = MaterialAlertDialogBuilder(requireContext())
@@ -688,56 +683,19 @@ class StockDetailFragment : Fragment() {
     }
 
     private fun showEditPriceRangeDialog(item: WatchItem) {
-        if (item.watchType !is WatchType.PriceRange) return
-        val priceRange = item.watchType
-        val dialogView = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_add_price_range, null)
-        val tickerInput = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.tickerInput)
-        val tickerInputLayout = tickerInput.parent as? TextInputLayout
-        tickerInputLayout?.visibility = android.view.View.GONE
-        tickerInput.setText(item.ticker ?: "")
-        tickerInput.isEnabled = false
-        
-        val minPriceInput = dialogView.findViewById<TextInputEditText>(R.id.minPriceInput).apply {
-            setText(priceFormat.format(priceRange.minPrice))
-        }
-        val maxPriceInput = dialogView.findViewById<TextInputEditText>(R.id.maxPriceInput).apply {
-            setText(priceFormat.format(priceRange.maxPrice))
-        }
-
-        val dialog = MaterialAlertDialogBuilder(requireContext())
-            .setTitle("Redigera prisintervall-bevakning")
-            .setView(dialogView)
-            .setOnDismissListener {
-                // Visa snabbvalen igen när dialogen stängs
+        com.stockflip.ui.dialogs.showEditPriceRangeDialog(
+            context = requireContext(),
+            item = item,
+            onUpdate = { minPrice, maxPrice ->
+                val updatedItem = item.copy(watchType = WatchType.PriceRange(minPrice, maxPrice))
+                viewModel.updateWatchItem(updatedItem)
+                Toast.makeText(requireContext(), getString(R.string.toast_watch_updated), Toast.LENGTH_SHORT).show()
+            },
+            onDelete = { showDeleteConfirmation(item) },
+            onDismiss = {
                 binding.root.findViewById<android.view.View>(R.id.quickActionsCard)?.visibility = android.view.View.VISIBLE
             }
-            .setPositiveButton("Uppdatera") { _, _ ->
-                val minPriceStr = minPriceInput.text.toString()
-                val maxPriceStr = maxPriceInput.text.toString()
-
-                if (minPriceStr.isNotEmpty() && maxPriceStr.isNotEmpty()) {
-                    val minPrice = minPriceStr.toDoubleOrNull()
-                    val maxPrice = maxPriceStr.toDoubleOrNull()
-
-                    if (minPrice != null && maxPrice != null && minPrice > 0 && maxPrice > minPrice) {
-                        val updatedItem = item.copy(
-                            watchType = WatchType.PriceRange(minPrice, maxPrice)
-                        )
-                        viewModel.updateWatchItem(updatedItem)
-                        Toast.makeText(requireContext(), "Bevakning uppdaterad", Toast.LENGTH_SHORT).show()
-                    } else {
-                        Toast.makeText(requireContext(), "Ange giltiga prisintervall", Toast.LENGTH_SHORT).show()
-                    }
-                } else {
-                    Toast.makeText(requireContext(), "Fyll i alla fält", Toast.LENGTH_SHORT).show()
-                }
-            }
-            .setNeutralButton("Ta bort") { _, _ ->
-                showDeleteConfirmation(item)
-            }
-            .setNegativeButton("Avbryt", null)
-            .create()
-        dialog.show()
+        )
     }
 
     private fun showEditDailyMoveDialog(item: WatchItem) {
@@ -751,7 +709,7 @@ class StockDetailFragment : Fragment() {
         tickerInput?.isEnabled = false
         
         val thresholdInput = dialogView.findViewById<TextInputEditText>(R.id.thresholdInput).apply {
-            setText(priceFormat.format(dailyMove.percentThreshold))
+            setText(CurrencyHelper.formatDecimal(dailyMove.percentThreshold))
         }
         val directionInput = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.directionInput).apply {
             setText(when (dailyMove.direction) {
@@ -823,7 +781,7 @@ class StockDetailFragment : Fragment() {
             })
         }
         val dropValueInput = dialogView.findViewById<TextInputEditText>(R.id.dropValueInput).apply {
-            setText(priceFormat.format(athBased.dropValue))
+            setText(CurrencyHelper.formatDecimal(athBased.dropValue))
         }
 
         val dropTypes = arrayOf("Procent", "Absolut (SEK)")
@@ -894,7 +852,7 @@ class StockDetailFragment : Fragment() {
             })
         }
         val targetValueInput = dialogView.findViewById<TextInputEditText>(R.id.targetValueInput).apply {
-            setText(priceFormat.format(keyMetrics.targetValue))
+            setText(CurrencyHelper.formatDecimal(keyMetrics.targetValue))
         }
 
         // History UI elements - hidden
@@ -1065,7 +1023,7 @@ class StockDetailFragment : Fragment() {
                     return@setPositiveButton
                 }
                 
-                lifecycleScope.launch {
+                viewLifecycleOwner.lifecycleScope.launch {
                     try {
                         val updatedWatchItem = watchItem.copy(
                             watchType = WatchType.Combined(newExpression),

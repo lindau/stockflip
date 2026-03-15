@@ -20,9 +20,6 @@ import com.stockflip.ui.theme.LocalPriceDown
 import com.stockflip.ui.theme.LocalPriceUp
 import com.stockflip.ui.theme.NordikNumericSecondaryStyle
 import com.stockflip.ui.theme.NordikNumericStyle
-import java.text.DecimalFormat
-import java.text.DecimalFormatSymbols
-import java.util.Locale
 
 /**
  * Summaryrad för en aktie: namn + ticker till vänster, pris + daglig förändring till höger.
@@ -44,7 +41,6 @@ fun StockSummaryRow(
     modifier: Modifier = Modifier,
     action: (@Composable () -> Unit)? = null,
 ) {
-    val priceFormat = DecimalFormat("#,##0.00", DecimalFormatSymbols(Locale("sv", "SE")))
     Row(
         modifier = modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -92,7 +88,7 @@ fun StockSummaryRow(
                             modifier = Modifier.size(14.dp),
                         )
                         Text(
-                            text = "${if (dailyChangePercent >= 0) "+" else ""}${priceFormat.format(dailyChangePercent)}%",
+                            text = "${if (dailyChangePercent >= 0) "+" else ""}${CurrencyHelper.formatDecimal(dailyChangePercent)}%",
                             style = NordikNumericSecondaryStyle,
                             color = trendColor,
                         )

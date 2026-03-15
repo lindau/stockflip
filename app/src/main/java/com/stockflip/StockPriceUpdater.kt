@@ -10,7 +10,11 @@ import android.os.Build
 import android.os.PowerManager
 import android.provider.Settings
 import android.util.Log
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.ProcessLifecycleOwner
 import androidx.work.*
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.launch
 import java.util.concurrent.TimeUnit
 
 object StockPriceUpdater {
@@ -88,17 +92,16 @@ object StockPriceUpdater {
     }
 
     private fun monitorWorkStatus(workManager: WorkManager) {
-        workManager.getWorkInfosForUniqueWorkLiveData(WORK_NAME_PERIODIC)
-            .observeForever { workInfos ->
-                workInfos?.forEach { workInfo ->
-                    Log.d(TAG, "Periodic work status: ${workInfo.state}")
-                }
+        val scope = ProcessLifecycleOwner.get().lifecycleScope
+        scope.launch {
+            workManager.getWorkInfosForUniqueWorkFlow(WORK_NAME_PERIODIC).collect { workInfos ->
+                workInfos.forEach { workInfo -> Log.d(TAG, "Periodic work status: ${workInfo.state}") }
             }
-        workManager.getWorkInfosForUniqueWorkLiveData(WORK_NAME_IMMEDIATE)
-            .observeForever { workInfos ->
-                workInfos?.forEach { workInfo ->
-                    Log.d(TAG, "Immediate work status: ${workInfo.state}")
-                }
+        }
+        scope.launch {
+            workManager.getWorkInfosForUniqueWorkFlow(WORK_NAME_IMMEDIATE).collect { workInfos ->
+                workInfos.forEach { workInfo -> Log.d(TAG, "Immediate work status: ${workInfo.state}") }
             }
+        }
     }
 } 

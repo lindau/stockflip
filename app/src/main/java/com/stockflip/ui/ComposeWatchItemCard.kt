@@ -19,18 +19,14 @@ import com.stockflip.ui.components.cards.High52wCard
 import com.stockflip.ui.components.cards.MetricAlertCard
 import com.stockflip.ui.components.cards.PairCard
 import com.stockflip.ui.components.cards.PriceRangeCard
+import com.stockflip.CurrencyHelper
 import com.stockflip.ui.components.cards.PriceTargetCard
-import java.text.DecimalFormat
-import java.text.DecimalFormatSymbols
-import java.util.Locale
 
 @Composable
 fun ComposeWatchItemCard(
     item: WatchItem,
     groupPosition: GroupPosition = GroupPosition.ONLY,
-    priceFormat: (Double) -> String = { value ->
-        DecimalFormat("#,##0.00", DecimalFormatSymbols(Locale("sv", "SE"))).format(value)
-    },
+    priceFormat: (Double) -> String = { value -> CurrencyHelper.formatDecimal(value) },
     onItemClick: () -> Unit = {},
     showStatus: Boolean = false,
     showControls: Boolean = false,
@@ -46,6 +42,7 @@ fun ComposeWatchItemCard(
     Column(
         modifier = modifier
             .fillMaxWidth()
+            .alpha(if (item.isActive) 1f else 0.5f)
             .clickable(onClick = onItemClick)
             .padding(start = NP.cardOuterH, end = NP.cardOuterH, top = paddingTop, bottom = paddingBottom),
     ) {

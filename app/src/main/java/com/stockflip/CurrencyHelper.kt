@@ -5,9 +5,21 @@ package com.stockflip
  */
 object CurrencyHelper {
     /**
+     * Formaterar ett decimaltal med svensk locale (#,##0.00).
+     * Använd för pris utan valutasymbol eller andra tal i UI.
+     *
+     * @param value Talet att formatera
+     * @return Formaterad sträng (t.ex. "123,45")
+     */
+    fun formatDecimal(value: Double): String {
+        val format = java.text.DecimalFormat("#,##0.00", java.text.DecimalFormatSymbols(java.util.Locale("sv", "SE")))
+        return format.format(value)
+    }
+
+    /**
      * Formaterar ett pris med valuta-symbol.
      * € och $ ska stå före beloppet, SEK efter.
-     * 
+     *
      * @param price Priset att formatera
      * @param currency Valuta-kod (t.ex. "SEK", "USD", "EUR")
      * @return Formaterat pris med valuta-symbol
@@ -15,8 +27,7 @@ object CurrencyHelper {
     fun formatPrice(price: Double, currency: String?): String {
         val currencyCode = currency ?: "SEK"
         val currencySymbol = getCurrencySymbol(currencyCode)
-        val priceFormat = java.text.DecimalFormat("#,##0.00", java.text.DecimalFormatSymbols(java.util.Locale("sv", "SE")))
-        val formattedPrice = priceFormat.format(price)
+        val formattedPrice = formatDecimal(price)
         
         // För USD, EUR, GBP, JPY, CNY, CHF, CAD, AUD: placera symbol före
         // För SEK, NOK, DKK och krypto: placera symbol efter

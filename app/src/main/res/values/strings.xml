@@ -24,4 +24,15 @@
     <string name="add_stock_search_hint">Sök aktie…</string>
     <string name="add_stock_empty">Inga träffar. Prova att skriva minst två tecken.</string>
     <string name="add_stock_error">Kunde inte söka aktier. Försök igen.</string>
+
+    <!-- Redigera bevakning - prisintervall -->
+    <string name="dialog_edit_price_range_title">Redigera prisintervall-bevakning</string>
+    <string name="dialog_button_update">Uppdatera</string>
+    <string name="dialog_button_cancel">Avbryt</string>
+    <string name="dialog_button_remove">Ta bort</string>
+    <string name="dialog_price_range_invalid">Ange giltiga prisintervall (min &lt; max)</string>
+    <string name="dialog_fill_all_fields">Fyll i alla fält</string>
+    <string name="toast_price_range_updated">Prisintervall-bevakning uppdaterad</string>
+    <string name="toast_watch_updated">Bevakning uppdaterad</string>
+    <string name="toast_watch_update_failed">Kunde inte uppdatera bevakning: %1$s</string>
 </resources>

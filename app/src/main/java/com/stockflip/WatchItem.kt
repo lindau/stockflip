@@ -5,9 +5,6 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 import androidx.room.Ignore
 import androidx.room.TypeConverters
-import java.text.DecimalFormat
-import java.text.DecimalFormatSymbols
-import java.util.Locale
 
 /**
  * Generic watch item that can represent different types of stock watches.
@@ -199,10 +196,10 @@ data class WatchItem(
             is WatchType.ATHBased -> {
                 when (watchType.dropType) {
                     WatchType.DropType.PERCENTAGE -> {
-                        if (currentDropPercentage > 0.0) "${priceFormat.format(currentDropPercentage)}%" else "Loading..."
+                        if (currentDropPercentage > 0.0) "${CurrencyHelper.formatDecimal(currentDropPercentage)}%" else "Loading..."
                     }
                     WatchType.DropType.ABSOLUTE -> {
-                        if (currentDropAbsolute > 0.0) "${priceFormat.format(currentDropAbsolute)} SEK" else "Loading..."
+                        if (currentDropAbsolute > 0.0) "${CurrencyHelper.formatDecimal(currentDropAbsolute)} SEK" else "Loading..."
                     }
                 }
             }
@@ -214,10 +211,10 @@ data class WatchItem(
         return when (watchType) {
             is WatchType.KeyMetrics -> {
                 when (watchType.metricType) {
-                    WatchType.MetricType.DIVIDEND_YIELD -> 
-                        if (currentMetricValue > 0.0) "${priceFormat.format(currentMetricValue)}%" else "Loading..."
-                    else -> 
-                        if (currentMetricValue > 0.0) priceFormat.format(currentMetricValue) else "Loading..."
+                    WatchType.MetricType.DIVIDEND_YIELD ->
+                        if (currentMetricValue > 0.0) "${CurrencyHelper.formatDecimal(currentMetricValue)}%" else "Loading..."
+                    else ->
+                        if (currentMetricValue > 0.0) CurrencyHelper.formatDecimal(currentMetricValue) else "Loading..."
                 }
             }
             else -> ""
@@ -225,7 +222,7 @@ data class WatchItem(
     }
 
     private fun formatPrice(price: Double): String =
-        if (price > 0.0) "${priceFormat.format(price)} SEK" else "Loading..."
+        if (price > 0.0) "${CurrencyHelper.formatDecimal(price)} SEK" else "Loading..."
 
     /**
      * Kontrollerar om alerten kan trigga baserat på spam-skydd.
@@ -287,8 +284,7 @@ data class WatchItem(
 
     companion object {
         private const val TAG = "WatchItem"
-        private val priceFormat = DecimalFormat("#,##0.00", DecimalFormatSymbols(Locale("sv", "SE")))
-        
+
         /**
          * Hämtar dagens datum i format "YYYY-MM-DD".
          */

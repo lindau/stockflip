@@ -20,10 +20,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.stockflip.CurrencyHelper
 import com.stockflip.WatchItem
-import java.text.DecimalFormat
-import java.text.DecimalFormatSymbols
-import java.util.Locale
 
 /**
  * Compose-komponent som visar ett WatchItem-kort med kontroller (toggle, delete, reactivate).
@@ -32,9 +30,7 @@ import java.util.Locale
 @Composable
 fun ComposeWatchItemCardWithControls(
     item: WatchItem,
-    priceFormat: (Double) -> String = { value ->
-        DecimalFormat("#,##0.00", DecimalFormatSymbols(Locale("sv", "SE"))).format(value)
-    },
+    priceFormat: (Double) -> String = { value -> CurrencyHelper.formatDecimal(value) },
     onToggleActive: (WatchItem) -> Unit,
     onReactivate: (WatchItem) -> Unit,
     onDelete: (WatchItem) -> Unit,

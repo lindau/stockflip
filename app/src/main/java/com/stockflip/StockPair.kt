@@ -4,9 +4,6 @@ import android.util.Log
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import androidx.room.Ignore
-import java.text.DecimalFormat
-import java.text.DecimalFormatSymbols
-import java.util.Locale
 
 @Entity(tableName = "stock_pairs")
 data class StockPair(
@@ -44,15 +41,14 @@ data class StockPair(
 
     fun formatPrice2(): String = formatPrice(currentPrice2)
 
-    fun formatPriceDifference(): String = priceFormat.format(priceDifference)
+    fun formatPriceDifference(): String = CurrencyHelper.formatDecimal(priceDifference)
 
     fun getDisplayName(): String = "$companyName1 - $companyName2"
 
-    private fun formatPrice(price: Double): String = 
-        if (price > 0.0) "${priceFormat.format(price)} SEK" else "Loading..."
+    private fun formatPrice(price: Double): String =
+        if (price > 0.0) "${CurrencyHelper.formatDecimal(price)} SEK" else "Loading..."
 
     companion object {
         private const val TAG = "StockPair"
-        private val priceFormat = DecimalFormat("#,##0.00", DecimalFormatSymbols(Locale("sv", "SE")))
     }
 } 
