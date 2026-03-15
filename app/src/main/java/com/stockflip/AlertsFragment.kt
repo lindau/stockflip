@@ -17,6 +17,7 @@ import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.stockflip.ui.SwipeToDeleteCallback
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.android.material.snackbar.Snackbar
 import com.stockflip.databinding.FragmentAlertsBinding
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
@@ -42,6 +43,7 @@ class AlertsFragment : Fragment() {
     }
 
     private lateinit var groupedAdapter: GroupedWatchItemAdapter
+    private var pendingDeleteSnackbar: Snackbar? = null
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -121,14 +123,26 @@ class AlertsFragment : Fragment() {
                     }
                 // Återställ ItemTouchHelper-state direkt — DiffUtil animerar bort raden när Room uppdaterar
                 groupedAdapter.notifyItemChanged(position)
-                viewLifecycleOwner.lifecycleScope.launch {
-                    try {
-                        viewModel.deleteWatchItem(listItem.item)
-                        Toast.makeText(requireContext(), R.string.alert_deleted, Toast.LENGTH_SHORT).show()
-                    } catch (e: Exception) {
-                        Toast.makeText(requireContext(), e.message ?: "Kunde inte ta bort bevakning", Toast.LENGTH_LONG).show()
+                val itemToDelete = listItem.item
+                // Dismiss any pending snackbar from a previous swipe before showing the new one
+                pendingDeleteSnackbar?.dismiss()
+                val snackbar = Snackbar.make(binding.root, R.string.alert_deleted, Snackbar.LENGTH_LONG)
+                snackbar.setAction(R.string.alert_undo) { /* Do nothing — item stays */ }
+                snackbar.addCallback(object : Snackbar.Callback() {
+                    override fun onDismissed(transientBottomBar: Snackbar?, event: Int) {
+                        if (event != DISMISS_EVENT_ACTION) {
+                            viewLifecycleOwner.lifecycleScope.launch {
+                                try {
+                                    viewModel.deleteWatchItem(itemToDelete)
+                                } catch (e: Exception) {
+                                    Toast.makeText(requireContext(), e.message ?: "Kunde inte ta bort bevakning", Toast.LENGTH_LONG).show()
+                                }
+                            }
+                        }
                     }
-                }
+                })
+                snackbar.show()
+                pendingDeleteSnackbar = snackbar
             },
             onSwipedRight = { position ->
                 val listItem = groupedAdapter.currentList.getOrNull(position) as? GroupedListItem.WatchItemWrapper
@@ -206,6 +220,8 @@ class AlertsFragment : Fragment() {
     }
 
     override fun onDestroyView() {
+        pendingDeleteSnackbar?.dismiss()
+        pendingDeleteSnackbar = null
         super.onDestroyView()
         _binding = null
     }
