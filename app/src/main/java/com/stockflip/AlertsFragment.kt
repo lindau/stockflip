@@ -16,6 +16,8 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.stockflip.ui.SwipeToDeleteCallback
+import com.stockflip.ui.WatchItemSkeletonList
+import com.stockflip.ui.theme.StockFlipTheme
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import com.stockflip.databinding.FragmentAlertsBinding
@@ -56,6 +58,11 @@ class AlertsFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        binding.skeletonLoadingView.setContent {
+            StockFlipTheme {
+                WatchItemSkeletonList(count = 4)
+            }
+        }
         setupRecyclerView()
         setupObservers()
     }
@@ -175,11 +182,11 @@ class AlertsFragment : Fragment() {
                     when (state) {
                         is UiState.Loading -> {
                             if (!binding.swipeRefreshLayout.isRefreshing) {
-                                binding.alertsProgressBar.visibility = View.VISIBLE
+                                binding.skeletonLoadingView.visibility = View.VISIBLE
                             }
                         }
                         is UiState.Success -> {
-                            binding.alertsProgressBar.visibility = View.GONE
+                            binding.skeletonLoadingView.visibility = View.GONE
                             binding.swipeRefreshLayout.isRefreshing = false
                             val items = state.data
                             groupedAdapter.submitGroupedList(items, sortMode)
@@ -190,7 +197,7 @@ class AlertsFragment : Fragment() {
                             }
                         }
                         is UiState.Error -> {
-                            binding.alertsProgressBar.visibility = View.GONE
+                            binding.skeletonLoadingView.visibility = View.GONE
                             binding.swipeRefreshLayout.isRefreshing = false
                             binding.emptyStateContainer.visibility = View.VISIBLE
                             binding.emptyStateText.text = state.message
