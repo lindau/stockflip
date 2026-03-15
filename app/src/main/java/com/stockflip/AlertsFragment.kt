@@ -183,7 +183,7 @@ class AlertsFragment : Fragment() {
                             binding.swipeRefreshLayout.isRefreshing = false
                             val items = state.data
                             groupedAdapter.submitGroupedList(items, sortMode)
-                            binding.emptyStateText.visibility = if (items.isEmpty()) {
+                            binding.emptyStateContainer.visibility = if (items.isEmpty()) {
                                 View.VISIBLE
                             } else {
                                 View.GONE
@@ -192,7 +192,7 @@ class AlertsFragment : Fragment() {
                         is UiState.Error -> {
                             binding.alertsProgressBar.visibility = View.GONE
                             binding.swipeRefreshLayout.isRefreshing = false
-                            binding.emptyStateText.visibility = View.VISIBLE
+                            binding.emptyStateContainer.visibility = View.VISIBLE
                             binding.emptyStateText.text = state.message
                         }
                     }

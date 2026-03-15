@@ -5,6 +5,8 @@
     <string name="icon_description">Icon</string>
 
     <string name="alerts_empty_state">Inga bevakningar ännu. Skapa en bevakning från en aktiesida för att se den här.</string>
+    <string name="alerts_empty_title">Inga bevakningar ännu</string>
+    <string name="alerts_empty_subtitle">Tryck + för att bevaka en aktie</string>
 
     <string name="alert_delete_title">Ta bort bevakning</string>
     <string name="alert_delete_message">Är du säker på att du vill ta bort den här bevakningen?</string>
