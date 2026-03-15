@@ -50,6 +50,7 @@ sealed class GroupedListItem {
         val dailyChangePercent: Double?,
         val watchItems: List<WatchItem>
     ) : GroupedListItem()
+    object GroupSeparator : GroupedListItem()
 }
 
 /**
@@ -72,6 +73,7 @@ class GroupedWatchItemAdapter(
         private const val VIEW_TYPE_HEADER = 0
         private const val VIEW_TYPE_WATCH_ITEM = 1
         private const val VIEW_TYPE_MULTIPLE_WATCHES = 2
+        private const val VIEW_TYPE_SEPARATOR = 3
         private const val TAG = "GroupedWatchItemAdapter"
     }
 
@@ -80,6 +82,7 @@ class GroupedWatchItemAdapter(
             is GroupedListItem.Header -> VIEW_TYPE_HEADER
             is GroupedListItem.WatchItemWrapper -> VIEW_TYPE_WATCH_ITEM
             is GroupedListItem.MultipleWatchesWrapper -> VIEW_TYPE_MULTIPLE_WATCHES
+            is GroupedListItem.GroupSeparator -> VIEW_TYPE_SEPARATOR
         }
     }
 
@@ -109,6 +112,15 @@ class GroupedWatchItemAdapter(
                 )
                 MultipleWatchesViewHolder(composeView)
             }
+            VIEW_TYPE_SEPARATOR -> {
+                val view = View(parent.context).apply {
+                    layoutParams = ViewGroup.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        (8 * parent.context.resources.displayMetrics.density).toInt()
+                    )
+                }
+                object : RecyclerView.ViewHolder(view) {}
+            }
             else -> throw IllegalArgumentException("Unknown view type: $viewType")
         }
     }
@@ -135,6 +147,9 @@ class GroupedWatchItemAdapter(
                         onItemClick(navItem)
                     }
                 }
+            }
+            is GroupedListItem.GroupSeparator -> {
+                // No-op: separator view has no data to bind
             }
         }
     }
@@ -193,8 +208,16 @@ class GroupedWatchItemAdapter(
 
         // Add single-stock section — always expand all watches per ticker with GroupPosition
         if (sortedItemsByTicker.isNotEmpty()) {
+            // Add separator between Aktiepar section and Aktier section if both are non-empty
+            if (sortedPricePairs.isNotEmpty()) {
+                groupedList.add(GroupedListItem.GroupSeparator)
+            }
             groupedList.add(GroupedListItem.Header("Aktier - Krypto"))
-            sortedItemsByTicker.forEach { (_, watchItemsForTicker) ->
+            sortedItemsByTicker.entries.forEachIndexed { groupIndex, (_, watchItemsForTicker) ->
+                // Add separator before each group (except the first one in this section)
+                if (groupIndex > 0) {
+                    groupedList.add(GroupedListItem.GroupSeparator)
+                }
                 when (watchItemsForTicker.size) {
                     1 -> groupedList.add(
                         GroupedListItem.WatchItemWrapper(watchItemsForTicker.first(), GroupPosition.ONLY)
@@ -280,6 +303,8 @@ class GroupedWatchItemAdapter(
                     oldItem.title == newItem.title
                 oldItem is GroupedListItem.WatchItemWrapper && newItem is GroupedListItem.WatchItemWrapper ->
                     oldItem.item.id == newItem.item.id
+                oldItem is GroupedListItem.GroupSeparator && newItem is GroupedListItem.GroupSeparator ->
+                    true
                 else -> false
             }
         }
@@ -314,6 +339,8 @@ class GroupedWatchItemAdapter(
                     oldItem.currentPrice == newItem.currentPrice &&
                     oldItem.dailyChangePercent == newItem.dailyChangePercent
                 }
+                oldItem is GroupedListItem.GroupSeparator && newItem is GroupedListItem.GroupSeparator ->
+                    true
                 else -> false
             }
         }

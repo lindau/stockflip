@@ -16,7 +16,10 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.stockflip.ui.SwipeToDeleteCallback
+import com.stockflip.ui.WatchItemSkeletonList
+import com.stockflip.ui.theme.StockFlipTheme
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.android.material.snackbar.Snackbar
 import com.stockflip.databinding.FragmentAlertsBinding
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
@@ -42,6 +45,7 @@ class AlertsFragment : Fragment() {
     }
 
     private lateinit var groupedAdapter: GroupedWatchItemAdapter
+    private var pendingDeleteSnackbar: Snackbar? = null
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -54,6 +58,11 @@ class AlertsFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        binding.skeletonLoadingView.setContent {
+            StockFlipTheme {
+                WatchItemSkeletonList(count = 4)
+            }
+        }
         setupRecyclerView()
         setupObservers()
     }
@@ -121,14 +130,26 @@ class AlertsFragment : Fragment() {
                     }
                 // Återställ ItemTouchHelper-state direkt — DiffUtil animerar bort raden när Room uppdaterar
                 groupedAdapter.notifyItemChanged(position)
-                viewLifecycleOwner.lifecycleScope.launch {
-                    try {
-                        viewModel.deleteWatchItem(listItem.item)
-                        Toast.makeText(requireContext(), R.string.alert_deleted, Toast.LENGTH_SHORT).show()
-                    } catch (e: Exception) {
-                        Toast.makeText(requireContext(), e.message ?: "Kunde inte ta bort bevakning", Toast.LENGTH_LONG).show()
+                val itemToDelete = listItem.item
+                // Dismiss any pending snackbar from a previous swipe before showing the new one
+                pendingDeleteSnackbar?.dismiss()
+                val snackbar = Snackbar.make(binding.root, R.string.alert_deleted, Snackbar.LENGTH_LONG)
+                snackbar.setAction(R.string.alert_undo) { /* Do nothing — item stays */ }
+                snackbar.addCallback(object : Snackbar.Callback() {
+                    override fun onDismissed(transientBottomBar: Snackbar?, event: Int) {
+                        if (event != DISMISS_EVENT_ACTION) {
+                            viewLifecycleOwner.lifecycleScope.launch {
+                                try {
+                                    viewModel.deleteWatchItem(itemToDelete)
+                                } catch (e: Exception) {
+                                    Toast.makeText(requireContext(), e.message ?: "Kunde inte ta bort bevakning", Toast.LENGTH_LONG).show()
+                                }
+                            }
+                        }
                     }
-                }
+                })
+                snackbar.show()
+                pendingDeleteSnackbar = snackbar
             },
             onSwipedRight = { position ->
                 val listItem = groupedAdapter.currentList.getOrNull(position) as? GroupedListItem.WatchItemWrapper
@@ -161,25 +182,37 @@ class AlertsFragment : Fragment() {
                     when (state) {
                         is UiState.Loading -> {
                             if (!binding.swipeRefreshLayout.isRefreshing) {
-                                binding.alertsProgressBar.visibility = View.VISIBLE
+                                binding.skeletonLoadingView.visibility = View.VISIBLE
                             }
+                            binding.sortModeLabel.visibility = View.GONE
                         }
                         is UiState.Success -> {
-                            binding.alertsProgressBar.visibility = View.GONE
+                            binding.skeletonLoadingView.visibility = View.GONE
                             binding.swipeRefreshLayout.isRefreshing = false
                             val items = state.data
                             groupedAdapter.submitGroupedList(items, sortMode)
-                            binding.emptyStateText.visibility = if (items.isEmpty()) {
+                            binding.emptyStateContainer.visibility = if (items.isEmpty()) {
                                 View.VISIBLE
                             } else {
                                 View.GONE
                             }
+                            // Update sort mode label
+                            when (sortMode) {
+                                SortHelper.SortMode.ALPHABETICAL -> {
+                                    binding.sortModeLabel.text = "Sorterat: Bokstavsordning"
+                                    binding.sortModeLabel.visibility = View.VISIBLE
+                                }
+                                SortHelper.SortMode.ADDITION_ORDER -> {
+                                    binding.sortModeLabel.visibility = View.GONE
+                                }
+                            }
                         }
                         is UiState.Error -> {
-                            binding.alertsProgressBar.visibility = View.GONE
+                            binding.skeletonLoadingView.visibility = View.GONE
                             binding.swipeRefreshLayout.isRefreshing = false
-                            binding.emptyStateText.visibility = View.VISIBLE
+                            binding.emptyStateContainer.visibility = View.VISIBLE
                             binding.emptyStateText.text = state.message
+                            binding.sortModeLabel.visibility = View.GONE
                         }
                     }
                 }
@@ -206,6 +239,8 @@ class AlertsFragment : Fragment() {
     }
 
     override fun onDestroyView() {
+        pendingDeleteSnackbar?.dismiss()
+        pendingDeleteSnackbar = null
         super.onDestroyView()
         _binding = null
     }

@@ -1,5 +1,8 @@
 package com.stockflip.ui.components.cards
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
@@ -22,6 +25,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
@@ -104,18 +108,29 @@ fun MetricAlertCard(
     val currency = CurrencyHelper.getCurrencyFromSymbol(item.ticker)
     val showStockHeader = showControls || groupPosition == GroupPosition.ONLY || groupPosition == GroupPosition.FIRST
 
+    val animatedContainerColor by animateColorAsState(
+        targetValue = if (isTriggered) MaterialTheme.colorScheme.tertiaryContainer else containerColor,
+        animationSpec = tween(durationMillis = 400, easing = FastOutSlowInEasing),
+        label = "containerColor"
+    )
+    val animatedBorderColor by animateColorAsState(
+        targetValue = if (isTriggered) MaterialTheme.colorScheme.tertiary.copy(alpha = 0.35f) else cardBorder,
+        animationSpec = tween(durationMillis = 400, easing = FastOutSlowInEasing),
+        label = "borderColor"
+    )
+
     Card(
         modifier = modifier
             .fillMaxWidth()
             .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier),
         colors = CardDefaults.cardColors(
-            containerColor = if (isTriggered) MaterialTheme.colorScheme.tertiaryContainer else containerColor,
+            containerColor = animatedContainerColor,
         ),
         shape = groupShape(groupPosition),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         border = BorderStroke(
             width = 1.dp,
-            color = if (isTriggered) MaterialTheme.colorScheme.tertiary.copy(alpha = 0.35f) else cardBorder,
+            color = animatedBorderColor,
         ),
     ) {
         Row(modifier = Modifier.fillMaxWidth()) {
