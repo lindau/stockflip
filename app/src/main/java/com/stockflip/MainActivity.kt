@@ -406,7 +406,7 @@ class MainActivity : AppCompatActivity() {
             canSwipe = { position ->
                 val adapter = binding.stockPairsList.adapter as? GroupedWatchItemAdapter ?: return@SwipeToDeleteCallback false
                 val item = adapter.currentList.getOrNull(position) ?: return@SwipeToDeleteCallback false
-                item !is GroupedListItem.Header
+                item !is GroupedListItem.Header && item !is GroupedListItem.GroupSeparator
             },
             onSwiped = { position ->
                 val adapter = binding.stockPairsList.adapter as? GroupedWatchItemAdapter ?: return@SwipeToDeleteCallback
@@ -430,6 +430,7 @@ class MainActivity : AppCompatActivity() {
                         }
                     }
                     is GroupedListItem.Header -> {}
+                    is GroupedListItem.GroupSeparator -> {}
                 }
             },
             onSwipedRight = { position ->
