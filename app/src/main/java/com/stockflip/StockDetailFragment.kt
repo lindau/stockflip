@@ -34,6 +34,7 @@ import com.stockflip.ui.builders.ConditionBuilderAdapter
 import android.widget.ImageView
 import android.text.TextWatcher
 import android.text.Editable
+import android.view.WindowManager
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -399,7 +400,10 @@ class StockDetailFragment : Fragment() {
                 }
             }
             .setNegativeButton("Avbryt", null)
-            .show()
+            .show().also { dialog ->
+                dialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE)
+                targetPriceInput.requestFocus()
+            }
     }
 
     private fun showCreateDrawdownDialog() {
@@ -458,7 +462,10 @@ class StockDetailFragment : Fragment() {
                 }
             }
             .setNegativeButton("Avbryt", null)
-            .show()
+            .show().also { dialog ->
+                dialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE)
+                dropValueInput.requestFocus()
+            }
     }
 
     private fun showCreateDailyMoveDialog() {
@@ -515,7 +522,10 @@ class StockDetailFragment : Fragment() {
                 }
             }
             .setNegativeButton("Avbryt", null)
-            .show()
+            .show().also { dialog ->
+                dialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE)
+                thresholdInput.requestFocus()
+            }
     }
 
     private fun showCreatePriceRangeDialog() {
@@ -560,7 +570,10 @@ class StockDetailFragment : Fragment() {
                 }
             }
             .setNegativeButton("Avbryt", null)
-            .show()
+            .show().also { dialog ->
+                dialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE)
+                minPriceInput.requestFocus()
+            }
     }
 
     private fun showCreateKeyMetricsDialog() {
@@ -622,7 +635,10 @@ class StockDetailFragment : Fragment() {
                     }
                 }
                 .setNegativeButton("Avbryt", null)
-                .show()
+                .show().also { dialog ->
+                    dialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE)
+                    targetValueInput.requestFocus()
+                }
         }
     }
 
@@ -681,7 +697,10 @@ class StockDetailFragment : Fragment() {
             }
             .setNeutralButton("Ta bort") { _, _ -> showDeleteConfirmation(item) }
             .setNegativeButton("Avbryt", null)
-            .show()
+            .show().also { dialog ->
+                dialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE)
+                priceDifferenceInput.requestFocus()
+            }
     }
 
     private fun showDeleteConfirmation(watchItem: WatchItem) {
@@ -766,6 +785,8 @@ class StockDetailFragment : Fragment() {
             .setNegativeButton("Avbryt", null)
             .create()
         dialog.show()
+        dialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE)
+        targetPriceInput.requestFocus()
     }
 
     private fun showEditPriceRangeDialog(item: WatchItem) {
@@ -850,6 +871,8 @@ class StockDetailFragment : Fragment() {
             .setNegativeButton("Avbryt", null)
             .create()
         dialog.show()
+        dialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE)
+        thresholdInput.requestFocus()
     }
 
     private fun showEditDrawdownDialog(item: WatchItem) {
@@ -917,6 +940,8 @@ class StockDetailFragment : Fragment() {
             .setNegativeButton("Avbryt", null)
             .create()
         dialog.show()
+        dialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE)
+        dropValueInput.requestFocus()
     }
 
     private fun showEditKeyMetricsDialog(item: WatchItem) {
@@ -999,6 +1024,8 @@ class StockDetailFragment : Fragment() {
             .setNegativeButton("Avbryt", null)
             .create()
         dialog.show()
+        dialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE)
+        targetValueInput.requestFocus()
     }
 
     /**

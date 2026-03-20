@@ -8,6 +8,7 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.WindowManager
 import android.widget.ArrayAdapter
 import android.widget.AutoCompleteTextView
 import android.widget.CheckBox
@@ -791,7 +792,10 @@ class MainActivity : AppCompatActivity() {
                 }
             }
             .setNegativeButton("Avbryt", null)
-            .show()
+            .show().also { dialog ->
+                dialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE)
+                ticker1Input.requestFocus()
+            }
     }
 
     /**
@@ -868,7 +872,10 @@ class MainActivity : AppCompatActivity() {
                 }
             }
             .setNegativeButton("Avbryt", null)
-            .show()
+            .show().also { dialog ->
+                dialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE)
+                tickerInput.requestFocus()
+            }
     }
 
     /**
@@ -973,7 +980,10 @@ class MainActivity : AppCompatActivity() {
                 }
             }
             .setNegativeButton("Avbryt", null)
-            .show()
+            .show().also { dialog ->
+                dialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE)
+                tickerInput.requestFocus()
+            }
     }
 
     /**
@@ -1053,7 +1063,10 @@ class MainActivity : AppCompatActivity() {
                 }
             }
             .setNegativeButton("Avbryt", null)
-            .show()
+            .show().also { dialog ->
+                dialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE)
+                tickerInput.requestFocus()
+            }
     }
 
     /**
@@ -1764,7 +1777,10 @@ class MainActivity : AppCompatActivity() {
                 }
             }
             .setNegativeButton("Avbryt", null)
-            .show()
+            .show().also { dialog ->
+                dialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE)
+                priceDifferenceInput.requestFocus()
+            }
     }
 
     /**
@@ -1831,7 +1847,10 @@ class MainActivity : AppCompatActivity() {
                 }
             }
             .setNegativeButton("Avbryt", null)
-            .show()
+            .show().also { dialog ->
+                dialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE)
+                targetPriceInput.requestFocus()
+            }
     }
 
     /**
@@ -1922,7 +1941,10 @@ class MainActivity : AppCompatActivity() {
                 }
             }
             .setNegativeButton("Avbryt", null)
-            .show()
+            .show().also { dialog ->
+                dialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE)
+                targetValueInput.requestFocus()
+            }
     }
 
     /**
@@ -2009,7 +2031,10 @@ class MainActivity : AppCompatActivity() {
                 }
             }
             .setNegativeButton("Avbryt", null)
-            .show()
+            .show().also { dialog ->
+                dialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE)
+                dropValueInput.requestFocus()
+            }
     }
 
     private fun showEditPriceRangeDialog(item: WatchItem) {
@@ -2102,7 +2127,10 @@ class MainActivity : AppCompatActivity() {
                 }
             }
             .setNegativeButton("Avbryt", null)
-            .show()
+            .show().also { dialog ->
+                dialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE)
+                thresholdInput.requestFocus()
+            }
     }
 
     /**

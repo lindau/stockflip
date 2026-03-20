@@ -2,6 +2,7 @@ package com.stockflip.ui.dialogs
 
 import android.content.Context
 import android.view.LayoutInflater
+import android.view.WindowManager
 import android.widget.Toast
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.textfield.TextInputEditText
@@ -74,4 +75,6 @@ fun showEditPriceRangeDialog(
         dialog.setOnDismissListener { onDismiss() }
     }
     dialog.show()
+    dialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE)
+    minPriceInput.requestFocus()
 }

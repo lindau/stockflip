@@ -32,6 +32,21 @@ class MainViewModel(
         viewModelScope.launch {
             loadStockPairs()
         }
+        startAutoRefresh()
+    }
+
+    private fun startAutoRefresh() {
+        viewModelScope.launch {
+            while (true) {
+                delay(30_000)
+                try {
+                    refreshStockPairs()
+                    refreshWatchItems()
+                } catch (e: Exception) {
+                    Log.w(TAG, "Auto-refresh failed: ${e.message}")
+                }
+            }
+        }
     }
 
     suspend fun loadStockPairs() {
