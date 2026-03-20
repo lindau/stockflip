@@ -18,7 +18,9 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.widget.doAfterTextChanged
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -30,6 +32,7 @@ import com.google.android.material.checkbox.MaterialCheckBox
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.textfield.MaterialAutoCompleteTextView
 import com.google.android.material.textfield.TextInputEditText
+import com.google.android.material.textfield.TextInputLayout
 import com.stockflip.databinding.ActivityMainBinding
 import kotlinx.coroutines.*
 import java.text.SimpleDateFormat
@@ -45,6 +48,7 @@ import android.widget.ProgressBar
 import androidx.cardview.widget.CardView
 import androidx.recyclerview.widget.ItemTouchHelper
 import com.stockflip.ui.SwipeToDeleteCallback
+import com.stockflip.backup.BackupManager
 
 /**
  * Main activity for the StockFlip application.
@@ -70,6 +74,15 @@ class MainActivity : AppCompatActivity() {
     ) { isGranted ->
         if (!isGranted) {
             Toast.makeText(this, "Notification permission is required for alerts", Toast.LENGTH_LONG).show()
+        }
+    }
+    private val importFileLauncher = registerForActivityResult(
+        ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        uri ?: return@registerForActivityResult
+        lifecycleScope.launch {
+            val json = contentResolver.openInputStream(uri)?.bufferedReader()?.readText() ?: return@launch
+            showImportConfirmationDialog(json)
         }
     }
     private val stockSearchViewModelFactory = object : ViewModelProvider.Factory {
@@ -219,9 +232,88 @@ class MainActivity : AppCompatActivity() {
                     Toast.makeText(this, "Sortering: Tilläggsordning", Toast.LENGTH_SHORT).show()
                     true
                 }
+                R.id.menu_theme -> {
+                    showThemeDialog()
+                    true
+                }
+                R.id.menu_export -> {
+                    lifecycleScope.launch {
+                        val json = viewModel.exportData()
+                        BackupManager.shareFile(this@MainActivity, json)
+                    }
+                    true
+                }
+                R.id.menu_import -> {
+                    importFileLauncher.launch(arrayOf("application/json", "text/plain"))
+                    true
+                }
                 else -> false
             }
         }
+    }
+
+    private fun showThemeDialog() {
+        val prefs = getSharedPreferences("settings", MODE_PRIVATE)
+        val current = prefs.getInt("night_mode", AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
+        val options = arrayOf("Systemtema", "Ljust", "Mörkt")
+        val modes = intArrayOf(
+            AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM,
+            AppCompatDelegate.MODE_NIGHT_NO,
+            AppCompatDelegate.MODE_NIGHT_YES
+        )
+        val checkedItem = modes.indexOfFirst { it == current }.coerceAtLeast(0)
+
+        AlertDialog.Builder(this)
+            .setTitle("Tema")
+            .setSingleChoiceItems(options, checkedItem) { dialog, which ->
+                val selected = modes[which]
+                prefs.edit().putInt("night_mode", selected).apply()
+                AppCompatDelegate.setDefaultNightMode(selected)
+                dialog.dismiss()
+            }
+            .setNegativeButton("Avbryt", null)
+            .show()
+    }
+
+    private fun showImportConfirmationDialog(json: String) {
+        val data = try {
+            BackupManager.importFromJson(json)
+        } catch (e: Exception) {
+            Toast.makeText(
+                this,
+                getString(R.string.import_error, e.message ?: "Okänt fel"),
+                Toast.LENGTH_LONG
+            ).show()
+            return
+        }
+        MaterialAlertDialogBuilder(this)
+            .setTitle(getString(R.string.import_confirm_title))
+            .setMessage(getString(R.string.import_confirm_message, data.watchItems.size, data.stockPairs.size))
+            .setPositiveButton("Importera") { _, _ ->
+                lifecycleScope.launch {
+                    val result = viewModel.importData(json)
+                    when (result) {
+                        is MainViewModel.ImportResult.Success -> {
+                            Toast.makeText(
+                                this@MainActivity,
+                                getString(R.string.import_success, result.watchCount, result.pairCount),
+                                Toast.LENGTH_LONG
+                            ).show()
+                            viewModel.loadWatchItems()
+                            viewModel.loadStockPairs()
+                        }
+                        is MainViewModel.ImportResult.Error -> {
+                            Toast.makeText(
+                                this@MainActivity,
+                                getString(R.string.import_error, result.message),
+                                Toast.LENGTH_LONG
+                            ).show()
+                        }
+                    }
+                }
+            }
+            .setNegativeButton(getString(R.string.dialog_button_cancel), null)
+            .show()
     }
 
     private fun openAddStock(): Unit {
@@ -380,6 +472,18 @@ class MainActivity : AppCompatActivity() {
             Log.d(TAG, "submitGroupedList called successfully")
         } else {
             Log.e(TAG, "CRITICAL: Adapter is null! Cannot update UI")
+        }
+
+        val showEmpty = filteredData.isEmpty() && currentMainTab != MainTab.ALERTS
+        binding.emptyStateContainer.visibility = if (showEmpty) View.VISIBLE else View.GONE
+        if (showEmpty) {
+            val (title, subtitle) = when (currentMainTab) {
+                MainTab.STOCKS -> getString(R.string.stocks_empty_title) to getString(R.string.stocks_empty_subtitle)
+                MainTab.PAIRS  -> getString(R.string.pairs_empty_title)  to getString(R.string.pairs_empty_subtitle)
+                MainTab.ALERTS -> "" to ""
+            }
+            binding.emptyStateTitle.text = title
+            binding.emptyStateSubtitle.text = subtitle
         }
     }
 
@@ -661,7 +765,7 @@ class MainActivity : AppCompatActivity() {
                 val notifyWhenEqual = notifyWhenEqualCheckbox.isChecked
 
                 if (selectedStock1 != null && selectedStock2 != null && priceDifferenceStr.isNotEmpty()) {
-                    val priceDifference = priceDifferenceStr.toDoubleOrNull() ?: 0.0
+                    val priceDifference = priceDifferenceStr.parseDecimal() ?: 0.0
                     lifecycleScope.launch {
                         try {
                             binding.progressBar.visibility = View.VISIBLE
@@ -735,7 +839,7 @@ class MainActivity : AppCompatActivity() {
                 val targetPriceStr = targetPriceInput.text.toString()
 
                 if (selectedStock != null && targetPriceStr.isNotEmpty()) {
-                    val targetPrice = targetPriceStr.toDoubleOrNull()
+                    val targetPrice = targetPriceStr.parseDecimal()
 
                     if (targetPrice != null && targetPrice > 0) {
                         lifecycleScope.launch {
@@ -840,7 +944,7 @@ class MainActivity : AppCompatActivity() {
                         "Utdelningsprocent" -> WatchType.MetricType.DIVIDEND_YIELD
                         else -> null
                     }
-                    val targetValue = targetValueStr.toDoubleOrNull()
+                    val targetValue = targetValueStr.parseDecimal()
 
                     if (metricType != null && targetValue != null && targetValue > 0) {
                         lifecycleScope.launch {
@@ -918,10 +1022,9 @@ class MainActivity : AppCompatActivity() {
                 if (finalTicker.isNotEmpty() && dropTypeStr.isNotEmpty() && dropValueStr.isNotEmpty()) {
                     val dropType = when (dropTypeStr) {
                         "Procent" -> WatchType.DropType.PERCENTAGE
-                        "Absolut (SEK)" -> WatchType.DropType.ABSOLUTE
-                        else -> null
+                        else -> WatchType.DropType.ABSOLUTE
                     }
-                    val dropValue = dropValueStr.toDoubleOrNull()
+                    val dropValue = dropValueStr.parseDecimal()
 
                     if (dropType != null && dropValue != null && dropValue > 0) {
                         lifecycleScope.launch {
@@ -1036,7 +1139,7 @@ class MainActivity : AppCompatActivity() {
                 // Validate all conditions
                 val validConditions = conditions.filter { 
                     it.value.isNotEmpty() && 
-                    it.value.toDoubleOrNull() != null 
+                    it.value.parseDecimal() != null 
                 }
                 
                 if (validConditions.size != conditions.size) {
@@ -1172,7 +1275,7 @@ class MainActivity : AppCompatActivity() {
                 // Validate all conditions
                 val validConditions = newConditions.filter { 
                     it.value.isNotEmpty() && 
-                    it.value.toDoubleOrNull() != null 
+                    it.value.parseDecimal() != null 
                 }
                 
                 if (validConditions.size != newConditions.size) {
@@ -1390,7 +1493,7 @@ class MainActivity : AppCompatActivity() {
      * Builds an AlertRule from a ConditionData and symbol.
      */
     private fun buildAlertRule(symbol: String, condition: com.stockflip.ui.builders.ConditionBuilderAdapter.ConditionData): AlertRule? {
-        val value = condition.value.toDoubleOrNull() ?: return null
+        val value = condition.value.parseDecimal() ?: return null
         
         return when (condition.conditionType) {
             "Pris" -> {
@@ -1633,7 +1736,7 @@ class MainActivity : AppCompatActivity() {
                 val finalTicker2 = selectedStock2?.symbol ?: ticker2Str
 
                 if (finalTicker1.isNotEmpty() && finalTicker2.isNotEmpty() && priceDifferenceStr.isNotEmpty()) {
-                    val priceDifference = priceDifferenceStr.toDoubleOrNull() ?: 0.0
+                    val priceDifference = priceDifferenceStr.parseDecimal() ?: 0.0
                     lifecycleScope.launch {
                         try {
                             binding.progressBar.visibility = View.VISIBLE
@@ -1669,10 +1772,12 @@ class MainActivity : AppCompatActivity() {
      */
     private fun showEditPriceTargetDialog(item: WatchItem) {
         if (item.watchType !is WatchType.PriceTarget) return
+        val currencySymbol = CurrencyHelper.getCurrencySymbol(CurrencyHelper.getCurrencyFromSymbol(item.ticker ?: ""))
         val priceTarget = item.watchType
         val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_add_price_target, null)
         val tickerInput = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.tickerInput).apply { setText(item.ticker) }
         val targetPriceInput = dialogView.findViewById<TextInputEditText>(R.id.targetPriceInput).apply { setText(priceTarget.targetPrice.toString()) }
+        (targetPriceInput.parent as? TextInputLayout)?.hint = "Målpris ($currencySymbol)"
         // Set up adapter for stock search
         val adapter = createStockAdapter()
         tickerInput.setAdapter(adapter)
@@ -1693,7 +1798,7 @@ class MainActivity : AppCompatActivity() {
                 val finalTicker = selectedStock?.symbol ?: tickerStr
 
                 if (finalTicker.isNotEmpty() && targetPriceStr.isNotEmpty()) {
-                    val targetPrice = targetPriceStr.toDoubleOrNull()
+                    val targetPrice = targetPriceStr.parseDecimal()
 
                     if (targetPrice != null && targetPrice > 0) {
                         val direction = if (item.currentPrice > 0.0 && item.currentPrice >= targetPrice)
@@ -1786,7 +1891,7 @@ class MainActivity : AppCompatActivity() {
                         "Utdelningsprocent" -> WatchType.MetricType.DIVIDEND_YIELD
                         else -> null
                     }
-                    val targetValue = targetValueStr.toDoubleOrNull()
+                    val targetValue = targetValueStr.parseDecimal()
 
                     if (metricType != null && targetValue != null && targetValue > 0) {
                         val direction = if (item.currentMetricValue > 0.0 && item.currentMetricValue >= targetValue)
@@ -1825,13 +1930,15 @@ class MainActivity : AppCompatActivity() {
      */
     private fun showEditATHBasedDialog(item: WatchItem) {
         if (item.watchType !is WatchType.ATHBased) return
+        val currencySymbol = CurrencyHelper.getCurrencySymbol(CurrencyHelper.getCurrencyFromSymbol(item.ticker ?: ""))
+        val absoluteLabel = "Absolut ($currencySymbol)"
         val athBased = item.watchType
         val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_add_ath_based, null)
         val tickerInput = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.tickerInput).apply { setText(item.ticker) }
         val dropTypeInput = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.dropTypeInput).apply {
             setText(when (athBased.dropType) {
                 WatchType.DropType.PERCENTAGE -> "Procent"
-                WatchType.DropType.ABSOLUTE -> "Absolut (SEK)"
+                WatchType.DropType.ABSOLUTE -> absoluteLabel
             })
         }
         val dropValueInput = dialogView.findViewById<TextInputEditText>(R.id.dropValueInput).apply {
@@ -1849,7 +1956,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         // Set up drop type dropdown
-        val dropTypes = arrayOf("Procent", "Absolut (SEK)")
+        val dropTypes = arrayOf("Procent", absoluteLabel)
         val dropTypeAdapter = ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line, dropTypes)
         dropTypeInput.setAdapter(dropTypeAdapter)
         dropTypeInput.setOnItemClickListener { _, _, position, _ ->
@@ -1869,10 +1976,9 @@ class MainActivity : AppCompatActivity() {
                 if (finalTicker.isNotEmpty() && dropTypeStr.isNotEmpty() && dropValueStr.isNotEmpty()) {
                     val dropType = when (dropTypeStr) {
                         "Procent" -> WatchType.DropType.PERCENTAGE
-                        "Absolut (SEK)" -> WatchType.DropType.ABSOLUTE
-                        else -> null
+                        else -> WatchType.DropType.ABSOLUTE
                     }
-                    val dropValue = dropValueStr.toDoubleOrNull()
+                    val dropValue = dropValueStr.parseDecimal()
 
                     if (dropType != null && dropValue != null && dropValue > 0) {
                         lifecycleScope.launch {
@@ -1907,9 +2013,11 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showEditPriceRangeDialog(item: WatchItem) {
+        val currency = CurrencyHelper.getCurrencyFromSymbol(item.ticker ?: "")
         com.stockflip.ui.dialogs.showEditPriceRangeDialog(
             context = this,
             item = item,
+            currency = currency,
             onUpdate = { minPrice, maxPrice ->
                 lifecycleScope.launch {
                     try {
@@ -1961,7 +2069,7 @@ class MainActivity : AppCompatActivity() {
                 val directionStr = directionInput.text.toString()
 
                 if (thresholdStr.isNotEmpty() && directionStr.isNotEmpty()) {
-                    val threshold = thresholdStr.toDoubleOrNull()
+                    val threshold = thresholdStr.parseDecimal()
                     val direction = when (directionStr) {
                         "Upp" -> WatchType.DailyMoveDirection.UP
                         "Ned" -> WatchType.DailyMoveDirection.DOWN
@@ -2141,7 +2249,7 @@ class MainActivity : AppCompatActivity() {
                         val priceDifferenceInput = dialogView.findViewById<TextInputEditText>(R.id.detailPriceDifference)
                         val notifyWhenEqualCheckbox = dialogView.findViewById<MaterialCheckBox>(R.id.detailNotifyWhenEqual)
                         
-                        val priceDifference = priceDifferenceInput.text.toString().toDoubleOrNull() ?: 0.0
+                        val priceDifference = priceDifferenceInput.text.toString().parseDecimal() ?: 0.0
                         val notifyWhenEqual = notifyWhenEqualCheckbox.isChecked
                         
                         item.copy(
@@ -2151,7 +2259,7 @@ class MainActivity : AppCompatActivity() {
                     is WatchType.PriceTarget -> {
                         val targetPriceInput = dialogView.findViewById<TextInputEditText>(R.id.detailTargetPrice)
 
-                        val targetPrice = targetPriceInput.text.toString().toDoubleOrNull() ?: 0.0
+                        val targetPrice = targetPriceInput.text.toString().parseDecimal() ?: 0.0
                         val direction = if (item.currentPrice > 0.0 && item.currentPrice >= targetPrice)
                             WatchType.PriceDirection.BELOW else WatchType.PriceDirection.ABOVE
 
@@ -2180,7 +2288,7 @@ class MainActivity : AppCompatActivity() {
                                 keyMetrics?.metricType ?: WatchType.MetricType.PE_RATIO
                             }
                         }
-                        val targetValue = targetValueInput.text.toString().toDoubleOrNull() ?: 0.0
+                        val targetValue = targetValueInput.text.toString().parseDecimal() ?: 0.0
                         val direction = if (item.currentMetricValue > 0.0 && item.currentMetricValue >= targetValue)
                             WatchType.PriceDirection.BELOW else WatchType.PriceDirection.ABOVE
 
@@ -2204,7 +2312,7 @@ class MainActivity : AppCompatActivity() {
                                 athBased?.dropType ?: WatchType.DropType.PERCENTAGE
                             }
                         }
-                        val dropValue = dropValueInput.text.toString().toDoubleOrNull() ?: 0.0
+                        val dropValue = dropValueInput.text.toString().parseDecimal() ?: 0.0
                         
                         item.copy(
                             watchType = WatchType.ATHBased(dropType, dropValue)

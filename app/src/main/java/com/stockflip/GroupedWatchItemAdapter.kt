@@ -48,7 +48,7 @@ sealed class GroupedListItem {
         val dailyChangePercent: Double?,
         val watchItems: List<WatchItem>
     ) : GroupedListItem()
-    object GroupSeparator : GroupedListItem()
+    data class GroupSeparator(val id: Int) : GroupedListItem()
 }
 
 /**
@@ -207,13 +207,13 @@ class GroupedWatchItemAdapter(
         if (sortedItemsByTicker.isNotEmpty()) {
             // Add separator between Aktiepar section and Aktier section if both are non-empty
             if (sortedPricePairs.isNotEmpty()) {
-                groupedList.add(GroupedListItem.GroupSeparator)
+                groupedList.add(GroupedListItem.GroupSeparator(groupedList.size))
             }
             groupedList.add(GroupedListItem.Header("Aktier - Krypto"))
             sortedItemsByTicker.entries.forEachIndexed { groupIndex, (_, watchItemsForTicker) ->
                 // Add separator before each group (except the first one in this section)
                 if (groupIndex > 0) {
-                    groupedList.add(GroupedListItem.GroupSeparator)
+                    groupedList.add(GroupedListItem.GroupSeparator(groupedList.size))
                 }
                 when (watchItemsForTicker.size) {
                     1 -> groupedList.add(
@@ -301,7 +301,7 @@ class GroupedWatchItemAdapter(
                 oldItem is GroupedListItem.WatchItemWrapper && newItem is GroupedListItem.WatchItemWrapper ->
                     oldItem.item.id == newItem.item.id
                 oldItem is GroupedListItem.GroupSeparator && newItem is GroupedListItem.GroupSeparator ->
-                    true
+                    oldItem.id == newItem.id
                 else -> false
             }
         }

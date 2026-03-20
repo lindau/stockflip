@@ -1,6 +1,7 @@
 package com.stockflip
 
 import android.util.Log
+import com.stockflip.CurrencyHelper
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.stockflip.repository.TriggerHistoryRepository
@@ -54,7 +55,7 @@ class StockDetailViewModel(
                 val previousClose: Double? = snapshot.previousClose
                 val week52High: Double? = snapshot.week52High
                 val week52Low: Double? = snapshot.week52Low
-                val currency: String = snapshot.currency ?: "SEK"
+                val currency: String = snapshot.currency ?: CurrencyHelper.getCurrencyFromSymbol(symbol)
                 val exchange: String? = snapshot.exchangeName
                 val companyName: String = snapshot.companyName ?: symbol
                 val dailyChangePercent: Double? = if (lastPrice != null && previousClose != null && previousClose > 0) {
@@ -257,7 +258,7 @@ class StockDetailViewModel(
     fun updateWatchItem(watchItem: WatchItem) {
         viewModelScope.launch {
             try {
-                watchItemDao.update(watchItem)
+                watchItemDao.update(watchItem.reactivate())
                 Log.d(TAG, "Updated alert ${watchItem.id}")
             } catch (e: Exception) {
                 Log.e(TAG, "Error updating alert: ${e.message}", e)

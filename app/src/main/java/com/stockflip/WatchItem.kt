@@ -265,11 +265,11 @@ data class WatchItem(
 
     /**
      * Återaktiverar alerten (tar bort triggad-status).
-     * 
-     * @return Ny WatchItem med isTriggered = false
+     *
+     * @return Ny WatchItem med isTriggered = false och lastTriggeredDate = null
      */
     fun reactivate(): WatchItem {
-        return copy(isTriggered = false)
+        return copy(isTriggered = false, lastTriggeredDate = null)
     }
 
     /**

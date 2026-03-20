@@ -18,6 +18,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.stockflip.ui.SwipeToDeleteCallback
 import androidx.core.widget.doAfterTextChanged
 import com.google.android.material.button.MaterialButton
+import com.google.android.material.checkbox.MaterialCheckBox
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.textfield.MaterialAutoCompleteTextView
 import com.google.android.material.textfield.TextInputEditText
@@ -57,6 +58,7 @@ class StockDetailFragment : Fragment() {
     private lateinit var viewModel: StockDetailViewModel
     private lateinit var alertAdapter: AlertAdapter
     private lateinit var stockSearchViewModel: StockSearchViewModel
+    private lateinit var stockSearchViewModel2: StockSearchViewModel
 
     companion object {
         private const val TAG = "StockDetailFragment"
@@ -131,6 +133,17 @@ class StockDetailFragment : Fragment() {
             }
         }
         stockSearchViewModel = ViewModelProvider(this, searchFactory)[StockSearchViewModel::class.java]
+
+        val searchFactory2 = object : ViewModelProvider.Factory {
+            override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
+                if (modelClass.isAssignableFrom(StockSearchViewModel::class.java)) {
+                    @Suppress("UNCHECKED_CAST")
+                    return StockSearchViewModel(StockRepository()) as T
+                }
+                throw IllegalArgumentException("Unknown ViewModel class")
+            }
+        }
+        stockSearchViewModel2 = ViewModelProvider(this, searchFactory2)[StockSearchViewModel::class.java]
 
         setupRecyclerView()
         setupQuickActions()
@@ -292,7 +305,7 @@ class StockDetailFragment : Fragment() {
         val canShowDailyChange: Boolean = data.dailyChangePercent != null ||
             (data.lastPrice != null && data.previousClose != null && data.previousClose > 0)
         if (canShowDailyChange) {
-            binding.dailyChangeRow.visibility = android.view.View.VISIBLE
+            binding.dailyChangePercent.visibility = android.view.View.VISIBLE
             val change: Double = data.dailyChangePercent ?: run {
                 val lp = requireNotNull(data.lastPrice)
                 val pc = requireNotNull(data.previousClose)
@@ -312,7 +325,7 @@ class StockDetailFragment : Fragment() {
                 binding.dailyChangePercent.text = "$sign${CurrencyHelper.formatDecimal(change)}%"
             }
         } else {
-            binding.dailyChangeRow.visibility = android.view.View.GONE
+            binding.dailyChangePercent.visibility = android.view.View.GONE
         }
         
         binding.week52High.text = data.week52High?.let {
@@ -339,6 +352,9 @@ class StockDetailFragment : Fragment() {
 
 
     private fun showCreatePriceTargetDialog() {
+        val currencySymbol = CurrencyHelper.getCurrencySymbol(
+            (viewModel.stockDataState.value as? UiState.Success<StockDetailData>)?.data?.currency ?: "SEK"
+        )
         val dialogView = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_add_price_target, null)
         val tickerInput = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.tickerInput)
         val targetPriceInput = dialogView.findViewById<TextInputEditText>(R.id.targetPriceInput)
@@ -352,6 +368,7 @@ class StockDetailFragment : Fragment() {
                 parent.visibility = android.view.View.GONE
             }
         }
+        dialogView.findViewById<TextInputLayout>(R.id.targetPriceLayout)?.hint = "Målpris ($currencySymbol)"
 
         MaterialAlertDialogBuilder(requireContext())
             .setTitle("Skapa målpris-bevakning")
@@ -360,7 +377,7 @@ class StockDetailFragment : Fragment() {
                 val targetPriceStr = targetPriceInput.text.toString()
 
                 if (targetPriceStr.isNotEmpty()) {
-                    val targetPrice = targetPriceStr.toDoubleOrNull()
+                    val targetPrice = targetPriceStr.parseDecimal()
 
                     if (targetPrice != null && targetPrice > 0) {
                         val currentPrice = (viewModel.stockDataState.value as? UiState.Success<StockDetailData>)?.data?.lastPrice ?: 0.0
@@ -386,11 +403,14 @@ class StockDetailFragment : Fragment() {
     }
 
     private fun showCreateDrawdownDialog() {
+        val currencySymbol = CurrencyHelper.getCurrencySymbol(
+            (viewModel.stockDataState.value as? UiState.Success<StockDetailData>)?.data?.currency ?: "SEK"
+        )
         val dialogView = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_add_ath_based, null)
         val tickerInput = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.tickerInput)
         val dropTypeInput = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.dropTypeInput)
         val dropValueInput = dialogView.findViewById<TextInputEditText>(R.id.dropValueInput)
-        
+
         // Dölj aktie/krypto-fältet eftersom vi redan är på denna akties/kryptos sida
         // TextInputLayout är parent till MaterialAutoCompleteTextView
         tickerInput?.parent?.let { parent ->
@@ -400,9 +420,9 @@ class StockDetailFragment : Fragment() {
                 parent.visibility = android.view.View.GONE
             }
         }
-        
+
         // Set up drop type dropdown
-        val dropTypes = arrayOf("Procent", "Absolut (SEK)")
+        val dropTypes = arrayOf("Procent", "Absolut ($currencySymbol)")
         val dropTypeAdapter = ArrayAdapter(requireContext(), android.R.layout.simple_dropdown_item_1line, dropTypes)
         dropTypeInput.setAdapter(dropTypeAdapter)
         dropTypeInput.setText("Procent", false) // Default to percentage
@@ -417,15 +437,14 @@ class StockDetailFragment : Fragment() {
                 if (dropTypeStr.isNotEmpty() && dropValueStr.isNotEmpty()) {
                     val dropType = when (dropTypeStr) {
                         "Procent" -> WatchType.DropType.PERCENTAGE
-                        "Absolut (SEK)" -> WatchType.DropType.ABSOLUTE
-                        else -> WatchType.DropType.PERCENTAGE
+                        else -> WatchType.DropType.ABSOLUTE
                     }
-                    val dropValue = dropValueStr.toDoubleOrNull()
+                    val dropValue = dropValueStr.parseDecimal()
 
                     if (dropValue != null && dropValue > 0) {
                         val currentCompanyName = (viewModel.stockDataState.value as? UiState.Success<StockDetailData>)?.data?.companyName
                             ?: arguments?.getString(ARG_COMPANY_NAME) ?: ""
-                        
+
                         viewModel.createAlert(
                             WatchType.ATHBased(dropType, dropValue),
                             currentCompanyName
@@ -471,7 +490,7 @@ class StockDetailFragment : Fragment() {
                 val directionStr = directionInput.text.toString()
 
                 if (thresholdStr.isNotEmpty() && directionStr.isNotEmpty()) {
-                    val threshold = thresholdStr.toDoubleOrNull()
+                    val threshold = thresholdStr.parseDecimal()
                     val direction = when (directionStr) {
                         "Upp" -> WatchType.DailyMoveDirection.UP
                         "Ned" -> WatchType.DailyMoveDirection.DOWN
@@ -500,9 +519,14 @@ class StockDetailFragment : Fragment() {
     }
 
     private fun showCreatePriceRangeDialog() {
+        val currencySymbol = CurrencyHelper.getCurrencySymbol(
+            (viewModel.stockDataState.value as? UiState.Success<StockDetailData>)?.data?.currency ?: "SEK"
+        )
         val dialogView = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_add_price_range, null)
         val minPriceInput = dialogView.findViewById<TextInputEditText>(R.id.minPriceInput)
         val maxPriceInput = dialogView.findViewById<TextInputEditText>(R.id.maxPriceInput)
+        dialogView.findViewById<TextInputLayout>(R.id.minPriceLayout)?.hint = "Minsta pris ($currencySymbol)"
+        dialogView.findViewById<TextInputLayout>(R.id.maxPriceLayout)?.hint = "Högsta pris ($currencySymbol)"
         
         MaterialAlertDialogBuilder(requireContext())
             .setTitle("Skapa prisintervall-bevakning")
@@ -512,8 +536,8 @@ class StockDetailFragment : Fragment() {
                 val maxPriceStr = maxPriceInput.text.toString()
 
                 if (minPriceStr.isNotEmpty() && maxPriceStr.isNotEmpty()) {
-                    val minPrice = minPriceStr.toDoubleOrNull()
-                    val maxPrice = maxPriceStr.toDoubleOrNull()
+                    val minPrice = minPriceStr.parseDecimal()
+                    val maxPrice = maxPriceStr.parseDecimal()
 
                     if (minPrice != null && maxPrice != null && minPrice > 0 && maxPrice > 0) {
                         if (minPrice >= maxPrice) {
@@ -582,7 +606,7 @@ class StockDetailFragment : Fragment() {
                             "Utdelningsprocent" -> WatchType.MetricType.DIVIDEND_YIELD
                             else -> null
                         }
-                        val targetValue = targetValueStr.toDoubleOrNull()
+                        val targetValue = targetValueStr.parseDecimal()
 
                         if (metricType != null && targetValue != null && targetValue > 0) {
                             viewModel.createAlert(
@@ -603,6 +627,63 @@ class StockDetailFragment : Fragment() {
     }
 
 
+    private fun showEditPricePairDialog(item: WatchItem) {
+        if (item.watchType !is WatchType.PricePair) return
+        val pricePair = item.watchType
+        val dialogView = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_add_stock_pair, null)
+        val ticker1Input = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.ticker1Input).apply { setText(item.ticker1) }
+        val ticker2Input = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.ticker2Input).apply { setText(item.ticker2) }
+        val priceDifferenceInput = dialogView.findViewById<TextInputEditText>(R.id.priceDifferenceInput).apply {
+            setText(CurrencyHelper.formatDecimal(pricePair.priceDifference))
+        }
+        val notifyWhenEqualCheckbox = dialogView.findViewById<MaterialCheckBox>(R.id.notifyWhenEqualCheckbox).apply {
+            isChecked = pricePair.notifyWhenEqual
+        }
+
+        val adapter1 = createStockAdapter()
+        val adapter2 = createStockAdapter()
+        setupStockSearch(ticker1Input, adapter1, stockSearchViewModel, includeCrypto = false)
+        setupStockSearch(ticker2Input, adapter2, stockSearchViewModel2, includeCrypto = false)
+
+        var selectedStock1: StockSearchResult? = null
+        var selectedStock2: StockSearchResult? = null
+
+        ticker1Input.setOnItemClickListener { _, _, position, _ -> selectedStock1 = adapter1.getItem(position) }
+        ticker2Input.setOnItemClickListener { _, _, position, _ -> selectedStock2 = adapter2.getItem(position) }
+
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle("Redigera aktiepar")
+            .setView(dialogView)
+            .setOnDismissListener {
+                binding.root.findViewById<android.view.View>(R.id.quickActionsCard)?.visibility = android.view.View.VISIBLE
+            }
+            .setPositiveButton("Uppdatera") { _, _ ->
+                val ticker1Str = ticker1Input.text.toString().trim()
+                val ticker2Str = ticker2Input.text.toString().trim()
+                val priceDifferenceStr = priceDifferenceInput.text.toString()
+                val notifyWhenEqual = notifyWhenEqualCheckbox.isChecked
+                val finalTicker1 = selectedStock1?.symbol ?: ticker1Str
+                val finalTicker2 = selectedStock2?.symbol ?: ticker2Str
+                if (finalTicker1.isNotEmpty() && finalTicker2.isNotEmpty() && priceDifferenceStr.isNotEmpty()) {
+                    val priceDifference = priceDifferenceStr.parseDecimal() ?: 0.0
+                    val updatedItem = item.copy(
+                        watchType = WatchType.PricePair(priceDifference, notifyWhenEqual),
+                        ticker1 = finalTicker1,
+                        ticker2 = finalTicker2,
+                        companyName1 = selectedStock1?.name ?: item.companyName1,
+                        companyName2 = selectedStock2?.name ?: item.companyName2
+                    )
+                    viewModel.updateWatchItem(updatedItem)
+                    Toast.makeText(requireContext(), "Aktiepar uppdaterat", Toast.LENGTH_SHORT).show()
+                } else {
+                    Toast.makeText(requireContext(), "Fyll i alla fält", Toast.LENGTH_SHORT).show()
+                }
+            }
+            .setNeutralButton("Ta bort") { _, _ -> showDeleteConfirmation(item) }
+            .setNegativeButton("Avbryt", null)
+            .show()
+    }
+
     private fun showDeleteConfirmation(watchItem: WatchItem) {
         MaterialAlertDialogBuilder(requireContext())
             .setTitle("Ta bort bevakning")
@@ -620,6 +701,7 @@ class StockDetailFragment : Fragment() {
         binding.root.findViewById<android.view.View>(R.id.quickActionsCard)?.visibility = android.view.View.GONE
         
         when (item.watchType) {
+            is WatchType.PricePair -> showEditPricePairDialog(item)
             is WatchType.PriceTarget -> showEditPriceTargetDialog(item)
             is WatchType.PriceRange -> showEditPriceRangeDialog(item)
             is WatchType.DailyMove -> showEditDailyMoveDialog(item)
@@ -634,6 +716,9 @@ class StockDetailFragment : Fragment() {
 
     private fun showEditPriceTargetDialog(item: WatchItem) {
         if (item.watchType !is WatchType.PriceTarget) return
+        val currencySymbol = CurrencyHelper.getCurrencySymbol(
+            (viewModel.stockDataState.value as? UiState.Success<StockDetailData>)?.data?.currency ?: "SEK"
+        )
         val priceTarget = item.watchType
         val dialogView = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_add_price_target, null)
         val tickerInput = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.tickerInput)
@@ -641,10 +726,11 @@ class StockDetailFragment : Fragment() {
         tickerInputLayout?.visibility = android.view.View.GONE
         tickerInput.setText(item.ticker ?: "")
         tickerInput.isEnabled = false
-        
+
         val targetPriceInput = dialogView.findViewById<TextInputEditText>(R.id.targetPriceInput).apply {
             setText(CurrencyHelper.formatDecimal(priceTarget.targetPrice))
         }
+        dialogView.findViewById<TextInputLayout>(R.id.targetPriceLayout)?.hint = "Målpris ($currencySymbol)"
 
         val dialog = MaterialAlertDialogBuilder(requireContext())
             .setTitle("Redigera prisbevakning")
@@ -657,7 +743,7 @@ class StockDetailFragment : Fragment() {
                 val targetPriceStr = targetPriceInput.text.toString()
 
                 if (targetPriceStr.isNotEmpty()) {
-                    val targetPrice = targetPriceStr.toDoubleOrNull()
+                    val targetPrice = targetPriceStr.parseDecimal()
 
                     if (targetPrice != null && targetPrice > 0) {
                         val direction = if (item.currentPrice > 0.0 && item.currentPrice >= targetPrice)
@@ -683,9 +769,11 @@ class StockDetailFragment : Fragment() {
     }
 
     private fun showEditPriceRangeDialog(item: WatchItem) {
+        val currency = (viewModel.stockDataState.value as? UiState.Success<StockDetailData>)?.data?.currency ?: "SEK"
         com.stockflip.ui.dialogs.showEditPriceRangeDialog(
             context = requireContext(),
             item = item,
+            currency = currency,
             onUpdate = { minPrice, maxPrice ->
                 val updatedItem = item.copy(watchType = WatchType.PriceRange(minPrice, maxPrice))
                 viewModel.updateWatchItem(updatedItem)
@@ -735,7 +823,7 @@ class StockDetailFragment : Fragment() {
                 val directionStr = directionInput.text.toString()
 
                 if (thresholdStr.isNotEmpty() && directionStr.isNotEmpty()) {
-                    val threshold = thresholdStr.toDoubleOrNull()
+                    val threshold = thresholdStr.parseDecimal()
                     val direction = when (directionStr) {
                         "Upp" -> WatchType.DailyMoveDirection.UP
                         "Ned" -> WatchType.DailyMoveDirection.DOWN
@@ -766,6 +854,9 @@ class StockDetailFragment : Fragment() {
 
     private fun showEditDrawdownDialog(item: WatchItem) {
         if (item.watchType !is WatchType.ATHBased) return
+        val currencySymbol = CurrencyHelper.getCurrencySymbol(
+            (viewModel.stockDataState.value as? UiState.Success<StockDetailData>)?.data?.currency ?: "SEK"
+        )
         val athBased = item.watchType
         val dialogView = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_add_ath_based, null)
         val tickerInput = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.tickerInput)
@@ -773,18 +864,19 @@ class StockDetailFragment : Fragment() {
         tickerInputLayout?.visibility = android.view.View.GONE
         tickerInput.setText(item.ticker ?: "")
         tickerInput.isEnabled = false
-        
+
+        val absoluteLabel = "Absolut ($currencySymbol)"
         val dropTypeInput = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.dropTypeInput).apply {
             setText(when (athBased.dropType) {
                 WatchType.DropType.PERCENTAGE -> "Procent"
-                WatchType.DropType.ABSOLUTE -> "Absolut (SEK)"
+                WatchType.DropType.ABSOLUTE -> absoluteLabel
             })
         }
         val dropValueInput = dialogView.findViewById<TextInputEditText>(R.id.dropValueInput).apply {
             setText(CurrencyHelper.formatDecimal(athBased.dropValue))
         }
 
-        val dropTypes = arrayOf("Procent", "Absolut (SEK)")
+        val dropTypes = arrayOf("Procent", absoluteLabel)
         val dropTypeAdapter = ArrayAdapter(requireContext(), android.R.layout.simple_dropdown_item_1line, dropTypes)
         dropTypeInput.setAdapter(dropTypeAdapter)
 
@@ -802,10 +894,9 @@ class StockDetailFragment : Fragment() {
                 if (dropTypeStr.isNotEmpty() && dropValueStr.isNotEmpty()) {
                     val dropType = when (dropTypeStr) {
                         "Procent" -> WatchType.DropType.PERCENTAGE
-                        "Absolut (SEK)" -> WatchType.DropType.ABSOLUTE
-                        else -> WatchType.DropType.PERCENTAGE
+                        else -> WatchType.DropType.ABSOLUTE
                     }
-                    val dropValue = dropValueStr.toDoubleOrNull()
+                    val dropValue = dropValueStr.parseDecimal()
 
                     if (dropValue != null && dropValue > 0) {
                         val updatedItem = item.copy(
@@ -885,7 +976,7 @@ class StockDetailFragment : Fragment() {
                         "Utdelningsprocent" -> WatchType.MetricType.DIVIDEND_YIELD
                         else -> null
                     }
-                    val targetValue = targetValueStr.toDoubleOrNull()
+                    val targetValue = targetValueStr.parseDecimal()
 
                     if (metricType != null && targetValue != null && targetValue > 0) {
                         val direction = if (item.currentMetricValue > 0.0 && item.currentMetricValue >= targetValue)
@@ -1008,7 +1099,7 @@ class StockDetailFragment : Fragment() {
                 // Validate all conditions
                 val validConditions = newConditions.filter { 
                     it.value.isNotEmpty() && 
-                    it.value.toDoubleOrNull() != null 
+                    it.value.parseDecimal() != null 
                 }
                 
                 if (validConditions.size != newConditions.size) {
@@ -1217,7 +1308,7 @@ class StockDetailFragment : Fragment() {
      * Builds an AlertRule from a ConditionData and symbol.
      */
     private fun buildAlertRule(symbol: String, condition: ConditionBuilderAdapter.ConditionData): AlertRule? {
-        val value = condition.value.toDoubleOrNull() ?: return null
+        val value = condition.value.parseDecimal() ?: return null
         
         return when (condition.conditionType) {
             "Pris" -> {

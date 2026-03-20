@@ -199,7 +199,7 @@ class AlertsFragment : Fragment() {
                             // Update sort mode label
                             when (sortMode) {
                                 SortHelper.SortMode.ALPHABETICAL -> {
-                                    binding.sortModeLabel.text = "Sorterat: Bokstavsordning"
+                                    binding.sortModeLabel.text = getString(R.string.sort_label_alphabetical)
                                     binding.sortModeLabel.visibility = View.VISIBLE
                                 }
                                 SortHelper.SortMode.ADDITION_ORDER -> {

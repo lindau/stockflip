@@ -8,6 +8,11 @@
     <string name="alerts_empty_title">Inga bevakningar ännu</string>
     <string name="alerts_empty_subtitle">Tryck + för att bevaka en aktie</string>
 
+    <string name="stocks_empty_title">Inga aktier ännu</string>
+    <string name="stocks_empty_subtitle">Tryck + för att bevaka en aktie</string>
+    <string name="pairs_empty_title">Inga aktiepar ännu</string>
+    <string name="pairs_empty_subtitle">Tryck + för att lägga till ett aktiepar</string>
+
     <string name="alert_delete_title">Ta bort bevakning</string>
     <string name="alert_delete_message">Är du säker på att du vill ta bort den här bevakningen?</string>
     <string name="alert_delete_positive">Ta bort</string>
@@ -35,4 +40,17 @@
     <string name="toast_price_range_updated">Prisintervall-bevakning uppdaterad</string>
     <string name="toast_watch_updated">Bevakning uppdaterad</string>
     <string name="toast_watch_update_failed">Kunde inte uppdatera bevakning: %1$s</string>
+
+    <!-- Backup/Restore -->
+    <string name="menu_export">Exportera data</string>
+    <string name="menu_import">Importera data</string>
+    <string name="import_confirm_title">Importera data</string>
+    <string name="import_confirm_message">%1$d bevakningar och %2$d aktiepar kommer att läggas till. Fortsätt?</string>
+    <string name="import_success">Importerade %1$d bevakningar och %2$d aktiepar</string>
+    <string name="import_error">Kunde inte importera: %1$s</string>
+
+    <!-- Sortering -->
+    <string name="sort_mode_alphabetical">Sortering: Bokstavsordning</string>
+    <string name="sort_mode_addition">Sortering: Tilläggsordning</string>
+    <string name="sort_label_alphabetical">Sorterat: Bokstavsordning</string>
 </resources>

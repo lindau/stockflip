@@ -70,9 +70,7 @@ class YahooMarketDataServiceImpl(
             if (!currency.isNullOrBlank()) {
                 return@withContext currency
             }
-            val exchange: String? = result.meta?.exchangeName
-            val fallbackCurrency: String = CurrencyHelper.getCurrencyFromExchange(exchange)
-            fallbackCurrency
+            CurrencyHelper.getCurrencyFromSymbol(symbol)
         } catch (e: Exception) {
             Log.e(TAG, "Error fetching currency for $symbol: ${e.message}", e)
             null
@@ -211,17 +209,12 @@ class YahooMarketDataServiceImpl(
                 return@withContext null
             }
             val currency: String? = meta.currency
-            val fallbackCurrency: String? = if (currency.isNullOrBlank()) {
-                CurrencyHelper.getCurrencyFromExchange(meta.exchangeName)
-            } else {
-                null
-            }
             StockDetailSnapshot(
                 lastPrice = meta.regularMarketPrice?.takeIf { !it.isNaN() && it > 0.0 },
                 previousClose = meta.regularMarketPreviousClose?.takeIf { !it.isNaN() && it > 0.0 },
                 week52High = meta.fiftyTwoWeekHigh?.takeIf { !it.isNaN() && it > 0.0 },
                 week52Low = meta.fiftyTwoWeekLow?.takeIf { !it.isNaN() && it > 0.0 },
-                currency = currency?.takeIf { it.isNotBlank() } ?: fallbackCurrency,
+                currency = currency?.takeIf { it.isNotBlank() } ?: CurrencyHelper.getCurrencyFromSymbol(symbol),
                 exchangeName = meta.exchangeName?.takeIf { it.isNotBlank() },
                 companyName = meta.longName ?: meta.shortName ?: meta.symbol
             )

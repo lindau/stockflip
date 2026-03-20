@@ -6,6 +6,7 @@ import android.widget.Toast
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.textfield.TextInputEditText
 import com.stockflip.CurrencyHelper
+import com.stockflip.parseDecimal
 import com.stockflip.R
 import com.stockflip.WatchItem
 import com.stockflip.WatchType
@@ -25,10 +26,12 @@ fun showEditPriceRangeDialog(
     item: WatchItem,
     onUpdate: (minPrice: Double, maxPrice: Double) -> Unit,
     onDelete: (() -> Unit)? = null,
-    onDismiss: (() -> Unit)? = null
+    onDismiss: (() -> Unit)? = null,
+    currency: String = "SEK"
 ) {
     if (item.watchType !is WatchType.PriceRange) return
     val priceRange = item.watchType
+    val currencySymbol = CurrencyHelper.getCurrencySymbol(currency)
     val dialogView = LayoutInflater.from(context).inflate(R.layout.dialog_add_price_range, null)
     val minPriceInput = dialogView.findViewById<TextInputEditText>(R.id.minPriceInput).apply {
         setText(CurrencyHelper.formatDecimal(priceRange.minPrice))
@@ -36,6 +39,8 @@ fun showEditPriceRangeDialog(
     val maxPriceInput = dialogView.findViewById<TextInputEditText>(R.id.maxPriceInput).apply {
         setText(CurrencyHelper.formatDecimal(priceRange.maxPrice))
     }
+    dialogView.findViewById<com.google.android.material.textfield.TextInputLayout>(R.id.minPriceLayout)?.hint = "Minsta pris ($currencySymbol)"
+    dialogView.findViewById<com.google.android.material.textfield.TextInputLayout>(R.id.maxPriceLayout)?.hint = "Högsta pris ($currencySymbol)"
     val tickerInput = dialogView.findViewById<com.google.android.material.textfield.MaterialAutoCompleteTextView?>(R.id.tickerInput)
     val tickerInputLayout = tickerInput?.parent as? com.google.android.material.textfield.TextInputLayout
     tickerInputLayout?.visibility = android.view.View.GONE
@@ -49,8 +54,8 @@ fun showEditPriceRangeDialog(
             val minPriceStr = minPriceInput.text.toString()
             val maxPriceStr = maxPriceInput.text.toString()
             if (minPriceStr.isNotEmpty() && maxPriceStr.isNotEmpty()) {
-                val minPrice = minPriceStr.toDoubleOrNull()
-                val maxPrice = maxPriceStr.toDoubleOrNull()
+                val minPrice = minPriceStr.parseDecimal()
+                val maxPrice = maxPriceStr.parseDecimal()
                 if (minPrice != null && maxPrice != null && minPrice > 0 && maxPrice > minPrice) {
                     onUpdate(minPrice, maxPrice)
                 } else {

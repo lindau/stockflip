@@ -44,69 +44,85 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="horizontal"
-                        android:gravity="center_vertical">
+                        android:gravity="top">
 
-                        <TextView
-                            android:id="@+id/countryFlag"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:textSize="18sp"
-                            android:layout_marginEnd="8dp"
-                            android:text="🇸🇪"
-                            tools:text="🇸🇪" />
-
-                        <TextView
-                            android:id="@+id/companyName"
+                        <!-- Vänster: flagga + namn + symbol -->
+                        <LinearLayout
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:textAppearance="?attr/textAppearanceTitleMedium"
-                            android:textColor="?attr/colorOnSurface"
-                            tools:text="Apple Inc." />
-                    </LinearLayout>
+                            android:orientation="horizontal"
+                            android:gravity="top">
 
-                    <!-- Symbol -->
-                    <TextView
-                        android:id="@+id/symbol"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="2dp"
-                        android:textAppearance="?attr/textAppearanceLabelMedium"
-                        android:textColor="?attr/colorOnSurfaceVariant"
-                        tools:text="AAPL" />
+                            <TextView
+                                android:id="@+id/countryFlag"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:textSize="18sp"
+                                android:layout_marginEnd="8dp"
+                                android:text="🇸🇪"
+                                tools:text="🇸🇪" />
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:id="@+id/companyName"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:textAppearance="?attr/textAppearanceTitleMedium"
+                                    android:textColor="?attr/colorOnSurface"
+                                    tools:text="Apple Inc." />
+
+                                <TextView
+                                    android:id="@+id/symbol"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="2dp"
+                                    android:textAppearance="?attr/textAppearanceLabelMedium"
+                                    android:textColor="?attr/colorOnSurfaceVariant"
+                                    tools:text="AAPL" />
+                            </LinearLayout>
+                        </LinearLayout>
+
+                        <!-- Höger: pris + daglig förändring -->
+                        <LinearLayout
+                            android:id="@+id/dailyChangeRow"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:gravity="end"
+                            android:layout_marginStart="8dp">
+
+                            <TextView
+                                android:id="@+id/lastPrice"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:textAppearance="?attr/textAppearanceTitleMedium"
+                                android:fontFamily="@font/jetbrains_mono_semibold"
+                                android:textColor="?attr/colorOnSurface"
+                                android:gravity="end"
+                                tools:text="180.50 SEK" />
+
+                            <TextView
+                                android:id="@+id/dailyChangePercent"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:textAppearance="?attr/textAppearanceLabelMedium"
+                                android:fontFamily="@font/jetbrains_mono_regular"
+                                android:textColor="?attr/colorOnSurface"
+                                android:gravity="end"
+                                tools:text="+2.5%" />
+                        </LinearLayout>
+                    </LinearLayout>
 
                     <com.google.android.material.divider.MaterialDivider
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginVertical="6dp" />
-
-                    <!-- Hero price row -->
-                    <LinearLayout
-                        android:id="@+id/dailyChangeRow"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical"
-                        android:layout_marginBottom="12dp">
-
-                        <TextView
-                            android:id="@+id/lastPrice"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:textAppearance="?attr/textAppearanceHeadlineMedium"
-                            android:textColor="?attr/colorOnSurface"
-                            android:layout_marginEnd="10dp"
-                            tools:text="180.50 SEK" />
-
-                        <TextView
-                            android:id="@+id/dailyChangePercent"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:textAppearance="?attr/textAppearanceTitleMedium"
-                            android:textColor="?attr/colorOnSurface"
-                            tools:text="+2.5%" />
-
-                    </LinearLayout>
 
                     <!-- 3-column stat row -->
                     <LinearLayout

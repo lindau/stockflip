@@ -3,6 +3,7 @@ package com.stockflip
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.stockflip.backup.BackupManager
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -427,12 +428,34 @@ class MainViewModel(
     suspend fun updateWatchItem(watchItem: WatchItem) {
         try {
             Log.d(TAG, "Updating watch item: ${watchItem.getDisplayName()}")
-            watchItemDao.update(watchItem)
+            watchItemDao.update(watchItem.reactivate())
             loadWatchItems() // Reload the list after updating
         } catch (e: Exception) {
             Log.e(TAG, "Error updating watch item: ${e.message}")
             _watchItemUiState.value = UiState.Error("Failed to update watch item: ${e.message}")
         }
+    }
+
+    suspend fun exportData(): String {
+        val watchItems = watchItemDao.getAllWatchItems()
+        val stockPairs = stockPairDao.getAllStockPairs()
+        return BackupManager.exportToJson(watchItems, stockPairs)
+    }
+
+    suspend fun importData(json: String): ImportResult {
+        return try {
+            val data = BackupManager.importFromJson(json)
+            data.watchItems.forEach { watchItemDao.insertWatchItem(it) }
+            data.stockPairs.forEach { stockPairDao.insertStockPair(it) }
+            ImportResult.Success(data.watchItems.size, data.stockPairs.size)
+        } catch (e: Exception) {
+            ImportResult.Error(e.message ?: "Okänt fel")
+        }
+    }
+
+    sealed class ImportResult {
+        data class Success(val watchCount: Int, val pairCount: Int) : ImportResult()
+        data class Error(val message: String) : ImportResult()
     }
 
     companion object {

@@ -147,3 +147,10 @@ object CurrencyHelper {
         return "SEK"
     }
 }
+
+/**
+ * Tolkar en sträng som ett decimaltal med stöd för både punkt och komma som decimalskiljare.
+ * Krävs eftersom Android-tangentbordet på svenska enheter skriver "," men
+ * Kotlin's toDoubleOrNull() bara accepterar ".".
+ */
+fun String.parseDecimal(): Double? = replace(",", ".").toDoubleOrNull()
