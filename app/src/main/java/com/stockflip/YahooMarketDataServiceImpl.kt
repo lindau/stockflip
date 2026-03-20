@@ -209,9 +209,13 @@ class YahooMarketDataServiceImpl(
                 return@withContext null
             }
             val currency: String? = meta.currency
+            val previousClose = (meta.regularMarketPreviousClose ?: meta.chartPreviousClose)
+                ?.takeIf { !it.isNaN() && it > 0.0 }
+            val changePercent = meta.regularMarketChangePercent?.takeIf { !it.isNaN() }
             StockDetailSnapshot(
                 lastPrice = meta.regularMarketPrice?.takeIf { !it.isNaN() && it > 0.0 },
-                previousClose = meta.regularMarketPreviousClose?.takeIf { !it.isNaN() && it > 0.0 },
+                previousClose = previousClose,
+                dailyChangePercent = changePercent,
                 week52High = meta.fiftyTwoWeekHigh?.takeIf { !it.isNaN() && it > 0.0 },
                 week52Low = meta.fiftyTwoWeekLow?.takeIf { !it.isNaN() && it > 0.0 },
                 currency = currency?.takeIf { it.isNotBlank() } ?: CurrencyHelper.getCurrencyFromSymbol(symbol),

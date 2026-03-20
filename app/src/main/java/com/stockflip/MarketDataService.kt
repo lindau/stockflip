@@ -7,6 +7,7 @@ package com.stockflip
 data class StockDetailSnapshot(
     val lastPrice: Double?,
     val previousClose: Double?,
+    val dailyChangePercent: Double?,
     val week52High: Double?,
     val week52Low: Double?,
     val currency: String?,

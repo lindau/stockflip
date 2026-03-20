@@ -58,11 +58,10 @@ class StockDetailViewModel(
                 val currency: String = snapshot.currency ?: CurrencyHelper.getCurrencyFromSymbol(symbol)
                 val exchange: String? = snapshot.exchangeName
                 val companyName: String = snapshot.companyName ?: symbol
-                val dailyChangePercent: Double? = if (lastPrice != null && previousClose != null && previousClose > 0) {
-                    ((lastPrice - previousClose) / previousClose) * 100
-                } else {
-                    null
-                }
+                val dailyChangePercent: Double? = snapshot.dailyChangePercent
+                    ?: if (lastPrice != null && previousClose != null && previousClose > 0) {
+                        ((lastPrice - previousClose) / previousClose) * 100
+                    } else null
                 val drawdownPercent: Double? = if (lastPrice != null && week52High != null && week52High > 0) {
                     ((week52High - lastPrice) / week52High) * 100
                 } else {
