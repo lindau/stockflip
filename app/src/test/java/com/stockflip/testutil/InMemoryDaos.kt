@@ -1,5 +1,7 @@
 package com.stockflip.testutil
 
+import com.stockflip.StockNote
+import com.stockflip.StockNoteDao
 import com.stockflip.StockPair
 import com.stockflip.StockPairDao
 import com.stockflip.TriggerHistoryDao
@@ -67,6 +69,21 @@ class InMemoryWatchItemDao(
     }
 
     override suspend fun getWatchItemById(id: Int): WatchItem? = state.value.firstOrNull { it.id == id }
+}
+
+class InMemoryStockNoteDao : StockNoteDao {
+    private val state: MutableStateFlow<Map<String, StockNote>> = MutableStateFlow(emptyMap())
+
+    override fun getByTickerFlow(ticker: String): Flow<StockNote?> =
+        state.map { it[ticker] }
+
+    override suspend fun upsert(note: StockNote) {
+        state.value = state.value + (note.ticker to note)
+    }
+
+    override suspend fun deleteByTicker(ticker: String) {
+        state.value = state.value - ticker
+    }
 }
 
 class InMemoryTriggerHistoryDao : TriggerHistoryDao {

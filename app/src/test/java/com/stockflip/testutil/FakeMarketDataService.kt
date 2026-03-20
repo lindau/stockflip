@@ -39,6 +39,7 @@ class FakeMarketDataService(
         return StockDetailSnapshot(
             lastPrice = lastPrice,
             previousClose = previousCloseBySymbol[symbol],
+            dailyChangePercent = null,
             week52High = null,
             week52Low = null,
             currency = currencyBySymbol[symbol],
