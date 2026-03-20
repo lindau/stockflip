@@ -6,8 +6,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.stockflip.repository.TriggerHistoryRepository
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 /**
@@ -18,7 +20,8 @@ class StockDetailViewModel(
     private val watchItemDao: WatchItemDao,
     private val yahooFinanceService: MarketDataService,
     private val symbol: String,
-    private val triggerHistoryRepository: TriggerHistoryRepository
+    private val triggerHistoryRepository: TriggerHistoryRepository,
+    private val stockNoteDao: StockNoteDao
 ) : ViewModel() {
 
     private val TAG = "StockDetailViewModel"
@@ -31,6 +34,16 @@ class StockDetailViewModel(
 
     private val _triggerHistoryState = MutableStateFlow<Map<Int, List<Long>>>(emptyMap())
     val triggerHistoryState: StateFlow<Map<Int, List<Long>>> = _triggerHistoryState.asStateFlow()
+
+    val noteState: StateFlow<StockNote?> = stockNoteDao.getByTickerFlow(symbol)
+        .stateIn(viewModelScope, SharingStarted.Lazily, null)
+
+    fun saveNote(text: String) {
+        viewModelScope.launch {
+            if (text.isBlank()) stockNoteDao.deleteByTicker(symbol)
+            else stockNoteDao.upsert(StockNote(symbol, text.trim()))
+        }
+    }
 
     init {
         loadStockData()

@@ -49,6 +49,12 @@
     <string name="import_success">Importerade %1$d bevakningar och %2$d aktiepar</string>
     <string name="import_error">Kunde inte importera: %1$s</string>
 
+    <!-- Anteckningar -->
+    <string name="notes_card_title">Anteckningar</string>
+    <string name="notes_placeholder">Tryck för att lägga till anteckning...</string>
+    <string name="notes_input_hint">Anteckning</string>
+    <string name="notes_dialog_title">Redigera anteckning</string>
+
     <!-- Sortering -->
     <string name="sort_mode_alphabetical">Sortering: Bokstavsordning</string>
     <string name="sort_mode_addition">Sortering: Tilläggsordning</string>

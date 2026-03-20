@@ -115,7 +115,8 @@ class StockDetailFragment : Fragment() {
                         database.watchItemDao(),
                         YahooFinanceService,
                         symbol,
-                        TriggerHistoryRepository(database.triggerHistoryDao())
+                        TriggerHistoryRepository(database.triggerHistoryDao()),
+                        database.stockNoteDao()
                     ) as T
                 }
                 throw IllegalArgumentException("Unknown ViewModel class")
@@ -150,6 +151,8 @@ class StockDetailFragment : Fragment() {
         setupQuickActions()
         setupObservers()
         setupSwipeRefresh()
+
+        binding.notesCard.setOnClickListener { showEditNoteDialog() }
 
         // Ladda data
         viewModel.loadStockData()
@@ -259,6 +262,28 @@ class StockDetailFragment : Fragment() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewModel.triggerHistoryState.collect { history ->
                 alertAdapter.updateTriggerHistory(history)
+            }
+        }
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewModel.noteState.collect { note ->
+                if (note != null && note.note.isNotBlank()) {
+                    binding.notesText.text = note.note
+                    binding.notesText.setTextColor(
+                        com.google.android.material.color.MaterialColors.getColor(
+                            binding.notesText,
+                            com.google.android.material.R.attr.colorOnSurface
+                        )
+                    )
+                } else {
+                    binding.notesText.setText(R.string.notes_placeholder)
+                    binding.notesText.setTextColor(
+                        com.google.android.material.color.MaterialColors.getColor(
+                            binding.notesText,
+                            com.google.android.material.R.attr.colorOnSurfaceVariant
+                        )
+                    )
+                }
             }
         }
     }
@@ -1500,6 +1525,32 @@ class StockDetailFragment : Fragment() {
             if (hasFocus && input.text.isNotEmpty() && adapter.count > 0) {
                 input.post { input.showDropDown() }
             }
+        }
+    }
+
+    private fun showEditNoteDialog() {
+        val currentNote = (viewModel.noteState.value)?.note ?: ""
+        val dialogView = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_edit_note, null)
+        val noteInput = dialogView.findViewById<TextInputEditText>(R.id.noteInput)
+        noteInput.setText(currentNote)
+
+        val builder = MaterialAlertDialogBuilder(requireContext())
+            .setTitle(R.string.notes_dialog_title)
+            .setView(dialogView)
+            .setPositiveButton(R.string.dialog_button_update) { _, _ ->
+                viewModel.saveNote(noteInput.text.toString())
+            }
+            .setNegativeButton(R.string.dialog_button_cancel, null)
+
+        if (currentNote.isNotBlank()) {
+            builder.setNeutralButton(R.string.dialog_button_remove) { _, _ ->
+                viewModel.saveNote("")
+            }
+        }
+
+        builder.show().also { dialog ->
+            dialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE)
+            noteInput.requestFocus()
         }
     }
 

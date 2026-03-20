@@ -9,8 +9,8 @@ import androidx.room.TypeConverters
 import androidx.sqlite.db.SupportSQLiteDatabase
 
 @Database(
-    entities = [StockPair::class, WatchItem::class, MetricHistoryEntity::class, TriggerHistoryEntity::class],
-    version = 9,
+    entities = [StockPair::class, WatchItem::class, MetricHistoryEntity::class, TriggerHistoryEntity::class, StockNote::class],
+    version = 10,
     exportSchema = true
 )
 @TypeConverters(WatchTypeConverter::class)
@@ -19,6 +19,7 @@ abstract class StockPairDatabase : RoomDatabase() {
     abstract fun watchItemDao(): WatchItemDao
     abstract fun metricHistoryDao(): MetricHistoryDao
     abstract fun triggerHistoryDao(): TriggerHistoryDao
+    abstract fun stockNoteDao(): StockNoteDao
 
     companion object {
         private val MIGRATION_4_5 = object : Migration(4, 5) {
@@ -161,6 +162,14 @@ abstract class StockPairDatabase : RoomDatabase() {
             }
         }
 
+        private val MIGRATION_9_10 = object : Migration(9, 10) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `stock_notes` (`ticker` TEXT NOT NULL, `note` TEXT NOT NULL, PRIMARY KEY(`ticker`))"
+                )
+            }
+        }
+
         private val MIGRATION_8_9 = object : Migration(8, 9) {
             override fun migrate(database: SupportSQLiteDatabase) {
                 database.execSQL("""
@@ -185,7 +194,7 @@ abstract class StockPairDatabase : RoomDatabase() {
                     StockPairDatabase::class.java,
                     "stock_pair_database"
                 )
-                .addMigrations(MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9)
+                .addMigrations(MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10)
                 .fallbackToDestructiveMigrationOnDowngrade()
                 .addCallback(object : RoomDatabase.Callback() {
                     override fun onOpen(db: SupportSQLiteDatabase) {
