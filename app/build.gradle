@@ -93,6 +93,7 @@ dependencies {
     implementation 'androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7'
     implementation 'androidx.compose.runtime:runtime-livedata'
     debugImplementation 'androidx.compose.ui:ui-tooling'
+
     
     ksp 'androidx.room:room-compiler:2.7.0-alpha11'
     androidTestImplementation 'androidx.work:work-testing:2.9.0'

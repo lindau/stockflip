@@ -219,38 +219,13 @@
 
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- Anteckningar -->
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/notesCard"
-                style="@style/Widget.Material3.CardView.Elevated"
+            <!-- Intradagskurva -->
+            <androidx.compose.ui.platform.ComposeView
+                android:id="@+id/intradayChartView"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginHorizontal="12dp"
-                android:layout_marginBottom="16dp">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="12dp">
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="@string/notes_card_title"
-                        android:textAppearance="?attr/textAppearanceLabelMedium"
-                        android:textColor="?attr/colorOnSurfaceVariant" />
-
-                    <TextView
-                        android:id="@+id/notesText"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="4dp"
-                        android:text="@string/notes_placeholder"
-                        android:textAppearance="?attr/textAppearanceBodyMedium" />
-
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
+                android:layout_marginBottom="16dp"
+                android:visibility="gone" />
 
             <!-- Bevakningar — inline sektionsetikett, inga kort-wrapper -->
             <TextView
@@ -337,6 +312,40 @@
                 </com.google.android.material.chip.ChipGroup>
 
             </LinearLayout>
+
+            <!-- Anteckningar -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/notesCard"
+                style="@style/Widget.Material3.CardView.Elevated"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="12dp"
+                android:layout_marginTop="12dp"
+                android:layout_marginBottom="16dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="12dp">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/notes_card_title"
+                        android:textAppearance="?attr/textAppearanceLabelMedium"
+                        android:textColor="?attr/colorOnSurfaceVariant" />
+
+                    <TextView
+                        android:id="@+id/notesText"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:text="@string/notes_placeholder"
+                        android:textAppearance="?attr/textAppearanceBodyMedium" />
+
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
 
         </LinearLayout>
 

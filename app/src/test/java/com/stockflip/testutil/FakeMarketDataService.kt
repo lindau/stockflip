@@ -1,5 +1,6 @@
 package com.stockflip.testutil
 
+import com.stockflip.IntradayChartData
 import com.stockflip.MarketDataService
 import com.stockflip.StockDetailSnapshot
 import com.stockflip.WatchType
@@ -33,6 +34,8 @@ class FakeMarketDataService(
     override suspend fun getCompanyName(symbol: String): String? = companyNameBySymbol[symbol]
 
     override suspend fun getKeyMetric(symbol: String, metricType: WatchType.MetricType): Double? = null
+
+    override suspend fun getIntradayChart(symbol: String): IntradayChartData? = null
 
     override suspend fun getStockDetailSnapshot(symbol: String): StockDetailSnapshot? {
         val lastPrice: Double? = pricesBySymbol[symbol] ?: return null

@@ -22,9 +22,16 @@ import kotlinx.coroutines.delay
 interface YahooFinanceApi {
     @GET("v8/finance/chart/{symbol}")
     suspend fun getStockPrice(@Path("symbol") symbol: String): YahooFinanceResponse
-    
+
     @GET("v8/finance/chart/{symbol}")
     suspend fun getStockInfo(@Path("symbol") symbol: String): YahooFinanceResponse
+
+    @GET("v8/finance/chart/{symbol}")
+    suspend fun getIntradayChart(
+        @Path("symbol") symbol: String,
+        @retrofit2.http.Query("range") range: String = "1d",
+        @retrofit2.http.Query("interval") interval: String = "2m"
+    ): YahooFinanceResponse
 }
 
 data class YahooFinanceResponse(
@@ -380,6 +387,10 @@ object YahooFinanceService : MarketDataService {
 
     override suspend fun getStockDetailSnapshot(symbol: String): StockDetailSnapshot? {
         return chartMarketDataService.getStockDetailSnapshot(symbol)
+    }
+
+    override suspend fun getIntradayChart(symbol: String): IntradayChartData? {
+        return chartMarketDataService.getIntradayChart(symbol)
     }
 
     @JvmStatic

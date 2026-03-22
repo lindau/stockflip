@@ -38,6 +38,8 @@ import android.view.WindowManager
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import com.stockflip.ui.components.IntradayChart
+import com.stockflip.ui.theme.StockFlipTheme
 
 /**
  * Fragment för att visa detaljer om en enskild aktie/krypto.
@@ -194,7 +196,7 @@ class StockDetailFragment : Fragment() {
 
     private fun setupSwipeRefresh() {
         binding.swipeRefreshLayout.setOnRefreshListener {
-            viewModel.loadStockData()
+            viewModel.refresh()
         }
     }
 
@@ -262,6 +264,23 @@ class StockDetailFragment : Fragment() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewModel.triggerHistoryState.collect { history ->
                 alertAdapter.updateTriggerHistory(history)
+            }
+        }
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewModel.chartState.collect { state ->
+                when (state) {
+                    is UiState.Loading -> binding.intradayChartView.isVisible = false
+                    is UiState.Success -> {
+                        binding.intradayChartView.isVisible = true
+                        binding.intradayChartView.setContent {
+                            StockFlipTheme {
+                                IntradayChart(data = state.data)
+                            }
+                        }
+                    }
+                    is UiState.Error -> binding.intradayChartView.isVisible = false
+                }
             }
         }
 

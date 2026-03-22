@@ -32,6 +32,9 @@ class StockDetailViewModel(
     private val _alertsState = MutableStateFlow<UiState<List<WatchItem>>>(UiState.Loading)
     val alertsState: StateFlow<UiState<List<WatchItem>>> = _alertsState.asStateFlow()
 
+    private val _chartState = MutableStateFlow<UiState<IntradayChartData>>(UiState.Loading)
+    val chartState: StateFlow<UiState<IntradayChartData>> = _chartState.asStateFlow()
+
     private val _triggerHistoryState = MutableStateFlow<Map<Int, List<Long>>>(emptyMap())
     val triggerHistoryState: StateFlow<Map<Int, List<Long>>> = _triggerHistoryState.asStateFlow()
 
@@ -47,6 +50,7 @@ class StockDetailViewModel(
 
     init {
         loadStockData()
+        loadChartData()
         observeAlerts()
     }
 
@@ -292,11 +296,29 @@ class StockDetailViewModel(
         }
     }
 
+    fun loadChartData() {
+        viewModelScope.launch {
+            try {
+                _chartState.value = UiState.Loading
+                val data = yahooFinanceService.getIntradayChart(symbol)
+                _chartState.value = if (data != null) {
+                    UiState.Success(data)
+                } else {
+                    UiState.Error("Ingen intradagsdata tillgänglig")
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error loading chart data: ${e.message}", e)
+                _chartState.value = UiState.Error("Kunde inte ladda diagram")
+            }
+        }
+    }
+
     /**
      * Uppdaterar aktiedata (refresh).
      */
     fun refresh() {
         loadStockData()
+        loadChartData()
         loadAlerts()
     }
 }

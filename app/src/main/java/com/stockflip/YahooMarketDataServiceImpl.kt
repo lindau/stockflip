@@ -228,6 +228,42 @@ class YahooMarketDataServiceImpl(
         }
     }
 
+    suspend fun getIntradayChart(symbol: String): IntradayChartData? = withContext(Dispatchers.IO) {
+        try {
+            Log.d(TAG, "Fetching intraday chart for symbol: $symbol")
+            val response: YahooFinanceResponse = api.getIntradayChart(symbol)
+            if (response.chart?.error != null) {
+                Log.e(TAG, "API Error for intraday chart $symbol: ${response.chart.error.description}")
+                return@withContext null
+            }
+            val result: Result = response.chart?.result?.firstOrNull() ?: run {
+                Log.e(TAG, "No result found for intraday chart $symbol")
+                return@withContext null
+            }
+            val timestamps = result.timestamp ?: return@withContext null
+            val closes = result.indicators?.quote?.firstOrNull()?.close ?: return@withContext null
+
+            val paired = timestamps.zip(closes)
+                .filter { (_, price) -> price != null && !price.isNaN() }
+            if (paired.size < 2) {
+                Log.w(TAG, "Not enough data points for intraday chart $symbol: ${paired.size}")
+                return@withContext null
+            }
+
+            val previousClose = (result.meta?.regularMarketPreviousClose ?: result.meta?.chartPreviousClose)
+                ?.takeIf { !it.isNaN() && it > 0.0 }
+
+            IntradayChartData(
+                timestamps = paired.map { it.first },
+                prices = paired.map { it.second!! },
+                previousClose = previousClose
+            )
+        } catch (e: Exception) {
+            Log.e(TAG, "Error fetching intraday chart for $symbol: ${e.message}", e)
+            null
+        }
+    }
+
     private companion object {
         private const val TAG: String = "YahooMarketDataService"
     }
