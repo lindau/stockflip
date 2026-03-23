@@ -4,11 +4,16 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.stockflip.backup.BackupManager
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
 
 class MainViewModel(
     private val stockPairDao: StockPairDao,
@@ -38,7 +43,7 @@ class MainViewModel(
     private fun startAutoRefresh() {
         viewModelScope.launch {
             while (true) {
-                delay(30_000)
+                delay(120_000)
                 try {
                     refreshStockPairs()
                     refreshWatchItems()
@@ -70,26 +75,33 @@ class MainViewModel(
             val pairs = stockPairDao.getAllStockPairs()
             Log.d(TAG, "Found ${pairs.size} pairs to refresh")
             
-            val updatedPairs = pairs.map { pair ->
-                try {
-                    Log.d(TAG, "Fetching prices for ${pair.ticker1} and ${pair.ticker2}")
-                    val price1 = yahooFinanceService.getStockPrice(pair.ticker1)
-                    val price2 = yahooFinanceService.getStockPrice(pair.ticker2)
-                    
-                    if (price1 != null && price2 != null) {
-                        Log.d(TAG, "Got prices for ${pair.ticker1}: $price1, ${pair.ticker2}: $price2")
-                        val updatedPair = pair.withCurrentPrices(price1, price2)
-                        stockPairDao.update(updatedPair)
-                        Log.d(TAG, "Updated database with new prices for ${pair.ticker1}-${pair.ticker2}")
-                        updatedPair
-                    } else {
-                        Log.w(TAG, "Could not get prices for ${pair.ticker1} or ${pair.ticker2}, keeping existing prices")
-                        pair
+            val semaphore = Semaphore(4)
+            val updatedPairs = coroutineScope {
+                pairs.map { pair ->
+                    async {
+                        semaphore.withPermit {
+                            try {
+                                Log.d(TAG, "Fetching prices for ${pair.ticker1} and ${pair.ticker2}")
+                                val price1 = yahooFinanceService.getStockPrice(pair.ticker1)
+                                val price2 = yahooFinanceService.getStockPrice(pair.ticker2)
+
+                                if (price1 != null && price2 != null) {
+                                    Log.d(TAG, "Got prices for ${pair.ticker1}: $price1, ${pair.ticker2}: $price2")
+                                    val updatedPair = pair.withCurrentPrices(price1, price2)
+                                    stockPairDao.update(updatedPair)
+                                    Log.d(TAG, "Updated database with new prices for ${pair.ticker1}-${pair.ticker2}")
+                                    updatedPair
+                                } else {
+                                    Log.w(TAG, "Could not get prices for ${pair.ticker1} or ${pair.ticker2}, keeping existing prices")
+                                    pair
+                                }
+                            } catch (e: Exception) {
+                                Log.e(TAG, "Error fetching prices for ${pair.ticker1}-${pair.ticker2}: ${e.message}")
+                                pair
+                            }
+                        }
                     }
-                } catch (e: Exception) {
-                    Log.e(TAG, "Error fetching prices for ${pair.ticker1}-${pair.ticker2}: ${e.message}")
-                    pair
-                }
+                }.awaitAll()
             }
             
             _uiState.value = UiState.Success(updatedPairs)
@@ -176,14 +188,13 @@ class MainViewModel(
             val items = watchItemDao.getAllWatchItems()
             Log.d(TAG, "Found ${items.size} watch items to refresh")
 
-            // Process items sequentially to avoid rate limits
-            val updatedItems = items.mapIndexed { index, item ->
+            // Parallellisera med max 4 samtida anrop för att undvika rate limiting
+            val semaphore = Semaphore(4)
+            val updatedItems = coroutineScope {
+            items.map { item ->
+                async {
+                semaphore.withPermit {
                 try {
-                    // Add small delay between key metric requests to avoid rate limits
-                    if (item.watchType is WatchType.KeyMetrics && index > 0) {
-                        delay(1000) // 1 second delay between key metric requests
-                    }
-                    
                     when (item.watchType) {
                         is WatchType.PricePair -> {
                             if (item.ticker1 != null && item.ticker2 != null) {
@@ -351,7 +362,10 @@ class MainViewModel(
                     Log.e(TAG, "Error fetching prices for watch item ${item.id}: ${e.message}")
                     item
                 }
-            }
+                } // semaphore.withPermit
+                } // async
+            }.awaitAll()
+            } // coroutineScope
 
             // Use updatedItems directly instead of reloading from database
             // This is important because currentMetricValue is @Ignore and not saved to database

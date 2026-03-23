@@ -16,6 +16,15 @@ data class StockDetailSnapshot(
 )
 
 /**
+ * Nyckeltal för en aktie (P/E, P/S, Direktavkastning).
+ */
+data class KeyMetrics(
+    val peRatio: Double?,
+    val psRatio: Double?,
+    val dividendYield: Double?
+)
+
+/**
  * Abstraction for market data retrieval.
  *
  * This enables deterministic tests by injecting a fake implementation.
@@ -30,6 +39,7 @@ interface MarketDataService {
     suspend fun getExchange(symbol: String): String?
     suspend fun getCompanyName(symbol: String): String?
     suspend fun getKeyMetric(symbol: String, metricType: WatchType.MetricType): Double?
+    suspend fun getAllKeyMetrics(symbol: String): KeyMetrics?
     suspend fun getStockDetailSnapshot(symbol: String): StockDetailSnapshot?
     suspend fun getIntradayChart(symbol: String): IntradayChartData?
 }

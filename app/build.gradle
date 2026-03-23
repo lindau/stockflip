@@ -4,6 +4,17 @@ plugins {
     id 'org.jetbrains.kotlin.plugin.compose'
 }
 
+// Auto-version från git: versionCode = antal commits, versionName = "1.0.<commits>"
+def gitCommitCount = {
+    try {
+        def proc = ['git', 'rev-list', '--count', 'HEAD'].execute(null, rootDir)
+        proc.waitFor()
+        return proc.text.trim().toInteger()
+    } catch (ignored) {
+        return 1
+    }
+}()
+
 android {
     namespace = 'com.stockflip'
     compileSdk = 35
@@ -12,8 +23,8 @@ android {
         applicationId "com.stockflip"
         minSdk 24
         targetSdk 35
-        versionCode 1
-        versionName "1.0"
+        versionCode gitCommitCount
+        versionName "1.0.${gitCommitCount}"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         

@@ -295,10 +295,12 @@ object YahooFinanceService : MarketDataService {
                                 summaryDetail.optJSONObject("priceToSalesTrailing12Months")?.optDouble("raw")
                             }
                             WatchType.MetricType.DIVIDEND_YIELD -> {
+                                // Try dividendYield first, then trailingAnnualDividendYield (common for non-US stocks)
                                 val yield = summaryDetail.optJSONObject("dividendYield")?.optDouble("raw")
-                                // Yahoo returns decimal (e.g. 0.05 for 5%), convert to percentage if needed
-                                // Assuming the app expects percentage (e.g. 5.0) based on Finnhub logic
-                                if (yield != null && !yield.isNaN()) yield * 100 else null
+                                    ?.takeIf { !it.isNaN() && it > 0 }
+                                    ?: summaryDetail.optJSONObject("trailingAnnualDividendYield")?.optDouble("raw")
+                                        ?.takeIf { !it.isNaN() && it > 0 }
+                                if (yield != null) yield * 100 else null
                             }
                         }
                         
@@ -391,6 +393,74 @@ object YahooFinanceService : MarketDataService {
 
     override suspend fun getIntradayChart(symbol: String): IntradayChartData? {
         return chartMarketDataService.getIntradayChart(symbol)
+    }
+
+    override suspend fun getAllKeyMetrics(symbol: String): KeyMetrics? = withContext(Dispatchers.IO) {
+        // Försök Yahoo Finance först (ett anrop för alla tre nyckeltal)
+        try {
+            if (consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {
+                val timeSinceLastFailure = System.currentTimeMillis() - lastFailureTime
+                if (timeSinceLastFailure < FAILURE_COOLDOWN_MS) {
+                    throw Exception("Circuit breaker open")
+                } else {
+                    consecutiveFailures = 0
+                }
+            }
+
+            ensureCrumb()
+            var url = "https://query2.finance.yahoo.com/v10/finance/quoteSummary/$symbol?modules=summaryDetail"
+            if (crumb != null) url += "&crumb=$crumb"
+
+            val request = Request.Builder()
+                .url(url)
+                .addHeader("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+                .build()
+
+            val response = client.newCall(request).execute()
+            if (response.isSuccessful) {
+                val body = response.body?.string()
+                if (body != null) {
+                    val summaryDetail = JSONObject(body)
+                        .optJSONObject("quoteSummary")
+                        ?.optJSONArray("result")
+                        ?.optJSONObject(0)
+                        ?.optJSONObject("summaryDetail")
+
+                    if (summaryDetail != null) {
+                        val pe = summaryDetail.optJSONObject("trailingPE")?.optDouble("raw").takeIf { it != null && !it.isNaN() && it > 0 }
+                            ?: summaryDetail.optJSONObject("forwardPE")?.optDouble("raw").takeIf { it != null && !it.isNaN() && it > 0 }
+                        val ps = summaryDetail.optJSONObject("priceToSalesTrailing12Months")?.optDouble("raw").takeIf { it != null && !it.isNaN() && it > 0 }
+                        val yieldRaw = summaryDetail.optJSONObject("dividendYield")?.optDouble("raw")
+                        val dividendYield = if (yieldRaw != null && !yieldRaw.isNaN() && yieldRaw > 0) yieldRaw * 100 else null
+
+                        response.close()
+                        return@withContext KeyMetrics(peRatio = pe, psRatio = ps, dividendYield = dividendYield)
+                    }
+                }
+            } else if (response.code == 401) {
+                crumb = null
+            }
+            response.close()
+        } catch (e: Exception) {
+            if (e.message != "Circuit breaker open") {
+                consecutiveFailures++
+                lastFailureTime = System.currentTimeMillis()
+            }
+            Log.w(TAG, "Yahoo getAllKeyMetrics failed for $symbol: ${e.message}")
+        }
+
+        // Fallback till Finnhub (tre parallella anrop)
+        try {
+            val pe = FinnhubService.getKeyMetric(symbol, WatchType.MetricType.PE_RATIO)
+            val ps = FinnhubService.getKeyMetric(symbol, WatchType.MetricType.PS_RATIO)
+            val div = FinnhubService.getKeyMetric(symbol, WatchType.MetricType.DIVIDEND_YIELD)
+            if (pe != null || ps != null || div != null) {
+                KeyMetrics(peRatio = pe, psRatio = ps, dividendYield = div)
+            } else null
+        } catch (e: Exception) {
+            Log.e(TAG, "Finnhub getAllKeyMetrics failed for $symbol: ${e.message}")
+            null
+        }
     }
 
     @JvmStatic

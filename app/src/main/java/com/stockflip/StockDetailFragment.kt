@@ -393,6 +393,13 @@ class StockDetailFragment : Fragment() {
                 com.google.android.material.R.attr.colorOnSurface
             )
         binding.drawdownPercent.setTextColor(dropColor)
+
+        // Nyckeltal-rad (dold för krypto och om inga värden finns)
+        val hasAnyMetric = data.peRatio != null || data.psRatio != null || data.dividendYield != null
+        binding.keyMetricsRow.visibility = if (hasAnyMetric) android.view.View.VISIBLE else android.view.View.GONE
+        binding.peRatioValue.text = data.peRatio?.let { CurrencyHelper.formatDecimal(it) } ?: "-"
+        binding.psRatioValue.text = data.psRatio?.let { CurrencyHelper.formatDecimal(it) } ?: "-"
+        binding.dividendYieldValue.text = data.dividendYield?.let { "${CurrencyHelper.formatDecimal(it)}%" } ?: "-"
     }
 
 

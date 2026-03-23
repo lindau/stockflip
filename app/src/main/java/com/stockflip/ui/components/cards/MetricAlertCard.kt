@@ -77,7 +77,9 @@ fun MetricAlertCard(
         else                                -> priceFormat(keyMetrics.targetValue)
     }
 
-    val currentValueText = when (keyMetrics.metricType) {
+    val hasCurrentValue = item.currentMetricValue > 0.0
+
+    val currentValueText = if (!hasCurrentValue) "—" else when (keyMetrics.metricType) {
         WatchType.MetricType.DIVIDEND_YIELD -> "${priceFormat(item.currentMetricValue)}%"
         else                                -> priceFormat(item.currentMetricValue)
     }
@@ -203,8 +205,9 @@ fun MetricAlertCard(
                         )
                         Text(
                             text = currentValueText,
-                            style = NordikNumericStyle,
-                            color = MaterialTheme.colorScheme.onSurface,
+                            style = if (hasCurrentValue) NordikNumericStyle else MaterialTheme.typography.bodyMedium,
+                            color = if (hasCurrentValue) MaterialTheme.colorScheme.onSurface
+                                    else MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                         trendDirection?.let { direction ->
                             val trendColor = when (direction) {

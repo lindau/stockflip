@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 /**
@@ -98,6 +99,24 @@ class StockDetailViewModel(
                 )
                 _stockDataState.value = UiState.Success(stockData)
                 Log.d(TAG, "Loaded stock data for $symbol")
+
+                // Hämta nyckeltal asynkront och uppdatera state när de anländer
+                if (!StockSearchResult.isCryptoSymbol(symbol)) {
+                    launch {
+                        try {
+                            val metrics = yahooFinanceService.getAllKeyMetrics(symbol)
+                            if (metrics != null) {
+                                _stockDataState.value = UiState.Success(stockData.copy(
+                                    peRatio = metrics.peRatio,
+                                    psRatio = metrics.psRatio,
+                                    dividendYield = metrics.dividendYield
+                                ))
+                            }
+                        } catch (e: Exception) {
+                            Log.e(TAG, "Error loading key metrics for $symbol: ${e.message}", e)
+                        }
+                    }
+                }
             } catch (e: Exception) {
                 Log.e(TAG, "Error loading stock data: ${e.message}", e)
                 _stockDataState.value = UiState.Error("Kunde inte ladda aktiedata: ${e.message}")
@@ -298,19 +317,23 @@ class StockDetailViewModel(
 
     fun loadChartData() {
         viewModelScope.launch {
-            try {
-                _chartState.value = UiState.Loading
-                val data = yahooFinanceService.getIntradayChart(symbol)
-                _chartState.value = if (data != null) {
-                    UiState.Success(data)
-                } else {
-                    UiState.Error("Ingen intradagsdata tillgänglig")
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "Error loading chart data: ${e.message}", e)
-                _chartState.value = UiState.Error("Kunde inte ladda diagram")
+            _chartState.value = UiState.Loading
+            // Försök hämta grafdata — retry efter 2 sekunder vid fel (t.ex. race condition med cookie-session)
+            var data = fetchChartData()
+            if (data == null) {
+                delay(2_000L)
+                data = fetchChartData()
             }
+            _chartState.value = if (data != null) UiState.Success(data)
+                                 else UiState.Error("Ingen intradagsdata tillgänglig")
         }
+    }
+
+    private suspend fun fetchChartData(): IntradayChartData? = try {
+        yahooFinanceService.getIntradayChart(symbol)
+    } catch (e: Exception) {
+        Log.e(TAG, "Error fetching chart for $symbol: ${e.message}", e)
+        null
     }
 
     /**
@@ -336,6 +359,9 @@ data class StockDetailData(
     val currency: String = "SEK",
     val exchange: String? = null,
     val dailyChangePercent: Double?,
-    val drawdownPercent: Double?
+    val drawdownPercent: Double?,
+    val peRatio: Double? = null,
+    val psRatio: Double? = null,
+    val dividendYield: Double? = null
 )
 

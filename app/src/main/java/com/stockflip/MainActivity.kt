@@ -135,9 +135,10 @@ class MainActivity : AppCompatActivity() {
     private val backPressCallback = object : androidx.activity.OnBackPressedCallback(true) {
         override fun handleOnBackPressed() {
             if (supportFragmentManager.backStackEntryCount > 0) {
-                supportFragmentManager.popBackStack()
+                // Visa bakomliggande content INNAN pop så den syns under utglidande fragment
                 binding.swipeRefreshLayout.visibility = View.VISIBLE
                 binding.addPairButton.visibility = View.VISIBLE
+                supportFragmentManager.popBackStack()
                 updateToolbarForCurrentTab()
             } else {
                 isEnabled = false
@@ -158,6 +159,36 @@ class MainActivity : AppCompatActivity() {
         showStocksToolbar()
     }
 
+    private fun tabIndex(tab: MainTab): Int = when(tab) {
+        MainTab.STOCKS -> 0
+        MainTab.PAIRS -> 1
+        MainTab.ALERTS -> 2
+    }
+
+    private fun animateContentSwitch(fromTab: MainTab, toTab: MainTab, onUpdate: () -> Unit) {
+        val screenWidth = binding.swipeRefreshLayout.width.toFloat()
+        if (screenWidth == 0f) { onUpdate(); return }
+
+        val navigatingRight = tabIndex(toTab) > tabIndex(fromTab)
+        val exitX = if (navigatingRight) -screenWidth * 0.3f else screenWidth
+        val enterX = if (navigatingRight) screenWidth else -screenWidth * 0.3f
+
+        binding.swipeRefreshLayout.animate()
+            .translationX(exitX)
+            .setDuration(150)
+            .setInterpolator(android.view.animation.AccelerateInterpolator())
+            .withEndAction {
+                onUpdate()
+                binding.swipeRefreshLayout.translationX = enterX
+                binding.swipeRefreshLayout.animate()
+                    .translationX(0f)
+                    .setDuration(280)
+                    .setInterpolator(android.view.animation.DecelerateInterpolator())
+                    .start()
+            }
+            .start()
+    }
+
     private fun setupBottomNavigation(): Unit {
         // Pill-indikator: primaryContainer (teal-ton) för tydligare active state
         binding.bottomNavigation.itemActiveIndicatorColor =
@@ -165,6 +196,7 @@ class MainActivity : AppCompatActivity() {
         binding.bottomNavigation.setOnItemSelectedListener { item ->
             when (item.itemId) {
                 R.id.menu_stocks -> {
+                    val previousTab = currentMainTab
                     currentMainTab = MainTab.STOCKS
                     binding.swipeRefreshLayout.visibility = View.VISIBLE
                     binding.addPairButton.visibility = View.VISIBLE
@@ -172,13 +204,18 @@ class MainActivity : AppCompatActivity() {
                         null,
                         androidx.fragment.app.FragmentManager.POP_BACK_STACK_INCLUSIVE
                     )
-                    if (lastWatchItems.isNotEmpty()) {
+                    showStocksToolbar()
+                    if (previousTab == MainTab.PAIRS) {
+                        animateContentSwitch(previousTab, MainTab.STOCKS) {
+                            if (lastWatchItems.isNotEmpty()) showWatchItemSuccess(lastWatchItems)
+                        }
+                    } else if (lastWatchItems.isNotEmpty()) {
                         showWatchItemSuccess(lastWatchItems)
                     }
-                    showStocksToolbar()
                     true
                 }
                 R.id.menu_pairs -> {
+                    val previousTab = currentMainTab
                     currentMainTab = MainTab.PAIRS
                     binding.swipeRefreshLayout.visibility = View.VISIBLE
                     binding.addPairButton.visibility = View.VISIBLE
@@ -186,10 +223,14 @@ class MainActivity : AppCompatActivity() {
                         null,
                         androidx.fragment.app.FragmentManager.POP_BACK_STACK_INCLUSIVE
                     )
-                    if (lastWatchItems.isNotEmpty()) {
+                    showPairsToolbar()
+                    if (previousTab == MainTab.STOCKS) {
+                        animateContentSwitch(previousTab, MainTab.PAIRS) {
+                            if (lastWatchItems.isNotEmpty()) showWatchItemSuccess(lastWatchItems)
+                        }
+                    } else if (lastWatchItems.isNotEmpty()) {
                         showWatchItemSuccess(lastWatchItems)
                     }
-                    showPairsToolbar()
                     true
                 }
                 R.id.menu_alerts -> {
@@ -197,6 +238,12 @@ class MainActivity : AppCompatActivity() {
                     binding.swipeRefreshLayout.visibility = View.GONE
                     binding.addPairButton.visibility = View.GONE
                     supportFragmentManager.beginTransaction()
+                        .setCustomAnimations(
+                            R.anim.slide_in_right,
+                            R.anim.slide_out_left,
+                            R.anim.slide_in_left,
+                            R.anim.slide_out_right
+                        )
                         .replace(R.id.fragmentContainer, AlertsFragment())
                         .addToBackStack("alerts")
                         .commit()
@@ -211,6 +258,7 @@ class MainActivity : AppCompatActivity() {
     private fun setupToolbar() {
         binding.topAppBar.menu.clear()
         binding.topAppBar.inflateMenu(R.menu.main_menu)
+        binding.topAppBar.menu.findItem(R.id.menu_version)?.title = "StockFlip v${BuildConfig.VERSION_NAME}"
         binding.topAppBar.setOnMenuItemClickListener { item ->
             when (item.itemId) {
                 R.id.menu_sort_alphabetical -> {
@@ -441,8 +489,8 @@ class MainActivity : AppCompatActivity() {
     private fun showLoading(): Unit {
         Log.d(TAG, "Showing loading state")
         val isOnAlertsTab = binding.bottomNavigation.selectedItemId == R.id.menu_alerts
-        if (!binding.swipeRefreshLayout.isRefreshing && !isOnAlertsTab) {
-            binding.progressBar.visibility = View.VISIBLE
+        if (!isOnAlertsTab) {
+            binding.swipeRefreshLayout.isRefreshing = true
         }
     }
 
@@ -463,8 +511,8 @@ class MainActivity : AppCompatActivity() {
         }
         Log.d(TAG, "Filtered watch items for tab $currentMainTab: ${filteredData.size}")
 
-        binding.progressBar.visibility = View.GONE
-        Log.d(TAG, "Progress bar hidden")
+        binding.swipeRefreshLayout.isRefreshing = false
+        Log.d(TAG, "Refresh indicator hidden")
         
         val adapter = binding.stockPairsList.adapter as? GroupedWatchItemAdapter
         if (adapter != null) {
@@ -490,7 +538,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun showError(message: String): Unit {
         Log.e(TAG, "Error state: $message")
-        binding.progressBar.visibility = View.GONE
+        binding.swipeRefreshLayout.isRefreshing = false
         Toast.makeText(this, message, Toast.LENGTH_LONG).show()
     }
 
@@ -635,9 +683,12 @@ class MainActivity : AppCompatActivity() {
             .addToBackStack("stock_detail")
             .commit()
         
-        // Dölj RecyclerView och visa Fragment
-        binding.swipeRefreshLayout.visibility = View.GONE
+        // FAB döljs direkt; swipeRefreshLayout döljs efter animationen (280ms) så
+        // att huvudinnehållet syns bakom det inkommande kortet under transition.
         binding.addPairButton.visibility = View.GONE
+        binding.swipeRefreshLayout.postDelayed({
+            binding.swipeRefreshLayout.visibility = View.GONE
+        }, 300L)
         
         // Dölj sorteringsmenyn
         binding.topAppBar.menu.findItem(R.id.menu_sort)?.isVisible = false

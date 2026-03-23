@@ -32,4 +32,10 @@
         android:title="@string/menu_import"
         app:showAsAction="never" />
 
+    <item
+        android:id="@+id/menu_version"
+        android:title="Version"
+        android:enabled="false"
+        app:showAsAction="never" />
+
 </menu>
