@@ -194,8 +194,9 @@ class MainViewModel(
             items.map { item ->
                 async {
                 semaphore.withPermit {
+                val now = System.currentTimeMillis()
                 try {
-                    when (item.watchType) {
+                    val result = when (item.watchType) {
                         is WatchType.PricePair -> {
                             if (item.ticker1 != null && item.ticker2 != null) {
                                 Log.d(TAG, "Fetching prices for ${item.ticker1} and ${item.ticker2}")
@@ -358,9 +359,13 @@ class MainViewModel(
                             }
                         }
                     }
+                    result.also {
+                        if (it !== item) { it.lastUpdatedAt = now; it.updateFailed = false }
+                        else { it.updateFailed = true }
+                    }
                 } catch (e: Exception) {
                     Log.e(TAG, "Error fetching prices for watch item ${item.id}: ${e.message}")
-                    item
+                    item.also { it.updateFailed = true }
                 }
                 } // semaphore.withPermit
                 } // async

@@ -228,10 +228,10 @@ class YahooMarketDataServiceImpl(
         }
     }
 
-    suspend fun getIntradayChart(symbol: String): IntradayChartData? = withContext(Dispatchers.IO) {
+    suspend fun getIntradayChart(symbol: String, period: ChartPeriod = ChartPeriod.DAY): IntradayChartData? = withContext(Dispatchers.IO) {
         try {
-            Log.d(TAG, "Fetching intraday chart for symbol: $symbol")
-            val response: YahooFinanceResponse = api.getIntradayChart(symbol)
+            Log.d(TAG, "Fetching chart for symbol: $symbol period: ${period.range}/${period.interval}")
+            val response: YahooFinanceResponse = api.getIntradayChart(symbol, period.range, period.interval)
             if (response.chart?.error != null) {
                 Log.e(TAG, "API Error for intraday chart $symbol: ${response.chart.error.description}")
                 return@withContext null
@@ -240,23 +240,31 @@ class YahooMarketDataServiceImpl(
                 Log.e(TAG, "No result found for intraday chart $symbol")
                 return@withContext null
             }
-            val timestamps = result.timestamp ?: return@withContext null
-            val closes = result.indicators?.quote?.firstOrNull()?.close ?: return@withContext null
-
-            val paired = timestamps.zip(closes)
-                .filter { (_, price) -> price != null && !price.isNaN() }
-            if (paired.size < 2) {
-                Log.w(TAG, "Not enough data points for intraday chart $symbol: ${paired.size}")
-                return@withContext null
-            }
-
+            val lastTradeTimestamp = result.meta?.regularMarketTime
             val previousClose = (result.meta?.regularMarketPreviousClose ?: result.meta?.chartPreviousClose)
                 ?.takeIf { !it.isNaN() && it > 0.0 }
+
+            val timestamps = result.timestamp
+            val closes = result.indicators?.quote?.firstOrNull()?.close
+            val paired = if (timestamps != null && closes != null)
+                timestamps.zip(closes).filter { (_, price) -> price != null && !price.isNaN() }
+            else emptyList()
+
+            if (paired.size < 2) {
+                Log.w(TAG, "Not enough data points for chart $symbol: ${paired.size} — marknad stängd")
+                return@withContext IntradayChartData(
+                    timestamps = emptyList(),
+                    prices = emptyList(),
+                    previousClose = previousClose,
+                    lastTradeTimestamp = lastTradeTimestamp
+                )
+            }
 
             IntradayChartData(
                 timestamps = paired.map { it.first },
                 prices = paired.map { it.second!! },
-                previousClose = previousClose
+                previousClose = previousClose,
+                lastTradeTimestamp = lastTradeTimestamp
             )
         } catch (e: Exception) {
             Log.e(TAG, "Error fetching intraday chart for $symbol: ${e.message}", e)

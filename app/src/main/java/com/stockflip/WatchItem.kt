@@ -65,6 +65,12 @@ data class WatchItem(
     var currentDailyChangePercent: Double? = null
         private set
 
+    @Ignore
+    var lastUpdatedAt: Long = 0L
+
+    @Ignore
+    var updateFailed: Boolean = false
+
     fun withCurrentPrices(price1: Double?, price2: Double?): WatchItem {
         Log.d(TAG, "Updating prices for watch item $id: $price1, $price2")
         if (price1 == null || price2 == null) {

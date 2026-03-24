@@ -41,6 +41,6 @@ interface MarketDataService {
     suspend fun getKeyMetric(symbol: String, metricType: WatchType.MetricType): Double?
     suspend fun getAllKeyMetrics(symbol: String): KeyMetrics?
     suspend fun getStockDetailSnapshot(symbol: String): StockDetailSnapshot?
-    suspend fun getIntradayChart(symbol: String): IntradayChartData?
+    suspend fun getIntradayChart(symbol: String, period: ChartPeriod = ChartPeriod.DAY): IntradayChartData?
 }
 

@@ -193,9 +193,12 @@ class GroupedWatchItemAdapter(
             it.watchType !is WatchType.PricePair && it.ticker != null
         }
 
-        // Group by ticker
-        val itemsByTicker = singleStockItems.groupBy { it.ticker!! }
-        val sortedItemsByTicker = SortHelper.sortTickerGroups(itemsByTicker, sortMode)
+        // Dela upp i aktier och krypto
+        val stockOnlyItems = singleStockItems.filter { !StockSearchResult.isCryptoSymbol(it.ticker!!) }
+        val cryptoItems = singleStockItems.filter { StockSearchResult.isCryptoSymbol(it.ticker!!) }
+
+        val sortedStocksByTicker = SortHelper.sortTickerGroups(stockOnlyItems.groupBy { it.ticker!! }, sortMode)
+        val sortedCryptoByTicker = SortHelper.sortTickerGroups(cryptoItems.groupBy { it.ticker!! }, sortMode)
 
         // Add Price Pairs section
         if (sortedPricePairs.isNotEmpty()) {
@@ -203,38 +206,43 @@ class GroupedWatchItemAdapter(
             sortedPricePairs.forEach { groupedList.add(GroupedListItem.WatchItemWrapper(it)) }
         }
 
-        // Add single-stock section — always expand all watches per ticker with GroupPosition
-        if (sortedItemsByTicker.isNotEmpty()) {
-            // Add separator between Aktiepar section and Aktier section if both are non-empty
-            if (sortedPricePairs.isNotEmpty()) {
-                groupedList.add(GroupedListItem.GroupSeparator(groupedList.size))
-            }
-            groupedList.add(GroupedListItem.Header("Aktier - Krypto"))
-            sortedItemsByTicker.entries.forEachIndexed { groupIndex, (_, watchItemsForTicker) ->
-                // Add separator before each group (except the first one in this section)
-                if (groupIndex > 0) {
-                    groupedList.add(GroupedListItem.GroupSeparator(groupedList.size))
-                }
-                when (watchItemsForTicker.size) {
-                    1 -> groupedList.add(
-                        GroupedListItem.WatchItemWrapper(watchItemsForTicker.first(), GroupPosition.ONLY)
-                    )
-                    else -> watchItemsForTicker.forEachIndexed { index, watchItem ->
-                        val position = when (index) {
-                            0                              -> GroupPosition.FIRST
-                            watchItemsForTicker.lastIndex -> GroupPosition.LAST
-                            else                           -> GroupPosition.MIDDLE
-                        }
-                        groupedList.add(GroupedListItem.WatchItemWrapper(watchItem, position))
-                    }
-                }
-            }
-        }
+        addTickerGroupSection(groupedList, "Aktier", sortedStocksByTicker)
+        addTickerGroupSection(groupedList, "Krypto", sortedCryptoByTicker)
 
         Log.d(TAG, "Built grouped list with ${groupedList.size} items")
         submitList(groupedList)
     }
-    
+
+    private fun addTickerGroupSection(
+        groupedList: MutableList<GroupedListItem>,
+        header: String,
+        sortedItemsByTicker: Map<String, List<WatchItem>>
+    ) {
+        if (sortedItemsByTicker.isEmpty()) return
+        if (groupedList.isNotEmpty()) {
+            groupedList.add(GroupedListItem.GroupSeparator(groupedList.size))
+        }
+        groupedList.add(GroupedListItem.Header(header))
+        sortedItemsByTicker.entries.forEachIndexed { groupIndex, (_, watchItemsForTicker) ->
+            if (groupIndex > 0) {
+                groupedList.add(GroupedListItem.GroupSeparator(groupedList.size))
+            }
+            when (watchItemsForTicker.size) {
+                1 -> groupedList.add(
+                    GroupedListItem.WatchItemWrapper(watchItemsForTicker.first(), GroupPosition.ONLY)
+                )
+                else -> watchItemsForTicker.forEachIndexed { index, watchItem ->
+                    val position = when (index) {
+                        0                              -> GroupPosition.FIRST
+                        watchItemsForTicker.lastIndex -> GroupPosition.LAST
+                        else                           -> GroupPosition.MIDDLE
+                    }
+                    groupedList.add(GroupedListItem.WatchItemWrapper(watchItem, position))
+                }
+            }
+        }
+    }
+
     /**
      * Stores all watch items for rebuilding the list when expansion state changes
      */

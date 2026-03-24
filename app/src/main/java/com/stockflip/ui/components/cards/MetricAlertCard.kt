@@ -256,6 +256,7 @@ fun MetricAlertCard(
                 }
 
                 TriggerHistoryRow(triggerHistory)
+                LastUpdatedRow(item.lastUpdatedAt, item.updateFailed)
 
                 if (item.isTriggered) {
                     Spacer(modifier = Modifier.height(6.dp))

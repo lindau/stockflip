@@ -391,8 +391,8 @@ object YahooFinanceService : MarketDataService {
         return chartMarketDataService.getStockDetailSnapshot(symbol)
     }
 
-    override suspend fun getIntradayChart(symbol: String): IntradayChartData? {
-        return chartMarketDataService.getIntradayChart(symbol)
+    override suspend fun getIntradayChart(symbol: String, period: ChartPeriod): IntradayChartData? {
+        return chartMarketDataService.getIntradayChart(symbol, period)
     }
 
     override suspend fun getAllKeyMetrics(symbol: String): KeyMetrics? = withContext(Dispatchers.IO) {

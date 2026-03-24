@@ -166,8 +166,9 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun animateContentSwitch(fromTab: MainTab, toTab: MainTab, onUpdate: () -> Unit) {
-        val screenWidth = binding.swipeRefreshLayout.width.toFloat()
-        if (screenWidth == 0f) { onUpdate(); return }
+        val screenWidth = resources.displayMetrics.widthPixels.toFloat()
+        binding.swipeRefreshLayout.animate().cancel()
+        binding.swipeRefreshLayout.translationX = 0f
 
         val navigatingRight = tabIndex(toTab) > tabIndex(fromTab)
         val exitX = if (navigatingRight) -screenWidth * 0.3f else screenWidth

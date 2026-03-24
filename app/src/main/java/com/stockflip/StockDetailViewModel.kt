@@ -36,6 +36,9 @@ class StockDetailViewModel(
     private val _chartState = MutableStateFlow<UiState<IntradayChartData>>(UiState.Loading)
     val chartState: StateFlow<UiState<IntradayChartData>> = _chartState.asStateFlow()
 
+    private val _selectedPeriod = MutableStateFlow(ChartPeriod.DAY)
+    val selectedPeriod: StateFlow<ChartPeriod> = _selectedPeriod.asStateFlow()
+
     private val _triggerHistoryState = MutableStateFlow<Map<Int, List<Long>>>(emptyMap())
     val triggerHistoryState: StateFlow<Map<Int, List<Long>>> = _triggerHistoryState.asStateFlow()
 
@@ -315,6 +318,11 @@ class StockDetailViewModel(
         }
     }
 
+    fun selectPeriod(period: ChartPeriod) {
+        _selectedPeriod.value = period
+        loadChartData()
+    }
+
     fun loadChartData() {
         viewModelScope.launch {
             _chartState.value = UiState.Loading
@@ -330,7 +338,7 @@ class StockDetailViewModel(
     }
 
     private suspend fun fetchChartData(): IntradayChartData? = try {
-        yahooFinanceService.getIntradayChart(symbol)
+        yahooFinanceService.getIntradayChart(symbol, _selectedPeriod.value)
     } catch (e: Exception) {
         Log.e(TAG, "Error fetching chart for $symbol: ${e.message}", e)
         null

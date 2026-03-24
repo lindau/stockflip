@@ -63,15 +63,17 @@ class StockRepository(
             // Enhanced sorting logic that handles both ticker and name searches
             val upperQuery = query.uppercase()
             val sortedResults = results.sortedWith(
-                compareByDescending<StockSearchResult> { 
-                    // First priority: Exact ticker matches
-                    it.symbol == upperQuery || 
-                    it.symbol == "$upperQuery.ST" || 
-                    it.symbol.removeSuffix(".ST") == upperQuery ||
-                    it.symbol.removeSuffix(".ST").replace("-", "") == upperQuery
+                compareByDescending<StockSearchResult> {
+                    when {
+                        it.symbol == upperQuery -> 3                                              // Exakt match, t.ex. AAPL → AAPL
+                        it.symbol == "$upperQuery.ST" ||
+                        it.symbol.removeSuffix(".ST") == upperQuery ||
+                        it.symbol.removeSuffix(".ST").replace("-", "") == upperQuery -> 2          // Svensk variant, t.ex. ERIC-B.ST
+                        it.isSwedish -> 1                                                          // Övriga svenska aktier
+                        else -> 0
+                    }
                 }
-                .thenByDescending { it.isSwedish } // Second priority: Swedish stocks
-                .thenBy { it.symbol } // Third priority: Alphabetical order
+                .thenBy { it.symbol } // Alfabetisk ordning inom varje grupp
             )
 
             cache[cacheKey] = CacheEntry(sortedResults, timeProvider())
