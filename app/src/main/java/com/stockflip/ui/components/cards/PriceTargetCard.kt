@@ -26,6 +26,7 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.stockflip.CurrencyHelper
+import com.stockflip.LiveWatchData
 import com.stockflip.WatchItem
 import com.stockflip.WatchType
 import com.stockflip.ui.components.StatusStripe
@@ -37,6 +38,7 @@ import com.stockflip.ui.theme.groupShape
 @Composable
 fun PriceTargetCard(
     item: WatchItem,
+    live: LiveWatchData = LiveWatchData(),
     priceFormat: (Double) -> String,
     groupPosition: GroupPosition = GroupPosition.ONLY,
     showStatus: Boolean = false,
@@ -55,9 +57,9 @@ fun PriceTargetCard(
         WatchType.PriceDirection.BELOW -> "Under"
     }
 
-    val isTriggered = item.currentPrice != 0.0 && when (priceTarget.direction) {
-        WatchType.PriceDirection.ABOVE -> item.currentPrice >= priceTarget.targetPrice
-        WatchType.PriceDirection.BELOW -> item.currentPrice <= priceTarget.targetPrice
+    val isTriggered = live.currentPrice != 0.0 && when (priceTarget.direction) {
+        WatchType.PriceDirection.ABOVE -> live.currentPrice >= priceTarget.targetPrice
+        WatchType.PriceDirection.BELOW -> live.currentPrice <= priceTarget.targetPrice
     }
 
     val cardBorder = LocalCardBorder.current
@@ -135,10 +137,10 @@ fun PriceTargetCard(
                     StockSummaryRow(
                         companyName = item.companyName,
                         ticker = item.ticker,
-                        price = item.currentPrice,
-                        dailyChangePercent = item.currentDailyChangePercent,
+                        price = live.currentPrice,
+                        dailyChangePercent = live.currentDailyChangePercent,
                         currency = currency,
-                        showPrice = item.currentPrice > 0,
+                        showPrice = live.currentPrice > 0,
                     )
                     HorizontalDivider(
                         modifier = Modifier.padding(vertical = 8.dp),
@@ -154,7 +156,7 @@ fun PriceTargetCard(
                 )
 
                 TriggerHistoryRow(triggerHistory)
-                LastUpdatedRow(item.lastUpdatedAt, item.updateFailed)
+                LastUpdatedRow(live.lastUpdatedAt, live.updateFailed)
 
                 if (item.isTriggered) {
                     Spacer(modifier = Modifier.height(6.dp))

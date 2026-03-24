@@ -19,7 +19,7 @@ class AlertAdapter(
     private val onDelete: (WatchItem) -> Unit,
     private val onEdit: (WatchItem) -> Unit,
     private val useVariantBackground: Boolean = false
-) : ListAdapter<WatchItem, AlertAdapter.AlertViewHolder>(AlertDiffCallback()) {
+) : ListAdapter<WatchItemUiState, AlertAdapter.AlertViewHolder>(AlertDiffCallback()) {
 
     private var triggerHistory: Map<Int, List<Long>> = emptyMap()
 
@@ -41,7 +41,8 @@ class AlertAdapter(
         private val composeView: ComposeView
     ) : RecyclerView.ViewHolder(composeView) {
 
-        fun bind(watchItem: WatchItem) {
+        fun bind(uiState: WatchItemUiState) {
+            val watchItem = uiState.item
             composeView.setContent {
                 StockFlipTheme {
                     val containerColor = if (useVariantBackground)
@@ -50,6 +51,7 @@ class AlertAdapter(
                         androidx.compose.material3.MaterialTheme.colorScheme.surface
                     ComposeWatchItemCardWithControls(
                         item = watchItem,
+                        live = uiState.live,
                         priceFormat = { value -> CurrencyHelper.formatDecimal(value) },
                         onToggleActive = { onToggleActive(watchItem) },
                         onReactivate = { onReactivate(watchItem) },
@@ -63,14 +65,15 @@ class AlertAdapter(
         }
     }
 
-    private class AlertDiffCallback : DiffUtil.ItemCallback<WatchItem>() {
-        override fun areItemsTheSame(oldItem: WatchItem, newItem: WatchItem): Boolean {
-            return oldItem.id == newItem.id
+    private class AlertDiffCallback : DiffUtil.ItemCallback<WatchItemUiState>() {
+        override fun areItemsTheSame(oldItem: WatchItemUiState, newItem: WatchItemUiState): Boolean {
+            return oldItem.item.id == newItem.item.id
         }
 
-        override fun areContentsTheSame(oldItem: WatchItem, newItem: WatchItem): Boolean {
+        override fun areContentsTheSame(oldItem: WatchItemUiState, newItem: WatchItemUiState): Boolean {
             return oldItem == newItem
         }
     }
 }
+
 

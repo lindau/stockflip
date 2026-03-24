@@ -179,7 +179,7 @@ class StockDetailFragment : Fragment() {
             onSwiped = { position ->
                 val item = alertAdapter.currentList.getOrNull(position) ?: return@SwipeToDeleteCallback
                 alertAdapter.notifyItemChanged(position)
-                viewModel.deleteAlert(item)
+                viewModel.deleteAlert(item.item)
                 Toast.makeText(requireContext(), "Bevakning borttagen", Toast.LENGTH_SHORT).show()
             }
         )

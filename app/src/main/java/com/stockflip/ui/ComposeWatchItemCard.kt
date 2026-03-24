@@ -10,6 +10,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.unit.dp
+import com.stockflip.LiveWatchData
 import com.stockflip.WatchItem
 import com.stockflip.ui.theme.GroupPosition
 import com.stockflip.ui.theme.NP
@@ -25,6 +26,7 @@ import com.stockflip.ui.components.cards.PriceTargetCard
 @Composable
 fun ComposeWatchItemCard(
     item: WatchItem,
+    live: LiveWatchData = LiveWatchData(),
     groupPosition: GroupPosition = GroupPosition.ONLY,
     priceFormat: (Double) -> String = { value -> CurrencyHelper.formatDecimal(value) },
     onItemClick: () -> Unit = {},
@@ -50,6 +52,7 @@ fun ComposeWatchItemCard(
             is com.stockflip.WatchType.PricePair -> {
                 PairCard(
                     item = item,
+                    live = live,
                     priceFormat = priceFormat,
                     groupPosition = groupPosition,
                     showControls = showControls,
@@ -63,6 +66,7 @@ fun ComposeWatchItemCard(
             is com.stockflip.WatchType.KeyMetrics -> {
                 MetricAlertCard(
                     item = item,
+                    live = live,
                     priceFormat = priceFormat,
                     groupPosition = groupPosition,
                     showStatus = showStatus,
@@ -78,6 +82,7 @@ fun ComposeWatchItemCard(
             is com.stockflip.WatchType.PriceTarget -> {
                 PriceTargetCard(
                     item = item,
+                    live = live,
                     priceFormat = priceFormat,
                     groupPosition = groupPosition,
                     showStatus = showStatus,
@@ -93,6 +98,7 @@ fun ComposeWatchItemCard(
             is com.stockflip.WatchType.PriceRange -> {
                 PriceRangeCard(
                     item = item,
+                    live = live,
                     priceFormat = priceFormat,
                     groupPosition = groupPosition,
                     showStatus = showStatus,
@@ -108,6 +114,7 @@ fun ComposeWatchItemCard(
             is com.stockflip.WatchType.DailyMove -> {
                 DailyMoveCard(
                     item = item,
+                    live = live,
                     priceFormat = priceFormat,
                     groupPosition = groupPosition,
                     showStatus = showStatus,
@@ -123,6 +130,7 @@ fun ComposeWatchItemCard(
             is com.stockflip.WatchType.ATHBased -> {
                 High52wCard(
                     item = item,
+                    live = live,
                     priceFormat = priceFormat,
                     groupPosition = groupPosition,
                     showStatus = showStatus,
@@ -138,6 +146,7 @@ fun ComposeWatchItemCard(
             is com.stockflip.WatchType.Combined -> {
                 CombinedAlertCard(
                     item = item,
+                    live = live,
                     priceFormat = priceFormat,
                     groupPosition = groupPosition,
                     showPrice = !showControls,

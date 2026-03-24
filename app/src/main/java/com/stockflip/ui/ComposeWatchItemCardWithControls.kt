@@ -21,6 +21,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.stockflip.CurrencyHelper
+import com.stockflip.LiveWatchData
 import com.stockflip.WatchItem
 
 /**
@@ -30,6 +31,7 @@ import com.stockflip.WatchItem
 @Composable
 fun ComposeWatchItemCardWithControls(
     item: WatchItem,
+    live: LiveWatchData = LiveWatchData(),
     priceFormat: (Double) -> String = { value -> CurrencyHelper.formatDecimal(value) },
     onToggleActive: (WatchItem) -> Unit,
     onReactivate: (WatchItem) -> Unit,
@@ -42,6 +44,7 @@ fun ComposeWatchItemCardWithControls(
     // Visa kortet med full information (inklusive status och kontroller)
     ComposeWatchItemCard(
         item = item,
+        live = live,
         priceFormat = priceFormat,
         onItemClick = { onEdit(item) }, // Klicka på kortet för att redigera
         showStatus = true, // Visa status i kortet

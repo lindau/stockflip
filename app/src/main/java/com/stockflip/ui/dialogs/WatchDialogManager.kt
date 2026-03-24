@@ -384,7 +384,7 @@ class WatchDialogManager(
             }
     }
 
-    private fun showEditPriceTargetDialog(item: WatchItem) {
+    private fun showEditPriceTargetDialog(item: WatchItem, currentPrice: Double = 0.0) {
         if (item.watchType !is WatchType.PriceTarget) return
         val currencySymbol = currentCurrencySymbol()
         val priceTarget = item.watchType
@@ -409,8 +409,12 @@ class WatchDialogManager(
                 if (targetPriceStr.isNotEmpty()) {
                     val targetPrice = targetPriceStr.parseDecimal()
                     if (targetPrice != null && targetPrice > 0) {
-                        val direction = if (item.currentPrice > 0.0 && item.currentPrice >= targetPrice)
-                            WatchType.PriceDirection.BELOW else WatchType.PriceDirection.ABOVE
+                        val existingDirection = (item.watchType as WatchType.PriceTarget).direction
+                        val direction = when {
+                            currentPrice > 0.0 && currentPrice >= targetPrice -> WatchType.PriceDirection.BELOW
+                            currentPrice > 0.0 -> WatchType.PriceDirection.ABOVE
+                            else -> existingDirection
+                        }
                         val updatedItem = item.copy(watchType = WatchType.PriceTarget(targetPrice, direction))
                         viewModel.updateWatchItem(updatedItem)
                         Toast.makeText(context, "Bevakning uppdaterad", Toast.LENGTH_SHORT).show()
@@ -562,7 +566,7 @@ class WatchDialogManager(
         dropValueInput.requestFocus()
     }
 
-    private fun showEditKeyMetricsDialog(item: WatchItem) {
+    private fun showEditKeyMetricsDialog(item: WatchItem, currentMetricValue: Double = 0.0) {
         if (item.watchType !is WatchType.KeyMetrics) return
         val keyMetrics = item.watchType
         val itemSymbol = item.ticker ?: symbol
@@ -610,8 +614,12 @@ class WatchDialogManager(
                     }
                     val targetValue = targetValueStr.parseDecimal()
                     if (metricType != null && targetValue != null && targetValue > 0) {
-                        val direction = if (item.currentMetricValue > 0.0 && item.currentMetricValue >= targetValue)
-                            WatchType.PriceDirection.BELOW else WatchType.PriceDirection.ABOVE
+                        val existingMetricDirection = (item.watchType as WatchType.KeyMetrics).direction
+                        val direction = when {
+                            currentMetricValue > 0.0 && currentMetricValue >= targetValue -> WatchType.PriceDirection.BELOW
+                            currentMetricValue > 0.0 -> WatchType.PriceDirection.ABOVE
+                            else -> existingMetricDirection
+                        }
                         val updatedItem = item.copy(watchType = WatchType.KeyMetrics(metricType, targetValue, direction))
                         viewModel.updateWatchItem(updatedItem)
                         Toast.makeText(context, "Bevakning uppdaterad", Toast.LENGTH_SHORT).show()

@@ -115,7 +115,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private var currentMainTab: MainTab = MainTab.STOCKS
-    private var lastWatchItems: List<WatchItem> = emptyList()
+    private var lastWatchItems: List<WatchItemUiState> = emptyList()
 
     /**
      * Initializes the activity's UI components and starts data loading.
@@ -451,18 +451,13 @@ class MainActivity : AppCompatActivity() {
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 Log.d(TAG, "Starting to collect from watchItemUiState StateFlow (lifecycle: STARTED)")
-                viewModel.watchItemUiState.collect { state: UiState<List<WatchItem>> ->
+                viewModel.watchItemUiState.collect { state: UiState<List<WatchItemUiState>> ->
                     when (state) {
                         is UiState.Loading -> {
                             Log.d(TAG, "=== UI STATE: Loading ===")
                         }
                         is UiState.Success -> {
                             Log.d(TAG, "=== UI STATE: Success with ${state.data.size} items ===")
-                            val keyMetricsItems = state.data.filter { it.watchType is WatchType.KeyMetrics }
-                            Log.d(TAG, "KeyMetrics items in UI state: ${keyMetricsItems.size}")
-                            keyMetricsItems.forEach { item ->
-                                Log.d(TAG, "KeyMetrics in UI: ${item.ticker}, value: ${item.currentMetricValue}")
-                            }
                         }
                         is UiState.Error -> {
                             Log.d(TAG, "=== UI STATE: Error - ${state.message} ===")
@@ -479,7 +474,7 @@ class MainActivity : AppCompatActivity() {
      *
      * @param state The current UI state to handle
      */
-    internal fun handleWatchItemUiState(state: UiState<List<WatchItem>>): Unit {
+    internal fun handleWatchItemUiState(state: UiState<List<WatchItemUiState>>): Unit {
         when (state) {
             is UiState.Loading -> showLoading()
             is UiState.Success -> showWatchItemSuccess(state.data)
@@ -495,19 +490,14 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun showWatchItemSuccess(data: List<WatchItem>): Unit {
+    private fun showWatchItemSuccess(data: List<WatchItemUiState>): Unit {
         Log.d(TAG, "=== showWatchItemSuccess() called with ${data.size} watch items ===")
-        val keyMetricsItems = data.filter { it.watchType is WatchType.KeyMetrics }
-        Log.d(TAG, "KeyMetrics items in showWatchItemSuccess: ${keyMetricsItems.size}")
-        keyMetricsItems.forEach { item ->
-            Log.d(TAG, "KeyMetrics item in showWatchItemSuccess: ${item.ticker}, currentMetricValue: ${item.currentMetricValue}")
-        }
 
         lastWatchItems = data
 
-        val filteredData: List<WatchItem> = when (currentMainTab) {
-            MainTab.STOCKS -> data.filter { it.watchType !is WatchType.PricePair }
-            MainTab.PAIRS -> data.filter { it.watchType is WatchType.PricePair }
+        val filteredData: List<WatchItemUiState> = when (currentMainTab) {
+            MainTab.STOCKS -> data.filter { it.item.watchType !is WatchType.PricePair }
+            MainTab.PAIRS -> data.filter { it.item.watchType is WatchType.PricePair }
             MainTab.ALERTS -> emptyList()
         }
         Log.d(TAG, "Filtered watch items for tab $currentMainTab: ${filteredData.size}")
@@ -1869,8 +1859,8 @@ class MainActivity : AppCompatActivity() {
                     val targetPrice = targetPriceStr.parseDecimal()
 
                     if (targetPrice != null && targetPrice > 0) {
-                        val direction = if (item.currentPrice > 0.0 && item.currentPrice >= targetPrice)
-                            WatchType.PriceDirection.BELOW else WatchType.PriceDirection.ABOVE
+                        val existingDir = (item.watchType as? WatchType.PriceTarget)?.direction ?: WatchType.PriceDirection.ABOVE
+                        val direction = existingDir
                         lifecycleScope.launch {
                             try {
                                 binding.progressBar.visibility = View.VISIBLE
@@ -1965,8 +1955,7 @@ class MainActivity : AppCompatActivity() {
                     val targetValue = targetValueStr.parseDecimal()
 
                     if (metricType != null && targetValue != null && targetValue > 0) {
-                        val direction = if (item.currentMetricValue > 0.0 && item.currentMetricValue >= targetValue)
-                            WatchType.PriceDirection.BELOW else WatchType.PriceDirection.ABOVE
+                        val direction = (item.watchType as? WatchType.KeyMetrics)?.direction ?: WatchType.PriceDirection.ABOVE
                         lifecycleScope.launch {
                             try {
                                 binding.progressBar.visibility = View.VISIBLE
@@ -2238,9 +2227,9 @@ class MainActivity : AppCompatActivity() {
         val pricePair = item.watchType as WatchType.PricePair
 
         detailStock1Name.text = "${item.companyName1 ?: item.ticker1} (${item.ticker1})"
-        detailStock1Price.text = item.formatPrice1()
+        detailStock1Price.text = "—"
         detailStock2Name.text = "${item.companyName2 ?: item.ticker2} (${item.ticker2})"
-        detailStock2Price.text = item.formatPrice2()
+        detailStock2Price.text = "—"
         detailPriceDifference.setText(pricePair.priceDifference.toString())
         detailNotifyWhenEqual.isChecked = pricePair.notifyWhenEqual
     }
@@ -2256,7 +2245,7 @@ class MainActivity : AppCompatActivity() {
         val priceTarget = item.watchType as WatchType.PriceTarget
 
         detailStockName.text = "${item.companyName ?: item.ticker} (${item.ticker})"
-        detailCurrentPrice.text = item.formatPrice()
+        detailCurrentPrice.text = "—"
         detailTargetPrice.setText(priceTarget.targetPrice.toString())
     }
 
@@ -2278,7 +2267,7 @@ class MainActivity : AppCompatActivity() {
             WatchType.MetricType.PS_RATIO -> "P/S-tal"
             WatchType.MetricType.DIVIDEND_YIELD -> "Utdelningsprocent"
         }
-        detailCurrentMetricValue.text = "$metricTypeName: ${item.formatMetricValue()}"
+        detailCurrentMetricValue.text = "$metricTypeName: —"
 
         val metricTypes = arrayOf("P/E-tal", "P/S-tal", "Utdelningsprocent")
         val metricTypeAdapter = ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line, metricTypes)
@@ -2301,11 +2290,7 @@ class MainActivity : AppCompatActivity() {
 
         detailATHStockName.text = "${item.companyName ?: item.ticker} (${item.ticker})"
         
-        val athInfoText = if (item.currentATH > 0.0) {
-            "ATH: ${CurrencyHelper.formatDecimal(item.currentATH)} SEK | Nedgång: ${item.formatATHDrop()}"
-        } else {
-            "ATH: Loading... | Nedgång: ${item.formatATHDrop()}"
-        }
+        val athInfoText = "ATH: — | Nedgång: —"
         detailATHInfo.text = athInfoText
         
         val dropTypes = arrayOf("Procent", "Absolut (SEK)")
@@ -2340,8 +2325,7 @@ class MainActivity : AppCompatActivity() {
                         val targetPriceInput = dialogView.findViewById<TextInputEditText>(R.id.detailTargetPrice)
 
                         val targetPrice = targetPriceInput.text.toString().parseDecimal() ?: 0.0
-                        val direction = if (item.currentPrice > 0.0 && item.currentPrice >= targetPrice)
-                            WatchType.PriceDirection.BELOW else WatchType.PriceDirection.ABOVE
+                        val direction = (item.watchType as? WatchType.PriceTarget)?.direction ?: WatchType.PriceDirection.ABOVE
 
                         item.copy(
                             watchType = WatchType.PriceTarget(targetPrice, direction)
@@ -2369,8 +2353,7 @@ class MainActivity : AppCompatActivity() {
                             }
                         }
                         val targetValue = targetValueInput.text.toString().parseDecimal() ?: 0.0
-                        val direction = if (item.currentMetricValue > 0.0 && item.currentMetricValue >= targetValue)
-                            WatchType.PriceDirection.BELOW else WatchType.PriceDirection.ABOVE
+                        val direction = (item.watchType as? WatchType.KeyMetrics)?.direction ?: WatchType.PriceDirection.ABOVE
 
                         item.copy(
                             watchType = WatchType.KeyMetrics(metricType, targetValue, direction)

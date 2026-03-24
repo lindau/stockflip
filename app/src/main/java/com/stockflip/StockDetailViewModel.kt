@@ -30,8 +30,8 @@ class StockDetailViewModel(
     private val _stockDataState = MutableStateFlow<UiState<StockDetailData>>(UiState.Loading)
     val stockDataState: StateFlow<UiState<StockDetailData>> = _stockDataState.asStateFlow()
 
-    private val _alertsState = MutableStateFlow<UiState<List<WatchItem>>>(UiState.Loading)
-    val alertsState: StateFlow<UiState<List<WatchItem>>> = _alertsState.asStateFlow()
+    private val _alertsState = MutableStateFlow<UiState<List<WatchItemUiState>>>(UiState.Loading)
+    val alertsState: StateFlow<UiState<List<WatchItemUiState>>> = _alertsState.asStateFlow()
 
     private val _chartState = MutableStateFlow<UiState<IntradayChartData>>(UiState.Loading)
     val chartState: StateFlow<UiState<IntradayChartData>> = _chartState.asStateFlow()
@@ -136,7 +136,7 @@ class StockDetailViewModel(
             watchItemDao.getWatchItemsBySymbolFlow(symbol).collect { items ->
                 try {
                     val activeItems = fetchPricesForItems(items.filter { it.isActive })
-                    val inactiveItems = items.filter { !it.isActive }
+                    val inactiveItems = items.filter { !it.isActive }.map { WatchItemUiState(it) }
                     val updatedAlerts = activeItems + inactiveItems
                     _alertsState.value = UiState.Success(updatedAlerts)
                     val history = items.associate { item ->
@@ -155,15 +155,18 @@ class StockDetailViewModel(
     /**
      * Hämtar aktuella priser för en lista bevakningar.
      */
-    private suspend fun fetchPricesForItems(items: List<WatchItem>): List<WatchItem> {
+    private suspend fun fetchPricesForItems(items: List<WatchItem>): List<WatchItemUiState> {
+        val now = System.currentTimeMillis()
         return items.map { item ->
             when (item.watchType) {
                 is WatchType.PricePair -> {
                     if (item.ticker1 != null && item.ticker2 != null) {
                         val price1 = yahooFinanceService.getStockPrice(item.ticker1)
                         val price2 = yahooFinanceService.getStockPrice(item.ticker2)
-                        if (price1 != null && price2 != null) item.withCurrentPrices(price1, price2) else item
-                    } else item
+                        if (price1 != null && price2 != null)
+                            WatchItemUiState(item, LiveWatchData(currentPrice1 = price1, currentPrice2 = price2, lastUpdatedAt = now))
+                        else WatchItemUiState(item, LiveWatchData(updateFailed = true))
+                    } else WatchItemUiState(item)
                 }
                 is WatchType.PriceTarget,
                 is WatchType.PriceRange,
@@ -171,7 +174,9 @@ class StockDetailViewModel(
                     val ticker = item.ticker ?: symbol
                     val price = yahooFinanceService.getStockPrice(ticker)
                     val changePercent = yahooFinanceService.getDailyChangePercent(ticker)
-                    if (price != null) item.withCurrentPriceAndDailyChange(price, changePercent) else item
+                    if (price != null)
+                        WatchItemUiState(item, LiveWatchData(currentPrice = price, currentDailyChangePercent = changePercent, lastUpdatedAt = now))
+                    else WatchItemUiState(item, LiveWatchData(updateFailed = true))
                 }
                 is WatchType.ATHBased -> {
                     val ticker = item.ticker ?: symbol
@@ -179,27 +184,30 @@ class StockDetailViewModel(
                     val price = yahooFinanceService.getStockPrice(ticker)
                     val changePercent = yahooFinanceService.getDailyChangePercent(ticker)
                     when {
-                        ath != null && price != null -> item.withATHData(ath, price).withDailyChangePercent(changePercent)
-                        price != null -> item.withCurrentPriceAndDailyChange(price, changePercent)
-                        else -> item
+                        ath != null && price != null -> WatchItemUiState(item, LiveWatchData(
+                            currentATH = ath, currentPrice = price,
+                            currentDropPercentage = ((ath - price) / ath) * 100,
+                            currentDropAbsolute = ath - price,
+                            currentDailyChangePercent = changePercent, lastUpdatedAt = now))
+                        price != null -> WatchItemUiState(item, LiveWatchData(currentPrice = price, currentDailyChangePercent = changePercent, lastUpdatedAt = now))
+                        else -> WatchItemUiState(item, LiveWatchData(updateFailed = true))
                     }
                 }
                 is WatchType.KeyMetrics -> {
                     val ticker = item.ticker ?: symbol
-                    val metricType = (item.watchType as? WatchType.KeyMetrics)?.metricType
-                    if (metricType != null) {
-                        val metricValue = yahooFinanceService.getKeyMetric(ticker, metricType)
-                        val price = yahooFinanceService.getStockPrice(ticker)
-                        val changePercent = yahooFinanceService.getDailyChangePercent(ticker)
-                        when {
-                            metricValue != null && price != null -> item.withCurrentMetricValue(metricValue).withCurrentPriceAndDailyChange(price, changePercent)
-                            metricValue != null -> item.withCurrentMetricValue(metricValue)
-                            price != null -> item.withCurrentPriceAndDailyChange(price, changePercent)
-                            else -> item
-                        }
-                    } else item
+                    val metricType = (item.watchType as WatchType.KeyMetrics).metricType
+                    val metricValue = yahooFinanceService.getKeyMetric(ticker, metricType)
+                    val price = yahooFinanceService.getStockPrice(ticker)
+                    val changePercent = yahooFinanceService.getDailyChangePercent(ticker)
+                    when {
+                        metricValue != null -> WatchItemUiState(item, LiveWatchData(
+                            currentMetricValue = metricValue, metricValueAtCreation = metricValue,
+                            currentPrice = price ?: 0.0, currentDailyChangePercent = changePercent, lastUpdatedAt = now))
+                        price != null -> WatchItemUiState(item, LiveWatchData(currentPrice = price, currentDailyChangePercent = changePercent, lastUpdatedAt = now))
+                        else -> WatchItemUiState(item, LiveWatchData(updateFailed = true))
+                    }
                 }
-                is WatchType.Combined -> item
+                is WatchType.Combined -> WatchItemUiState(item)
             }
         }
     }

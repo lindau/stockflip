@@ -27,6 +27,7 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.stockflip.CurrencyHelper
+import com.stockflip.LiveWatchData
 import com.stockflip.WatchItem
 import com.stockflip.WatchType
 import com.stockflip.ui.components.StatusStripe
@@ -39,6 +40,7 @@ import kotlin.math.abs
 @Composable
 fun PairCard(
     item: WatchItem,
+    live: LiveWatchData = LiveWatchData(),
     priceFormat: (Double) -> String,
     groupPosition: GroupPosition = GroupPosition.ONLY,
     showControls: Boolean = false,
@@ -53,8 +55,8 @@ fun PairCard(
     val currency1 = CurrencyHelper.getCurrencyFromSymbol(item.ticker1)
     val currency2 = CurrencyHelper.getCurrencyFromSymbol(item.ticker2)
 
-    val isTriggered = item.currentPrice1 > 0.0 && item.currentPrice2 > 0.0 && run {
-        val diff = abs(item.currentPrice1 - item.currentPrice2)
+    val isTriggered = live.currentPrice1 > 0.0 && live.currentPrice2 > 0.0 && run {
+        val diff = abs(live.currentPrice1 - live.currentPrice2)
         (pricePair.notifyWhenEqual && diff < 0.01) ||
             (pricePair.priceDifference > 0 && diff <= pricePair.priceDifference)
     }
@@ -68,8 +70,8 @@ fun PairCard(
         if (!hasEqual && !hasDiff) append("=")
     }
 
-    val currentSpread: Double? = if (item.currentPrice1 > 0.0 && item.currentPrice2 > 0.0)
-        abs(item.currentPrice1 - item.currentPrice2) else null
+    val currentSpread: Double? = if (live.currentPrice1 > 0.0 && live.currentPrice2 > 0.0)
+        abs(live.currentPrice1 - live.currentPrice2) else null
 
     val cardBorder = LocalCardBorder.current
 
@@ -138,8 +140,8 @@ fun PairCard(
                     StockPriceRow(
                         companyName = item.companyName1,
                         ticker = item.ticker1,
-                        price = if (item.currentPrice1 > 0.0)
-                            CurrencyHelper.formatPrice(item.currentPrice1, currency1) else "—",
+                        price = if (live.currentPrice1 > 0.0)
+                            CurrencyHelper.formatPrice(live.currentPrice1, currency1) else "—",
                     )
 
                     HorizontalDivider(
@@ -151,8 +153,8 @@ fun PairCard(
                     StockPriceRow(
                         companyName = item.companyName2,
                         ticker = item.ticker2,
-                        price = if (item.currentPrice2 > 0.0)
-                            CurrencyHelper.formatPrice(item.currentPrice2, currency2) else "—",
+                        price = if (live.currentPrice2 > 0.0)
+                            CurrencyHelper.formatPrice(live.currentPrice2, currency2) else "—",
                     )
 
                     Spacer(modifier = Modifier.height(8.dp))
@@ -193,7 +195,7 @@ fun PairCard(
                 }
 
                 TriggerHistoryRow(triggerHistory)
-                LastUpdatedRow(item.lastUpdatedAt, item.updateFailed)
+                LastUpdatedRow(live.lastUpdatedAt, live.updateFailed)
 
                 if (item.isTriggered) {
                     Spacer(modifier = Modifier.height(6.dp))

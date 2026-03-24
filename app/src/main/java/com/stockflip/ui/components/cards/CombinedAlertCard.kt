@@ -25,6 +25,7 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.stockflip.LiveWatchData
 import com.stockflip.WatchItem
 import com.stockflip.WatchType
 import com.stockflip.ui.components.StatusStripe
@@ -35,6 +36,7 @@ import com.stockflip.ui.theme.groupShape
 @Composable
 fun CombinedAlertCard(
     item: WatchItem,
+    live: LiveWatchData = LiveWatchData(),
     priceFormat: (Double) -> String,
     groupPosition: GroupPosition = GroupPosition.ONLY,
     showPrice: Boolean = true,
@@ -126,7 +128,7 @@ fun CombinedAlertCard(
                 }
 
                 TriggerHistoryRow(triggerHistory)
-                LastUpdatedRow(item.lastUpdatedAt, item.updateFailed)
+                LastUpdatedRow(live.lastUpdatedAt, live.updateFailed)
 
                 if (item.isTriggered) {
                     Spacer(modifier = Modifier.height(6.dp))

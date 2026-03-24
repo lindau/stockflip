@@ -55,16 +55,16 @@ class MainViewModelRefreshWatchItemsTest {
 
         val viewModel = MainViewModel(stockPairDao, watchItemDao, marketDataService)
         viewModel.refreshWatchItems()
-        val state: UiState<List<WatchItem>> = viewModel.watchItemUiState.value
-        val success: UiState.Success<List<WatchItem>> = state as UiState.Success<List<WatchItem>>
-        val updated: List<WatchItem> = success.data
-        val updatedTarget: WatchItem = updated.first { it.id == 1 }
-        val updatedPair: WatchItem = updated.first { it.id == 2 }
-        val updatedCombined: WatchItem = updated.first { it.id == 3 }
-        assertEquals(300.0, updatedTarget.currentPrice, 0.0001)
-        assertEquals(300.0, updatedPair.currentPrice1, 0.0001)
-        assertEquals(280.0, updatedPair.currentPrice2, 0.0001)
-        assertEquals(300.0, updatedCombined.currentPrice, 0.0001)
+        val state: UiState<List<WatchItemUiState>> = viewModel.watchItemUiState.value
+        val success: UiState.Success<List<WatchItemUiState>> = state as UiState.Success<List<WatchItemUiState>>
+        val updated: List<WatchItemUiState> = success.data
+        val updatedTarget = updated.first { it.item.id == 1 }
+        val updatedPair = updated.first { it.item.id == 2 }
+        val updatedCombined = updated.first { it.item.id == 3 }
+        assertEquals(300.0, updatedTarget.live.currentPrice, 0.0001)
+        assertEquals(300.0, updatedPair.live.currentPrice1, 0.0001)
+        assertEquals(280.0, updatedPair.live.currentPrice2, 0.0001)
+        assertEquals(300.0, updatedCombined.live.currentPrice, 0.0001)
     }
 }
 

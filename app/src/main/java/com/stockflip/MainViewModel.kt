@@ -24,8 +24,8 @@ class MainViewModel(
     private val _uiState = MutableStateFlow<UiState<List<StockPair>>>(UiState.Loading)
     val uiState: StateFlow<UiState<List<StockPair>>> = _uiState
 
-    private val _watchItemUiState = MutableStateFlow<UiState<List<WatchItem>>>(UiState.Loading)
-    val watchItemUiState: StateFlow<UiState<List<WatchItem>>> = _watchItemUiState.asStateFlow()
+    private val _watchItemUiState = MutableStateFlow<UiState<List<WatchItemUiState>>>(UiState.Loading)
+    val watchItemUiState: StateFlow<UiState<List<WatchItemUiState>>> = _watchItemUiState.asStateFlow()
 
     private val _alertSortMode = MutableStateFlow(SortHelper.SortMode.ADDITION_ORDER)
     val alertSortMode: StateFlow<SortHelper.SortMode> = _alertSortMode.asStateFlow()
@@ -163,7 +163,7 @@ class MainViewModel(
                 // This ensures KeyMetrics values are loaded before showing UI
             } else {
                 // No KeyMetrics items, safe to show data from database immediately
-                _watchItemUiState.value = UiState.Success(items)
+                _watchItemUiState.value = UiState.Success(items.map { WatchItemUiState(it) })
                 Log.d(TAG, "No KeyMetrics items, set UI state to Success")
             }
         } catch (e: Exception) {
@@ -196,25 +196,21 @@ class MainViewModel(
                 semaphore.withPermit {
                 val now = System.currentTimeMillis()
                 try {
-                    val result = when (item.watchType) {
+                    when (item.watchType) {
                         is WatchType.PricePair -> {
                             if (item.ticker1 != null && item.ticker2 != null) {
                                 Log.d(TAG, "Fetching prices for ${item.ticker1} and ${item.ticker2}")
                                 val price1 = yahooFinanceService.getStockPrice(item.ticker1)
                                 val price2 = yahooFinanceService.getStockPrice(item.ticker2)
-
                                 if (price1 != null && price2 != null) {
                                     Log.d(TAG, "Got prices for ${item.ticker1}: $price1, ${item.ticker2}: $price2")
-                                    val updatedItem = item.withCurrentPrices(price1, price2)
-                                    watchItemDao.update(updatedItem)
-                                    Log.d(TAG, "Updated database with new prices for ${item.ticker1}-${item.ticker2}")
-                                    updatedItem
+                                    WatchItemUiState(item, LiveWatchData(currentPrice1 = price1, currentPrice2 = price2, lastUpdatedAt = now))
                                 } else {
-                                    Log.w(TAG, "Could not get prices for ${item.ticker1} or ${item.ticker2}, keeping existing prices")
-                                    item
+                                    Log.w(TAG, "Could not get prices for ${item.ticker1} or ${item.ticker2}")
+                                    WatchItemUiState(item, LiveWatchData(updateFailed = true))
                                 }
                             } else {
-                                item
+                                WatchItemUiState(item)
                             }
                         }
                         is WatchType.PriceTarget -> {
@@ -222,19 +218,15 @@ class MainViewModel(
                                 Log.d(TAG, "Fetching price and daily change for ${item.ticker}")
                                 val price = yahooFinanceService.getStockPrice(item.ticker)
                                 val changePercent = yahooFinanceService.getDailyChangePercent(item.ticker)
-
                                 if (price != null) {
                                     Log.d(TAG, "Got price for ${item.ticker}: $price, changePercent: $changePercent")
-                                    val updatedItem = item.withCurrentPriceAndDailyChange(price, changePercent)
-                                    watchItemDao.update(updatedItem)
-                                    Log.d(TAG, "Updated database with new price for ${item.ticker}")
-                                    updatedItem
+                                    WatchItemUiState(item, LiveWatchData(currentPrice = price, currentDailyChangePercent = changePercent, lastUpdatedAt = now))
                                 } else {
-                                    Log.w(TAG, "Could not get price for ${item.ticker}, keeping existing price")
-                                    item
+                                    Log.w(TAG, "Could not get price for ${item.ticker}")
+                                    WatchItemUiState(item, LiveWatchData(updateFailed = true))
                                 }
                             } else {
-                                item
+                                WatchItemUiState(item)
                             }
                         }
                         is WatchType.KeyMetrics -> {
@@ -246,33 +238,28 @@ class MainViewModel(
                                     val price = yahooFinanceService.getStockPrice(item.ticker)
                                     val changePercent = yahooFinanceService.getDailyChangePercent(item.ticker)
                                     Log.d(TAG, "getKeyMetric returned: $metricValue for ${item.ticker}")
-
                                     if (metricValue != null) {
                                         Log.d(TAG, "Got metric value for ${item.ticker}: $metricValue")
-                                        var updatedItem = item.withCurrentMetricValue(metricValue)
-                                        if (price != null) {
-                                            updatedItem = updatedItem.withCurrentPriceAndDailyChange(price, changePercent)
-                                        }
-                                        watchItemDao.update(updatedItem)
-                                        Log.d(TAG, "Updated database with new metric value for ${item.ticker}: ${updatedItem.currentMetricValue}")
-                                        updatedItem
+                                        WatchItemUiState(item, LiveWatchData(
+                                            currentMetricValue = metricValue,
+                                            metricValueAtCreation = metricValue,
+                                            currentPrice = price ?: 0.0,
+                                            currentDailyChangePercent = changePercent,
+                                            lastUpdatedAt = now
+                                        ))
+                                    } else if (price != null) {
+                                        WatchItemUiState(item, LiveWatchData(currentPrice = price, currentDailyChangePercent = changePercent, lastUpdatedAt = now))
                                     } else {
-                                        if (price != null) {
-                                            val updatedItem = item.withCurrentPriceAndDailyChange(price, changePercent)
-                                            watchItemDao.update(updatedItem)
-                                            updatedItem
-                                        } else {
-                                            Log.w(TAG, "Could not get metric value for ${item.ticker} (returned null), keeping existing value: ${item.currentMetricValue}")
-                                            item
-                                        }
+                                        Log.w(TAG, "Could not get metric value or price for ${item.ticker}")
+                                        WatchItemUiState(item, LiveWatchData(updateFailed = true))
                                     }
                                 } catch (e: Exception) {
                                     Log.e(TAG, "Exception while fetching key metric for ${item.ticker}: ${e.message}", e)
-                                    item
+                                    WatchItemUiState(item, LiveWatchData(updateFailed = true))
                                 }
                             } else {
                                 Log.w(TAG, "Ticker is null for KeyMetrics watch item ${item.id}")
-                                item
+                                WatchItemUiState(item)
                             }
                         }
                         is WatchType.ATHBased -> {
@@ -281,19 +268,22 @@ class MainViewModel(
                                 val ath = yahooFinanceService.getATH(item.ticker)
                                 val price = yahooFinanceService.getStockPrice(item.ticker)
                                 val changePercent = yahooFinanceService.getDailyChangePercent(item.ticker)
-
                                 if (ath != null && price != null) {
                                     Log.d(TAG, "Got ATH for ${item.ticker}: $ath, Price: $price, changePercent: $changePercent")
-                                    val updatedItem = item.withATHData(ath, price).withDailyChangePercent(changePercent)
-                                    watchItemDao.update(updatedItem)
-                                    Log.d(TAG, "Updated database with new ATH data for ${item.ticker}")
-                                    updatedItem
+                                    WatchItemUiState(item, LiveWatchData(
+                                        currentATH = ath,
+                                        currentPrice = price,
+                                        currentDropPercentage = ((ath - price) / ath) * 100,
+                                        currentDropAbsolute = ath - price,
+                                        currentDailyChangePercent = changePercent,
+                                        lastUpdatedAt = now
+                                    ))
                                 } else {
-                                    Log.w(TAG, "Could not get ATH or price for ${item.ticker}, keeping existing values")
-                                    item
+                                    Log.w(TAG, "Could not get ATH or price for ${item.ticker}")
+                                    WatchItemUiState(item, LiveWatchData(updateFailed = true))
                                 }
                             } else {
-                                item
+                                WatchItemUiState(item)
                             }
                         }
                         is WatchType.PriceRange -> {
@@ -301,19 +291,13 @@ class MainViewModel(
                                 Log.d(TAG, "Fetching price and daily change for ${item.ticker} (PriceRange)")
                                 val price = yahooFinanceService.getStockPrice(item.ticker)
                                 val changePercent = yahooFinanceService.getDailyChangePercent(item.ticker)
-
                                 if (price != null) {
-                                    Log.d(TAG, "Got price for ${item.ticker}: $price, changePercent: $changePercent")
-                                    val updatedItem = item.withCurrentPriceAndDailyChange(price, changePercent)
-                                    watchItemDao.update(updatedItem)
-                                    Log.d(TAG, "Updated database with new price for ${item.ticker}")
-                                    updatedItem
+                                    WatchItemUiState(item, LiveWatchData(currentPrice = price, currentDailyChangePercent = changePercent, lastUpdatedAt = now))
                                 } else {
-                                    Log.w(TAG, "Could not get price for ${item.ticker}, keeping existing price")
-                                    item
+                                    WatchItemUiState(item, LiveWatchData(updateFailed = true))
                                 }
                             } else {
-                                item
+                                WatchItemUiState(item)
                             }
                         }
                         is WatchType.DailyMove -> {
@@ -321,81 +305,47 @@ class MainViewModel(
                                 Log.d(TAG, "Fetching price and daily change for ${item.ticker} (DailyMove)")
                                 val price = yahooFinanceService.getStockPrice(item.ticker)
                                 val changePercent = yahooFinanceService.getDailyChangePercent(item.ticker)
-
                                 if (price != null) {
-                                    Log.d(TAG, "Got price for ${item.ticker}: $price, changePercent: $changePercent")
-                                    val updatedItem = item.withCurrentPriceAndDailyChange(price, changePercent)
-                                    watchItemDao.update(updatedItem)
-                                    Log.d(TAG, "Updated database with new price for ${item.ticker}")
-                                    updatedItem
+                                    WatchItemUiState(item, LiveWatchData(currentPrice = price, currentDailyChangePercent = changePercent, lastUpdatedAt = now))
                                 } else {
-                                    Log.w(TAG, "Could not get price for ${item.ticker}, keeping existing price")
-                                    item
+                                    WatchItemUiState(item, LiveWatchData(updateFailed = true))
                                 }
                             } else {
-                                item
+                                WatchItemUiState(item)
                             }
                         }
                         is WatchType.Combined -> {
-                            // Combined WatchType: använd item.ticker direkt (samma som för vanliga bevakningar)
                             if (item.ticker != null) {
                                 Log.d(TAG, "Fetching price and daily change for combined alert ticker: ${item.ticker}")
                                 val price = yahooFinanceService.getStockPrice(item.ticker)
                                 val changePercent = yahooFinanceService.getDailyChangePercent(item.ticker)
-
                                 if (price != null) {
-                                    Log.d(TAG, "Got price for combined alert ticker ${item.ticker}: $price, changePercent: $changePercent")
-                                    val updatedItem = item.withCurrentPriceAndDailyChange(price, changePercent)
-                                    watchItemDao.update(updatedItem)
-                                    Log.d(TAG, "Updated database with new price for combined alert")
-                                    updatedItem
+                                    WatchItemUiState(item, LiveWatchData(currentPrice = price, currentDailyChangePercent = changePercent, lastUpdatedAt = now))
                                 } else {
                                     Log.w(TAG, "Could not get price for combined alert ticker ${item.ticker}")
-                                    item
+                                    WatchItemUiState(item, LiveWatchData(updateFailed = true))
                                 }
                             } else {
                                 Log.w(TAG, "Combined alert has no ticker set")
-                                item
+                                WatchItemUiState(item)
                             }
                         }
                     }
-                    result.also {
-                        if (it !== item) { it.lastUpdatedAt = now; it.updateFailed = false }
-                        else { it.updateFailed = true }
-                    }
                 } catch (e: Exception) {
                     Log.e(TAG, "Error fetching prices for watch item ${item.id}: ${e.message}")
-                    item.also { it.updateFailed = true }
+                    WatchItemUiState(item, LiveWatchData(updateFailed = true))
                 }
                 } // semaphore.withPermit
                 } // async
             }.awaitAll()
             } // coroutineScope
 
-            // Use updatedItems directly instead of reloading from database
-            // This is important because currentMetricValue is @Ignore and not saved to database
-            Log.d(TAG, "Refresh complete, using updated items directly (${updatedItems.size} items)")
-            
-            // Log key metrics items specifically
-            try {
-                val keyMetricsItems = updatedItems.filter { it.watchType is WatchType.KeyMetrics }
-                Log.d(TAG, "Found ${keyMetricsItems.size} KeyMetrics items in updated list")
-                keyMetricsItems.forEach { item ->
-                    Log.d(TAG, "KeyMetrics item: ${item.ticker}, currentMetricValue: ${item.currentMetricValue}")
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "Error logging KeyMetrics items: ${e.message}", e)
-            }
-            
-            // Update StateFlow - this is critical!
+            Log.d(TAG, "Refresh complete, built ${updatedItems.size} WatchItemUiState objects")
+
+            // Update StateFlow
             try {
                 Log.d(TAG, "About to update StateFlow with ${updatedItems.size} items")
                 _watchItemUiState.value = UiState.Success(updatedItems)
-                Log.d(TAG, "StateFlow updated! Current value type: ${_watchItemUiState.value::class.simpleName}")
-                if (_watchItemUiState.value is UiState.Success) {
-                    val successState = _watchItemUiState.value as UiState.Success
-                    Log.d(TAG, "StateFlow contains ${successState.data.size} items")
-                }
                 Log.d(TAG, "Set UI state to Success with ${updatedItems.size} watch items")
             } catch (e: Exception) {
                 Log.e(TAG, "CRITICAL: Error updating StateFlow: ${e.message}", e)

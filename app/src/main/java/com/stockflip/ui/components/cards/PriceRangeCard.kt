@@ -25,6 +25,7 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.stockflip.CurrencyHelper
+import com.stockflip.LiveWatchData
 import com.stockflip.WatchItem
 import com.stockflip.WatchType
 import com.stockflip.ui.components.StatusStripe
@@ -35,6 +36,7 @@ import com.stockflip.ui.theme.groupShape
 @Composable
 fun PriceRangeCard(
     item: WatchItem,
+    live: LiveWatchData = LiveWatchData(),
     priceFormat: (Double) -> String,
     groupPosition: GroupPosition = GroupPosition.ONLY,
     showStatus: Boolean = false,
@@ -48,7 +50,7 @@ fun PriceRangeCard(
 ) {
     val priceRange = item.watchType as? WatchType.PriceRange ?: return
 
-    val isTriggered = item.currentPrice >= priceRange.minPrice && item.currentPrice <= priceRange.maxPrice
+    val isTriggered = live.currentPrice >= priceRange.minPrice && live.currentPrice <= priceRange.maxPrice
 
     val cardBorder = LocalCardBorder.current
 
@@ -127,7 +129,7 @@ fun PriceRangeCard(
                 )
 
                 TriggerHistoryRow(triggerHistory)
-                LastUpdatedRow(item.lastUpdatedAt, item.updateFailed)
+                LastUpdatedRow(live.lastUpdatedAt, live.updateFailed)
 
                 if (item.isTriggered) {
                     Spacer(modifier = Modifier.height(6.dp))

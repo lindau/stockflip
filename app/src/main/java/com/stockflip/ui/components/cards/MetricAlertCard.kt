@@ -32,6 +32,7 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.stockflip.CurrencyHelper
+import com.stockflip.LiveWatchData
 import com.stockflip.WatchItem
 import com.stockflip.WatchType
 import com.stockflip.ui.components.StatusStripe
@@ -48,6 +49,7 @@ import com.stockflip.ui.theme.groupShape
 @Composable
 fun MetricAlertCard(
     item: WatchItem,
+    live: LiveWatchData = LiveWatchData(),
     priceFormat: (Double) -> String,
     groupPosition: GroupPosition = GroupPosition.ONLY,
     showStatus: Boolean = false,
@@ -77,30 +79,30 @@ fun MetricAlertCard(
         else                                -> priceFormat(keyMetrics.targetValue)
     }
 
-    val hasCurrentValue = item.currentMetricValue > 0.0
+    val hasCurrentValue = live.currentMetricValue > 0.0
 
     val currentValueText = if (!hasCurrentValue) "—" else when (keyMetrics.metricType) {
-        WatchType.MetricType.DIVIDEND_YIELD -> "${priceFormat(item.currentMetricValue)}%"
-        else                                -> priceFormat(item.currentMetricValue)
+        WatchType.MetricType.DIVIDEND_YIELD -> "${priceFormat(live.currentMetricValue)}%"
+        else                                -> priceFormat(live.currentMetricValue)
     }
 
-    val isTriggered = item.currentMetricValue != 0.0 && when (keyMetrics.direction) {
-        WatchType.PriceDirection.ABOVE -> item.currentMetricValue >= keyMetrics.targetValue
-        WatchType.PriceDirection.BELOW -> item.currentMetricValue <= keyMetrics.targetValue
+    val isTriggered = live.currentMetricValue != 0.0 && when (keyMetrics.direction) {
+        WatchType.PriceDirection.ABOVE -> live.currentMetricValue >= keyMetrics.targetValue
+        WatchType.PriceDirection.BELOW -> live.currentMetricValue <= keyMetrics.targetValue
     }
 
-    val hasValueAtCreation = item.metricValueAtCreation > 0.0
-    val trendDirection = if (hasValueAtCreation && item.currentMetricValue > 0.0) {
+    val hasValueAtCreation = live.metricValueAtCreation > 0.0
+    val trendDirection = if (hasValueAtCreation && live.currentMetricValue > 0.0) {
         when {
-            item.currentMetricValue > item.metricValueAtCreation -> "UP"
-            item.currentMetricValue < item.metricValueAtCreation -> "DOWN"
+            live.currentMetricValue > live.metricValueAtCreation -> "UP"
+            live.currentMetricValue < live.metricValueAtCreation -> "DOWN"
             else                                                 -> "SAME"
         }
     } else null
 
-    val trendChange = if (hasValueAtCreation && item.currentMetricValue > 0.0) {
-        val change = item.currentMetricValue - item.metricValueAtCreation
-        val changePercent = (change / item.metricValueAtCreation) * 100
+    val trendChange = if (hasValueAtCreation && live.currentMetricValue > 0.0) {
+        val change = live.currentMetricValue - live.metricValueAtCreation
+        val changePercent = (change / live.metricValueAtCreation) * 100
         Pair(change, changePercent)
     } else null
 
@@ -178,10 +180,10 @@ fun MetricAlertCard(
                     StockSummaryRow(
                         companyName = item.companyName,
                         ticker = item.ticker,
-                        price = item.currentPrice,
-                        dailyChangePercent = item.currentDailyChangePercent,
+                        price = live.currentPrice,
+                        dailyChangePercent = live.currentDailyChangePercent,
                         currency = currency,
-                        showPrice = item.currentPrice > 0,
+                        showPrice = live.currentPrice > 0,
                     )
                     HorizontalDivider(
                         modifier = Modifier.padding(vertical = 8.dp),
@@ -244,8 +246,8 @@ fun MetricAlertCard(
 
                 if (hasValueAtCreation) {
                     val valueAtCreationText = when (keyMetrics.metricType) {
-                        WatchType.MetricType.DIVIDEND_YIELD -> "${priceFormat(item.metricValueAtCreation)}%"
-                        else                                -> priceFormat(item.metricValueAtCreation)
+                        WatchType.MetricType.DIVIDEND_YIELD -> "${priceFormat(live.metricValueAtCreation)}%"
+                        else                                -> priceFormat(live.metricValueAtCreation)
                     }
                     Spacer(modifier = Modifier.height(2.dp))
                     Text(
@@ -256,7 +258,7 @@ fun MetricAlertCard(
                 }
 
                 TriggerHistoryRow(triggerHistory)
-                LastUpdatedRow(item.lastUpdatedAt, item.updateFailed)
+                LastUpdatedRow(live.lastUpdatedAt, live.updateFailed)
 
                 if (item.isTriggered) {
                     Spacer(modifier = Modifier.height(6.dp))

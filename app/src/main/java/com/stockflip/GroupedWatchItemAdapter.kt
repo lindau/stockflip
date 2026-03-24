@@ -37,6 +37,7 @@ sealed class GroupedListItem {
     data class Header(val title: String) : GroupedListItem()
     data class WatchItemWrapper(
         val item: WatchItem,
+        val live: LiveWatchData = LiveWatchData(),
         val groupPosition: GroupPosition = GroupPosition.ONLY,
     ) : GroupedListItem()
     data class MultipleWatchesWrapper(
@@ -130,7 +131,7 @@ class GroupedWatchItemAdapter(
             }
             is GroupedListItem.WatchItemWrapper -> {
                 val watchItemHolder = holder as ComposeWatchItemViewHolder
-                watchItemHolder.bind(item.item, item.groupPosition)
+                watchItemHolder.bind(item.item, item.live, item.groupPosition)
             }
             is GroupedListItem.MultipleWatchesWrapper -> {
                 val multipleWatchesHolder = holder as MultipleWatchesViewHolder
@@ -162,7 +163,7 @@ class GroupedWatchItemAdapter(
      * Converts a list of WatchItems into grouped list by stock symbol.
      * Optionally updates sort mode atomically before building.
      */
-    fun submitGroupedList(items: List<WatchItem>, newSortMode: SortHelper.SortMode? = null) {
+    fun submitGroupedList(items: List<WatchItemUiState>, newSortMode: SortHelper.SortMode? = null) {
         Log.d(TAG, "=== submitGroupedList() called with ${items.size} items ===")
         if (newSortMode != null) sortMode = newSortMode
         allWatchItems = items
@@ -180,30 +181,39 @@ class GroupedWatchItemAdapter(
     /**
      * Builds and submits a grouped list by stock symbol
      */
-    private fun buildFilteredList(items: List<WatchItem>) {
+    private fun buildFilteredList(items: List<WatchItemUiState>) {
+        val uiStateMap = items.associateBy { it.item.id }
         val groupedList = mutableListOf<GroupedListItem>()
-        val activeItems = items.filter { it.isActive }
+        val activeItems = items.filter { it.item.isActive }
 
         // Separate PricePairs (they have two stocks, handle separately)
-        val pricePairs = activeItems.filter { it.watchType is WatchType.PricePair }
-        val sortedPricePairs = SortHelper.sortWatchItems(pricePairs, sortMode)
+        val pricePairs = activeItems.filter { it.item.watchType is WatchType.PricePair }
+        val sortedPricePairs = SortHelper.sortWatchItems(pricePairs.map { it.item }, sortMode)
+            .mapNotNull { uiStateMap[it.id] }
 
         // Group single-stock items by ticker (inklusive Combined)
         val singleStockItems = activeItems.filter {
-            it.watchType !is WatchType.PricePair && it.ticker != null
+            it.item.watchType !is WatchType.PricePair && it.item.ticker != null
         }
 
         // Dela upp i aktier och krypto
-        val stockOnlyItems = singleStockItems.filter { !StockSearchResult.isCryptoSymbol(it.ticker!!) }
-        val cryptoItems = singleStockItems.filter { StockSearchResult.isCryptoSymbol(it.ticker!!) }
+        val stockOnlyItems = singleStockItems.filter { !StockSearchResult.isCryptoSymbol(it.item.ticker!!) }
+        val cryptoItems = singleStockItems.filter { StockSearchResult.isCryptoSymbol(it.item.ticker!!) }
 
-        val sortedStocksByTicker = SortHelper.sortTickerGroups(stockOnlyItems.groupBy { it.ticker!! }, sortMode)
-        val sortedCryptoByTicker = SortHelper.sortTickerGroups(cryptoItems.groupBy { it.ticker!! }, sortMode)
+        val sortedStocksByTicker = SortHelper.sortTickerGroups(
+            stockOnlyItems.groupBy { it.item.ticker!! }.mapValues { (_, v) -> v.map { it.item } }, sortMode
+        ).mapValues { (_, wis) -> wis.mapNotNull { uiStateMap[it.id] } }
+
+        val sortedCryptoByTicker = SortHelper.sortTickerGroups(
+            cryptoItems.groupBy { it.item.ticker!! }.mapValues { (_, v) -> v.map { it.item } }, sortMode
+        ).mapValues { (_, wis) -> wis.mapNotNull { uiStateMap[it.id] } }
 
         // Add Price Pairs section
         if (sortedPricePairs.isNotEmpty()) {
             groupedList.add(GroupedListItem.Header("Aktiepar"))
-            sortedPricePairs.forEach { groupedList.add(GroupedListItem.WatchItemWrapper(it)) }
+            sortedPricePairs.forEach { uiState ->
+                groupedList.add(GroupedListItem.WatchItemWrapper(uiState.item, uiState.live))
+            }
         }
 
         addTickerGroupSection(groupedList, "Aktier", sortedStocksByTicker)
@@ -216,7 +226,7 @@ class GroupedWatchItemAdapter(
     private fun addTickerGroupSection(
         groupedList: MutableList<GroupedListItem>,
         header: String,
-        sortedItemsByTicker: Map<String, List<WatchItem>>
+        sortedItemsByTicker: Map<String, List<WatchItemUiState>>
     ) {
         if (sortedItemsByTicker.isEmpty()) return
         if (groupedList.isNotEmpty()) {
@@ -228,16 +238,17 @@ class GroupedWatchItemAdapter(
                 groupedList.add(GroupedListItem.GroupSeparator(groupedList.size))
             }
             when (watchItemsForTicker.size) {
-                1 -> groupedList.add(
-                    GroupedListItem.WatchItemWrapper(watchItemsForTicker.first(), GroupPosition.ONLY)
-                )
-                else -> watchItemsForTicker.forEachIndexed { index, watchItem ->
+                1 -> {
+                    val uiState = watchItemsForTicker.first()
+                    groupedList.add(GroupedListItem.WatchItemWrapper(uiState.item, uiState.live, GroupPosition.ONLY))
+                }
+                else -> watchItemsForTicker.forEachIndexed { index, uiState ->
                     val position = when (index) {
                         0                              -> GroupPosition.FIRST
                         watchItemsForTicker.lastIndex -> GroupPosition.LAST
                         else                           -> GroupPosition.MIDDLE
                     }
-                    groupedList.add(GroupedListItem.WatchItemWrapper(watchItem, position))
+                    groupedList.add(GroupedListItem.WatchItemWrapper(uiState.item, uiState.live, position))
                 }
             }
         }
@@ -246,7 +257,7 @@ class GroupedWatchItemAdapter(
     /**
      * Stores all watch items for rebuilding the list when expansion state changes
      */
-    private var allWatchItems: List<WatchItem> = emptyList()
+    private var allWatchItems: List<WatchItemUiState> = emptyList()
 
     inner class HeaderViewHolder(private val binding: ItemSectionHeaderBinding) : RecyclerView.ViewHolder(binding.root) {
         fun bind(title: String) {
@@ -260,11 +271,12 @@ class GroupedWatchItemAdapter(
         private val composeView: ComposeView
     ) : RecyclerView.ViewHolder(composeView) {
 
-        fun bind(item: WatchItem, groupPosition: GroupPosition = GroupPosition.ONLY) {
+        fun bind(item: WatchItem, live: LiveWatchData, groupPosition: GroupPosition = GroupPosition.ONLY) {
             composeView.setContent {
                 StockFlipTheme {
                     ComposeWatchItemCard(
                         item = item,
+                        live = live,
                         groupPosition = groupPosition,
                         priceFormat = { value -> CurrencyHelper.formatDecimal(value) },
                         onItemClick = { onItemClick(item) },
@@ -318,24 +330,8 @@ class GroupedWatchItemAdapter(
             return when {
                 oldItem is GroupedListItem.Header && newItem is GroupedListItem.Header ->
                     oldItem.title == newItem.title
-                oldItem is GroupedListItem.WatchItemWrapper && newItem is GroupedListItem.WatchItemWrapper -> {
-                    // Compare all fields, including those marked with @Ignore
-                    val old = oldItem.item
-                    val new = newItem.item
-
-                    // Standard data class equals (compares DB fields)
-                    old == new &&
-                    oldItem.groupPosition == newItem.groupPosition &&
-                    // Compare @Ignore fields manually
-                    old.currentPrice1 == new.currentPrice1 &&
-                    old.currentPrice2 == new.currentPrice2 &&
-                    old.currentPrice == new.currentPrice &&
-                    old.currentMetricValue == new.currentMetricValue &&
-                    old.currentATH == new.currentATH &&
-                    old.currentDropPercentage == new.currentDropPercentage &&
-                    old.currentDropAbsolute == new.currentDropAbsolute &&
-                    old.currentDailyChangePercent == new.currentDailyChangePercent
-                }
+                oldItem is GroupedListItem.WatchItemWrapper && newItem is GroupedListItem.WatchItemWrapper ->
+                    oldItem == newItem
                 oldItem is GroupedListItem.MultipleWatchesWrapper && newItem is GroupedListItem.MultipleWatchesWrapper -> {
                     oldItem.symbol == newItem.symbol &&
                     oldItem.companyName == newItem.companyName &&

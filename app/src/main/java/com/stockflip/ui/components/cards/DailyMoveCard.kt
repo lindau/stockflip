@@ -26,6 +26,7 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.stockflip.CurrencyHelper
+import com.stockflip.LiveWatchData
 import com.stockflip.WatchItem
 import com.stockflip.WatchType
 import com.stockflip.ui.components.StatusStripe
@@ -37,6 +38,7 @@ import com.stockflip.ui.theme.groupShape
 @Composable
 fun DailyMoveCard(
     item: WatchItem,
+    live: LiveWatchData = LiveWatchData(),
     priceFormat: (Double) -> String,
     groupPosition: GroupPosition = GroupPosition.ONLY,
     showStatus: Boolean = false,
@@ -130,10 +132,10 @@ fun DailyMoveCard(
                     StockSummaryRow(
                         companyName = item.companyName,
                         ticker = item.ticker,
-                        price = item.currentPrice,
-                        dailyChangePercent = item.currentDailyChangePercent,
+                        price = live.currentPrice,
+                        dailyChangePercent = live.currentDailyChangePercent,
                         currency = currency,
-                        showPrice = item.currentPrice > 0,
+                        showPrice = live.currentPrice > 0,
                     )
                     HorizontalDivider(
                         modifier = Modifier.padding(vertical = 8.dp),
@@ -149,7 +151,7 @@ fun DailyMoveCard(
                 )
 
                 TriggerHistoryRow(triggerHistory)
-                LastUpdatedRow(item.lastUpdatedAt, item.updateFailed)
+                LastUpdatedRow(live.lastUpdatedAt, live.updateFailed)
 
                 if (item.isTriggered) {
                     Spacer(modifier = Modifier.height(6.dp))
