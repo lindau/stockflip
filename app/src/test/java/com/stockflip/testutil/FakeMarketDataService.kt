@@ -1,5 +1,6 @@
 package com.stockflip.testutil
 
+import com.stockflip.ChartPeriod
 import com.stockflip.IntradayChartData
 import com.stockflip.KeyMetrics
 import com.stockflip.MarketDataService

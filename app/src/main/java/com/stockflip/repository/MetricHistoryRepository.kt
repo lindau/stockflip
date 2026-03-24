@@ -44,8 +44,8 @@ class MetricHistoryRepository(
             val threeYearStart = now - (THREE_YEAR_DAYS * MILLIS_PER_DAY)
             val fiveYearStart = now - (FIVE_YEAR_DAYS * MILLIS_PER_DAY)
 
-            val allHistory = dao.getAllHistoryForMetric(symbol, metricType.name)
-            
+            val allHistory = dao.getMetricHistory(symbol, metricType.name, fiveYearStart, now)
+
             if (allHistory.isEmpty()) {
                 Log.d(TAG, "No history found for $symbol ${metricType.name}")
                 return null
@@ -239,7 +239,8 @@ class MetricHistoryRepository(
         metricType: WatchType.MetricType,
         minDays: Int = 365
     ): Boolean {
-        val allHistory = dao.getAllHistoryForMetric(symbol, metricType.name)
+        val fiveYearsAgo = System.currentTimeMillis() - (FIVE_YEAR_DAYS * MILLIS_PER_DAY)
+        val allHistory = dao.getMetricHistory(symbol, metricType.name, fiveYearsAgo, System.currentTimeMillis())
         if (allHistory.isEmpty()) {
             return false
         }
