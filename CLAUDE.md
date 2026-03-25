@@ -23,6 +23,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Unit tests are network-free and include MockWebServer fixtures for Yahoo chart responses.
 
+> **OBS för Claude Code:** Kör aldrig `./gradlew`-kommandon som bakgrundsprocess (`run_in_background`). Kör alltid synkront — Gradle-daemons startar underprocesser som inte avslutas när bakgrundsprocessen tappas. Återställningskommando om zombie-daemons uppstår: `./gradlew --stop`
+
 Live/network tests in `YahooFinanceServiceTest.kt` are annotated with `@Ignore` — remove the annotation to run them manually. Recommended test symbols: `VOLV-B.ST` (Swedish), `AAPL` (US), `BTC-USD` (crypto), `EQNR.OL` (Norway).
 
 ## API Key Setup
@@ -99,3 +101,4 @@ The app uses a **hybrid View/Compose** approach:
 - Code comments are mixed Swedish/English (Swedish is common in business logic).
 - Direction for `PriceTarget` and `KeyMetrics` is **auto-inferred at save**: if current value ≥ target → `BELOW`, else `ABOVE`. No direction field exists in the dialogs.
 - Pull-to-refresh uses `SwipeRefreshLayout` in both `MainActivity` and `StockDetailFragment`. Always set `isRefreshing = false` in both `Success` and `Error` branches of the `stockDataState` observer.
+- **Coroutine job-hantering:** Om `viewModelScope.launch` anropas från en funktion som kan triggas flera gånger (t.ex. vid användarinteraktion), spara alltid `Job`-referensen och avbryt föregående job innan ett nytt startas. Annars kan en äldre coroutine skriva ett gammalt `Error`-tillstånd ovanpå ett nyare lyckat resultat. Mönster: `private var myJob: Job? = null` / `myJob?.cancel(); myJob = viewModelScope.launch { ... }`

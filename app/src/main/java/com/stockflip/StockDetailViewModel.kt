@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -35,6 +36,7 @@ class StockDetailViewModel(
 
     private val _chartState = MutableStateFlow<UiState<IntradayChartData>>(UiState.Loading)
     val chartState: StateFlow<UiState<IntradayChartData>> = _chartState.asStateFlow()
+    private var chartLoadingJob: Job? = null
 
     private val _selectedPeriod = MutableStateFlow(ChartPeriod.DAY)
     val selectedPeriod: StateFlow<ChartPeriod> = _selectedPeriod.asStateFlow()
@@ -332,7 +334,8 @@ class StockDetailViewModel(
     }
 
     fun loadChartData() {
-        viewModelScope.launch {
+        chartLoadingJob?.cancel()
+        chartLoadingJob = viewModelScope.launch {
             _chartState.value = UiState.Loading
             // Försök hämta grafdata — retry efter 2 sekunder vid fel (t.ex. race condition med cookie-session)
             var data = fetchChartData()
