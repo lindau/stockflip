@@ -135,7 +135,17 @@ class MainActivity : AppCompatActivity() {
     private val backPressCallback = object : androidx.activity.OnBackPressedCallback(true) {
         override fun handleOnBackPressed() {
             if (supportFragmentManager.backStackEntryCount > 0) {
-                // Visa bakomliggande content INNAN pop så den syns under utglidande fragment
+                if (currentMainTab == MainTab.ALERTS) {
+                    // Slide in swipeRefreshLayout från vänster (back = navigera till lägre index)
+                    val screenWidth = resources.displayMetrics.widthPixels.toFloat()
+                    binding.swipeRefreshLayout.translationX = -screenWidth * 0.3f
+                    binding.swipeRefreshLayout.animate().cancel()
+                    binding.swipeRefreshLayout.animate()
+                        .translationX(0f)
+                        .setDuration(280)
+                        .setInterpolator(android.view.animation.DecelerateInterpolator())
+                        .start()
+                }
                 binding.swipeRefreshLayout.visibility = View.VISIBLE
                 binding.addPairButton.visibility = View.VISIBLE
                 supportFragmentManager.popBackStack()
@@ -206,7 +216,17 @@ class MainActivity : AppCompatActivity() {
                         androidx.fragment.app.FragmentManager.POP_BACK_STACK_INCLUSIVE
                     )
                     showStocksToolbar()
-                    if (previousTab == MainTab.PAIRS) {
+                    if (previousTab == MainTab.ALERTS) {
+                        val screenWidth = resources.displayMetrics.widthPixels.toFloat()
+                        binding.swipeRefreshLayout.translationX = -screenWidth * 0.3f
+                        binding.swipeRefreshLayout.animate().cancel()
+                        binding.swipeRefreshLayout.animate()
+                            .translationX(0f)
+                            .setDuration(280)
+                            .setInterpolator(android.view.animation.DecelerateInterpolator())
+                            .start()
+                        if (lastWatchItems.isNotEmpty()) showWatchItemSuccess(lastWatchItems)
+                    } else if (previousTab == MainTab.PAIRS) {
                         animateContentSwitch(previousTab, MainTab.STOCKS) {
                             if (lastWatchItems.isNotEmpty()) showWatchItemSuccess(lastWatchItems)
                         }
@@ -225,7 +245,17 @@ class MainActivity : AppCompatActivity() {
                         androidx.fragment.app.FragmentManager.POP_BACK_STACK_INCLUSIVE
                     )
                     showPairsToolbar()
-                    if (previousTab == MainTab.STOCKS) {
+                    if (previousTab == MainTab.ALERTS) {
+                        val screenWidth = resources.displayMetrics.widthPixels.toFloat()
+                        binding.swipeRefreshLayout.translationX = -screenWidth * 0.3f
+                        binding.swipeRefreshLayout.animate().cancel()
+                        binding.swipeRefreshLayout.animate()
+                            .translationX(0f)
+                            .setDuration(280)
+                            .setInterpolator(android.view.animation.DecelerateInterpolator())
+                            .start()
+                        if (lastWatchItems.isNotEmpty()) showWatchItemSuccess(lastWatchItems)
+                    } else if (previousTab == MainTab.STOCKS) {
                         animateContentSwitch(previousTab, MainTab.PAIRS) {
                             if (lastWatchItems.isNotEmpty()) showWatchItemSuccess(lastWatchItems)
                         }
@@ -236,19 +266,24 @@ class MainActivity : AppCompatActivity() {
                 }
                 R.id.menu_alerts -> {
                     currentMainTab = MainTab.ALERTS
-                    binding.swipeRefreshLayout.visibility = View.GONE
                     binding.addPairButton.visibility = View.GONE
-                    supportFragmentManager.beginTransaction()
-                        .setCustomAnimations(
-                            R.anim.slide_in_right,
-                            R.anim.slide_out_left,
-                            R.anim.slide_in_left,
-                            R.anim.slide_out_right
-                        )
-                        .replace(R.id.fragmentContainer, AlertsFragment())
-                        .addToBackStack("alerts")
-                        .commit()
                     showAlertsToolbar()
+                    val screenWidth = resources.displayMetrics.widthPixels.toFloat()
+                    binding.swipeRefreshLayout.animate().cancel()
+                    binding.swipeRefreshLayout.animate()
+                        .translationX(-screenWidth * 0.3f)
+                        .setDuration(150)
+                        .setInterpolator(android.view.animation.AccelerateInterpolator())
+                        .withEndAction {
+                            binding.swipeRefreshLayout.visibility = View.GONE
+                            binding.swipeRefreshLayout.translationX = 0f
+                            supportFragmentManager.beginTransaction()
+                                .setCustomAnimations(R.anim.slide_in_right, 0, R.anim.slide_in_left, R.anim.slide_out_right)
+                                .replace(R.id.fragmentContainer, AlertsFragment())
+                                .addToBackStack("alerts")
+                                .commit()
+                        }
+                        .start()
                     true
                 }
                 else -> false

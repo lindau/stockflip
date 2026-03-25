@@ -20,6 +20,9 @@ import com.stockflip.repository.StockRepository
 import com.stockflip.ui.dialogs.WatchDialogManager
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.combine
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import com.stockflip.ui.components.IntradayChart
 import com.stockflip.ui.theme.StockFlipTheme
 
@@ -397,6 +400,12 @@ class StockDetailFragment : Fragment() {
         binding.peRatioValue.text = data.peRatio?.let { CurrencyHelper.formatDecimal(it) } ?: "-"
         binding.psRatioValue.text = data.psRatio?.let { CurrencyHelper.formatDecimal(it) } ?: "-"
         binding.dividendYieldValue.text = data.dividendYield?.let { "${CurrencyHelper.formatDecimal(it)}%" } ?: "-"
+
+        if (data.lastUpdatedAt > 0) {
+            val timeStr = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(data.lastUpdatedAt))
+            binding.lastUpdatedText.text = "Uppdaterad $timeStr"
+            binding.lastUpdatedText.isVisible = true
+        }
     }
 
 

@@ -12,15 +12,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowDownward
-import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -39,11 +33,6 @@ import com.stockflip.ui.components.StatusStripe
 import com.stockflip.ui.components.StockSummaryRow
 import com.stockflip.ui.theme.GroupPosition
 import com.stockflip.ui.theme.LocalCardBorder
-import com.stockflip.ui.theme.LocalTextTertiary
-import com.stockflip.ui.theme.LocalTrendDown
-import com.stockflip.ui.theme.LocalTrendUp
-import com.stockflip.ui.theme.NordikNumericSecondaryStyle
-import com.stockflip.ui.theme.NordikNumericStyle
 import com.stockflip.ui.theme.groupShape
 
 @Composable
@@ -79,35 +68,11 @@ fun MetricAlertCard(
         else                                -> priceFormat(keyMetrics.targetValue)
     }
 
-    val hasCurrentValue = live.currentMetricValue > 0.0
-
-    val currentValueText = if (!hasCurrentValue) "—" else when (keyMetrics.metricType) {
-        WatchType.MetricType.DIVIDEND_YIELD -> "${priceFormat(live.currentMetricValue)}%"
-        else                                -> priceFormat(live.currentMetricValue)
-    }
-
     val isTriggered = live.currentMetricValue != 0.0 && when (keyMetrics.direction) {
         WatchType.PriceDirection.ABOVE -> live.currentMetricValue >= keyMetrics.targetValue
         WatchType.PriceDirection.BELOW -> live.currentMetricValue <= keyMetrics.targetValue
     }
 
-    val hasValueAtCreation = live.metricValueAtCreation > 0.0
-    val trendDirection = if (hasValueAtCreation && live.currentMetricValue > 0.0) {
-        when {
-            live.currentMetricValue > live.metricValueAtCreation -> "UP"
-            live.currentMetricValue < live.metricValueAtCreation -> "DOWN"
-            else                                                 -> "SAME"
-        }
-    } else null
-
-    val trendChange = if (hasValueAtCreation && live.currentMetricValue > 0.0) {
-        val change = live.currentMetricValue - live.metricValueAtCreation
-        val changePercent = (change / live.metricValueAtCreation) * 100
-        Pair(change, changePercent)
-    } else null
-
-    val trendUp = LocalTrendUp.current
-    val trendDown = LocalTrendDown.current
     val cardBorder = LocalCardBorder.current
     val currency = CurrencyHelper.getCurrencyFromSymbol(item.ticker)
     val showStockHeader = showControls || groupPosition == GroupPosition.ONLY || groupPosition == GroupPosition.FIRST
@@ -191,74 +156,14 @@ fun MetricAlertCard(
                     )
                 }
 
-                // Metric data row
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Row(
-                        modifier = Modifier.weight(1f),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Text(
-                            text = "$metricTypeName  ",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                        Text(
-                            text = currentValueText,
-                            style = if (hasCurrentValue) NordikNumericStyle else MaterialTheme.typography.bodyMedium,
-                            color = if (hasCurrentValue) MaterialTheme.colorScheme.onSurface
-                                    else MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                        trendDirection?.let { direction ->
-                            val trendColor = when (direction) {
-                                "UP"   -> trendUp
-                                "DOWN" -> trendDown
-                                else   -> MaterialTheme.colorScheme.onSurfaceVariant
-                            }
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Icon(
-                                imageVector = when (direction) {
-                                    "UP"  -> Icons.Default.ArrowUpward
-                                    else  -> Icons.Default.ArrowDownward
-                                },
-                                contentDescription = null,
-                                tint = trendColor,
-                                modifier = Modifier.size(12.dp),
-                            )
-                            trendChange?.let { (change, changePercent) ->
-                                Text(
-                                    text = "${if (change >= 0) "+" else ""}${priceFormat(changePercent)}%",
-                                    style = NordikNumericSecondaryStyle,
-                                    color = trendColor,
-                                )
-                            }
-                        }
-                    }
-                    Text(
-                        text = "Mål: $directionText $targetValueText",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = if (isTriggered) MaterialTheme.colorScheme.tertiary
-                                else MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-
-                if (hasValueAtCreation) {
-                    val valueAtCreationText = when (keyMetrics.metricType) {
-                        WatchType.MetricType.DIVIDEND_YIELD -> "${priceFormat(live.metricValueAtCreation)}%"
-                        else                                -> priceFormat(live.metricValueAtCreation)
-                    }
-                    Spacer(modifier = Modifier.height(2.dp))
-                    Text(
-                        text = "Vid skapande: $valueAtCreationText",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = LocalTextTertiary.current,
-                    )
-                }
+                Text(
+                    text = "$metricTypeName — Mål: $directionText $targetValueText",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = if (isTriggered) MaterialTheme.colorScheme.tertiary
+                            else MaterialTheme.colorScheme.onSurfaceVariant,
+                )
 
                 TriggerHistoryRow(triggerHistory)
-                LastUpdatedRow(live.lastUpdatedAt, live.updateFailed)
 
                 if (item.isTriggered) {
                     Spacer(modifier = Modifier.height(6.dp))

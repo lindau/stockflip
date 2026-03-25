@@ -100,7 +100,8 @@ class StockDetailViewModel(
                     currency = currency,
                     exchange = exchange,
                     dailyChangePercent = dailyChangePercent,
-                    drawdownPercent = drawdownPercent
+                    drawdownPercent = drawdownPercent,
+                    lastUpdatedAt = System.currentTimeMillis()
                 )
                 _stockDataState.value = UiState.Success(stockData)
                 Log.d(TAG, "Loaded stock data for $symbol")
@@ -381,6 +382,7 @@ data class StockDetailData(
     val drawdownPercent: Double?,
     val peRatio: Double? = null,
     val psRatio: Double? = null,
-    val dividendYield: Double? = null
+    val dividendYield: Double? = null,
+    val lastUpdatedAt: Long = 0L
 )
 

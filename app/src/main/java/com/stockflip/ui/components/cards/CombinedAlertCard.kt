@@ -128,7 +128,6 @@ fun CombinedAlertCard(
                 }
 
                 TriggerHistoryRow(triggerHistory)
-                LastUpdatedRow(live.lastUpdatedAt, live.updateFailed)
 
                 if (item.isTriggered) {
                     Spacer(modifier = Modifier.height(6.dp))

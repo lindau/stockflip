@@ -308,6 +308,18 @@
 
                     </LinearLayout>
 
+                    <TextView
+                        android:id="@+id/lastUpdatedText"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:textAppearance="?attr/textAppearanceLabelSmall"
+                        android:textColor="?attr/colorOnSurfaceVariant"
+                        android:alpha="0.6"
+                        android:visibility="gone"
+                        tools:text="Uppdaterad 14:32"
+                        tools:visibility="visible" />
+
                 </LinearLayout>
 
             </com.google.android.material.card.MaterialCardView>
