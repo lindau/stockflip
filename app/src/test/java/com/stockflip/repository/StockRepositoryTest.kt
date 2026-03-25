@@ -10,7 +10,6 @@ import org.junit.After
 import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
-import org.robolectric.shadows.ShadowLog
 import kotlin.time.ExperimentalTime
 
 @OptIn(ExperimentalCoroutinesApi::class, ExperimentalTime::class)
@@ -21,9 +20,6 @@ class StockRepositoryTest {
 
     @Before
     fun setup() {
-        // Set up logging
-        ShadowLog.stream = System.out
-        
         // Mock Android Log class
         mockkStatic(Log::class)
         every { Log.d(any(), any()) } returns 0

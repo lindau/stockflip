@@ -5,7 +5,7 @@ import com.stockflip.testutil.InMemoryStockPairDao
 import com.stockflip.testutil.InMemoryWatchItemDao
 import com.stockflip.testutil.MainDispatcherRule
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -16,7 +16,7 @@ class MainViewModelRefreshWatchItemsTest {
     val mainDispatcherRule: MainDispatcherRule = MainDispatcherRule()
 
     @Test
-    fun `refreshWatchItems updates prices for PriceTarget, PricePair and Combined`() = runTest {
+    fun `refreshWatchItems updates prices for PriceTarget, PricePair and Combined`() = runBlocking {
         val watchItems: List<WatchItem> = listOf(
             WatchItem(
                 id = 1,

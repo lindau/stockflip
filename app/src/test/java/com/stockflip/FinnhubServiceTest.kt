@@ -1,6 +1,7 @@
 package com.stockflip
 
 import kotlinx.coroutines.runBlocking
+import org.junit.Ignore
 import org.junit.Test
 import org.junit.Assert.*
 import org.junit.Before
@@ -17,6 +18,7 @@ import org.junit.Before
  * 3. Rebuild the project
  * 4. Run the tests
  */
+@Ignore("Live network tests; run manually when needed.")
 class FinnhubServiceTest {
     
     @Before

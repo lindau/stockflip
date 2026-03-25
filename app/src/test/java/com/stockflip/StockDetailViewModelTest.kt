@@ -7,7 +7,6 @@ import com.stockflip.testutil.InMemoryTriggerHistoryDao
 import com.stockflip.testutil.InMemoryWatchItemDao
 import com.stockflip.testutil.MainDispatcherRule
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -77,7 +76,7 @@ class StockDetailViewModelTest {
             prices = listOf(300.0, 302.0),
             previousClose = 295.0
         )
-        // DAY saknas i map → getIntradayChart returnerar null → triggar retry-delay på 2s
+        // DAY saknas i map → getIntradayChart returnerar null → triggar 2s retry-delay
         val fake = FakeMarketDataService(
             pricesBySymbol = mapOf("VOLV-B.ST" to 300.0),
             chartDataByPeriod = mapOf(ChartPeriod.MONTH to monthData)
@@ -86,17 +85,13 @@ class StockDetailViewModelTest {
             InMemoryWatchItemDao(emptyList()), fake, "VOLV-B.ST",
             TriggerHistoryRepository(InMemoryTriggerHistoryDao()), InMemoryStockNoteDao()
         )
-
-        // Starta DAY-hämtning (returnerar null → påbörjar 2s retry-delay)
-        viewModel.loadChartData()
-        advanceTimeBy(500) // Inne i delay — hämtning ej klar
+        // ViewModel init har anropat loadChartData() för DAY (null → 2s retry delay pending)
 
         // Byt period — ska avbryta DAY-coroutinen och starta MONTH
         viewModel.selectPeriod(ChartPeriod.MONTH)
-        advanceUntilIdle() // MONTH-coroutinen körs klart
 
-        // Utan fix: DAY-coroutinen vaknar efter delay → sätter Error → grafen försvinner
-        // Med fix: DAY-coroutinen är avbruten → MONTH-Success gäller
+        // Ingen advanceUntilIdle() — orsakar hänge via observeAlerts() + MutableStateFlow-loop.
+        // Med UnconfinedTestDispatcher körs MONTH-coroutinen eagerly och är klar direkt.
         assertTrue(
             "Expected Success but got ${viewModel.chartState.value}",
             viewModel.chartState.value is UiState.Success

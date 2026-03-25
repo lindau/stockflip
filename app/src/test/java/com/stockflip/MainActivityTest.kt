@@ -36,16 +36,10 @@ import org.junit.Before
 import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.robolectric.RobolectricTestRunner
-import org.robolectric.annotation.Config
-import org.robolectric.shadows.ShadowLog
-import org.robolectric.shadows.ShadowToast
 import kotlin.time.ExperimentalTime
 
 @ExperimentalCoroutinesApi
 @ExperimentalTime
-@RunWith(RobolectricTestRunner::class)
-@Config(application = Application::class, sdk = [34], manifest = Config.NONE)
 @Ignore("Needs rewrite: ViewBinding/ViewModelProvider mocking is brittle in Robolectric with targetSdk 35.")
 class MainActivityTest {
     @MockK
@@ -91,9 +85,6 @@ class MainActivityTest {
         mockkStatic(Toast::class)
         mockkStatic(ViewModelProvider::class)
         mockkStatic(StockPairDatabase::class)
-        
-        // Set up logging
-        ShadowLog.stream = System.out
         
         // Set up UI state flow
         uiStateFlow = MutableStateFlow(UiState.Loading)
