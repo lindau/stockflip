@@ -18,3 +18,7 @@ local.properties
 *.iml
 .idea
 .vscode
+
+# Google Services
+google-services.json
+app/StockFlip Google Services.json
