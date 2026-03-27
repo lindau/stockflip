@@ -134,9 +134,15 @@ class MainActivity : AppCompatActivity() {
 
     private val backPressCallback = object : androidx.activity.OnBackPressedCallback(true) {
         override fun handleOnBackPressed() {
-            if (supportFragmentManager.backStackEntryCount > 0) {
-                if (currentMainTab == MainTab.ALERTS) {
-                    // Slide in swipeRefreshLayout från vänster (back = navigera till lägre index)
+            val backStackCount = supportFragmentManager.backStackEntryCount
+            if (backStackCount > 0) {
+                val belowName = if (backStackCount > 1)
+                    supportFragmentManager.getBackStackEntryAt(backStackCount - 2).name
+                else null
+
+                if (belowName == null) {
+                    // Stacken töms → återgår till STOCKS
+                    currentMainTab = MainTab.STOCKS
                     val screenWidth = resources.displayMetrics.widthPixels.toFloat()
                     binding.swipeRefreshLayout.translationX = -screenWidth * 0.3f
                     binding.swipeRefreshLayout.animate().cancel()
@@ -145,9 +151,16 @@ class MainActivity : AppCompatActivity() {
                         .setDuration(280)
                         .setInterpolator(android.view.animation.DecelerateInterpolator())
                         .start()
+                    binding.swipeRefreshLayout.visibility = View.VISIBLE
+                    binding.addPairButton.visibility = View.VISIBLE
+                    if (lastWatchItems.isNotEmpty()) showWatchItemSuccess(lastWatchItems)
+                } else if (belowName == "pairs") {
+                    // Återgår till PairsFragment
+                    currentMainTab = MainTab.PAIRS
+                    binding.addPairButton.visibility = View.VISIBLE
                 }
-                binding.swipeRefreshLayout.visibility = View.VISIBLE
-                binding.addPairButton.visibility = View.VISIBLE
+                // else: återgår till ett annat fragment (alerts etc.) — currentMainTab redan korrekt
+
                 supportFragmentManager.popBackStack()
                 updateToolbarForCurrentTab()
             } else {
@@ -169,37 +182,6 @@ class MainActivity : AppCompatActivity() {
         showStocksToolbar()
     }
 
-    private fun tabIndex(tab: MainTab): Int = when(tab) {
-        MainTab.STOCKS -> 0
-        MainTab.PAIRS -> 1
-        MainTab.ALERTS -> 2
-    }
-
-    private fun animateContentSwitch(fromTab: MainTab, toTab: MainTab, onUpdate: () -> Unit) {
-        val screenWidth = resources.displayMetrics.widthPixels.toFloat()
-        binding.swipeRefreshLayout.animate().cancel()
-        binding.swipeRefreshLayout.translationX = 0f
-
-        val navigatingRight = tabIndex(toTab) > tabIndex(fromTab)
-        val exitX = if (navigatingRight) -screenWidth else screenWidth
-        val enterX = if (navigatingRight) screenWidth else -screenWidth
-
-        binding.swipeRefreshLayout.animate()
-            .translationX(exitX)
-            .setDuration(150)
-            .setInterpolator(android.view.animation.AccelerateInterpolator())
-            .withEndAction {
-                onUpdate()
-                binding.swipeRefreshLayout.translationX = enterX
-                binding.swipeRefreshLayout.animate()
-                    .translationX(0f)
-                    .setDuration(280)
-                    .setInterpolator(android.view.animation.DecelerateInterpolator())
-                    .start()
-            }
-            .start()
-    }
-
     private fun setupBottomNavigation(): Unit {
         // Pill-indikator: primaryContainer (teal-ton) för tydligare active state
         binding.bottomNavigation.itemActiveIndicatorColor =
@@ -216,8 +198,9 @@ class MainActivity : AppCompatActivity() {
                         androidx.fragment.app.FragmentManager.POP_BACK_STACK_INCLUSIVE
                     )
                     showStocksToolbar()
-                    if (previousTab == MainTab.ALERTS) {
-                        val screenWidth = resources.displayMetrics.widthPixels.toFloat()
+                    val screenWidth = resources.displayMetrics.widthPixels.toFloat()
+                    if (previousTab == MainTab.ALERTS || previousTab == MainTab.PAIRS) {
+                        // Samma animation för båda: swipeRefreshLayout glider in från vänster
                         binding.swipeRefreshLayout.translationX = -screenWidth * 0.3f
                         binding.swipeRefreshLayout.animate().cancel()
                         binding.swipeRefreshLayout.animate()
@@ -225,65 +208,76 @@ class MainActivity : AppCompatActivity() {
                             .setDuration(280)
                             .setInterpolator(android.view.animation.DecelerateInterpolator())
                             .start()
-                        if (lastWatchItems.isNotEmpty()) showWatchItemSuccess(lastWatchItems)
-                    } else if (previousTab == MainTab.PAIRS) {
-                        animateContentSwitch(previousTab, MainTab.STOCKS) {
-                            if (lastWatchItems.isNotEmpty()) showWatchItemSuccess(lastWatchItems)
-                        }
-                    } else if (lastWatchItems.isNotEmpty()) {
-                        showWatchItemSuccess(lastWatchItems)
                     }
+                    if (lastWatchItems.isNotEmpty()) showWatchItemSuccess(lastWatchItems)
                     true
                 }
                 R.id.menu_pairs -> {
                     val previousTab = currentMainTab
                     currentMainTab = MainTab.PAIRS
-                    binding.swipeRefreshLayout.visibility = View.VISIBLE
                     binding.addPairButton.visibility = View.VISIBLE
-                    supportFragmentManager.popBackStack(
-                        null,
-                        androidx.fragment.app.FragmentManager.POP_BACK_STACK_INCLUSIVE
-                    )
                     showPairsToolbar()
-                    if (previousTab == MainTab.ALERTS) {
-                        val screenWidth = resources.displayMetrics.widthPixels.toFloat()
-                        binding.swipeRefreshLayout.translationX = -screenWidth * 0.3f
-                        binding.swipeRefreshLayout.animate().cancel()
-                        binding.swipeRefreshLayout.animate()
-                            .translationX(0f)
-                            .setDuration(280)
-                            .setInterpolator(android.view.animation.DecelerateInterpolator())
-                            .start()
-                        if (lastWatchItems.isNotEmpty()) showWatchItemSuccess(lastWatchItems)
-                    } else if (previousTab == MainTab.STOCKS) {
-                        animateContentSwitch(previousTab, MainTab.PAIRS) {
-                            if (lastWatchItems.isNotEmpty()) showWatchItemSuccess(lastWatchItems)
+                    val screenWidth = resources.displayMetrics.widthPixels.toFloat()
+                    when (previousTab) {
+                        MainTab.STOCKS -> {
+                            // Samma animation som STOCKS→ALERTS: swipeRefreshLayout 30% ut, PairsFragment glider in från höger
+                            binding.swipeRefreshLayout.animate().cancel()
+                            binding.swipeRefreshLayout.animate()
+                                .translationX(-screenWidth * 0.3f)
+                                .setDuration(150)
+                                .setInterpolator(android.view.animation.AccelerateInterpolator())
+                                .withEndAction {
+                                    binding.swipeRefreshLayout.visibility = View.GONE
+                                    binding.swipeRefreshLayout.translationX = 0f
+                                    supportFragmentManager.beginTransaction()
+                                        .setCustomAnimations(R.anim.slide_in_right, 0, R.anim.slide_in_left, R.anim.slide_out_right)
+                                        .replace(R.id.fragmentContainer, PairsFragment())
+                                        .addToBackStack("pairs")
+                                        .commit()
+                                }
+                                .start()
                         }
-                    } else if (lastWatchItems.isNotEmpty()) {
-                        showWatchItemSuccess(lastWatchItems)
+                        MainTab.ALERTS -> {
+                            // ALERTS→PAIRS: poppa AlertsFragment, PairsFragment visas med popEnter-animation
+                            supportFragmentManager.popBackStack()
+                        }
+                        MainTab.PAIRS -> {
+                            // Redan på PAIRS, inget att göra
+                        }
                     }
                     true
                 }
                 R.id.menu_alerts -> {
+                    val previousTab = currentMainTab
                     currentMainTab = MainTab.ALERTS
                     binding.addPairButton.visibility = View.GONE
                     showAlertsToolbar()
                     val screenWidth = resources.displayMetrics.widthPixels.toFloat()
-                    binding.swipeRefreshLayout.animate().cancel()
-                    binding.swipeRefreshLayout.animate()
-                        .translationX(-screenWidth * 0.3f)
-                        .setDuration(150)
-                        .setInterpolator(android.view.animation.AccelerateInterpolator())
-                        .withEndAction {
-                            binding.swipeRefreshLayout.visibility = View.GONE
-                            binding.swipeRefreshLayout.translationX = 0f
-                            supportFragmentManager.beginTransaction()
-                                .setCustomAnimations(R.anim.slide_in_right, 0, R.anim.slide_in_left, R.anim.slide_out_right)
-                                .replace(R.id.fragmentContainer, AlertsFragment())
-                                .addToBackStack("alerts")
-                                .commit()
-                        }
-                        .start()
+                    if (previousTab == MainTab.PAIRS) {
+                        // swipeRefreshLayout redan GONE — visa AlertsFragment direkt ovanpå PairsFragment
+                        supportFragmentManager.beginTransaction()
+                            .setCustomAnimations(R.anim.slide_in_right, 0, R.anim.slide_in_left, R.anim.slide_out_right)
+                            .replace(R.id.fragmentContainer, AlertsFragment())
+                            .addToBackStack("alerts")
+                            .commit()
+                    } else {
+                        // Från STOCKS: swipeRefreshLayout 30% ut, AlertsFragment glider in från höger
+                        binding.swipeRefreshLayout.animate().cancel()
+                        binding.swipeRefreshLayout.animate()
+                            .translationX(-screenWidth * 0.3f)
+                            .setDuration(150)
+                            .setInterpolator(android.view.animation.AccelerateInterpolator())
+                            .withEndAction {
+                                binding.swipeRefreshLayout.visibility = View.GONE
+                                binding.swipeRefreshLayout.translationX = 0f
+                                supportFragmentManager.beginTransaction()
+                                    .setCustomAnimations(R.anim.slide_in_right, 0, R.anim.slide_in_left, R.anim.slide_out_right)
+                                    .replace(R.id.fragmentContainer, AlertsFragment())
+                                    .addToBackStack("alerts")
+                                    .commit()
+                            }
+                            .start()
+                    }
                     true
                 }
                 else -> false
@@ -298,21 +292,25 @@ class MainActivity : AppCompatActivity() {
         binding.topAppBar.setOnMenuItemClickListener { item ->
             when (item.itemId) {
                 R.id.menu_sort_alphabetical -> {
-                    if (currentMainTab == MainTab.ALERTS) {
-                        viewModel.setAlertSortMode(SortHelper.SortMode.ALPHABETICAL)
-                    } else {
-                        val adapter = binding.stockPairsList.adapter as? GroupedWatchItemAdapter
-                        adapter?.setSortMode(SortHelper.SortMode.ALPHABETICAL)
+                    when (currentMainTab) {
+                        MainTab.ALERTS -> viewModel.setAlertSortMode(SortHelper.SortMode.ALPHABETICAL)
+                        MainTab.PAIRS -> viewModel.setPairsSortMode(SortHelper.SortMode.ALPHABETICAL)
+                        MainTab.STOCKS -> {
+                            val adapter = binding.stockPairsList.adapter as? GroupedWatchItemAdapter
+                            adapter?.setSortMode(SortHelper.SortMode.ALPHABETICAL)
+                        }
                     }
                     Toast.makeText(this, "Sortering: Bokstavsordning", Toast.LENGTH_SHORT).show()
                     true
                 }
                 R.id.menu_sort_addition -> {
-                    if (currentMainTab == MainTab.ALERTS) {
-                        viewModel.setAlertSortMode(SortHelper.SortMode.ADDITION_ORDER)
-                    } else {
-                        val adapter = binding.stockPairsList.adapter as? GroupedWatchItemAdapter
-                        adapter?.setSortMode(SortHelper.SortMode.ADDITION_ORDER)
+                    when (currentMainTab) {
+                        MainTab.ALERTS -> viewModel.setAlertSortMode(SortHelper.SortMode.ADDITION_ORDER)
+                        MainTab.PAIRS -> viewModel.setPairsSortMode(SortHelper.SortMode.ADDITION_ORDER)
+                        MainTab.STOCKS -> {
+                            val adapter = binding.stockPairsList.adapter as? GroupedWatchItemAdapter
+                            adapter?.setSortMode(SortHelper.SortMode.ADDITION_ORDER)
+                        }
                     }
                     Toast.makeText(this, "Sortering: Tilläggsordning", Toast.LENGTH_SHORT).show()
                     true
@@ -520,7 +518,7 @@ class MainActivity : AppCompatActivity() {
     private fun showLoading(): Unit {
         Log.d(TAG, "Showing loading state")
         val isOnAlertsTab = binding.bottomNavigation.selectedItemId == R.id.menu_alerts
-        if (!isOnAlertsTab) {
+        if (!isOnAlertsTab && currentMainTab != MainTab.PAIRS) {
             binding.swipeRefreshLayout.isRefreshing = true
         }
     }
@@ -530,16 +528,18 @@ class MainActivity : AppCompatActivity() {
 
         lastWatchItems = data
 
-        val filteredData: List<WatchItemUiState> = when (currentMainTab) {
-            MainTab.STOCKS -> data.filter { it.item.watchType !is WatchType.PricePair }
-            MainTab.PAIRS -> data.filter { it.item.watchType is WatchType.PricePair }
-            MainTab.ALERTS -> emptyList()
+        // PAIRS och ALERTS hanteras av sina egna fragment — uppdatera bara för STOCKS
+        if (currentMainTab != MainTab.STOCKS) {
+            binding.swipeRefreshLayout.isRefreshing = false
+            return
         }
-        Log.d(TAG, "Filtered watch items for tab $currentMainTab: ${filteredData.size}")
+
+        val filteredData = data.filter { it.item.watchType !is WatchType.PricePair }
+        Log.d(TAG, "Filtered watch items for STOCKS tab: ${filteredData.size}")
 
         binding.swipeRefreshLayout.isRefreshing = false
         Log.d(TAG, "Refresh indicator hidden")
-        
+
         val adapter = binding.stockPairsList.adapter as? GroupedWatchItemAdapter
         if (adapter != null) {
             Log.d(TAG, "Adapter found, calling submitGroupedList with ${filteredData.size} items")
@@ -549,16 +549,11 @@ class MainActivity : AppCompatActivity() {
             Log.e(TAG, "CRITICAL: Adapter is null! Cannot update UI")
         }
 
-        val showEmpty = filteredData.isEmpty() && currentMainTab != MainTab.ALERTS
+        val showEmpty = filteredData.isEmpty()
         binding.emptyStateContainer.visibility = if (showEmpty) View.VISIBLE else View.GONE
         if (showEmpty) {
-            val (title, subtitle) = when (currentMainTab) {
-                MainTab.STOCKS -> getString(R.string.stocks_empty_title) to getString(R.string.stocks_empty_subtitle)
-                MainTab.PAIRS  -> getString(R.string.pairs_empty_title)  to getString(R.string.pairs_empty_subtitle)
-                MainTab.ALERTS -> "" to ""
-            }
-            binding.emptyStateTitle.text = title
-            binding.emptyStateSubtitle.text = subtitle
+            binding.emptyStateTitle.text = getString(R.string.stocks_empty_title)
+            binding.emptyStateSubtitle.text = getString(R.string.stocks_empty_subtitle)
         }
     }
 
@@ -725,6 +720,14 @@ class MainActivity : AppCompatActivity() {
     }
 
     internal fun showEditDialogFromAlerts(item: WatchItem): Unit {
+        handleEditClick(item)
+    }
+
+    internal fun navigateToStockDetailFromPairs(symbol: String, companyName: String?): Unit {
+        navigateToStockDetail(symbol, companyName)
+    }
+
+    internal fun showEditDialogFromPairs(item: WatchItem): Unit {
         handleEditClick(item)
     }
 

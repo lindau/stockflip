@@ -30,6 +30,9 @@ class MainViewModel(
     private val _alertSortMode = MutableStateFlow(SortHelper.SortMode.ADDITION_ORDER)
     val alertSortMode: StateFlow<SortHelper.SortMode> = _alertSortMode.asStateFlow()
 
+    private val _pairsSortMode = MutableStateFlow(SortHelper.SortMode.ADDITION_ORDER)
+    val pairsSortMode: StateFlow<SortHelper.SortMode> = _pairsSortMode.asStateFlow()
+
     private var isRefreshing = false
 
     init {
@@ -397,6 +400,10 @@ class MainViewModel(
 
     fun setAlertSortMode(mode: SortHelper.SortMode) {
         _alertSortMode.value = mode
+    }
+
+    fun setPairsSortMode(mode: SortHelper.SortMode) {
+        _pairsSortMode.value = mode
     }
 
     suspend fun toggleWatchItemActive(watchItem: WatchItem, isActive: Boolean) {
