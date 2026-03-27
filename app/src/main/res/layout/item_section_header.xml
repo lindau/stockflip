@@ -9,8 +9,9 @@
     android:paddingEnd="12dp"
     android:paddingTop="16dp"
     android:paddingBottom="6dp"
-    android:clickable="false"
-    android:focusable="false">
+    android:clickable="true"
+    android:focusable="true"
+    android:background="?attr/selectableItemBackground">
 
     <!-- Vänsteraccent — 3 dp bred stapel, rundad höger, lågmäld primärfärg -->
     <View

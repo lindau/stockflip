@@ -64,6 +64,7 @@ class GroupedWatchItemAdapter(
 ) : ListAdapter<GroupedListItem, RecyclerView.ViewHolder>(GroupedListItemDiffCallback()) {
 
     private val highlightedItems = mutableSetOf<Int>()
+    private val collapsedSections = mutableSetOf<String>()
     // Sorteringsläge
     private var sortMode: SortHelper.SortMode = SortHelper.SortMode.ADDITION_ORDER
 
@@ -211,8 +212,10 @@ class GroupedWatchItemAdapter(
         // Add Price Pairs section
         if (sortedPricePairs.isNotEmpty()) {
             groupedList.add(GroupedListItem.Header("Aktiepar"))
-            sortedPricePairs.forEach { uiState ->
-                groupedList.add(GroupedListItem.WatchItemWrapper(uiState.item, uiState.live))
+            if ("Aktiepar" !in collapsedSections) {
+                sortedPricePairs.forEach { uiState ->
+                    groupedList.add(GroupedListItem.WatchItemWrapper(uiState.item, uiState.live))
+                }
             }
         }
 
@@ -233,6 +236,7 @@ class GroupedWatchItemAdapter(
             groupedList.add(GroupedListItem.GroupSeparator(groupedList.size))
         }
         groupedList.add(GroupedListItem.Header(header))
+        if (header in collapsedSections) return
         sortedItemsByTicker.entries.forEachIndexed { groupIndex, (_, watchItemsForTicker) ->
             if (groupIndex > 0) {
                 groupedList.add(GroupedListItem.GroupSeparator(groupedList.size))
@@ -262,8 +266,16 @@ class GroupedWatchItemAdapter(
     inner class HeaderViewHolder(private val binding: ItemSectionHeaderBinding) : RecyclerView.ViewHolder(binding.root) {
         fun bind(title: String) {
             binding.sectionHeaderText.text = title
-            binding.expandIcon.visibility = android.view.View.GONE
-            binding.root.setOnClickListener(null)
+            val isCollapsed = title in collapsedSections
+            binding.expandIcon.visibility = View.VISIBLE
+            binding.expandIcon.setImageResource(
+                if (isCollapsed) R.drawable.ic_expand_more else R.drawable.ic_expand_less
+            )
+            binding.root.setOnClickListener {
+                if (title in collapsedSections) collapsedSections.remove(title)
+                else collapsedSections.add(title)
+                rebuildAndSubmitList()
+            }
         }
     }
     
