@@ -871,7 +871,7 @@ class MainActivity : AppCompatActivity() {
             .setNegativeButton("Avbryt", null)
             .show().also { dialog ->
                 dialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE)
-                ticker1Input.requestFocus()
+                ticker1Input.post { ticker1Input.requestFocus() }
             }
     }
 
@@ -951,7 +951,7 @@ class MainActivity : AppCompatActivity() {
             .setNegativeButton("Avbryt", null)
             .show().also { dialog ->
                 dialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE)
-                tickerInput.requestFocus()
+                tickerInput.post { tickerInput.requestFocus() }
             }
     }
 
@@ -1059,7 +1059,7 @@ class MainActivity : AppCompatActivity() {
             .setNegativeButton("Avbryt", null)
             .show().also { dialog ->
                 dialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE)
-                tickerInput.requestFocus()
+                tickerInput.post { tickerInput.requestFocus() }
             }
     }
 
@@ -1142,7 +1142,7 @@ class MainActivity : AppCompatActivity() {
             .setNegativeButton("Avbryt", null)
             .show().also { dialog ->
                 dialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE)
-                tickerInput.requestFocus()
+                tickerInput.post { tickerInput.requestFocus() }
             }
     }
 
@@ -1856,7 +1856,7 @@ class MainActivity : AppCompatActivity() {
             .setNegativeButton("Avbryt", null)
             .show().also { dialog ->
                 dialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE)
-                priceDifferenceInput.requestFocus()
+                priceDifferenceInput.post { priceDifferenceInput.requestFocus(); priceDifferenceInput.selectAll() }
             }
     }
 
@@ -1926,7 +1926,7 @@ class MainActivity : AppCompatActivity() {
             .setNegativeButton("Avbryt", null)
             .show().also { dialog ->
                 dialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE)
-                targetPriceInput.requestFocus()
+                targetPriceInput.post { targetPriceInput.requestFocus(); targetPriceInput.selectAll() }
             }
     }
 
@@ -2019,7 +2019,7 @@ class MainActivity : AppCompatActivity() {
             .setNegativeButton("Avbryt", null)
             .show().also { dialog ->
                 dialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE)
-                targetValueInput.requestFocus()
+                targetValueInput.post { targetValueInput.requestFocus(); targetValueInput.selectAll() }
             }
     }
 
@@ -2109,7 +2109,7 @@ class MainActivity : AppCompatActivity() {
             .setNegativeButton("Avbryt", null)
             .show().also { dialog ->
                 dialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE)
-                dropValueInput.requestFocus()
+                dropValueInput.post { dropValueInput.requestFocus(); dropValueInput.selectAll() }
             }
     }
 
@@ -2205,7 +2205,7 @@ class MainActivity : AppCompatActivity() {
             .setNegativeButton("Avbryt", null)
             .show().also { dialog ->
                 dialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE)
-                thresholdInput.requestFocus()
+                thresholdInput.post { thresholdInput.requestFocus(); thresholdInput.selectAll() }
             }
     }
 

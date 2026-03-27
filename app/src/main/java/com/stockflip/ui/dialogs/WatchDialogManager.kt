@@ -113,7 +113,7 @@ class WatchDialogManager(
             .setNegativeButton("Avbryt", null)
             .show().also { dialog ->
                 dialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE)
-                targetPriceInput.requestFocus()
+                targetPriceInput.post { targetPriceInput.requestFocus() }
             }
     }
 
@@ -162,7 +162,7 @@ class WatchDialogManager(
             .setNegativeButton("Avbryt", null)
             .show().also { dialog ->
                 dialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE)
-                dropValueInput.requestFocus()
+                dropValueInput.post { dropValueInput.requestFocus() }
             }
     }
 
@@ -208,7 +208,7 @@ class WatchDialogManager(
             .setNegativeButton("Avbryt", null)
             .show().also { dialog ->
                 dialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE)
-                thresholdInput.requestFocus()
+                thresholdInput.post { thresholdInput.requestFocus() }
             }
     }
 
@@ -259,7 +259,7 @@ class WatchDialogManager(
             .setNegativeButton("Avbryt", null)
             .show().also { dialog ->
                 dialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE)
-                targetValueInput.requestFocus()
+                targetValueInput.post { targetValueInput.requestFocus() }
             }
     }
 
@@ -318,7 +318,7 @@ class WatchDialogManager(
 
         builder.show().also { dialog ->
             dialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE)
-            noteInput.requestFocus()
+            noteInput.post { noteInput.requestFocus(); noteInput.selectAll() }
         }
     }
 
@@ -380,7 +380,7 @@ class WatchDialogManager(
             .setNegativeButton("Avbryt", null)
             .show().also { dialog ->
                 dialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE)
-                priceDifferenceInput.requestFocus()
+                priceDifferenceInput.post { priceDifferenceInput.requestFocus(); priceDifferenceInput.selectAll() }
             }
     }
 
@@ -430,7 +430,7 @@ class WatchDialogManager(
             .create()
         dialog.show()
         dialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE)
-        targetPriceInput.requestFocus()
+        targetPriceInput.post { targetPriceInput.requestFocus(); targetPriceInput.selectAll() }
     }
 
     private fun showEditPriceRangeDialog(item: WatchItem) {
@@ -505,7 +505,7 @@ class WatchDialogManager(
             .create()
         dialog.show()
         dialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE)
-        thresholdInput.requestFocus()
+        thresholdInput.post { thresholdInput.requestFocus(); thresholdInput.selectAll() }
     }
 
     private fun showEditDrawdownDialog(item: WatchItem) {
@@ -563,7 +563,7 @@ class WatchDialogManager(
             .create()
         dialog.show()
         dialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE)
-        dropValueInput.requestFocus()
+        dropValueInput.post { dropValueInput.requestFocus(); dropValueInput.selectAll() }
     }
 
     private fun showEditKeyMetricsDialog(item: WatchItem, currentMetricValue: Double = 0.0) {
@@ -635,7 +635,7 @@ class WatchDialogManager(
             .create()
         dialog.show()
         dialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE)
-        targetValueInput.requestFocus()
+        targetValueInput.post { targetValueInput.requestFocus(); targetValueInput.selectAll() }
     }
 
     private fun showEditCombinedAlertDialog(watchItem: WatchItem) {
