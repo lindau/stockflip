@@ -181,8 +181,8 @@ class MainActivity : AppCompatActivity() {
         binding.swipeRefreshLayout.translationX = 0f
 
         val navigatingRight = tabIndex(toTab) > tabIndex(fromTab)
-        val exitX = if (navigatingRight) -screenWidth * 0.3f else screenWidth
-        val enterX = if (navigatingRight) screenWidth else -screenWidth * 0.3f
+        val exitX = if (navigatingRight) -screenWidth else screenWidth
+        val enterX = if (navigatingRight) screenWidth else -screenWidth
 
         binding.swipeRefreshLayout.animate()
             .translationX(exitX)
