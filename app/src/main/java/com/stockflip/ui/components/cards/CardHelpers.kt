@@ -1,5 +1,7 @@
 package com.stockflip.ui.components.cards
 
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -7,6 +9,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -16,6 +19,12 @@ import com.stockflip.ui.theme.LocalTriggeredBadge
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+
+/**
+ * CompositionLocal som anger om den aktuella bevakningskortets utlösning är osedd av användaren.
+ * Sätts av [ComposeWatchItemCard] baserat på [TriggerSeenTracker].
+ */
+val LocalIsNewTrigger = compositionLocalOf { false }
 
 /**
  * Hjälpfunktioner för kortkomponenter.
@@ -70,22 +79,55 @@ internal fun LastUpdatedRow(lastUpdatedAt: Long, updateFailed: Boolean) {
 }
 
 /**
- * Badge som visas när en bevakning har utlösts idag.
+ * Badge-rad som visas när en bevakning har utlösts.
+ *
+ * Visar "Utlöst idag" om [lastTriggeredDate] är dagens datum, annars "Utlöst d MMM".
+ * Om [LocalIsNewTrigger] är true visas även ett "Ny"-chip bredvid — försvinner när
+ * användaren öppnat skärmen som visar bevakningen.
  *
  * Färger hämtas från [LocalTriggeredBadge] och [LocalOnTriggeredBadge] — amber-ton i
  * båda teman. Kontrast verifierad: dark 11.7:1, light 6.8:1 (WCAG AA ✓).
  */
 @Composable
-internal fun TriggeredBadge() {
-    Surface(
-        shape = MaterialTheme.shapes.small,
-        color = LocalTriggeredBadge.current,
-    ) {
-        Text(
-            text = "Utlöst idag",
-            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
-            style = MaterialTheme.typography.labelSmall,
-            color = LocalOnTriggeredBadge.current,
-        )
+internal fun TriggeredBadge(lastTriggeredDate: String? = null) {
+    val isNew = LocalIsNewTrigger.current
+    val today = remember { SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date()) }
+    val label = remember(lastTriggeredDate) {
+        when {
+            lastTriggeredDate == null || lastTriggeredDate == today -> "Utlöst idag"
+            else -> try {
+                val parsed = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).parse(lastTriggeredDate)
+                val formatted = SimpleDateFormat("d MMM", Locale("sv", "SE")).format(parsed!!)
+                "Utlöst $formatted"
+            } catch (_: Exception) {
+                "Utlöst idag"
+            }
+        }
+    }
+    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        if (isNew) {
+            Surface(
+                shape = MaterialTheme.shapes.small,
+                color = MaterialTheme.colorScheme.primary,
+            ) {
+                Text(
+                    text = "Ny",
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onPrimary,
+                )
+            }
+        }
+        Surface(
+            shape = MaterialTheme.shapes.small,
+            color = LocalTriggeredBadge.current,
+        ) {
+            Text(
+                text = label,
+                modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                style = MaterialTheme.typography.labelSmall,
+                color = LocalOnTriggeredBadge.current,
+            )
+        }
     }
 }

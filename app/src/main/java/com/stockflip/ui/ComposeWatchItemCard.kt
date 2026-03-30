@@ -6,12 +6,14 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.unit.dp
 import com.stockflip.LiveWatchData
 import com.stockflip.WatchItem
+import com.stockflip.ui.components.cards.LocalIsNewTrigger
 import com.stockflip.ui.theme.GroupPosition
 import com.stockflip.ui.theme.NP
 import com.stockflip.ui.components.cards.CombinedAlertCard
@@ -35,6 +37,7 @@ fun ComposeWatchItemCard(
     onToggleActive: (() -> Unit)? = null,
     containerColor: Color = MaterialTheme.colorScheme.surface,
     triggerHistory: List<Long> = emptyList(),
+    isNew: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
     // Vertical outer padding: group items connect tightly — only ONLY/FIRST get top spacing,
@@ -48,6 +51,7 @@ fun ComposeWatchItemCard(
             .clickable(onClick = onItemClick)
             .padding(start = NP.cardOuterH, end = NP.cardOuterH, top = paddingTop, bottom = paddingBottom),
     ) {
+        CompositionLocalProvider(LocalIsNewTrigger provides isNew) {
         when (item.watchType) {
             is com.stockflip.WatchType.PricePair -> {
                 PairCard(
@@ -159,5 +163,6 @@ fun ComposeWatchItemCard(
                 )
             }
         }
+        } // CompositionLocalProvider
     }
 }

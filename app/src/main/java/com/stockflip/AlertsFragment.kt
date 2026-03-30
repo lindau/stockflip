@@ -190,6 +190,7 @@ class AlertsFragment : Fragment() {
                             binding.skeletonLoadingView.visibility = View.GONE
                             binding.swipeRefreshLayout.isRefreshing = false
                             val items = state.data
+                            TriggerSeenTracker.markAllSeen(items.map { it.item })
                             groupedAdapter.submitGroupedList(items, sortMode)
                             binding.emptyStateContainer.visibility = if (items.isEmpty()) {
                                 View.VISIBLE

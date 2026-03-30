@@ -154,7 +154,7 @@ fun DailyMoveCard(
 
                 if (item.isTriggered) {
                     Spacer(modifier = Modifier.height(6.dp))
-                    TriggeredBadge()
+                    TriggeredBadge(item.lastTriggeredDate)
                 }
             }
         }

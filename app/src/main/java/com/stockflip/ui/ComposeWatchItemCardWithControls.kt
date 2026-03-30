@@ -22,6 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.stockflip.CurrencyHelper
 import com.stockflip.LiveWatchData
+import com.stockflip.TriggerSeenTracker
 import com.stockflip.WatchItem
 
 /**
@@ -52,6 +53,7 @@ fun ComposeWatchItemCardWithControls(
         onToggleActive = { onToggleActive(item) },
         containerColor = containerColor,
         triggerHistory = triggerHistory,
+        isNew = TriggerSeenTracker.isNew(item),
         modifier = modifier.fillMaxWidth()
     )
 }

@@ -197,7 +197,13 @@ class StockPriceUpdateWorker(
                     val name = item.companyName ?: item.ticker ?: item.ticker1 ?: "Bevakning"
                     val ticker = item.ticker ?: item.ticker1
                     showNotification("Larm triggat", name, ticker, item.companyName)
-                    watchItemDao.update(item.markAsTriggered(today))
+                    val triggeredItem = item.markAsTriggered(today)
+                    val updatedItem = when (item.watchType) {
+                        is WatchType.PriceTarget, is WatchType.ATHBased ->
+                            triggeredItem.copy(isActive = false)
+                        else -> triggeredItem
+                    }
+                    watchItemDao.update(updatedItem)
                     triggerHistoryRepository.record(item.id)
                     Log.d(TAG, "WatchItem ${item.id} triggered: $name")
                 }

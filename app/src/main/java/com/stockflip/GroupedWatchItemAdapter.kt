@@ -292,6 +292,7 @@ class GroupedWatchItemAdapter(
                         groupPosition = groupPosition,
                         priceFormat = { value -> CurrencyHelper.formatDecimal(value) },
                         onItemClick = { onItemClick(item) },
+                        isNew = TriggerSeenTracker.isNew(item),
                     )
                 }
             }

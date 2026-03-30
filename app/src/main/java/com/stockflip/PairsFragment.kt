@@ -192,6 +192,7 @@ class PairsFragment : Fragment() {
                             binding.skeletonLoadingView.visibility = View.GONE
                             binding.swipeRefreshLayout.isRefreshing = false
                             val pairs = state.data.filter { it.item.watchType is WatchType.PricePair }
+                            TriggerSeenTracker.markAllSeen(pairs.map { it.item })
                             groupedAdapter.submitGroupedList(pairs, sortMode)
                             binding.emptyStateContainer.visibility = if (pairs.isEmpty()) View.VISIBLE else View.GONE
                             when (sortMode) {

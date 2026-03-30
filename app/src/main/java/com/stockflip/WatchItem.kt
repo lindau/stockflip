@@ -82,7 +82,11 @@ data class WatchItem(
      */
     fun canTrigger(today: String): Boolean {
         if (!isActive) return false
-        if (isTriggered) return false
+        // Engångslarm (PriceTarget, ATHBased) blockeras permanent av isTriggered — kräver
+        // manuell återaktivering. Övriga larmtyper är återkommande och blockeras bara av
+        // datumet (ett larm per dag), inte av isTriggered-flaggan.
+        val isOneTimeAlarm = watchType is WatchType.PriceTarget || watchType is WatchType.ATHBased
+        if (isOneTimeAlarm && isTriggered) return false
         if (lastTriggeredDate == today) return false
         return true
     }

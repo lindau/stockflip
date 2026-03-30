@@ -20,5 +20,6 @@ class StockFlipApplication : Application() {
             
         WorkManager.initialize(this, config)
         StockPriceUpdater.startPeriodicUpdate(this)
+        TriggerSeenTracker.init(this)
     }
 } 
