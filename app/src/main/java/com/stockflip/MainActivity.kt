@@ -1,6 +1,7 @@
 package com.stockflip
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
@@ -130,6 +131,21 @@ class MainActivity : AppCompatActivity() {
         initializeUpdates()
         requestPermissions()
         loadInitialData()
+        handleDeepLinkIntent(intent)
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        handleDeepLinkIntent(intent)
+    }
+
+    private fun handleDeepLinkIntent(intent: Intent?) {
+        if (intent == null) return
+        val ticker = intent.getStringExtra(EXTRA_OPEN_TICKER) ?: return
+        intent.removeExtra(EXTRA_OPEN_TICKER)
+        val companyName = intent.getStringExtra(EXTRA_OPEN_COMPANY)
+        navigateToStockDetail(ticker, companyName)
     }
 
     private val backPressCallback = object : androidx.activity.OnBackPressedCallback(true) {
@@ -153,7 +169,7 @@ class MainActivity : AppCompatActivity() {
                         .start()
                     binding.swipeRefreshLayout.visibility = View.VISIBLE
                     binding.addPairButton.visibility = View.VISIBLE
-                    if (lastWatchItems.isNotEmpty()) showWatchItemSuccess(lastWatchItems)
+                    showWatchItemSuccess(lastWatchItems)
                 } else if (belowName == "pairs") {
                     // Återgår till PairsFragment
                     currentMainTab = MainTab.PAIRS
@@ -209,7 +225,7 @@ class MainActivity : AppCompatActivity() {
                             .setInterpolator(android.view.animation.DecelerateInterpolator())
                             .start()
                     }
-                    if (lastWatchItems.isNotEmpty()) showWatchItemSuccess(lastWatchItems)
+                    showWatchItemSuccess(lastWatchItems)
                     true
                 }
                 R.id.menu_pairs -> {
@@ -2490,5 +2506,9 @@ class MainActivity : AppCompatActivity() {
         private const val TAG = "MainActivity"
         /** Format pattern for time display */
         private const val TIME_FORMAT = "HH:mm:ss"
+        /** Intent extra: ticker to open in StockDetailFragment (from notification deep link) */
+        const val EXTRA_OPEN_TICKER = "extra_open_ticker"
+        /** Intent extra: company name for the ticker (optional, for display) */
+        const val EXTRA_OPEN_COMPANY = "extra_open_company"
     }
 } 

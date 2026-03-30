@@ -107,16 +107,18 @@ class StockPriceUpdateWorker(
         }
     }
 
-    private fun showNotification(title: String, message: String) {
-        // Create an Intent to open MainActivity
-        val intent = applicationContext.packageManager.getLaunchIntentForPackage(applicationContext.packageName)?.apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+    private fun showNotification(title: String, message: String, ticker: String? = null, companyName: String? = null) {
+        val intent = Intent(applicationContext, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+            if (ticker != null) {
+                putExtra(MainActivity.EXTRA_OPEN_TICKER, ticker)
+                putExtra(MainActivity.EXTRA_OPEN_COMPANY, companyName)
+            }
         }
-        
-        // Create PendingIntent
+
         val pendingIntent = PendingIntent.getActivity(
             applicationContext,
-            0,
+            ticker?.hashCode() ?: 0,
             intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
@@ -193,7 +195,8 @@ class StockPriceUpdateWorker(
                 val triggered = evaluateWatchItem(item, snapshots) ?: continue
                 if (triggered) {
                     val name = item.companyName ?: item.ticker ?: item.ticker1 ?: "Bevakning"
-                    showNotification("Larm triggat", name)
+                    val ticker = item.ticker ?: item.ticker1
+                    showNotification("Larm triggat", name, ticker, item.companyName)
                     watchItemDao.update(item.markAsTriggered(today))
                     triggerHistoryRepository.record(item.id)
                     Log.d(TAG, "WatchItem ${item.id} triggered: $name")
