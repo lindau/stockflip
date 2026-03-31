@@ -106,3 +106,15 @@ The app uses a **hybrid View/Compose** approach:
 - **Tester med MainViewModel:** Använd `runBlocking` istället för `runTest` i tester som skapar en `MainViewModel`. `startAutoRefresh()` kör en `while(true)`-loop som gör att `runTest`'s interna `advanceUntilIdle()` aldrig terminerar.
 - **Live nätverkstester:** Alla testklasser som gör riktiga nätverksanrop (t.ex. `FinnhubServiceTest`, `YahooFinanceServiceTest`) MÅSTE ha `@Ignore` på klassnivå. De får inte köras automatiskt i CI/CD eller vid vanlig `./gradlew testDebugUnitTest`.
 - **Robolectric:** Sätt `includeAndroidResources = false` i `testOptions` (i `build.gradle`). `includeAndroidResources = true` triggar Robolectric SDK-instrumentering för ALLA unit tests, även de utan `@RunWith(RobolectricTestRunner::class)`. Importera aldrig `org.robolectric.*` i testklasser som inte aktivt använder Robolectric-runnern.
+
+## Dokumentation
+
+Användarhandboken har **två kopior som alltid ska vara identiska**:
+- `docs/MANUAL.md` — läsbar direkt i repot
+- `app/src/main/assets/manual.md` — används av appen (läses av `HelpFragment`)
+
+När du uppdaterar manualen måste du uppdatera **båda filerna**. När en ny bevakningsttyp, UI-funktion eller ett användarflöde läggs till eller ändras, uppdatera båda kopiorna. Detta gäller speciellt:
+- Nya bevakningsttyper eller ändringar i befintliga (trigger-villkor, engångs/återkommande)
+- Ändringar i hur notiser fungerar eller vad som händer vid utlösning
+- Ny navigation eller nya flikar
+- Ändringar i hur "Ny"-märket eller triggad-badge visas

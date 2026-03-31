@@ -346,6 +346,10 @@ class MainActivity : AppCompatActivity() {
                     importFileLauncher.launch(arrayOf("application/json", "text/plain"))
                     true
                 }
+                R.id.menu_help -> {
+                    openHelpScreen()
+                    true
+                }
                 else -> false
             }
         }
@@ -413,6 +417,24 @@ class MainActivity : AppCompatActivity() {
             }
             .setNegativeButton(getString(R.string.dialog_button_cancel), null)
             .show()
+    }
+
+    private fun openHelpScreen() {
+        binding.swipeRefreshLayout.visibility = View.GONE
+        binding.addPairButton.visibility = View.GONE
+        binding.topAppBar.title = "Hjälp"
+        binding.topAppBar.navigationIcon = androidx.appcompat.content.res.AppCompatResources.getDrawable(
+            this,
+            R.drawable.ic_arrow_back
+        )
+        binding.topAppBar.setNavigationOnClickListener {
+            onBackPressedDispatcher.onBackPressed()
+        }
+        binding.topAppBar.menu.findItem(R.id.menu_sort)?.isVisible = false
+        supportFragmentManager.beginTransaction()
+            .replace(R.id.fragmentContainer, HelpFragment())
+            .addToBackStack("help")
+            .commit()
     }
 
     private fun openAddStock(): Unit {

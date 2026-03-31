@@ -33,6 +33,11 @@
         app:showAsAction="never" />
 
     <item
+        android:id="@+id/menu_help"
+        android:title="Hjälp"
+        app:showAsAction="never" />
+
+    <item
         android:id="@+id/menu_version"
         android:title="Version"
         android:enabled="false"
