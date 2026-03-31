@@ -101,8 +101,15 @@ class WatchDialogManager(
                             ?.data?.lastPrice ?: 0.0
                         val direction = if (currentPrice > 0.0 && currentPrice >= targetPrice)
                             WatchType.PriceDirection.BELOW else WatchType.PriceDirection.ABOVE
-                        viewModel.createAlert(WatchType.PriceTarget(targetPrice, direction), currentCompanyName())
-                        Toast.makeText(context, "Målpris-bevakning skapad", Toast.LENGTH_SHORT).show()
+                        val watchType = WatchType.PriceTarget(targetPrice, direction)
+                        lifecycleScope.launch {
+                            if (viewModel.isDuplicateWatch(watchType)) {
+                                Toast.makeText(context, "En bevakning med dessa inställningar finns redan", Toast.LENGTH_SHORT).show()
+                            } else {
+                                viewModel.createAlert(watchType, currentCompanyName())
+                                Toast.makeText(context, "Målpris-bevakning skapad", Toast.LENGTH_SHORT).show()
+                            }
+                        }
                     } else {
                         Toast.makeText(context, "Ange ett giltigt målpris", Toast.LENGTH_SHORT).show()
                     }
@@ -150,8 +157,15 @@ class WatchDialogManager(
                     }
                     val dropValue = dropValueStr.parseDecimal()
                     if (dropValue != null && dropValue > 0) {
-                        viewModel.createAlert(WatchType.ATHBased(dropType, dropValue), currentCompanyName())
-                        Toast.makeText(context, "Drawdown-bevakning skapad", Toast.LENGTH_SHORT).show()
+                        val watchType = WatchType.ATHBased(dropType, dropValue)
+                        lifecycleScope.launch {
+                            if (viewModel.isDuplicateWatch(watchType)) {
+                                Toast.makeText(context, "En bevakning med dessa inställningar finns redan", Toast.LENGTH_SHORT).show()
+                            } else {
+                                viewModel.createAlert(watchType, currentCompanyName())
+                                Toast.makeText(context, "Drawdown-bevakning skapad", Toast.LENGTH_SHORT).show()
+                            }
+                        }
                     } else {
                         Toast.makeText(context, "Ange ett giltigt värde", Toast.LENGTH_SHORT).show()
                     }
@@ -196,8 +210,15 @@ class WatchDialogManager(
                         else -> WatchType.DailyMoveDirection.BOTH
                     }
                     if (threshold != null && threshold > 0) {
-                        viewModel.createAlert(WatchType.DailyMove(threshold, direction), currentCompanyName())
-                        Toast.makeText(context, "Dagsrörelse-bevakning skapad", Toast.LENGTH_SHORT).show()
+                        val watchType = WatchType.DailyMove(threshold, direction)
+                        lifecycleScope.launch {
+                            if (viewModel.isDuplicateWatch(watchType)) {
+                                Toast.makeText(context, "En bevakning med dessa inställningar finns redan", Toast.LENGTH_SHORT).show()
+                            } else {
+                                viewModel.createAlert(watchType, currentCompanyName())
+                                Toast.makeText(context, "Dagsrörelse-bevakning skapad", Toast.LENGTH_SHORT).show()
+                            }
+                        }
                     } else {
                         Toast.makeText(context, "Ange ett giltigt tröskelvärde", Toast.LENGTH_SHORT).show()
                     }
@@ -244,11 +265,15 @@ class WatchDialogManager(
                     }
                     val targetValue = targetValueStr.parseDecimal()
                     if (metricType != null && targetValue != null && targetValue > 0) {
-                        viewModel.createAlert(
-                            WatchType.KeyMetrics(metricType, targetValue, WatchType.PriceDirection.ABOVE),
-                            currentCompanyName()
-                        )
-                        Toast.makeText(context, "Nyckeltalsbevakning skapad", Toast.LENGTH_SHORT).show()
+                        val watchType = WatchType.KeyMetrics(metricType, targetValue, WatchType.PriceDirection.ABOVE)
+                        lifecycleScope.launch {
+                            if (viewModel.isDuplicateWatch(watchType)) {
+                                Toast.makeText(context, "En bevakning med dessa inställningar finns redan", Toast.LENGTH_SHORT).show()
+                            } else {
+                                viewModel.createAlert(watchType, currentCompanyName())
+                                Toast.makeText(context, "Nyckeltalsbevakning skapad", Toast.LENGTH_SHORT).show()
+                            }
+                        }
                     } else {
                         Toast.makeText(context, "Ange giltiga värden för alla fält", Toast.LENGTH_SHORT).show()
                     }

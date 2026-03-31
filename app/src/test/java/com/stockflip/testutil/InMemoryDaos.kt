@@ -48,6 +48,9 @@ class InMemoryWatchItemDao(
             list.filter { it.ticker == symbol || it.ticker1 == symbol || it.ticker2 == symbol }
         }
 
+    override suspend fun getWatchItemsBySymbol(symbol: String): List<WatchItem> =
+        state.value.filter { it.ticker == symbol || it.ticker1 == symbol || it.ticker2 == symbol }
+
     override suspend fun insertWatchItem(item: WatchItem) {
         state.value = state.value + item
     }

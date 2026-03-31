@@ -235,6 +235,16 @@ class StockDetailViewModel(
     }
 
     /**
+     * Returnerar true om en aktiv bevakning med exakt samma inställningar redan finns.
+     * Combined-bevakningar kontrolleras aldrig.
+     */
+    suspend fun isDuplicateWatch(watchType: WatchType): Boolean {
+        if (watchType is WatchType.Combined) return false
+        return watchItemDao.getWatchItemsBySymbol(symbol)
+            .any { it.isActive && it.watchType == watchType }
+    }
+
+    /**
      * Skapar en ny alert för aktien.
      */
     fun createAlert(watchType: WatchType, companyName: String) {
