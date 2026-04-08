@@ -883,7 +883,7 @@ class MainActivity : AppCompatActivity() {
                 val priceDifferenceStr = priceDifferenceInput.text.toString()
                 val notifyWhenEqual = notifyWhenEqualCheckbox.isChecked
 
-                if (selectedStock1 != null && selectedStock2 != null && priceDifferenceStr.isNotEmpty()) {
+                if (selectedStock1 != null && selectedStock2 != null) {
                     val priceDifference = priceDifferenceStr.parseDecimal() ?: 0.0
                     lifecycleScope.launch {
                         try {
@@ -906,7 +906,7 @@ class MainActivity : AppCompatActivity() {
                         }
                     }
                 } else {
-                    Toast.makeText(this, "Välj båda aktier och ange prissskillnad", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, "Välj båda aktier", Toast.LENGTH_SHORT).show()
                 }
             }
             .setNegativeButton("Avbryt", null)
@@ -1866,7 +1866,7 @@ class MainActivity : AppCompatActivity() {
                 val finalTicker1 = selectedStock1?.symbol ?: ticker1Str
                 val finalTicker2 = selectedStock2?.symbol ?: ticker2Str
 
-                if (finalTicker1.isNotEmpty() && finalTicker2.isNotEmpty() && priceDifferenceStr.isNotEmpty()) {
+                if (finalTicker1.isNotEmpty() && finalTicker2.isNotEmpty()) {
                     val priceDifference = priceDifferenceStr.parseDecimal() ?: 0.0
                     lifecycleScope.launch {
                         try {
@@ -1891,7 +1891,7 @@ class MainActivity : AppCompatActivity() {
                         }
                     }
                 } else {
-                    Toast.makeText(this, "Fyll i alla fält", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, "Välj båda aktier", Toast.LENGTH_SHORT).show()
                 }
             }
             .setNegativeButton("Avbryt", null)

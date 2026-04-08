@@ -54,8 +54,8 @@ object AlertEvaluator {
         
         val priceDifference = abs(priceA - priceB)
         
-        // Larm när spread når tröskelvärdet
-        if (priceDifference >= rule.spreadTarget) {
+        // Larm när spread når tröskelvärdet (bara om ett mål är satt)
+        if (rule.spreadTarget > 0.0 && priceDifference >= rule.spreadTarget) {
             return true
         }
         

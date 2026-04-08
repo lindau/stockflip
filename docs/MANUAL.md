@@ -11,10 +11,9 @@ StockFlip låter dig bevaka aktier och kryptovalutor och få notiser när dina e
   - [1. Prismål](#1-prismal-prisbevakning)
   - [2. Dagsrörelse](#2-dagsrorelse)
   - [3. 52-veckorshögsta](#3-52-veckorshogsta-drawdown)
-  - [4. Prisintervall](#4-prisintervall)
-  - [5. Nyckeltal](#5-nyckeltal)
-  - [6. Aktiepar](#6-aktiepar)
-  - [7. Kombinerat larm](#7-kombinerat-larm)
+  - [4. Nyckeltal](#4-nyckeltal)
+  - [5. Aktiepar](#5-aktiepar)
+  - [6. Kombinerat larm](#6-kombinerat-larm)
 - [Vanliga flöden](#vanliga-floden)
 - [Hantera dina bevakningar](#hantera-dina-bevakningar)
 - [Notiser](#notiser)
@@ -149,21 +148,7 @@ Appen har tre flikar längst ned:
 
 ---
 
-### 4. Prisintervall
-
-**Vad det gör:** Skickar en notis när aktiens pris befinner sig inom ett angivet prisintervall.
-
-**Typ:** Återkommande — kan utlösas igen nästa handelsdag.
-
-> **OBS:** Prisintervall är inte längre tillgängligt i snabbåtgärdspanelen för nya bevakningar. Befintliga prisintervall-bevakningar fungerar fortfarande fullt ut.
-
-**Vad händer när den utlöses:**
-- Du får en notis.
-- Återställs automatiskt nästa dag.
-
----
-
-### 5. Nyckeltal
+### 4. Nyckeltal
 
 **Vad det gör:** Skickar en notis när ett finansiellt nyckeltal (P/E, P/S eller direktavkastning) når ett målvärde.
 
@@ -189,21 +174,21 @@ Appen har tre flikar längst ned:
 
 ---
 
-### 6. Aktiepar
+### 5. Aktiepar
 
-**Vad det gör:** Bevakar prisskillnaden mellan två aktier och skickar en notis när skillnaden är tillräckligt liten (eller noll).
+**Vad det gör:** Bevakar prisskillnaden mellan två aktier och skickar en notis när skillnaden når ett visst värde, eller när priserna är lika.
 
 **Typ:** Återkommande — kan utlösas igen nästa handelsdag.
 
 **Inställningar:**
-- **Prisskillnadsgräns** — utlöses när |pris1 − pris2| ≤ gränsen
-- **Notis när lika** — utlöses även om priserna är praktiskt taget identiska (skiljer sig med mindre än 0,01)
+- **Prisskillnad (valfritt)** — utlöses när |pris1 − pris2| når gränsen
+- **Notis när lika** — utlöses när priserna är praktiskt taget identiska (skiljer sig med mindre än 0,01)
 
 **Skapa en aktiepar-bevakning:**
 1. Tryck på **+**-knappen i Aktier- eller Par-fliken.
 2. Sök upp och välj den första aktien.
 3. Sök upp och välj den andra aktien.
-4. Ange prisskillnadsgräns och/eller aktivera "Notis när lika".
+4. Ange prisskillnad om önskat, och/eller aktivera "Notis när lika".
 5. Tryck **Spara**.
 
 **Vad händer när den utlöses:**
@@ -212,7 +197,7 @@ Appen har tre flikar längst ned:
 
 ---
 
-### 7. Kombinerat larm
+### 6. Kombinerat larm
 
 **Vad det gör:** Låter dig kombinera flera villkor med logiska operatorer för att skapa avancerade bevakningsregler.
 
@@ -354,7 +339,7 @@ Utan notisbehörighet kan appen inte meddela dig när en bevakning utlöses — 
 
 | | Engångslarm | Återkommande larm |
 |---|---|---|
-| **Typ** | Prismål, 52-veckorshögsta | Dagsrörelse, Nyckeltal, Prisintervall, Aktiepar, Kombinerat |
+| **Typ** | Prismål, 52-veckorshögsta | Dagsrörelse, Nyckeltal, Aktiepar, Kombinerat |
 | **Inaktiveras efter utlösning** | Ja | Nej |
 | **Återaktivering** | Manuell | Automatisk (nästa dag) |
 | **Kan utlösas igen samma dag** | Nej | Nej (max en gång per handelsdag) |
