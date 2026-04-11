@@ -1,6 +1,5 @@
 plugins {
     id 'com.android.application'
-    id 'org.jetbrains.kotlin.android'
     id 'com.google.devtools.ksp'
     id 'org.jetbrains.kotlin.plugin.compose'
 }
@@ -58,15 +57,15 @@ android {
         targetCompatibility JavaVersion.VERSION_17
     }
     
-    kotlinOptions {
-        jvmTarget = "17"
-    }
-    
     buildFeatures {
         viewBinding = true
         buildConfig = true
         compose = true
     }
+}
+
+kotlin {
+    jvmToolchain(17)
 }
 
 ksp {
@@ -87,8 +86,8 @@ dependencies {
     implementation 'androidx.lifecycle:lifecycle-livedata-ktx:2.8.7'
     implementation 'androidx.fragment:fragment-ktx:1.8.5'
     implementation 'androidx.work:work-runtime-ktx:2.9.1'
-    implementation 'androidx.room:room-runtime:2.7.0-alpha11'
-    implementation 'androidx.room:room-ktx:2.7.0-alpha11'
+    implementation 'androidx.room:room-runtime:2.7.0'
+    implementation 'androidx.room:room-ktx:2.7.0'
     implementation 'com.squareup.retrofit2:retrofit:2.11.0'
     implementation 'com.squareup.retrofit2:converter-gson:2.11.0'
     implementation 'com.squareup.okhttp3:okhttp:4.12.0'
@@ -109,7 +108,7 @@ dependencies {
     implementation 'androidx.compose.runtime:runtime-livedata'
     debugImplementation 'androidx.compose.ui:ui-tooling'
 
-    ksp 'androidx.room:room-compiler:2.7.0-alpha11'
+    ksp 'androidx.room:room-compiler:2.7.0'
     androidTestImplementation 'androidx.work:work-testing:2.9.0'
     testImplementation 'junit:junit:4.13.2'
     testImplementation 'org.jetbrains.kotlin:kotlin-reflect:2.0.21'

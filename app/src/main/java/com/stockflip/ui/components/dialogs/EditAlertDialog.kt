@@ -79,9 +79,9 @@ fun OutlinedTextFieldStyled(
         modifier = modifier.fillMaxWidth(),
         enabled = enabled,
         singleLine = singleLine,
-        colors = androidx.compose.material3.TextFieldDefaults.outlinedTextFieldColors(
-            focusedBorderColor = MaterialTheme.colorScheme.primary,
-            unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+        colors = androidx.compose.material3.TextFieldDefaults.colors(
+            focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+            unfocusedIndicatorColor = MaterialTheme.colorScheme.outline,
             focusedLabelColor = MaterialTheme.colorScheme.primary,
             unfocusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant
         )
