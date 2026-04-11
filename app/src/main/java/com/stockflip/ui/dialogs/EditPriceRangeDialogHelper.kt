@@ -76,5 +76,5 @@ fun showEditPriceRangeDialog(
     }
     dialog.show()
     dialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE)
-    minPriceInput.post { minPriceInput.requestFocus(); minPriceInput.selectAll() }
+    focusInput(minPriceInput)
 }

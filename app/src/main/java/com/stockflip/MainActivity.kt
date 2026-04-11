@@ -51,6 +51,7 @@ import androidx.cardview.widget.CardView
 import androidx.recyclerview.widget.ItemTouchHelper
 import com.stockflip.ui.SwipeToDeleteCallback
 import com.stockflip.backup.BackupManager
+import com.stockflip.ui.dialogs.focusInput
 
 /**
  * Main activity for the StockFlip application.
@@ -912,7 +913,7 @@ class MainActivity : AppCompatActivity() {
             .setNegativeButton("Avbryt", null)
             .show().also { dialog ->
                 dialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE)
-                ticker1Input.post { ticker1Input.requestFocus() }
+                focusInput(ticker1Input, selectAll = false)
             }
     }
 
@@ -992,7 +993,7 @@ class MainActivity : AppCompatActivity() {
             .setNegativeButton("Avbryt", null)
             .show().also { dialog ->
                 dialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE)
-                tickerInput.post { tickerInput.requestFocus() }
+                focusInput(tickerInput, selectAll = !tickerInput.text.isNullOrEmpty())
             }
     }
 
@@ -1100,7 +1101,7 @@ class MainActivity : AppCompatActivity() {
             .setNegativeButton("Avbryt", null)
             .show().also { dialog ->
                 dialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE)
-                tickerInput.post { tickerInput.requestFocus() }
+                focusInput(tickerInput, selectAll = !tickerInput.text.isNullOrEmpty())
             }
     }
 
@@ -1183,7 +1184,7 @@ class MainActivity : AppCompatActivity() {
             .setNegativeButton("Avbryt", null)
             .show().also { dialog ->
                 dialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE)
-                tickerInput.post { tickerInput.requestFocus() }
+                focusInput(tickerInput, selectAll = !tickerInput.text.isNullOrEmpty())
             }
     }
 
@@ -1897,7 +1898,7 @@ class MainActivity : AppCompatActivity() {
             .setNegativeButton("Avbryt", null)
             .show().also { dialog ->
                 dialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE)
-                priceDifferenceInput.post { priceDifferenceInput.requestFocus(); priceDifferenceInput.selectAll() }
+                focusInput(priceDifferenceInput)
             }
     }
 
@@ -1967,7 +1968,7 @@ class MainActivity : AppCompatActivity() {
             .setNegativeButton("Avbryt", null)
             .show().also { dialog ->
                 dialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE)
-                targetPriceInput.post { targetPriceInput.requestFocus(); targetPriceInput.selectAll() }
+                focusInput(targetPriceInput)
             }
     }
 
@@ -2060,7 +2061,7 @@ class MainActivity : AppCompatActivity() {
             .setNegativeButton("Avbryt", null)
             .show().also { dialog ->
                 dialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE)
-                targetValueInput.post { targetValueInput.requestFocus(); targetValueInput.selectAll() }
+                focusInput(targetValueInput)
             }
     }
 
@@ -2150,7 +2151,7 @@ class MainActivity : AppCompatActivity() {
             .setNegativeButton("Avbryt", null)
             .show().also { dialog ->
                 dialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE)
-                dropValueInput.post { dropValueInput.requestFocus(); dropValueInput.selectAll() }
+                focusInput(dropValueInput)
             }
     }
 
@@ -2246,7 +2247,7 @@ class MainActivity : AppCompatActivity() {
             .setNegativeButton("Avbryt", null)
             .show().also { dialog ->
                 dialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE)
-                thresholdInput.post { thresholdInput.requestFocus(); thresholdInput.selectAll() }
+                focusInput(thresholdInput)
             }
     }
 
@@ -2260,15 +2261,28 @@ class MainActivity : AppCompatActivity() {
         val watchTypeChip = dialogView.findViewById<com.google.android.material.chip.Chip>(R.id.watchTypeChip)
         watchTypeChip.text = item.getWatchTypeDisplayName()
 
+        var focusField: TextInputEditText? = null
         when (item.watchType) {
-            is WatchType.PricePair -> showPricePairDetail(dialogView, item)
-            is WatchType.PriceTarget -> showPriceTargetDetail(dialogView, item)
+            is WatchType.PricePair -> {
+                showPricePairDetail(dialogView, item)
+                focusField = dialogView.findViewById(R.id.detailPriceDifference)
+            }
+            is WatchType.PriceTarget -> {
+                showPriceTargetDetail(dialogView, item)
+                focusField = dialogView.findViewById(R.id.detailTargetPrice)
+            }
             is WatchType.PriceRange -> {
                 // PriceRange hanteras via StockDetailFragment
                 Toast.makeText(this, "Redigera via aktiedetaljvy", Toast.LENGTH_SHORT).show()
             }
-            is WatchType.KeyMetrics -> showKeyMetricsDetail(dialogView, item)
-            is WatchType.ATHBased -> showATHBasedDetail(dialogView, item)
+            is WatchType.KeyMetrics -> {
+                showKeyMetricsDetail(dialogView, item)
+                focusField = dialogView.findViewById(R.id.detailTargetValue)
+            }
+            is WatchType.ATHBased -> {
+                showATHBasedDetail(dialogView, item)
+                focusField = dialogView.findViewById(R.id.detailATHDropValue)
+            }
             is WatchType.DailyMove -> {
                 // DailyMove hanteras via StockDetailFragment
                 Toast.makeText(this, "Redigera via aktiedetaljvy", Toast.LENGTH_SHORT).show()
@@ -2286,7 +2300,10 @@ class MainActivity : AppCompatActivity() {
                 saveWatchItemChanges(dialogView, item)
             }
             .setNegativeButton("Avbryt", null)
-            .show()
+            .show().also { dialog ->
+                dialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE)
+                focusField?.let { focusInput(it) }
+            }
     }
 
     private fun showPricePairDetail(dialogView: android.view.View, item: WatchItem) {
