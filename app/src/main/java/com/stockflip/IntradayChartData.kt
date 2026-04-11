@@ -8,7 +8,8 @@ data class IntradayChartData(
     val timestamps: List<Long>,
     val prices: List<Double>,
     val previousClose: Double?,
-    val lastTradeTimestamp: Long? = null
+    val lastTradeTimestamp: Long? = null,
+    val emptyReason: String? = null
 )
 
 enum class ChartPeriod(val label: String, val range: String, val interval: String) {

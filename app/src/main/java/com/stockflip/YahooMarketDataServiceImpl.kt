@@ -251,12 +251,32 @@ class YahooMarketDataServiceImpl(
             else emptyList()
 
             if (paired.size < 2) {
-                Log.w(TAG, "Not enough data points for chart $symbol: ${paired.size} — marknad stängd")
+                val reason = when (result.meta?.instrumentType?.lowercase()) {
+                    "cryptocurrency", "crypto" -> "Ingen intradagsdata tillgänglig"
+                    else -> "Marknaden stängd"
+                }
+                Log.w(TAG, "Not enough data points for chart $symbol: ${paired.size} — $reason")
+                val fallbackPrice = result.meta?.regularMarketPrice
+                    ?.takeIf { !it.isNaN() && it > 0.0 }
+                    ?: previousClose
+                if (fallbackPrice != null) {
+                    val intervalSeconds = intervalToSeconds(period.interval)
+                    val endTs = lastTradeTimestamp ?: (System.currentTimeMillis() / 1000L)
+                    val startTs = (endTs - intervalSeconds).coerceAtLeast(0L)
+                    return@withContext IntradayChartData(
+                        timestamps = listOf(startTs, endTs),
+                        prices = listOf(fallbackPrice, fallbackPrice),
+                        previousClose = previousClose,
+                        lastTradeTimestamp = lastTradeTimestamp,
+                        emptyReason = reason
+                    )
+                }
                 return@withContext IntradayChartData(
                     timestamps = emptyList(),
                     prices = emptyList(),
                     previousClose = previousClose,
-                    lastTradeTimestamp = lastTradeTimestamp
+                    lastTradeTimestamp = lastTradeTimestamp,
+                    emptyReason = reason
                 )
             }
 
@@ -275,5 +295,20 @@ class YahooMarketDataServiceImpl(
     private companion object {
         private const val TAG: String = "YahooMarketDataService"
     }
-}
 
+    private fun intervalToSeconds(interval: String): Long = when (interval) {
+        "1m" -> 60L
+        "2m" -> 120L
+        "5m" -> 300L
+        "15m" -> 900L
+        "30m" -> 1_800L
+        "60m", "1h" -> 3_600L
+        "90m" -> 5_400L
+        "1d" -> 86_400L
+        "5d" -> 432_000L
+        "1wk" -> 604_800L
+        "1mo" -> 2_592_000L
+        "3mo" -> 7_776_000L
+        else -> 3_600L
+    }
+}

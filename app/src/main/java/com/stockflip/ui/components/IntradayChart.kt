@@ -61,6 +61,15 @@ fun IntradayChart(
             }
         }
 
+        if (data.prices.isNotEmpty() && data.emptyReason != null) {
+            Text(
+                text = "Fallback",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 6.dp, bottom = 2.dp)
+            )
+        }
+
         if (data.prices.isEmpty()) {
             Box(
                 modifier = Modifier
@@ -74,7 +83,7 @@ fun IntradayChart(
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     Text(
-                        text = "Marknaden stängd",
+                        text = data.emptyReason ?: "Marknaden stängd",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )

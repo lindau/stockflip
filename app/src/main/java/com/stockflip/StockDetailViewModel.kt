@@ -354,8 +354,19 @@ class StockDetailViewModel(
                 delay(2_000L)
                 data = fetchChartData()
             }
-            _chartState.value = if (data != null) UiState.Success(data)
-                                 else UiState.Error("Ingen intradagsdata tillgänglig")
+            _chartState.value = if (data != null) {
+                UiState.Success(data)
+            } else {
+                UiState.Success(
+                    IntradayChartData(
+                        timestamps = emptyList(),
+                        prices = emptyList(),
+                        previousClose = null,
+                        lastTradeTimestamp = null,
+                        emptyReason = "Ingen intradagsdata tillgänglig"
+                    )
+                )
+            }
         }
     }
 
@@ -395,4 +406,3 @@ data class StockDetailData(
     val dividendYield: Double? = null,
     val lastUpdatedAt: Long = 0L
 )
-
