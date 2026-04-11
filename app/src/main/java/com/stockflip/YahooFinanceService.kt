@@ -77,7 +77,7 @@ data class Indicators(
 )
 
 data class Quote(
-    val close: List<Double>? = null
+    val close: List<Double?>? = null
 )
 
 object YahooFinanceService : MarketDataService {

@@ -721,7 +721,13 @@ class MainActivity : AppCompatActivity() {
                 val symbol = item.ticker ?: return
                 navigateToStockDetail(symbol, item.companyName)
             }
-            MainTab.PAIRS -> handleEditClick(item)
+            MainTab.PAIRS -> {
+                if (item.watchType is WatchType.PricePair) {
+                    navigateToPairDetail(item.id)
+                } else {
+                    handleEditClick(item)
+                }
+            }
             MainTab.ALERTS -> { /* No-op, managed by AlertsFragment */ }
         }
     }
@@ -766,8 +772,34 @@ class MainActivity : AppCompatActivity() {
         navigateToStockDetail(symbol, companyName)
     }
 
+    internal fun navigateToPairDetailFromPairs(watchItemId: Int): Unit {
+        navigateToPairDetail(watchItemId)
+    }
+
     internal fun showEditDialogFromPairs(item: WatchItem): Unit {
         handleEditClick(item)
+    }
+
+    private fun navigateToPairDetail(watchItemId: Int) {
+        val fragment = PairDetailFragment.newInstance(watchItemId)
+
+        supportFragmentManager.beginTransaction()
+            .setCustomAnimations(
+                R.anim.slide_in_right,
+                R.anim.slide_out_left,
+                R.anim.slide_in_left,
+                R.anim.slide_out_right
+            )
+            .replace(R.id.fragmentContainer, fragment)
+            .addToBackStack("pair_detail")
+            .commit()
+
+        binding.addPairButton.visibility = View.GONE
+        binding.swipeRefreshLayout.postDelayed({
+            binding.swipeRefreshLayout.visibility = View.GONE
+        }, 300L)
+
+        binding.topAppBar.menu.findItem(R.id.menu_sort)?.isVisible = false
     }
 
     private fun handleDeleteClick(item: WatchItem): Unit {

@@ -100,11 +100,7 @@ class PairsFragment : Fragment() {
                 (requireActivity() as? MainActivity)?.showEditDialogFromPairs(watchItem)
             },
             onItemClick = { watchItem ->
-                val symbol = watchItem.ticker1 ?: watchItem.ticker ?: return@GroupedWatchItemAdapter
-                (requireActivity() as? MainActivity)?.navigateToStockDetailFromPairs(
-                    symbol = symbol,
-                    companyName = watchItem.companyName
-                )
+                (requireActivity() as? MainActivity)?.navigateToPairDetailFromPairs(watchItem.id)
             }
         )
 
@@ -160,12 +156,8 @@ class PairsFragment : Fragment() {
                     ?: return@SwipeToDeleteCallback
                 groupedAdapter.notifyItemChanged(position)
                 val item = listItem.item
-                val symbol = item.ticker1 ?: item.ticker ?: return@SwipeToDeleteCallback
                 binding.pairsRecyclerView.postDelayed({
-                    (requireActivity() as? MainActivity)?.navigateToStockDetailFromPairs(
-                        symbol = symbol,
-                        companyName = item.companyName
-                    )
+                    (requireActivity() as? MainActivity)?.navigateToPairDetailFromPairs(item.id)
                 }, 120)
             }
         )

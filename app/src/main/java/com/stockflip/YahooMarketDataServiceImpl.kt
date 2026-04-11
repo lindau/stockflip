@@ -246,9 +246,11 @@ class YahooMarketDataServiceImpl(
 
             val timestamps = result.timestamp
             val closes = result.indicators?.quote?.firstOrNull()?.close
-            val paired = if (timestamps != null && closes != null)
-                timestamps.zip(closes).filter { (_, price) -> price != null && !price.isNaN() }
-            else emptyList()
+            val paired = if (timestamps != null && closes != null) {
+                timestamps.zip(closes).mapNotNull { (ts, price) ->
+                    price?.takeIf { !it.isNaN() }?.let { ts to it }
+                }
+            } else emptyList()
 
             if (paired.size < 2) {
                 val reason = when (result.meta?.instrumentType?.lowercase()) {
@@ -282,7 +284,7 @@ class YahooMarketDataServiceImpl(
 
             IntradayChartData(
                 timestamps = paired.map { it.first },
-                prices = paired.map { it.second!! },
+                prices = paired.map { it.second },
                 previousClose = previousClose,
                 lastTradeTimestamp = lastTradeTimestamp
             )
