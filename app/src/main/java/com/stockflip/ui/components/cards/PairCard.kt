@@ -157,7 +157,11 @@ fun PairCard(
                             CurrencyHelper.formatPrice(live.currentPrice2, currency2) else "—",
                     )
 
-                    Spacer(modifier = Modifier.height(8.dp))
+                    HorizontalDivider(
+                        modifier = Modifier.padding(top = 6.dp, bottom = 8.dp),
+                        thickness = 0.5.dp,
+                        color = MaterialTheme.colorScheme.outlineVariant,
+                    )
 
                     // Spread + villkorsrad
                     Row(

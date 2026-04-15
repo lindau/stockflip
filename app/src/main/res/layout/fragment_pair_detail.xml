@@ -18,14 +18,6 @@
             android:layout_gravity="center_horizontal"
             android:visibility="gone" />
 
-        <TextView
-            android:id="@+id/pairTitle"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Aktiepar"
-            android:textAppearance="@style/TextAppearance.Material3.TitleLarge"
-            android:paddingBottom="8dp" />
-
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -95,45 +87,82 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
-            app:cardUseCompatPadding="true"
-            app:cardElevation="0dp">
+            app:cardBackgroundColor="?attr/colorSurfaceContainerLow"
+            app:cardCornerRadius="20dp"
+            app:cardElevation="0dp"
+            app:strokeColor="?attr/colorOutlineVariant"
+            app:strokeWidth="1dp"
+            app:cardUseCompatPadding="false">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:padding="12dp">
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="Prisskillnad"
-                    android:textAppearance="@style/TextAppearance.Material3.TitleMedium" />
-
-                <TextView
-                    android:id="@+id/spreadValue"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="—"
-                    android:textAppearance="@style/TextAppearance.Material3.BodyLarge" />
-
-                <TextView
-                    android:id="@+id/spreadTarget"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="Mål: —"
-                    android:textAppearance="@style/TextAppearance.Material3.BodyMedium" />
+                android:padding="14dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
+                    android:gravity="center_vertical"
                     android:orientation="horizontal">
 
                     <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Bevakningsvillkor"
+                        android:textAppearance="@style/TextAppearance.Material3.TitleSmall" />
+
+                    <TextView
+                        android:id="@+id/statusValue"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Notify when equal: "
+                        android:text="—"
+                        android:textAppearance="@style/TextAppearance.Material3.LabelMedium" />
+                </LinearLayout>
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:text="Prisskillnad nu"
+                    android:textAppearance="@style/TextAppearance.Material3.LabelMedium" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:id="@+id/spreadValue"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="—"
+                        android:textAppearance="@style/TextAppearance.Material3.TitleMedium" />
+
+                    <TextView
+                        android:id="@+id/spreadTarget"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Mål: —"
+                        android:textAppearance="@style/TextAppearance.Material3.BodyMedium" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Meddela när priserna är lika"
                         android:textAppearance="@style/TextAppearance.Material3.BodySmall" />
 
                     <TextView
@@ -141,27 +170,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Nej"
-                        android:textAppearance="@style/TextAppearance.Material3.BodySmall" />
-                </LinearLayout>
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="6dp"
-                    android:orientation="horizontal">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Status: "
-                        android:textAppearance="@style/TextAppearance.Material3.BodySmall" />
-
-                    <TextView
-                        android:id="@+id/statusValue"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="—"
-                        android:textAppearance="@style/TextAppearance.Material3.BodySmall" />
+                        android:textAppearance="@style/TextAppearance.Material3.LabelLarge" />
                 </LinearLayout>
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>

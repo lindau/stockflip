@@ -12,6 +12,26 @@ data class IntradayChartData(
     val emptyReason: String? = null
 )
 
+data class PairChartSeries(
+    val timestamps: List<Long>,
+    val values: List<Double>
+)
+
+data class PairChartData(
+    val stockALabel: String,
+    val stockBLabel: String,
+    val normalizedA: PairChartSeries,
+    val normalizedB: PairChartSeries,
+    val spread: IntradayChartData,
+    val spreadTarget: Double?,
+    val showEqualLine: Boolean,
+    val currentSpread: Double?,
+    val distanceToTarget: Double?,
+    val leaderLabel: String?,
+    val lastTradeTimestamp: Long?,
+    val emptyReason: String? = null
+)
+
 enum class ChartPeriod(val label: String, val range: String, val interval: String) {
     DAY("1D", "1d", "2m"),
     WEEK("1V", "5d", "15m"),

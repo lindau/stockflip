@@ -12,7 +12,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import com.stockflip.databinding.FragmentPairDetailBinding
 import com.stockflip.repository.TriggerHistoryRepository
-import com.stockflip.ui.components.IntradayChart
+import com.stockflip.ui.components.PairPerformanceChart
 import com.stockflip.ui.theme.StockFlipTheme
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
@@ -107,7 +107,7 @@ class PairDetailFragment : Fragment() {
                             binding.spreadChartView.isVisible = true
                             binding.spreadChartView.setContent {
                                 StockFlipTheme {
-                                    IntradayChart(
+                                    PairPerformanceChart(
                                         data = state.data,
                                         selectedPeriod = period,
                                         onPeriodSelected = { viewModel.selectPeriod(it) }
@@ -134,15 +134,13 @@ class PairDetailFragment : Fragment() {
         val a = data.stockA
         val b = data.stockB
 
-        binding.pairTitle.text = "${a.companyName ?: a.symbol} • ${b.companyName ?: b.symbol}"
-
         binding.stockALabel.text = "${a.companyName ?: a.symbol} (${a.symbol})"
         binding.stockBLabel.text = "${b.companyName ?: b.symbol} (${b.symbol})"
 
         binding.stockAPrice.text = formatPrice(a.lastPrice, a.currency)
         binding.stockBPrice.text = formatPrice(b.lastPrice, b.currency)
-        binding.stockAChange.text = formatChange(a.dailyChangePercent)
-        binding.stockBChange.text = formatChange(b.dailyChangePercent)
+        bindChange(binding.stockAChange, a.dailyChangePercent)
+        bindChange(binding.stockBChange, b.dailyChangePercent)
 
         binding.spreadValue.text = data.spread?.let { CurrencyHelper.formatDecimal(it) } ?: "—"
         binding.spreadTarget.text = "Mål: ${CurrencyHelper.formatDecimal(pair.priceDifference)}"
@@ -168,10 +166,16 @@ class PairDetailFragment : Fragment() {
         return CurrencyHelper.formatPrice(price, code)
     }
 
-    private fun formatChange(change: Double?): String {
-        if (change == null) return "—"
+    private fun formatChange(change: Double): String {
         val sign = if (change >= 0) "+" else ""
         return "$sign${CurrencyHelper.formatDecimal(change)}%"
+    }
+
+    private fun bindChange(view: android.widget.TextView, change: Double?) {
+        view.isVisible = change != null
+        if (change != null) {
+            view.text = formatChange(change)
+        }
     }
 
     override fun onDestroyView() {
