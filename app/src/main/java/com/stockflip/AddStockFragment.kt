@@ -98,19 +98,24 @@ class AddStockFragment : Fragment() {
                         is SearchState.Success -> {
                             binding.searchProgressBar.visibility = View.GONE
                             adapter.submitList(state.results)
-                            binding.emptyText.visibility =
-                                if (state.results.isEmpty()) View.VISIBLE else View.GONE
+                            val query = binding.searchInput.text?.toString().orEmpty().trim()
+                            if (state.results.isEmpty()) {
+                                binding.emptyText.visibility = View.VISIBLE
+                                binding.emptyText.text = if (query.length < 2) {
+                                    getString(R.string.add_stock_empty)
+                                } else {
+                                    getString(R.string.add_stock_no_results)
+                                }
+                            } else {
+                                binding.emptyText.visibility = View.GONE
+                            }
                         }
 
                         is SearchState.Error -> {
                             binding.searchProgressBar.visibility = View.GONE
                             binding.emptyText.visibility = View.VISIBLE
                             binding.emptyText.text = getString(R.string.add_stock_error)
-                            Toast.makeText(
-                                requireContext(),
-                                state.message,
-                                Toast.LENGTH_SHORT
-                            ).show()
+                            Toast.makeText(requireContext(), getString(R.string.add_stock_error), Toast.LENGTH_SHORT).show()
                         }
                     }
                 }
@@ -172,4 +177,3 @@ class AddStockFragment : Fragment() {
         }
     }
 }
-

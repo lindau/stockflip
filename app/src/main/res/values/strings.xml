@@ -25,10 +25,11 @@
     <string name="tab_alerts">Bevakningar</string>
 
     <string name="menu_add">Lägg till</string>
-    <string name="title_add_stock">Lägg till aktie</string>
-    <string name="add_stock_search_hint">Sök aktie…</string>
-    <string name="add_stock_empty">Inga träffar. Prova att skriva minst två tecken.</string>
-    <string name="add_stock_error">Kunde inte söka aktier. Försök igen.</string>
+    <string name="title_add_stock">Lägg till aktie eller krypto</string>
+    <string name="add_stock_search_hint">Sök aktie eller krypto…</string>
+    <string name="add_stock_empty">Skriv minst två tecken för att söka efter aktier eller krypto.</string>
+    <string name="add_stock_no_results">Det finns inga träffar för din sökning.</string>
+    <string name="add_stock_error">Det finns inga träffar för din sökning.</string>
 
     <!-- Redigera bevakning - prisintervall -->
     <string name="dialog_edit_price_range_title">Redigera prisintervall-bevakning</string>
