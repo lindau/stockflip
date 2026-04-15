@@ -17,17 +17,21 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
+import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
+import androidx.core.content.edit
 import androidx.core.widget.doAfterTextChanged
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.lifecycle.Lifecycle
+import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.checkbox.MaterialCheckBox
+import com.google.android.material.button.MaterialButton
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.textfield.MaterialAutoCompleteTextView
 import com.google.android.material.textfield.TextInputEditText
@@ -37,6 +41,7 @@ import androidx.cardview.widget.CardView
 import androidx.recyclerview.widget.ItemTouchHelper
 import com.stockflip.ui.SwipeToDeleteCallback
 import com.stockflip.backup.BackupManager
+import com.stockflip.ui.builders.ConditionBuilderAdapter
 import com.stockflip.ui.dialogs.focusInput
 import com.stockflip.repository.SearchState
 import com.stockflip.repository.StockRepository
@@ -359,7 +364,7 @@ class MainActivity : AppCompatActivity() {
             .setTitle("Tema")
             .setSingleChoiceItems(options, checkedItem) { dialog, which ->
                 val selected = modes[which]
-                prefs.edit().putInt("night_mode", selected).apply()
+                prefs.edit { putInt("night_mode", selected) }
                 AppCompatDelegate.setDefaultNightMode(selected)
                 dialog.dismiss()
             }
@@ -1083,11 +1088,7 @@ class MainActivity : AppCompatActivity() {
      * Shows a dialog for adding a new ATH-based watch.
      * Handles user input validation and API calls for stock information.
      */
-    /**
-     * Shows a dialog for adding a new ATH-based watch.
-     * 
-     * @param prefillSymbol Optional symbol to prefill in the ticker input field
-     */
+    @Suppress("unused")
     private fun showAddATHBasedDialog() {
         val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_add_ath_based, null)
         val tickerInput = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.tickerInput)
@@ -1169,17 +1170,17 @@ class MainActivity : AppCompatActivity() {
     private fun showAddCombinedAlertDialog() {
         val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_add_combined_alert, null)
         val symbolInput = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.symbolInput)
-        val conditionsRecyclerView = dialogView.findViewById<androidx.recyclerview.widget.RecyclerView>(R.id.conditionsRecyclerView)
-        val addConditionButton = dialogView.findViewById<com.google.android.material.button.MaterialButton>(R.id.addConditionButton)
+        val conditionsRecyclerView = dialogView.findViewById<RecyclerView>(R.id.conditionsRecyclerView)
+        val addConditionButton = dialogView.findViewById<MaterialButton>(R.id.addConditionButton)
         val previewText = dialogView.findViewById<TextView>(R.id.previewText)
 
         // Setup RecyclerView
-        conditionsRecyclerView.layoutManager = androidx.recyclerview.widget.LinearLayoutManager(this)
+        conditionsRecyclerView.layoutManager = LinearLayoutManager(this)
         
         // Create condition adapter (lateinit to use in lambdas)
-        lateinit var conditionAdapter: com.stockflip.ui.builders.ConditionBuilderAdapter
+        lateinit var conditionAdapter: ConditionBuilderAdapter
         
-        conditionAdapter = com.stockflip.ui.builders.ConditionBuilderAdapter(
+        conditionAdapter = ConditionBuilderAdapter(
             onConditionTypeChanged = { _, _ ->
                 val symbol = symbolInput.text.toString()
                 updatePreview(conditionAdapter, symbol, previewText)
@@ -1301,17 +1302,17 @@ class MainActivity : AppCompatActivity() {
         
         val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_add_combined_alert, null)
         val symbolInput = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.symbolInput)
-        val conditionsRecyclerView = dialogView.findViewById<androidx.recyclerview.widget.RecyclerView>(R.id.conditionsRecyclerView)
-        val addConditionButton = dialogView.findViewById<com.google.android.material.button.MaterialButton>(R.id.addConditionButton)
+        val conditionsRecyclerView = dialogView.findViewById<RecyclerView>(R.id.conditionsRecyclerView)
+        val addConditionButton = dialogView.findViewById<MaterialButton>(R.id.addConditionButton)
         val previewText = dialogView.findViewById<TextView>(R.id.previewText)
 
         // Setup RecyclerView
-        conditionsRecyclerView.layoutManager = androidx.recyclerview.widget.LinearLayoutManager(this)
+        conditionsRecyclerView.layoutManager = LinearLayoutManager(this)
         
         // Create condition adapter with existing conditions
-        lateinit var conditionAdapter: com.stockflip.ui.builders.ConditionBuilderAdapter
+        lateinit var conditionAdapter: ConditionBuilderAdapter
         
-        conditionAdapter = com.stockflip.ui.builders.ConditionBuilderAdapter(
+        conditionAdapter = ConditionBuilderAdapter(
             onConditionTypeChanged = { _, _ ->
                 val newSymbol = symbolInput.text.toString()
                 updatePreview(conditionAdapter, newSymbol, previewText)
@@ -1526,7 +1527,7 @@ class MainActivity : AppCompatActivity() {
      * Updates the preview text showing the current expression.
      */
     private fun updatePreview(
-        adapter: com.stockflip.ui.builders.ConditionBuilderAdapter,
+        adapter: ConditionBuilderAdapter,
         symbol: String,
         previewText: TextView
     ) {
@@ -1558,7 +1559,7 @@ class MainActivity : AppCompatActivity() {
      */
     private fun buildAlertExpression(
         symbol: String,
-        conditions: List<com.stockflip.ui.builders.ConditionBuilderAdapter.ConditionData>
+        conditions: List<ConditionBuilderAdapter.ConditionData>
     ): AlertExpression? {
         if (conditions.isEmpty()) return null
         
@@ -1591,7 +1592,7 @@ class MainActivity : AppCompatActivity() {
     /**
      * Builds an AlertRule from a ConditionData and symbol.
      */
-    private fun buildAlertRule(symbol: String, condition: com.stockflip.ui.builders.ConditionBuilderAdapter.ConditionData): AlertRule? {
+    private fun buildAlertRule(symbol: String, condition: ConditionBuilderAdapter.ConditionData): AlertRule? {
         val value = condition.value.parseDecimal() ?: return null
         
         return when (condition.conditionType) {
@@ -2236,6 +2237,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     private fun requestNotificationPermission() {
         if (checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
             notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
