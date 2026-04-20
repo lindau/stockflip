@@ -97,8 +97,10 @@ internal fun TriggeredBadge(lastTriggeredDate: String? = null) {
             lastTriggeredDate == null || lastTriggeredDate == today -> "Utlöst idag"
             else -> try {
                 val parsed = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).parse(lastTriggeredDate)
-                val formatted = SimpleDateFormat("d MMM", Locale("sv", "SE")).format(parsed!!)
-                "Utlöst $formatted"
+                parsed?.let {
+                    val formatted = SimpleDateFormat("d MMM", Locale("sv", "SE")).format(it)
+                    "Utlöst $formatted"
+                } ?: "Utlöst idag"
             } catch (_: Exception) {
                 "Utlöst idag"
             }

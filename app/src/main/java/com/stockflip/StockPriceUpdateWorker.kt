@@ -169,7 +169,7 @@ class StockPriceUpdateWorker(
             item.ticker2?.let { tickers.add(it) }
             if (item.watchType is WatchType.KeyMetrics) {
                 val ticker = item.ticker ?: continue
-                val metricType = (item.watchType as WatchType.KeyMetrics).metricType
+                val metricType = item.watchType.metricType
                 keyMetricNeeds.getOrPut(ticker) { mutableSetOf() }.add(metricType)
             }
         }

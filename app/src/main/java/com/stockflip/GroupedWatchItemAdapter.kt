@@ -198,15 +198,19 @@ class GroupedWatchItemAdapter(
         }
 
         // Dela upp i aktier och krypto
-        val stockOnlyItems = singleStockItems.filter { !StockSearchResult.isCryptoSymbol(it.item.ticker!!) }
-        val cryptoItems = singleStockItems.filter { StockSearchResult.isCryptoSymbol(it.item.ticker!!) }
+        val stockOnlyItems = singleStockItems.filter { item ->
+            item.item.ticker?.let { ticker -> !StockSearchResult.isCryptoSymbol(ticker) } == true
+        }
+        val cryptoItems = singleStockItems.filter { item ->
+            item.item.ticker?.let { ticker -> StockSearchResult.isCryptoSymbol(ticker) } == true
+        }
 
         val sortedStocksByTicker = SortHelper.sortTickerGroups(
-            stockOnlyItems.groupBy { it.item.ticker!! }.mapValues { (_, v) -> v.map { it.item } }, sortMode
+            stockOnlyItems.groupBy { requireNotNull(it.item.ticker) }.mapValues { (_, v) -> v.map { it.item } }, sortMode
         ).mapValues { (_, wis) -> wis.mapNotNull { uiStateMap[it.id] } }
 
         val sortedCryptoByTicker = SortHelper.sortTickerGroups(
-            cryptoItems.groupBy { it.item.ticker!! }.mapValues { (_, v) -> v.map { it.item } }, sortMode
+            cryptoItems.groupBy { requireNotNull(it.item.ticker) }.mapValues { (_, v) -> v.map { it.item } }, sortMode
         ).mapValues { (_, wis) -> wis.mapNotNull { uiStateMap[it.id] } }
 
         // Add Price Pairs section
@@ -360,5 +364,4 @@ class GroupedWatchItemAdapter(
         }
     }
 }
-
 

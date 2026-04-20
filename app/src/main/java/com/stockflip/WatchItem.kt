@@ -62,15 +62,7 @@ data class WatchItem(
     }
 
     fun getWatchTypeDisplayName(): String {
-        return when (watchType) {
-            is WatchType.PricePair -> "Aktiepar"
-            is WatchType.PriceTarget -> "Prisbevakning"
-            is WatchType.KeyMetrics -> "Nyckeltal"
-            is WatchType.ATHBased -> "52-veckorshögsta"
-            is WatchType.PriceRange -> "Prisintervall"
-            is WatchType.DailyMove -> "Dagsrörelse"
-            is WatchType.Combined -> "Kombinerat larm"
-        }
+        return watchType.kind.displayName
     }
 
     /**

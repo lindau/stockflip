@@ -198,7 +198,7 @@ class StockDetailViewModel(
                 }
                 is WatchType.KeyMetrics -> {
                     val ticker = item.ticker ?: symbol
-                    val metricType = (item.watchType as WatchType.KeyMetrics).metricType
+                    val metricType = item.watchType.metricType
                     val metricValue = yahooFinanceService.getKeyMetric(ticker, metricType)
                     val price = yahooFinanceService.getStockPrice(ticker)
                     val changePercent = yahooFinanceService.getDailyChangePercent(ticker)

@@ -10,7 +10,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 
 @Database(
     entities = [StockPair::class, WatchItem::class, MetricHistoryEntity::class, TriggerHistoryEntity::class, StockNote::class],
-    version = 10,
+    version = 11,
     exportSchema = true
 )
 @TypeConverters(WatchTypeConverter::class)
@@ -22,6 +22,26 @@ abstract class StockPairDatabase : RoomDatabase() {
     abstract fun stockNoteDao(): StockNoteDao
 
     companion object {
+        private const val CREATE_METRIC_HISTORY_TABLE_SQL = """
+            CREATE TABLE IF NOT EXISTS metric_history (
+                id TEXT PRIMARY KEY NOT NULL,
+                symbol TEXT NOT NULL,
+                metricType TEXT NOT NULL,
+                date INTEGER NOT NULL,
+                value REAL NOT NULL
+            )
+        """
+
+        private const val CREATE_METRIC_HISTORY_SYMBOL_METRIC_INDEX_SQL = """
+            CREATE INDEX IF NOT EXISTS index_metric_history_symbol_metricType
+            ON metric_history(symbol, metricType)
+        """
+
+        private const val CREATE_METRIC_HISTORY_DATE_INDEX_SQL = """
+            CREATE INDEX IF NOT EXISTS index_metric_history_date
+            ON metric_history(date)
+        """
+
         private val MIGRATION_4_5 = object : Migration(4, 5) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 // Create new table with ticker and company name fields
@@ -105,82 +125,35 @@ abstract class StockPairDatabase : RoomDatabase() {
 
         private val MIGRATION_7_8 = object : Migration(7, 8) {
             override fun migrate(db: SupportSQLiteDatabase) {
-                try {
-                    // Kontrollera om tabellen redan finns (för säkerhets skull)
-                    val cursor = db.query("SELECT name FROM sqlite_master WHERE type='table' AND name='metric_history'")
-                    val tableExists = cursor.moveToFirst()
-                    cursor.close()
-                    
-                    if (!tableExists) {
-                        // Skapa metric_history tabell för Fas 2 - historisk nyckeltal-data
-                        db.execSQL("""
-                            CREATE TABLE metric_history (
-                                id TEXT PRIMARY KEY NOT NULL,
-                                symbol TEXT NOT NULL,
-                                metricType TEXT NOT NULL,
-                                date INTEGER NOT NULL,
-                                value REAL NOT NULL
-                            )
-                        """)
-                    }
-                    
-                    // Skapa index för snabbare queries (IF NOT EXISTS hanteras av SQLite)
-                    try {
-                        db.execSQL("""
-                            CREATE INDEX IF NOT EXISTS index_metric_history_symbol_metricType 
-                            ON metric_history(symbol, metricType)
-                        """)
-                    } catch (e: Exception) {
-                        // Index kan redan finnas, ignorera fel
-                    }
-                    
-                    try {
-                        db.execSQL("""
-                            CREATE INDEX IF NOT EXISTS index_metric_history_date 
-                            ON metric_history(date)
-                        """)
-                    } catch (e: Exception) {
-                        // Index kan redan finnas, ignorera fel
-                    }
-                } catch (e: Exception) {
-                    // Om något går fel, försök skapa tabellen ändå
-                    android.util.Log.e("StockPairDatabase", "Error in migration 7->8: ${e.message}", e)
-                    try {
-                        db.execSQL("""
-                            CREATE TABLE IF NOT EXISTS metric_history (
-                                id TEXT PRIMARY KEY NOT NULL,
-                                symbol TEXT NOT NULL,
-                                metricType TEXT NOT NULL,
-                                date INTEGER NOT NULL,
-                                value REAL NOT NULL
-                            )
-                        """)
-                    } catch (e2: Exception) {
-                        android.util.Log.e("StockPairDatabase", "Failed to create metric_history table: ${e2.message}", e2)
-                    }
-                }
+                createMetricHistorySchema(db)
             }
         }
 
         private val MIGRATION_9_10 = object : Migration(9, 10) {
-            override fun migrate(database: SupportSQLiteDatabase) {
-                database.execSQL(
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
                     "CREATE TABLE IF NOT EXISTS `stock_notes` (`ticker` TEXT NOT NULL, `note` TEXT NOT NULL, PRIMARY KEY(`ticker`))"
                 )
             }
         }
 
+        private val MIGRATION_10_11 = object : Migration(10, 11) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                createMetricHistorySchema(db)
+            }
+        }
+
         private val MIGRATION_8_9 = object : Migration(8, 9) {
-            override fun migrate(database: SupportSQLiteDatabase) {
-                database.execSQL("""
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("""
                     CREATE TABLE IF NOT EXISTS trigger_history (
                         id TEXT NOT NULL PRIMARY KEY,
                         watchItemId INTEGER NOT NULL,
                         triggeredAt INTEGER NOT NULL
                     )
                 """)
-                database.execSQL("CREATE INDEX IF NOT EXISTS `index_trigger_history_watchItemId` ON `trigger_history` (`watchItemId`)")
-                database.execSQL("CREATE INDEX IF NOT EXISTS `index_trigger_history_triggeredAt` ON `trigger_history` (`triggeredAt`)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_trigger_history_watchItemId` ON `trigger_history` (`watchItemId`)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_trigger_history_triggeredAt` ON `trigger_history` (`triggeredAt`)")
             }
         }
 
@@ -194,55 +167,26 @@ abstract class StockPairDatabase : RoomDatabase() {
                     StockPairDatabase::class.java,
                     "stock_pair_database"
                 )
-                .addMigrations(MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10)
-                .fallbackToDestructiveMigrationOnDowngrade()
-                .addCallback(object : RoomDatabase.Callback() {
-                    override fun onOpen(db: SupportSQLiteDatabase) {
-                        super.onOpen(db)
-                        // Säkerställ att metric_history-tabellen finns även om migrationen misslyckades
-                        ensureMetricHistoryTableExists(db)
-                    }
-                })
+                .addMigrations(
+                    MIGRATION_4_5,
+                    MIGRATION_5_6,
+                    MIGRATION_6_7,
+                    MIGRATION_7_8,
+                    MIGRATION_8_9,
+                    MIGRATION_9_10,
+                    MIGRATION_10_11
+                )
+                .fallbackToDestructiveMigrationOnDowngrade(false)
                 .build()
                 INSTANCE = instance
                 instance
             }
         }
-        
-        /**
-         * Säkerställer att metric_history-tabellen finns.
-         * Anropas vid databas-öppning för att hantera edge cases där migrationen misslyckades.
-         */
-        private fun ensureMetricHistoryTableExists(db: SupportSQLiteDatabase) {
-            try {
-                val cursor = db.query("SELECT name FROM sqlite_master WHERE type='table' AND name='metric_history'")
-                val tableExists = cursor.moveToFirst()
-                cursor.close()
-                
-                if (!tableExists) {
-                    android.util.Log.w("StockPairDatabase", "metric_history table missing, creating it now")
-                    db.execSQL("""
-                        CREATE TABLE IF NOT EXISTS metric_history (
-                            id TEXT PRIMARY KEY NOT NULL,
-                            symbol TEXT NOT NULL,
-                            metricType TEXT NOT NULL,
-                            date INTEGER NOT NULL,
-                            value REAL NOT NULL
-                        )
-                    """)
-                    db.execSQL("""
-                        CREATE INDEX IF NOT EXISTS index_metric_history_symbol_metricType 
-                        ON metric_history(symbol, metricType)
-                    """)
-                    db.execSQL("""
-                        CREATE INDEX IF NOT EXISTS index_metric_history_date 
-                        ON metric_history(date)
-                    """)
-                    android.util.Log.d("StockPairDatabase", "metric_history table created successfully")
-                }
-            } catch (e: Exception) {
-                android.util.Log.e("StockPairDatabase", "Error ensuring metric_history table exists: ${e.message}", e)
-            }
+
+        private fun createMetricHistorySchema(db: SupportSQLiteDatabase) {
+            db.execSQL(CREATE_METRIC_HISTORY_TABLE_SQL)
+            db.execSQL(CREATE_METRIC_HISTORY_SYMBOL_METRIC_INDEX_SQL)
+            db.execSQL(CREATE_METRIC_HISTORY_DATE_INDEX_SQL)
         }
     }
 } 
