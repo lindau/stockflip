@@ -136,6 +136,12 @@ class MainActivity : AppCompatActivity() {
 
     private fun handleDeepLinkIntent(intent: Intent?) {
         if (intent == null) return
+        val pairWatchItemId = intent.getIntExtra(EXTRA_OPEN_PAIR_WATCH_ID, -1)
+        if (pairWatchItemId != -1) {
+            intent.removeExtra(EXTRA_OPEN_PAIR_WATCH_ID)
+            navigateToPairDetail(pairWatchItemId)
+            return
+        }
         val ticker = intent.getStringExtra(EXTRA_OPEN_TICKER) ?: return
         intent.removeExtra(EXTRA_OPEN_TICKER)
         val companyName = intent.getStringExtra(EXTRA_OPEN_COMPANY)
@@ -2273,6 +2279,8 @@ class MainActivity : AppCompatActivity() {
         private const val TAG = "MainActivity"
         /** Format pattern for time display */
         private const val TIME_FORMAT = "HH:mm:ss"
+        /** Intent extra: watch item id to open in PairDetailFragment (from pair notification deep link) */
+        const val EXTRA_OPEN_PAIR_WATCH_ID = "extra_open_pair_watch_id"
         /** Intent extra: ticker to open in StockDetailFragment (from notification deep link) */
         const val EXTRA_OPEN_TICKER = "extra_open_ticker"
         /** Intent extra: company name for the ticker (optional, for display) */

@@ -107,10 +107,18 @@ class StockPriceUpdateWorker(
         }
     }
 
-    private fun showNotification(title: String, message: String, ticker: String? = null, companyName: String? = null) {
+    private fun showNotification(
+        title: String,
+        message: String,
+        ticker: String? = null,
+        companyName: String? = null,
+        pairWatchItemId: Int? = null
+    ) {
         val intent = Intent(applicationContext, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
-            if (ticker != null) {
+            if (pairWatchItemId != null) {
+                putExtra(MainActivity.EXTRA_OPEN_PAIR_WATCH_ID, pairWatchItemId)
+            } else if (ticker != null) {
                 putExtra(MainActivity.EXTRA_OPEN_TICKER, ticker)
                 putExtra(MainActivity.EXTRA_OPEN_COMPANY, companyName)
             }
@@ -118,7 +126,7 @@ class StockPriceUpdateWorker(
 
         val pendingIntent = PendingIntent.getActivity(
             applicationContext,
-            ticker?.hashCode() ?: 0,
+            pairWatchItemId ?: (ticker?.hashCode() ?: 0),
             intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
@@ -195,8 +203,19 @@ class StockPriceUpdateWorker(
                 val triggered = evaluateWatchItem(item, snapshots) ?: continue
                 if (triggered) {
                     val name = item.companyName ?: item.ticker ?: item.ticker1 ?: "Bevakning"
-                    val ticker = item.ticker ?: item.ticker1
-                    showNotification("Larm triggat", name, ticker, item.companyName)
+                    when (item.watchType) {
+                        is WatchType.PricePair -> {
+                            showNotification(
+                                title = "Larm triggat",
+                                message = item.getDisplayName(),
+                                pairWatchItemId = item.id
+                            )
+                        }
+                        else -> {
+                            val ticker = item.ticker ?: item.ticker1
+                            showNotification("Larm triggat", name, ticker, item.companyName)
+                        }
+                    }
                     val triggeredItem = item.markAsTriggered(today)
                     val updatedItem = when (item.watchType) {
                         is WatchType.PriceTarget, is WatchType.ATHBased ->
