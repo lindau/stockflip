@@ -4,7 +4,7 @@ plugins {
     id 'org.jetbrains.kotlin.plugin.compose'
 }
 
-// Auto-version från git: versionCode = antal commits, versionName = "1.0.<commits>"
+// Auto-version från git: versionCode = antal commits, versionName = "1.1.0"
 def gitCommitCount = {
     try {
         def proc = ['git', 'rev-list', '--count', 'HEAD'].execute(null, rootDir)
@@ -24,7 +24,7 @@ android {
         minSdk 24
         targetSdk 35
         versionCode gitCommitCount
-        versionName "1.0.${gitCommitCount}"
+        versionName "1.1.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         
