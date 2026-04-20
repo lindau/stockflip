@@ -13,7 +13,8 @@ StockFlip låter dig bevaka aktier och kryptovalutor och få notiser när dina e
   - [3. 52-veckorshögsta](#3-52-veckorshogsta-drawdown)
   - [4. Nyckeltal](#4-nyckeltal)
   - [5. Aktiepar](#5-aktiepar)
-  - [6. Kombinerat larm](#6-kombinerat-larm)
+  - [6. Prisintervall](#6-prisintervall)
+  - [7. Kombinerat larm](#7-kombinerat-larm)
 - [Vanliga flöden](#vanliga-floden)
 - [Hantera dina bevakningar](#hantera-dina-bevakningar)
 - [Notiser](#notiser)
@@ -29,7 +30,7 @@ StockFlip låter dig bevaka aktier och kryptovalutor och få notiser när dina e
 | **Utlösning** (triggad) | Bevakningens villkor har uppfyllts. Appen skickade en notis och märkte bevakningen som triggad. |
 | **Engångslarm** | En bevakning som inaktiveras automatiskt när den utlöses. Måste återaktiveras manuellt för att kunna utlösas igen. |
 | **Återkommande larm** | En bevakning som kan utlösas igen nästa handelsdag utan att du behöver göra något. |
-| **Ny-märke** | En lila "Ny"-etikett som visas på bevakningskort för utlösningar du ännu inte har sett. Försvinner när du öppnar aktiedetaljvyn. |
+| **Ny-märke** | En "Ny"-etikett som visas på bevakningskort för utlösningar du ännu inte har sett. Försvinner när du öppnar detaljvyn för den berörda aktien eller paret. |
 | **Dagsrörelse** | Hur mycket aktiens pris förändrats i procent sedan föregående stängningskurs. |
 | **Drawdown** | Hur mycket aktiens pris har fallit från sin 52-veckorshögsta kurs, antingen i procent eller i kronor. |
 | **52-veckorshögsta** | Det högsta priset aktien handlades på under de senaste 52 veckorna. |
@@ -47,7 +48,7 @@ StockFlip låter dig bevaka aktier och kryptovalutor och få notiser när dina e
 StockFlip hämtar aktuella kurser automatiskt:
 
 - **Under börsens öppetider:** en gång per minut
-- **Utanför börsens öppetider:** var 60:e minut**
+- **Utanför börsens öppetider:** var 60:e minut
 
 Notiser skickas direkt när ett villkor uppfylls. Trycker du på notisen öppnas appen och du hamnar direkt på aktiedetaljvyn för den berörda aktien.
 
@@ -71,7 +72,13 @@ Appen har tre flikar längst ned:
 
 - **Aktier** — alla dina bevakningar, grupperade per bolag
 - **Par** — enbart aktiepar-bevakningar
-- **Larm** — alla bevakningar sorterade med nyligen utlösta högst upp
+- **Bevakningar** — alla bevakningar samlade i en lista
+
+I nuvarande appversion skapas nya bevakningar främst så här:
+
+- **Aktier:** tryck på `+`, sök fram en aktie eller krypto och öppna detaljvyn. Där kan du skapa prismål, dagsrörelse, drawdown och nyckeltal.
+- **Par:** gå till fliken **Par** och tryck på `+` för att skapa ett aktiepar.
+- **Bevakningar:** används för att överblicka, redigera, aktivera/inaktivera och ta bort befintliga bevakningar.
 
 ---
 
@@ -197,7 +204,22 @@ Appen har tre flikar längst ned:
 
 ---
 
-### 6. Kombinerat larm
+### 6. Prisintervall
+
+**Vad det gör:** Bevakar om priset ligger inom ett angivet intervall mellan ett min- och maxpris.
+
+**Typ:** Återkommande.
+
+**Viktigt i nuvarande version:** Prisintervall finns fortfarande som bevakningstyp och kan redigeras om du redan har en sådan bevakning, men det finns ingen tydlig skapa-knapp för den i dagens huvudflöde.
+
+**Redigera en befintlig prisintervall-bevakning:**
+1. Öppna bevakningen från listan.
+2. Justera min- och maxpris.
+3. Tryck **Uppdatera**.
+
+---
+
+### 7. Kombinerat larm
 
 **Vad det gör:** Låter dig kombinera flera villkor med logiska operatorer för att skapa avancerade bevakningsregler.
 
@@ -212,11 +234,7 @@ Appen har tre flikar längst ned:
 - "Pris under 100 kr OCH P/E under 15" — köpsignal baserad på både pris och värdering
 - "Dagsrörelse ≥ 5 % ELLER Drawdown ≥ 10 %" — varning vid antingen stor rörelse eller stort fall
 
-**Skapa ett kombinerat larm:**
-1. Tryck på **+**-knappen.
-2. Välj **Kombinerat larm**.
-3. Bygg upp uttrycket genom att lägga till villkor och välja operator (OCH / ELLER / INTE).
-4. Tryck **Spara**.
+**Viktigt i nuvarande version:** Kombinerade larm stöds fortfarande av appen och kan redigeras om de redan finns, men det finns ingen synlig skapa-väg för dem i dagens huvudflöde.
 
 ---
 
@@ -272,15 +290,13 @@ Situation: Du äger Handelsbanken och SEB och vill veta om priskurvan jämnas ut
 
 ---
 
-### Skapa ett komplext kombinerat larm
+### Hantera äldre bevakningstyper
 
-Situation: Du vill ha en notis om ABB faller 10 % från 52-veckorstoppen *och* P/E-talet samtidigt sjunker under 15 (köpläge).
+Om du redan har äldre bevakningar av typen **Prisintervall** eller **Kombinerat larm** kvar i databasen kan du fortfarande:
 
-1. Tryck **+** och välj **Kombinerat larm**.
-2. Lägg till villkor 1: **Drawdown ≥ 10 %** (procent).
-3. Välj operator: **OCH**.
-4. Lägg till villkor 2: **P/E-tal under 15**.
-5. Tryck **Spara**.
+1. Öppna dem från listan.
+2. Redigera deras värden.
+3. Aktivera/inaktivera eller ta bort dem som vanligt.
 
 ---
 
@@ -332,14 +348,14 @@ Utan notisbehörighet kan appen inte meddela dig när en bevakning utlöses — 
 ### Vad händer när en notis skickas
 
 - Notisen visas med titeln och en kort beskrivning av vad som triggades.
-- Trycker du på notisen öppnas StockFlip direkt på aktiedetaljvyn för den berörda aktien.
+- Trycker du på notisen öppnas StockFlip direkt på detaljvyn för den berörda aktien, eller pardetaljen för ett aktiepar.
 - Bevakningen är märkt som triggad med datum när du väl öppnar appen.
 
 ### Engångslarm vs återkommande larm
 
 | | Engångslarm | Återkommande larm |
 |---|---|---|
-| **Typ** | Prismål, 52-veckorshögsta | Dagsrörelse, Nyckeltal, Aktiepar, Kombinerat |
+| **Typ** | Prismål, 52-veckorshögsta | Dagsrörelse, Nyckeltal, Aktiepar, Prisintervall, Kombinerat |
 | **Inaktiveras efter utlösning** | Ja | Nej |
 | **Återaktivering** | Manuell | Automatisk (nästa dag) |
 | **Kan utlösas igen samma dag** | Nej | Nej (max en gång per handelsdag) |

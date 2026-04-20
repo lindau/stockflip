@@ -4,13 +4,21 @@ A personal Android app for monitoring stock prices and triggering push notificat
 
 ## Features
 
-- **7 alert types** — price targets, daily % moves, 52-week drawdowns, key metrics (PE/PS/yield), spread between two tickers, price ranges, and composite AND/OR/NOT conditions
+- **5 primary alert flows in the current UI** — price targets, daily % moves, 52-week drawdowns, key metrics (PE/PS/yield), and spread between two tickers
+- **Legacy watch type support** — price ranges and composite AND/OR/NOT conditions remain supported in storage/rendering and can still be edited when they already exist
 - **Push notifications** with spam protection — at most one notification per alert per trading day
 - **Market-aware background updates** — 1-minute refresh during open hours, 60-minute outside
 - **Interactive stock charts** — intraday and multi-period (1M, 3M, 6M, 1Y, 5Y) price history
 - **Key metrics tracking** — PE ratio, PS ratio, and dividend yield with historical trend storage
 - **Stock search** — Yahoo Finance autocomplete with exact-match and Swedish-stock prioritization
 - **Hybrid UI** — Fragment/View Binding structure with Jetpack Compose cards embedded via `ComposeView`
+
+## Current User Flows
+
+- **Stocks** — search for a stock or crypto, open its detail page, then create price target, daily move, drawdown, or key-metric alerts from the quick actions card
+- **Pairs** — add a stock pair from the `Par` tab with the floating `+` button
+- **Alerts/Overview** — review all watch items in the `Bevakningar` tab, toggle active state, edit items, or remove them with swipe/delete actions
+- **Help** — open the in-app help from the top app bar menu; it renders `app/src/main/assets/manual.md`
 
 ## Supported Markets
 
