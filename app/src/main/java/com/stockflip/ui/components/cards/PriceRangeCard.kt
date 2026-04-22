@@ -127,6 +127,10 @@ fun PriceRangeCard(
                     color = if (isTriggered) MaterialTheme.colorScheme.tertiary
                             else MaterialTheme.colorScheme.onSurfaceVariant,
                 )
+                if (!item.isTriggered) {
+                    Spacer(modifier = Modifier.height(6.dp))
+                    NearTriggerBadge()
+                }
 
                 TriggerHistoryRow(triggerHistory)
 

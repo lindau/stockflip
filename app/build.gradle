@@ -4,7 +4,7 @@ plugins {
     id 'org.jetbrains.kotlin.plugin.compose'
 }
 
-// Auto-version från git: versionCode = antal commits, versionName = "1.1.0"
+// Auto-version från git: versionCode = antal commits, versionName startar på "1.1.0"
 def gitCommitCount = {
     try {
         def proc = ['git', 'rev-list', '--count', 'HEAD'].execute(null, rootDir)
@@ -15,6 +15,9 @@ def gitCommitCount = {
     }
 }()
 
+def versionNameBaseCommit = 111
+def patchVersion = Math.max(gitCommitCount - versionNameBaseCommit, 0)
+
 android {
     namespace = 'com.stockflip'
     compileSdk = 35
@@ -24,7 +27,7 @@ android {
         minSdk 24
         targetSdk 35
         versionCode gitCommitCount
-        versionName "1.1.0"
+        versionName "1.1.${patchVersion}"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         

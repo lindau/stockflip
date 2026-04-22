@@ -70,6 +70,15 @@ class PairDetailViewModel(
         }
     }
 
+    fun reactivate() {
+        viewModelScope.launch {
+            val current = (_pairState.value as? UiState.Success)?.data?.watchItem ?: return@launch
+            watchItemDao.update(current.reactivate().copy(isActive = true))
+            loadPair()
+            loadHistory()
+        }
+    }
+
     fun deletePair() {
         viewModelScope.launch {
             val current = (_pairState.value as? UiState.Success)?.data?.watchItem ?: return@launch

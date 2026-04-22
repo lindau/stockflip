@@ -110,6 +110,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private var currentMainTab: MainTab = MainTab.STOCKS
+    private var stocksSortMode: SortHelper.SortMode = SortHelper.SortMode.ADDITION_ORDER
     private var lastWatchItems: List<WatchItemUiState> = emptyList()
     private var detailSyncJob: Job? = null
     private val watchItemEditor by lazy {
@@ -165,16 +166,24 @@ class MainActivity : AppCompatActivity() {
 
     private fun handleDeepLinkIntent(intent: Intent?) {
         if (intent == null) return
+        val triggerTitle = intent.getStringExtra(EXTRA_TRIGGER_TITLE)
+        val triggerMessage = intent.getStringExtra(EXTRA_TRIGGER_MESSAGE)
         val pairWatchItemId = intent.getIntExtra(EXTRA_OPEN_PAIR_WATCH_ID, -1)
         if (pairWatchItemId != -1) {
             intent.removeExtra(EXTRA_OPEN_PAIR_WATCH_ID)
-            navigateToPairDetail(pairWatchItemId)
+            intent.removeExtra(EXTRA_TRIGGER_TITLE)
+            intent.removeExtra(EXTRA_TRIGGER_MESSAGE)
+            navigateToPairDetail(pairWatchItemId, triggerTitle, triggerMessage, openedFromNotification = true)
             return
         }
         val ticker = intent.getStringExtra(EXTRA_OPEN_TICKER) ?: return
+        val watchItemId = intent.getIntExtra(EXTRA_OPEN_WATCH_ID, -1).takeIf { it > 0 }
         intent.removeExtra(EXTRA_OPEN_TICKER)
+        intent.removeExtra(EXTRA_OPEN_WATCH_ID)
+        intent.removeExtra(EXTRA_TRIGGER_TITLE)
+        intent.removeExtra(EXTRA_TRIGGER_MESSAGE)
         val companyName = intent.getStringExtra(EXTRA_OPEN_COMPANY)
-        navigateToStockDetail(ticker, companyName)
+        navigateToStockDetail(ticker, companyName, watchItemId, triggerTitle, triggerMessage, openedFromNotification = true)
     }
 
     private val backPressCallback = object : androidx.activity.OnBackPressedCallback(true) {
@@ -197,11 +206,14 @@ class MainActivity : AppCompatActivity() {
                         .setInterpolator(android.view.animation.DecelerateInterpolator())
                         .start()
                     binding.swipeRefreshLayout.visibility = View.VISIBLE
-                    binding.addPairButton.visibility = View.VISIBLE
+                    binding.addPairButton.visibility = View.GONE
                     showWatchItemSuccess(lastWatchItems)
                 } else if (belowName == "pairs") {
                     // Återgår till PairsFragment
                     currentMainTab = MainTab.PAIRS
+                    binding.addPairButton.visibility = View.VISIBLE
+                } else if (belowName == "alerts") {
+                    currentMainTab = MainTab.ALERTS
                     binding.addPairButton.visibility = View.VISIBLE
                 }
                 // else: återgår till ett annat fragment (alerts etc.) — currentMainTab redan korrekt
@@ -218,6 +230,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun initializeUI() {
         setupRecyclerView()
+        restoreSortModes()
         setupSwipeToDelete()
         setupObservers()
         setupSwipeRefresh()
@@ -237,7 +250,7 @@ class MainActivity : AppCompatActivity() {
                     val previousTab = currentMainTab
                     currentMainTab = MainTab.STOCKS
                     binding.swipeRefreshLayout.visibility = View.VISIBLE
-                    binding.addPairButton.visibility = View.VISIBLE
+                    binding.addPairButton.visibility = View.GONE
                     supportFragmentManager.popBackStack(
                         null,
                         androidx.fragment.app.FragmentManager.POP_BACK_STACK_INCLUSIVE
@@ -295,7 +308,7 @@ class MainActivity : AppCompatActivity() {
                 R.id.menu_alerts -> {
                     val previousTab = currentMainTab
                     currentMainTab = MainTab.ALERTS
-                    binding.addPairButton.visibility = View.GONE
+                    binding.addPairButton.visibility = View.VISIBLE
                     showAlertsToolbar()
                     val screenWidth = resources.displayMetrics.widthPixels.toFloat()
                     if (previousTab == MainTab.PAIRS) {
@@ -338,11 +351,19 @@ class MainActivity : AppCompatActivity() {
             when (item.itemId) {
                 R.id.menu_sort_alphabetical -> {
                     when (currentMainTab) {
-                        MainTab.ALERTS -> viewModel.setAlertSortMode(SortHelper.SortMode.ALPHABETICAL)
-                        MainTab.PAIRS -> viewModel.setPairsSortMode(SortHelper.SortMode.ALPHABETICAL)
+                        MainTab.ALERTS -> {
+                            viewModel.setAlertSortMode(SortHelper.SortMode.ALPHABETICAL)
+                            saveSortMode(PREF_ALERTS_SORT_MODE, SortHelper.SortMode.ALPHABETICAL)
+                        }
+                        MainTab.PAIRS -> {
+                            viewModel.setPairsSortMode(SortHelper.SortMode.ALPHABETICAL)
+                            saveSortMode(PREF_PAIRS_SORT_MODE, SortHelper.SortMode.ALPHABETICAL)
+                        }
                         MainTab.STOCKS -> {
+                            stocksSortMode = SortHelper.SortMode.ALPHABETICAL
+                            saveSortMode(PREF_STOCKS_SORT_MODE, stocksSortMode)
                             val adapter = binding.stockPairsList.adapter as? GroupedWatchItemAdapter
-                            adapter?.setSortMode(SortHelper.SortMode.ALPHABETICAL)
+                            adapter?.setSortMode(stocksSortMode)
                         }
                     }
                     Toast.makeText(this, "Sortering: Bokstavsordning", Toast.LENGTH_SHORT).show()
@@ -350,11 +371,19 @@ class MainActivity : AppCompatActivity() {
                 }
                 R.id.menu_sort_addition -> {
                     when (currentMainTab) {
-                        MainTab.ALERTS -> viewModel.setAlertSortMode(SortHelper.SortMode.ADDITION_ORDER)
-                        MainTab.PAIRS -> viewModel.setPairsSortMode(SortHelper.SortMode.ADDITION_ORDER)
+                        MainTab.ALERTS -> {
+                            viewModel.setAlertSortMode(SortHelper.SortMode.ADDITION_ORDER)
+                            saveSortMode(PREF_ALERTS_SORT_MODE, SortHelper.SortMode.ADDITION_ORDER)
+                        }
+                        MainTab.PAIRS -> {
+                            viewModel.setPairsSortMode(SortHelper.SortMode.ADDITION_ORDER)
+                            saveSortMode(PREF_PAIRS_SORT_MODE, SortHelper.SortMode.ADDITION_ORDER)
+                        }
                         MainTab.STOCKS -> {
+                            stocksSortMode = SortHelper.SortMode.ADDITION_ORDER
+                            saveSortMode(PREF_STOCKS_SORT_MODE, stocksSortMode)
                             val adapter = binding.stockPairsList.adapter as? GroupedWatchItemAdapter
-                            adapter?.setSortMode(SortHelper.SortMode.ADDITION_ORDER)
+                            adapter?.setSortMode(stocksSortMode)
                         }
                     }
                     Toast.makeText(this, "Sortering: Tilläggsordning", Toast.LENGTH_SHORT).show()
@@ -495,19 +524,22 @@ class MainActivity : AppCompatActivity() {
     private fun showStocksToolbar() {
         binding.topAppBar.title = getString(R.string.tab_stocks)
         binding.topAppBar.navigationIcon = null
-        binding.topAppBar.menu.findItem(R.id.menu_sort)?.isVisible = true
+        binding.topAppBar.menu.findItem(R.id.menu_sort)?.isVisible = false
+        binding.addPairButton.visibility = View.GONE
     }
 
     private fun showPairsToolbar() {
         binding.topAppBar.title = getString(R.string.tab_pairs)
         binding.topAppBar.navigationIcon = null
-        binding.topAppBar.menu.findItem(R.id.menu_sort)?.isVisible = true
+        binding.topAppBar.menu.findItem(R.id.menu_sort)?.isVisible = false
+        binding.addPairButton.visibility = View.VISIBLE
     }
 
     private fun showAlertsToolbar() {
         binding.topAppBar.title = getString(R.string.tab_alerts)
         binding.topAppBar.navigationIcon = null
-        binding.topAppBar.menu.findItem(R.id.menu_sort)?.isVisible = true
+        binding.topAppBar.menu.findItem(R.id.menu_sort)?.isVisible = false
+        binding.addPairButton.visibility = View.VISIBLE
     }
 
     private fun initializeUpdates() {
@@ -595,7 +627,7 @@ class MainActivity : AppCompatActivity() {
 
         lastWatchItems = data
 
-        // PAIRS och ALERTS hanteras av sina egna fragment — uppdatera bara för STOCKS
+        // PAIRS och ALERTS hanteras av sina egna fragment — uppdatera bara för ÖVERSIKT
         if (currentMainTab != MainTab.STOCKS) {
             binding.swipeRefreshLayout.isRefreshing = false
             return
@@ -609,9 +641,9 @@ class MainActivity : AppCompatActivity() {
 
         val adapter = binding.stockPairsList.adapter as? GroupedWatchItemAdapter
         if (adapter != null) {
-            Log.d(TAG, "Adapter found, calling submitGroupedList with ${filteredData.size} items")
-            adapter.submitGroupedList(filteredData)
-            Log.d(TAG, "submitGroupedList called successfully")
+            Log.d(TAG, "Adapter found, calling submitOverviewList with ${filteredData.size} items")
+            adapter.submitOverviewList(filteredData, stocksSortMode)
+            Log.d(TAG, "submitOverviewList called successfully")
         } else {
             Log.e(TAG, "CRITICAL: Adapter is null! Cannot update UI")
         }
@@ -640,6 +672,7 @@ class MainActivity : AppCompatActivity() {
             onEditClick = { item: WatchItem -> handleEditClick(item) },
             onItemClick = { item: WatchItem -> handleItemClick(item) }
         )
+        (binding.stockPairsList.adapter as? GroupedWatchItemAdapter)?.setSortMode(stocksSortMode)
     }
 
     private fun setupSwipeToDelete() {
@@ -648,7 +681,9 @@ class MainActivity : AppCompatActivity() {
             canSwipe = { position ->
                 val adapter = binding.stockPairsList.adapter as? GroupedWatchItemAdapter ?: return@SwipeToDeleteCallback false
                 val item = adapter.currentList.getOrNull(position) ?: return@SwipeToDeleteCallback false
-                item !is GroupedListItem.Header && item !is GroupedListItem.GroupSeparator
+                item !is GroupedListItem.Header &&
+                    item !is GroupedListItem.GroupSeparator &&
+                    item !is GroupedListItem.OverviewSummary
             },
             onSwiped = { position ->
                 val adapter = binding.stockPairsList.adapter as? GroupedWatchItemAdapter ?: return@SwipeToDeleteCallback
@@ -670,6 +705,9 @@ class MainActivity : AppCompatActivity() {
                             // En av flera bevakningar — ta bort bara denna enskilda bevakning
                             showDeleteSingleWatchDialog(item.item)
                         }
+                    }
+                    is GroupedListItem.OverviewSummary -> {
+                        adapter.notifyItemChanged(position)
                     }
                     is GroupedListItem.Header -> {}
                     is GroupedListItem.GroupSeparator -> {}
@@ -763,8 +801,22 @@ class MainActivity : AppCompatActivity() {
     /**
      * Navigerar till StockDetailFragment för en aktie.
      */
-    private fun navigateToStockDetail(symbol: String, companyName: String? = null) {
-        val fragment = StockDetailFragment.newInstance(symbol, companyName)
+    private fun navigateToStockDetail(
+        symbol: String,
+        companyName: String? = null,
+        highlightWatchItemId: Int? = null,
+        triggerTitle: String? = null,
+        triggerMessage: String? = null,
+        openedFromNotification: Boolean = false
+    ) {
+        val fragment = StockDetailFragment.newInstance(
+            symbol = symbol,
+            companyName = companyName,
+            highlightWatchItemId = highlightWatchItemId,
+            triggerTitle = triggerTitle,
+            triggerMessage = triggerMessage,
+            openedFromNotification = openedFromNotification
+        )
         
         supportFragmentManager.beginTransaction()
             .setCustomAnimations(
@@ -808,8 +860,18 @@ class MainActivity : AppCompatActivity() {
         handleEditClick(item)
     }
 
-    private fun navigateToPairDetail(watchItemId: Int) {
-        val fragment = PairDetailFragment.newInstance(watchItemId)
+    private fun navigateToPairDetail(
+        watchItemId: Int,
+        triggerTitle: String? = null,
+        triggerMessage: String? = null,
+        openedFromNotification: Boolean = false
+    ) {
+        val fragment = PairDetailFragment.newInstance(
+            watchItemId = watchItemId,
+            triggerTitle = triggerTitle,
+            triggerMessage = triggerMessage,
+            openedFromNotification = openedFromNotification
+        )
 
         supportFragmentManager.beginTransaction()
             .setCustomAnimations(
@@ -846,13 +908,13 @@ class MainActivity : AppCompatActivity() {
         binding.addPairButton.imageTintList = null
         binding.addPairButton.setOnClickListener {
             when (currentMainTab) {
-                MainTab.STOCKS -> {
-                    openAddStock()
-                }
+                MainTab.STOCKS -> Unit
                 MainTab.PAIRS -> {
                     showAddStockPairDialog()
                 }
-                MainTab.ALERTS -> { /* No-op, button hidden */ }
+                MainTab.ALERTS -> {
+                    openAddStock()
+                }
             }
         }
     }
@@ -1077,6 +1139,27 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun restoreSortModes() {
+        stocksSortMode = readSortMode(PREF_STOCKS_SORT_MODE)
+        viewModel.setAlertSortMode(readSortMode(PREF_ALERTS_SORT_MODE))
+        viewModel.setPairsSortMode(readSortMode(PREF_PAIRS_SORT_MODE))
+        (binding.stockPairsList.adapter as? GroupedWatchItemAdapter)?.setSortMode(stocksSortMode)
+    }
+
+    private fun readSortMode(key: String): SortHelper.SortMode {
+        val stored = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
+            .getString(key, SortHelper.SortMode.ADDITION_ORDER.name)
+        return stored?.let { value ->
+            runCatching { SortHelper.SortMode.valueOf(value) }.getOrNull()
+        } ?: SortHelper.SortMode.ADDITION_ORDER
+    }
+
+    private fun saveSortMode(key: String, mode: SortHelper.SortMode) {
+        getSharedPreferences(PREFS_NAME, MODE_PRIVATE).edit {
+            putString(key, mode.name)
+        }
+    }
+
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     private fun requestNotificationPermission() {
         if (checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
@@ -1111,13 +1194,23 @@ class MainActivity : AppCompatActivity() {
     companion object {
         /** Tag for logging purposes */
         private const val TAG = "MainActivity"
+        private const val PREFS_NAME = "settings"
+        private const val PREF_STOCKS_SORT_MODE = "stocks_sort_mode"
+        private const val PREF_ALERTS_SORT_MODE = "alerts_sort_mode"
+        private const val PREF_PAIRS_SORT_MODE = "pairs_sort_mode"
         /** Format pattern for time display */
         private const val TIME_FORMAT = "HH:mm:ss"
         /** Intent extra: watch item id to open in PairDetailFragment (from pair notification deep link) */
         const val EXTRA_OPEN_PAIR_WATCH_ID = "extra_open_pair_watch_id"
         /** Intent extra: ticker to open in StockDetailFragment (from notification deep link) */
         const val EXTRA_OPEN_TICKER = "extra_open_ticker"
+        /** Intent extra: watch item id for the triggered stock alert */
+        const val EXTRA_OPEN_WATCH_ID = "extra_open_watch_id"
         /** Intent extra: company name for the ticker (optional, for display) */
         const val EXTRA_OPEN_COMPANY = "extra_open_company"
+        /** Intent extra: human-readable trigger title for notification landing */
+        const val EXTRA_TRIGGER_TITLE = "extra_trigger_title"
+        /** Intent extra: human-readable trigger message for notification landing */
+        const val EXTRA_TRIGGER_MESSAGE = "extra_trigger_message"
     }
 } 

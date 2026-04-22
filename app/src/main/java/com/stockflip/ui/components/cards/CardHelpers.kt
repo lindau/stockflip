@@ -25,6 +25,7 @@ import java.util.Locale
  * Sätts av [ComposeWatchItemCard] baserat på [TriggerSeenTracker].
  */
 val LocalIsNewTrigger = compositionLocalOf { false }
+val LocalNearTriggerLabel = compositionLocalOf<String?> { null }
 
 /**
  * Hjälpfunktioner för kortkomponenter.
@@ -131,5 +132,21 @@ internal fun TriggeredBadge(lastTriggeredDate: String? = null) {
                 color = LocalOnTriggeredBadge.current,
             )
         }
+    }
+}
+
+@Composable
+internal fun NearTriggerBadge() {
+    val label = LocalNearTriggerLabel.current ?: return
+    Surface(
+        shape = MaterialTheme.shapes.small,
+        color = MaterialTheme.colorScheme.secondaryContainer,
+    ) {
+        Text(
+            text = label,
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSecondaryContainer,
+        )
     }
 }
