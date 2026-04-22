@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
@@ -23,6 +24,47 @@
 
     </com.google.android.material.textfield.TextInputLayout>
 
+    <TextView
+        android:id="@+id/contextText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="12dp"
+        android:textAppearance="?attr/textAppearanceBodyMedium"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        android:text="Aktuell drawdown 0,0 %"
+        tools:text="Aktuell drawdown 8,4 % från 52v högsta 280 kr." />
+
+    <com.google.android.material.chip.ChipGroup
+        android:id="@+id/presetChipGroup"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="12dp"
+        app:chipSpacingHorizontal="6dp"
+        app:chipSpacingVertical="6dp">
+
+        <com.google.android.material.chip.Chip
+            android:id="@+id/presetChipOne"
+            style="@style/Widget.Material3.Chip.Assist"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="10 %" />
+
+        <com.google.android.material.chip.Chip
+            android:id="@+id/presetChipTwo"
+            style="@style/Widget.Material3.Chip.Assist"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="15 %" />
+
+        <com.google.android.material.chip.Chip
+            android:id="@+id/presetChipThree"
+            style="@style/Widget.Material3.Chip.Assist"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="20 %" />
+
+    </com.google.android.material.chip.ChipGroup>
+
     <com.google.android.material.textfield.TextInputLayout
         style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
         android:layout_width="match_parent"
@@ -43,6 +85,7 @@
     </com.google.android.material.textfield.TextInputLayout>
 
     <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/dropValueLayout"
         style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -58,5 +101,13 @@
 
     </com.google.android.material.textfield.TextInputLayout>
 
-</LinearLayout>
+    <TextView
+        android:id="@+id/triggerInfoText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:textAppearance="?attr/textAppearanceBodySmall"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        android:text="När larmet triggar markeras det som utlöst och kan återaktiveras senare." />
 
+</LinearLayout>

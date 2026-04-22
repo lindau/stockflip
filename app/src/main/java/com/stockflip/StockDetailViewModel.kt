@@ -2,6 +2,7 @@ package com.stockflip
 
 import android.util.Log
 import com.stockflip.CurrencyHelper
+import com.stockflip.repository.MetricHistoryRepository
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.stockflip.repository.TriggerHistoryRepository
@@ -23,7 +24,8 @@ class StockDetailViewModel(
     private val yahooFinanceService: MarketDataService,
     private val symbol: String,
     private val triggerHistoryRepository: TriggerHistoryRepository,
-    private val stockNoteDao: StockNoteDao
+    private val stockNoteDao: StockNoteDao,
+    private val metricHistoryRepository: MetricHistoryRepository
 ) : ViewModel() {
 
     private val TAG = "StockDetailViewModel"
@@ -43,6 +45,9 @@ class StockDetailViewModel(
 
     private val _triggerHistoryState = MutableStateFlow<Map<Int, List<Long>>>(emptyMap())
     val triggerHistoryState: StateFlow<Map<Int, List<Long>>> = _triggerHistoryState.asStateFlow()
+
+    private val _metricHistoryState = MutableStateFlow<Map<WatchType.MetricType, MetricHistorySummary>>(emptyMap())
+    val metricHistoryState: StateFlow<Map<WatchType.MetricType, MetricHistorySummary>> = _metricHistoryState.asStateFlow()
 
     val noteState: StateFlow<StockNote?> = stockNoteDao.getByTickerFlow(symbol)
         .stateIn(viewModelScope, SharingStarted.Lazily, null)
@@ -106,6 +111,12 @@ class StockDetailViewModel(
                 _stockDataState.value = UiState.Success(stockData)
                 Log.d(TAG, "Loaded stock data for $symbol")
 
+                if (!StockSearchResult.isCryptoSymbol(symbol)) {
+                    launch { loadMetricHistory() }
+                } else {
+                    _metricHistoryState.value = emptyMap()
+                }
+
                 // Hämta nyckeltal asynkront och uppdatera state när de anländer
                 if (!StockSearchResult.isCryptoSymbol(symbol)) {
                     launch {
@@ -127,6 +138,18 @@ class StockDetailViewModel(
                 Log.e(TAG, "Error loading stock data: ${e.message}", e)
                 _stockDataState.value = UiState.Error("Kunde inte ladda aktiedata: ${e.message}")
             }
+        }
+    }
+
+    private suspend fun loadMetricHistory() {
+        try {
+            val summaries = WatchType.MetricType.entries.mapNotNull { metricType ->
+                metricHistoryRepository.getMetricHistorySummary(symbol, metricType)?.let { metricType to it }
+            }.toMap()
+            _metricHistoryState.value = summaries
+        } catch (e: Exception) {
+            Log.e(TAG, "Error loading metric history for $symbol: ${e.message}", e)
+            _metricHistoryState.value = emptyMap()
         }
     }
 
