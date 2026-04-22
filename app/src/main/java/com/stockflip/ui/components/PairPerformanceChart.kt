@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -203,7 +204,7 @@ private fun NormalizedComparisonChart(
             .height(200.dp)
     ) {
         Canvas(
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxSize()
         ) {
             val yLabelWidth = 54.dp.toPx()
             val rightPadding = 18.dp.toPx()
@@ -234,13 +235,14 @@ private fun NormalizedComparisonChart(
                 )
                 val text = CurrencyHelper.formatDecimal(tick)
                 val measured = textMeasurer.measure(text, labelStyle)
+                val maxLabelY = (chartBottom - measured.size.height).coerceAtLeast(chartTop)
                 drawText(
                     textMeasurer = textMeasurer,
                     text = text,
                     style = labelStyle,
                     topLeft = Offset(
                         x = (yLabelWidth - measured.size.width - 4.dp.toPx()).coerceAtLeast(0f),
-                        y = y - measured.size.height / 2f
+                        y = (y - measured.size.height / 2f).coerceIn(chartTop, maxLabelY)
                     )
                 )
             }
@@ -287,12 +289,13 @@ private fun NormalizedComparisonChart(
                 Triple(stockBLabel, seriesB.values.last(), secondaryColor)
             ).map { (label, value, color) ->
                 val measured = textMeasurer.measure(label, labelStyle)
+                val maxLabelY = (chartBottom - measured.size.height).coerceAtLeast(chartTop)
                 Triple(
                     measured,
                     Offset(
                         x = (chartRight - measured.size.width - 4.dp.toPx()).coerceAtLeast(chartLeft),
                         y = (yFor(value) - measured.size.height / 2f)
-                            .coerceIn(chartTop, chartBottom - measured.size.height)
+                            .coerceIn(chartTop, maxLabelY)
                     ),
                     color
                 )
@@ -454,13 +457,14 @@ private fun SpreadMiniChart(
             )
             val text = formatSignedDecimal(tick)
             val measured = textMeasurer.measure(text, labelStyle)
+            val maxLabelY = (chartBottom - measured.size.height).coerceAtLeast(chartTop)
             drawText(
                 textMeasurer = textMeasurer,
                 text = text,
                 style = labelStyle,
                 topLeft = Offset(
                     x = (yLabelWidth - measured.size.width - 4.dp.toPx()).coerceAtLeast(0f),
-                    y = y - measured.size.height / 2f
+                    y = (y - measured.size.height / 2f).coerceIn(chartTop, maxLabelY)
                 )
             )
         }
@@ -689,7 +693,8 @@ private fun separateLabelPositions(
     if (items.isEmpty()) return emptyList()
 
     val sorted = items.mapIndexed { index, (measured, x, y) ->
-        Pair(index, Triple(measured, x, y.coerceIn(minY, maxY - measured.size.height)))
+        val maxAllowedY = (maxY - measured.size.height).coerceAtLeast(minY)
+        Pair(index, Triple(measured, x, y.coerceIn(minY, maxAllowedY)))
     }.sortedBy { it.second.third }
 
     val adjusted = mutableListOf<Pair<Int, Triple<androidx.compose.ui.text.TextLayoutResult, Float, Float>>>()
@@ -697,15 +702,20 @@ private fun separateLabelPositions(
         val (measured, x, desiredY) = item
         val previous = adjusted.lastOrNull()
         val minAllowedY = previous?.let { it.second.third + it.second.first.size.height + minGap } ?: minY
-        adjusted += index to Triple(measured, x, desiredY.coerceAtLeast(minAllowedY))
+        val maxAllowedY = (maxY - measured.size.height).coerceAtLeast(minY)
+        adjusted += index to Triple(
+            measured,
+            x,
+            desiredY.coerceAtLeast(minAllowedY).coerceAtMost(maxAllowedY)
+        )
     }
 
     for (i in adjusted.indices.reversed()) {
         val (index, current) = adjusted[i]
         val maxAllowedY = if (i == adjusted.lastIndex) {
-            maxY - current.first.size.height
+            (maxY - current.first.size.height).coerceAtLeast(minY)
         } else {
-            adjusted[i + 1].second.third - current.first.size.height - minGap
+            (adjusted[i + 1].second.third - current.first.size.height - minGap).coerceAtLeast(minY)
         }
         adjusted[i] = index to Triple(current.first, current.second, current.third.coerceAtMost(maxAllowedY))
     }
@@ -714,9 +724,10 @@ private fun separateLabelPositions(
         .sortedBy { it.first }
         .map { (_, item) ->
             val (measured, x, y) = item
+            val maxAllowedY = (maxY - measured.size.height).coerceAtLeast(minY)
             Offset(
                 x = x,
-                y = y.coerceIn(minY, maxY - measured.size.height)
+                y = y.coerceIn(minY, maxAllowedY)
             )
         }
 }

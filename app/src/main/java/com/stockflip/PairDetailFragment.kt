@@ -110,8 +110,13 @@ class PairDetailFragment : Fragment() {
                     }
                     is UiState.Success -> {
                         binding.loadingIndicator.isVisible = false
-                        renderPair(state.data)
-                        renderTriggerBanner(state.data)
+                        try {
+                            renderPair(state.data)
+                            renderTriggerBanner(state.data)
+                        } catch (e: Exception) {
+                            android.util.Log.e(TAG, "Error rendering pair detail: ${e.message}", e)
+                            Toast.makeText(requireContext(), "Kunde inte visa aktieparet", Toast.LENGTH_LONG).show()
+                        }
                     }
                     is UiState.Error -> {
                         binding.loadingIndicator.isVisible = false
@@ -127,15 +132,20 @@ class PairDetailFragment : Fragment() {
                     when (state) {
                         is UiState.Loading -> { /* no-op */ }
                         is UiState.Success -> {
-                            binding.spreadChartView.isVisible = true
-                            binding.spreadChartView.setContent {
-                                StockFlipTheme {
-                                    PairPerformanceChart(
-                                        data = state.data,
-                                        selectedPeriod = period,
-                                        onPeriodSelected = { viewModel.selectPeriod(it) }
-                                    )
+                            try {
+                                binding.spreadChartView.isVisible = true
+                                binding.spreadChartView.setContent {
+                                    StockFlipTheme {
+                                        PairPerformanceChart(
+                                            data = state.data,
+                                            selectedPeriod = period,
+                                            onPeriodSelected = { viewModel.selectPeriod(it) }
+                                        )
+                                    }
                                 }
+                            } catch (e: Exception) {
+                                android.util.Log.e(TAG, "Error rendering pair chart: ${e.message}", e)
+                                binding.spreadChartView.isVisible = false
                             }
                         }
                         is UiState.Error -> {
@@ -225,6 +235,7 @@ class PairDetailFragment : Fragment() {
     }
 
     companion object {
+        private const val TAG = "PairDetailFragment"
         private const val ARG_WATCH_ITEM_ID = "watch_item_id"
         private const val ARG_TRIGGER_TITLE = "trigger_title"
         private const val ARG_TRIGGER_MESSAGE = "trigger_message"
