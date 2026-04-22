@@ -48,7 +48,8 @@ class WatchDialogManager(
     private val stockSearchViewModel: StockSearchViewModel,
     private val stockSearchViewModel2: StockSearchViewModel,
     private val symbol: String,
-    private val companyName: String?
+    private val companyName: String?,
+    private val onWatchChanged: () -> Unit = {}
 ) {
     private val context get() = fragment.requireContext()
     private val lifecycleScope get() = fragment.viewLifecycleOwner.lifecycleScope
@@ -83,6 +84,7 @@ class WatchDialogManager(
             },
             onUpdateWatchItem = { updatedItem ->
                 viewModel.updateWatchItem(updatedItem)
+                onWatchChanged()
             },
             onDeleteRequested = { watchItem ->
                 showDeleteConfirmation(watchItem)
@@ -142,6 +144,7 @@ class WatchDialogManager(
                                 Toast.makeText(context, "En bevakning med dessa inställningar finns redan", Toast.LENGTH_SHORT).show()
                             } else {
                                 viewModel.createAlert(watchType, currentCompanyName())
+                                onWatchChanged()
                                 Toast.makeText(context, "Målpris-bevakning skapad", Toast.LENGTH_SHORT).show()
                             }
                         }
@@ -198,6 +201,7 @@ class WatchDialogManager(
                                 Toast.makeText(context, "En bevakning med dessa inställningar finns redan", Toast.LENGTH_SHORT).show()
                             } else {
                                 viewModel.createAlert(watchType, currentCompanyName())
+                                onWatchChanged()
                                 Toast.makeText(context, "Drawdown-bevakning skapad", Toast.LENGTH_SHORT).show()
                             }
                         }
@@ -251,6 +255,7 @@ class WatchDialogManager(
                                 Toast.makeText(context, "En bevakning med dessa inställningar finns redan", Toast.LENGTH_SHORT).show()
                             } else {
                                 viewModel.createAlert(watchType, currentCompanyName())
+                                onWatchChanged()
                                 Toast.makeText(context, "Dagsrörelse-bevakning skapad", Toast.LENGTH_SHORT).show()
                             }
                         }
@@ -306,6 +311,7 @@ class WatchDialogManager(
                                 Toast.makeText(context, "En bevakning med dessa inställningar finns redan", Toast.LENGTH_SHORT).show()
                             } else {
                                 viewModel.createAlert(watchType, currentCompanyName())
+                                onWatchChanged()
                                 Toast.makeText(context, "Nyckeltalsbevakning skapad", Toast.LENGTH_SHORT).show()
                             }
                         }
@@ -337,6 +343,7 @@ class WatchDialogManager(
             .setMessage("Är du säker på att du vill ta bort denna bevakning?")
             .setPositiveButton("Ta bort") { _, _ ->
                 viewModel.deleteAlert(watchItem)
+                onWatchChanged()
                 Toast.makeText(context, "Bevakning borttagen", Toast.LENGTH_SHORT).show()
             }
             .setNegativeButton("Avbryt", null)

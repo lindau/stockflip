@@ -49,6 +49,10 @@ class StockDetailFragment : Fragment() {
     private lateinit var stockSearchViewModel2: StockSearchViewModel
     private lateinit var dialogManager: WatchDialogManager
 
+    private fun syncOverviewInBackground() {
+        (activity as? MainActivity)?.syncWatchItemsAfterDetailChange()
+    }
+
     companion object {
         private const val TAG = "StockDetailFragment"
         private const val ARG_SYMBOL = "symbol"
@@ -141,7 +145,8 @@ class StockDetailFragment : Fragment() {
             stockSearchViewModel = stockSearchViewModel,
             stockSearchViewModel2 = stockSearchViewModel2,
             symbol = symbol,
-            companyName = arguments?.getString(ARG_COMPANY_NAME)
+            companyName = arguments?.getString(ARG_COMPANY_NAME),
+            onWatchChanged = ::syncOverviewInBackground
         )
 
         setupRecyclerView()
@@ -159,9 +164,11 @@ class StockDetailFragment : Fragment() {
         alertAdapter = AlertAdapter(
             onToggleActive = { watchItem ->
                 viewModel.toggleAlert(watchItem)
+                syncOverviewInBackground()
             },
             onReactivate = { watchItem ->
                 viewModel.reactivateAlert(watchItem)
+                syncOverviewInBackground()
             },
             onDelete = { watchItem ->
                 dialogManager.showDeleteConfirmation(watchItem)

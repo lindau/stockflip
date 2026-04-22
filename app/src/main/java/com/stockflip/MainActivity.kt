@@ -111,6 +111,7 @@ class MainActivity : AppCompatActivity() {
 
     private var currentMainTab: MainTab = MainTab.STOCKS
     private var lastWatchItems: List<WatchItemUiState> = emptyList()
+    private var detailSyncJob: Job? = null
     private val watchItemEditor by lazy {
         WatchItemEditor(
             context = this,
@@ -126,7 +127,6 @@ class MainActivity : AppCompatActivity() {
                 binding.progressBar.visibility = View.VISIBLE
                 try {
                     viewModel.updateWatchItem(updatedItem)
-                    viewModel.refreshWatchItems()
                     updateLastUpdateTime()
                 } finally {
                     binding.progressBar.visibility = View.GONE
@@ -1059,6 +1059,20 @@ class MainActivity : AppCompatActivity() {
                 Toast.makeText(this@MainActivity, "Failed to refresh: ${e.message}", Toast.LENGTH_LONG).show()
             } finally {
                 binding.swipeRefreshLayout.isRefreshing = false
+            }
+        }
+    }
+
+    internal fun syncWatchItemsAfterDetailChange() {
+        detailSyncJob?.cancel()
+        detailSyncJob = lifecycleScope.launch {
+            try {
+                // Apply the DB change immediately, then enrich with fresh prices quietly.
+                viewModel.loadWatchItems(forceShowStaleData = true)
+                viewModel.refreshWatchItems(showLoading = false)
+                updateLastUpdateTime()
+            } catch (e: Exception) {
+                Log.w(TAG, "Background sync after detail change failed: ${e.message}", e)
             }
         }
     }

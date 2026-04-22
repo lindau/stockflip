@@ -27,6 +27,10 @@ class PairDetailFragment : Fragment() {
 
     private lateinit var viewModel: PairDetailViewModel
 
+    private fun syncOverviewInBackground() {
+        (activity as? MainActivity)?.syncWatchItemsAfterDetailChange()
+    }
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -67,6 +71,7 @@ class PairDetailFragment : Fragment() {
         }
         binding.toggleActiveButton.setOnClickListener {
             viewModel.toggleActive()
+            syncOverviewInBackground()
         }
 
         observeState()
