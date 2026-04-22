@@ -21,7 +21,6 @@ import com.stockflip.ui.theme.StockFlipTheme
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import com.stockflip.databinding.FragmentAlertsBinding
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 
 class AlertsFragment : Fragment() {
@@ -57,7 +56,6 @@ class AlertsFragment : Fragment() {
     private var pendingDeleteSnackbar: Snackbar? = null
     private var currentFilter: AlertsFilter = AlertsFilter.ALL
     private var latestItems: List<WatchItemUiState> = emptyList()
-    private var latestSortMode: SortHelper.SortMode = SortHelper.SortMode.ADDITION_ORDER
     private val selectedRuleIds: MutableSet<Int> = mutableSetOf()
     private var selectionMode: Boolean = false
 
@@ -230,43 +228,25 @@ class AlertsFragment : Fragment() {
     private fun setupObservers() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                combine(
-                    viewModel.watchItemUiState,
-                    viewModel.alertSortMode
-                ) { state, sortMode ->
-                    Pair(state, sortMode)
-                }.collect { (state, sortMode) ->
+                viewModel.watchItemUiState.collect { state ->
                     when (state) {
                         is UiState.Loading -> {
                             if (!binding.swipeRefreshLayout.isRefreshing) {
                                 binding.skeletonLoadingView.visibility = View.VISIBLE
                             }
-                            binding.sortModeLabel.visibility = View.GONE
                         }
                         is UiState.Success -> {
                             binding.skeletonLoadingView.visibility = View.GONE
                             binding.swipeRefreshLayout.isRefreshing = false
                             latestItems = state.data
-                            latestSortMode = sortMode
                             TriggerSeenTracker.markAllSeen(latestItems.map { it.item })
                             renderFilteredList()
-                            // Update sort mode label
-                            when (sortMode) {
-                                SortHelper.SortMode.ALPHABETICAL -> {
-                                    binding.sortModeLabel.text = getString(R.string.sort_label_alphabetical)
-                                    binding.sortModeLabel.visibility = View.VISIBLE
-                                }
-                                SortHelper.SortMode.ADDITION_ORDER -> {
-                                    binding.sortModeLabel.visibility = View.GONE
-                                }
-                            }
                         }
                         is UiState.Error -> {
                             binding.skeletonLoadingView.visibility = View.GONE
                             binding.swipeRefreshLayout.isRefreshing = false
                             binding.emptyStateContainer.visibility = View.VISIBLE
                             binding.emptyStateText.text = state.message
-                            binding.sortModeLabel.visibility = View.GONE
                         }
                     }
                 }
@@ -298,7 +278,7 @@ class AlertsFragment : Fragment() {
             selectionMode = false
         }
 
-        groupedAdapter.submitGroupedList(filteredItems, latestSortMode)
+        groupedAdapter.submitGroupedList(filteredItems)
         groupedAdapter.setSelectionMode(selectionMode)
         groupedAdapter.setSelectedItemIds(selectedRuleIds)
         updateBatchActionState()
@@ -307,16 +287,16 @@ class AlertsFragment : Fragment() {
         if (showEmpty) {
             binding.emptyStateTitle.text = when (currentFilter) {
                 AlertsFilter.ALL -> getString(R.string.alerts_empty_title)
-                AlertsFilter.ACTIVE -> "Inga aktiva regler"
-                AlertsFilter.TRIGGERED -> "Inga triggade regler"
-                AlertsFilter.PRICE -> "Inga prisregler"
-                AlertsFilter.METRICS -> "Inga nyckeltalsregler"
-                AlertsFilter.PAIRS -> "Inga parregler"
+                AlertsFilter.ACTIVE -> "Inga aktiva case"
+                AlertsFilter.TRIGGERED -> "Inga triggade case"
+                AlertsFilter.PRICE -> "Inga priscase"
+                AlertsFilter.METRICS -> "Inga nyckeltalscase"
+                AlertsFilter.PAIRS -> "Inga parcase"
             }
             binding.emptyStateText.text = when (currentFilter) {
                 AlertsFilter.ALL -> getString(R.string.alerts_empty_subtitle)
-                AlertsFilter.ACTIVE -> "Aktivera en regel eller skapa en ny för att se den här."
-                AlertsFilter.TRIGGERED -> "Här visas regler som nyligen har utlöst."
+                AlertsFilter.ACTIVE -> "Aktivera ett case eller skapa ett nytt för att se det här."
+                AlertsFilter.TRIGGERED -> "Här visas case som nyligen har utlöst."
                 AlertsFilter.PRICE -> "Skapa prismål, drawdown eller dagsrörelse för att få en prislista här."
                 AlertsFilter.METRICS -> "Skapa ett P/E-, P/S- eller yield-larm för att fylla den här vyn."
                 AlertsFilter.PAIRS -> "Skapa ett aktiepar för att hantera parkonvergens här."
@@ -376,7 +356,7 @@ class AlertsFragment : Fragment() {
                 }
                 exitSelectionMode()
             } catch (e: Exception) {
-                Toast.makeText(requireContext(), e.message ?: "Kunde inte uppdatera regler", Toast.LENGTH_LONG).show()
+                Toast.makeText(requireContext(), e.message ?: "Kunde inte uppdatera case", Toast.LENGTH_LONG).show()
             }
         }
     }
@@ -385,8 +365,8 @@ class AlertsFragment : Fragment() {
         val items = selectedItems()
         if (items.isEmpty()) return
         MaterialAlertDialogBuilder(requireContext())
-            .setTitle("Ta bort regler")
-            .setMessage("Ta bort ${items.size} valda regler?")
+            .setTitle("Ta bort case")
+            .setMessage("Ta bort ${items.size} valda case?")
             .setPositiveButton("Ta bort") { _, _ ->
                 viewLifecycleOwner.lifecycleScope.launch {
                     try {
@@ -394,9 +374,9 @@ class AlertsFragment : Fragment() {
                             viewModel.deleteWatchItem(watchItem)
                         }
                         exitSelectionMode()
-                        Toast.makeText(requireContext(), "Regler borttagna", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(requireContext(), "Case borttagna", Toast.LENGTH_SHORT).show()
                     } catch (e: Exception) {
-                        Toast.makeText(requireContext(), e.message ?: "Kunde inte ta bort regler", Toast.LENGTH_LONG).show()
+                        Toast.makeText(requireContext(), e.message ?: "Kunde inte ta bort case", Toast.LENGTH_LONG).show()
                     }
                 }
             }

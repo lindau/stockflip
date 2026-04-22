@@ -4,6 +4,7 @@ A personal Android app for monitoring stock prices and triggering push notificat
 
 ## Features
 
+- **3 main app areas** — `Översikt` for read-first prioritization, `Mina case` for setup and administration, and `Par` for pair alerts
 - **5 primary alert flows in the current UI** — price targets, daily % moves, 52-week drawdowns, key metrics (PE/PS/yield), and spread between two tickers
 - **Legacy watch type support** — price ranges and composite AND/OR/NOT conditions remain supported in storage/rendering and can still be edited when they already exist
 - **Push notifications** with spam protection — at most one notification per alert per trading day
@@ -15,9 +16,10 @@ A personal Android app for monitoring stock prices and triggering push notificat
 
 ## Current User Flows
 
-- **Stocks** — search for a stock or crypto, open its detail page, then create price target, daily move, drawdown, or key-metric alerts from the quick actions card
-- **Pairs** — add a stock pair from the `Par` tab with the floating `+` button
-- **Alerts/Overview** — review all watch items in the `Bevakningar` tab, toggle active state, edit items, or remove them with swipe/delete actions
+- **Översikt** — read-only overview of your cases with sections for triggered items, near-trigger items, active cases, and inactive cases
+- **Mina case** — add a stock or crypto with the floating `+` button, open its detail page, and create or manage alerts there; also filter, batch-manage, edit, pause, reactivate, and delete cases
+- **Par** — add a stock pair from the `Par` tab with the floating `+` button
+- **Stock detail** — shows price snapshot, existing alerts for the selected stock, and buttons to add `Målpris`, `Drawdown`, `Dagsrörelse`, or `Nyckeltal`
 - **Help** — open the in-app help from the top app bar menu; it renders `app/src/main/assets/manual.md`
 
 ## Supported Markets
@@ -110,6 +112,12 @@ This is injected as `BuildConfig.FINNHUB_API_KEY` at build time.
 ```
 
 Unit tests are fully offline and include MockWebServer fixtures for Yahoo Finance responses. Live/network tests in `YahooFinanceServiceTest.kt` are annotated with `@Ignore` — remove the annotation to run them manually. Recommended test symbols: `VOLV-B.ST` (Sweden), `AAPL` (US), `BTC-USD` (crypto), `EQNR.OL` (Norway).
+
+## Versioning
+
+- `versionCode` follows total git commit count
+- `versionName` starts at `1.1.0` and increments the patch number automatically from that baseline
+- The app menu shows `BuildConfig.VERSION_NAME`
 
 ## Requirements
 

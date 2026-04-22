@@ -248,34 +248,29 @@ class StockDetailFragment : Fragment() {
         val symbol = arguments?.getString(ARG_SYMBOL)
         binding.addWatchHeaderText.text = "Lägg till bevakning av ${companyName ?: symbol ?: ""}"
 
-        configureQuickActionButton(binding.createPriceTargetButton, WatchType.Kind.PRICE_TARGET) {
+        configureQuickActionButton(binding.createPriceTargetButton) {
             dialogManager.showCreatePriceTargetDialog()
         }
 
-        configureQuickActionButton(binding.createDrawdownButton, WatchType.Kind.ATH_BASED) {
+        configureQuickActionButton(binding.createDrawdownButton) {
             dialogManager.showCreateDrawdownDialog()
         }
 
-        configureQuickActionButton(binding.createDailyMoveButton, WatchType.Kind.DAILY_MOVE) {
+        configureQuickActionButton(binding.createDailyMoveButton) {
             dialogManager.showCreateDailyMoveDialog()
         }
 
-        configureQuickActionButton(binding.createKeyMetricsButton, WatchType.Kind.KEY_METRICS) {
+        configureQuickActionButton(binding.createKeyMetricsButton) {
             dialogManager.showCreateKeyMetricsDialog()
         }
     }
 
     private fun configureQuickActionButton(
         button: View,
-        watchKind: WatchType.Kind,
         onClick: () -> Unit
     ) {
-        button.isVisible = watchKind.supportsStockDetailQuickCreate
-        if (watchKind.supportsStockDetailQuickCreate) {
-            button.setOnClickListener { onClick() }
-        } else {
-            button.setOnClickListener(null)
-        }
+        button.isVisible = true
+        button.setOnClickListener { onClick() }
     }
 
     private fun setupObservers() {

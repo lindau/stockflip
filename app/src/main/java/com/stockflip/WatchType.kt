@@ -9,58 +9,38 @@ import androidx.room.TypeConverter
 sealed class WatchType {
     abstract val kind: Kind
 
-    enum class CreationUiPolicy {
-        STOCK_DETAIL_QUICK_ACTION,
-        DEDICATED_PAIR_FLOW,
-        EDIT_ONLY_LEGACY
-    }
-
     enum class Kind(
         val displayName: String,
-        val creationUiPolicy: CreationUiPolicy,
         val isLegacyManaged: Boolean
     ) {
         PRICE_PAIR(
             displayName = "Aktiepar",
-            creationUiPolicy = CreationUiPolicy.DEDICATED_PAIR_FLOW,
             isLegacyManaged = true
         ),
         PRICE_TARGET(
             displayName = "Prisbevakning",
-            creationUiPolicy = CreationUiPolicy.STOCK_DETAIL_QUICK_ACTION,
             isLegacyManaged = false
         ),
         KEY_METRICS(
             displayName = "Nyckeltal",
-            creationUiPolicy = CreationUiPolicy.STOCK_DETAIL_QUICK_ACTION,
             isLegacyManaged = false
         ),
         ATH_BASED(
             displayName = "52-veckorshögsta",
-            creationUiPolicy = CreationUiPolicy.STOCK_DETAIL_QUICK_ACTION,
             isLegacyManaged = false
         ),
         PRICE_RANGE(
             displayName = "Prisintervall",
-            creationUiPolicy = CreationUiPolicy.EDIT_ONLY_LEGACY,
             isLegacyManaged = true
         ),
         DAILY_MOVE(
             displayName = "Dagsrörelse",
-            creationUiPolicy = CreationUiPolicy.STOCK_DETAIL_QUICK_ACTION,
             isLegacyManaged = false
         ),
         COMBINED(
             displayName = "Kombinerat larm",
-            creationUiPolicy = CreationUiPolicy.EDIT_ONLY_LEGACY,
             isLegacyManaged = true
         );
-
-        val supportsStockDetailQuickCreate: Boolean
-            get() = creationUiPolicy == CreationUiPolicy.STOCK_DETAIL_QUICK_ACTION
-
-        val supportsCurrentUiCreation: Boolean
-            get() = creationUiPolicy != CreationUiPolicy.EDIT_ONLY_LEGACY
     }
 
     /**

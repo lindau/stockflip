@@ -60,7 +60,6 @@ class GroupedWatchItemAdapter(
 ) : ListAdapter<GroupedListItem, RecyclerView.ViewHolder>(GroupedListItemDiffCallback()) {
 
     private val collapsedSections = mutableSetOf<String>()
-    private var sortMode: SortHelper.SortMode = SortHelper.SortMode.ADDITION_ORDER
     private var displayMode: DisplayMode = DisplayMode.GROUPED
     private var allWatchItems: List<WatchItemUiState> = emptyList()
     private var selectionMode: Boolean = false
@@ -189,23 +188,16 @@ class GroupedWatchItemAdapter(
         }
     }
 
-    fun submitGroupedList(items: List<WatchItemUiState>, newSortMode: SortHelper.SortMode? = null) {
-        if (newSortMode != null) sortMode = newSortMode
+    fun submitGroupedList(items: List<WatchItemUiState>) {
         displayMode = DisplayMode.GROUPED
         allWatchItems = items
         buildFilteredList(items)
     }
 
-    fun submitOverviewList(items: List<WatchItemUiState>, newSortMode: SortHelper.SortMode? = null) {
-        if (newSortMode != null) sortMode = newSortMode
+    fun submitOverviewList(items: List<WatchItemUiState>) {
         displayMode = DisplayMode.OVERVIEW
         allWatchItems = items
         buildOverviewList(items)
-    }
-
-    fun setSortMode(mode: SortHelper.SortMode) {
-        sortMode = mode
-        rebuildAndSubmitList()
     }
 
     fun setSelectionMode(enabled: Boolean) {
@@ -227,7 +219,7 @@ class GroupedWatchItemAdapter(
         val activeItems = items.filter { it.item.isActive }
 
         val pricePairs = activeItems.filter { it.item.watchType is WatchType.PricePair }
-        val sortedPricePairs = SortHelper.sortWatchItems(pricePairs.map { it.item }, sortMode)
+        val sortedPricePairs = sortWatchItemsByAdditionOrder(pricePairs.map { it.item })
             .mapNotNull { uiStateMap[it.id] }
 
         val singleStockItems = activeItems.filter {
@@ -241,14 +233,12 @@ class GroupedWatchItemAdapter(
             item.item.ticker?.let { ticker -> StockSearchResult.isCryptoSymbol(ticker) } == true
         }
 
-        val sortedStocksByTicker = SortHelper.sortTickerGroups(
+        val sortedStocksByTicker = sortTickerGroupsByAdditionOrder(
             stockOnlyItems.groupBy { requireNotNull(it.item.ticker) }.mapValues { (_, values) -> values.map { it.item } },
-            sortMode
         ).mapValues { (_, watchItems) -> watchItems.mapNotNull { uiStateMap[it.id] } }
 
-        val sortedCryptoByTicker = SortHelper.sortTickerGroups(
+        val sortedCryptoByTicker = sortTickerGroupsByAdditionOrder(
             cryptoItems.groupBy { requireNotNull(it.item.ticker) }.mapValues { (_, values) -> values.map { it.item } },
-            sortMode
         ).mapValues { (_, watchItems) -> watchItems.mapNotNull { uiStateMap[it.id] } }
 
         if (sortedPricePairs.isNotEmpty()) {
@@ -335,31 +325,64 @@ class GroupedWatchItemAdapter(
         groupedList.add(GroupedListItem.Header(header))
         if (header in collapsedSections) return
 
-        items.forEachIndexed { index, uiState ->
-            val groupPosition = when (index) {
-                0 -> if (items.size == 1) GroupPosition.ONLY else GroupPosition.FIRST
-                items.lastIndex -> GroupPosition.LAST
-                else -> GroupPosition.MIDDLE
+        val groups = buildOverviewGroups(items)
+        groups.forEachIndexed { groupIndex, groupItems ->
+            if (groupIndex > 0) {
+                groupedList.add(GroupedListItem.GroupSeparator(groupedList.size))
             }
-            groupedList.add(
-                GroupedListItem.WatchItemWrapper(
-                    item = uiState.item,
-                    live = uiState.live,
-                    groupPosition = groupPosition,
-                    nearTriggerLabel = nearLabels[uiState.item.id]
+            groupItems.forEachIndexed { index, uiState ->
+                val groupPosition = when (index) {
+                    0 -> if (groupItems.size == 1) GroupPosition.ONLY else GroupPosition.FIRST
+                    groupItems.lastIndex -> GroupPosition.LAST
+                    else -> GroupPosition.MIDDLE
+                }
+                groupedList.add(
+                    GroupedListItem.WatchItemWrapper(
+                        item = uiState.item,
+                        live = uiState.live,
+                        groupPosition = groupPosition,
+                        nearTriggerLabel = nearLabels[uiState.item.id]
+                    )
                 )
-            )
+            }
         }
     }
 
-    private fun sortForOverview(items: List<WatchItemUiState>): List<WatchItemUiState> {
-        return when (sortMode) {
-            SortHelper.SortMode.ALPHABETICAL -> items.sortedBy {
-                (it.item.companyName ?: it.item.ticker ?: "").lowercase()
-            }
+    private fun buildOverviewGroups(items: List<WatchItemUiState>): List<List<WatchItemUiState>> {
+        val groups = mutableListOf<MutableList<WatchItemUiState>>()
+        val groupedByKey = linkedMapOf<String, MutableList<WatchItemUiState>>()
 
-            SortHelper.SortMode.ADDITION_ORDER -> items.sortedByDescending { it.item.id }
+        items.forEach { uiState ->
+            val key = overviewGroupKey(uiState.item)
+            val existingGroup = groupedByKey.getOrPut(key) {
+                mutableListOf<WatchItemUiState>().also { groups.add(it) }
+            }
+            existingGroup.add(uiState)
         }
+
+        return groups
+    }
+
+    private fun overviewGroupKey(item: WatchItem): String {
+        return item.ticker
+            ?: item.companyName
+            ?: "${item.watchType.kind.name}-${item.id}"
+    }
+
+    private fun sortForOverview(items: List<WatchItemUiState>): List<WatchItemUiState> {
+        return items.sortedByDescending { it.item.id }
+    }
+
+    private fun sortWatchItemsByAdditionOrder(items: List<WatchItem>): List<WatchItem> {
+        return items.sortedByDescending { it.id }
+    }
+
+    private fun sortTickerGroupsByAdditionOrder(
+        itemsByTicker: Map<String, List<WatchItem>>
+    ): Map<String, List<WatchItem>> {
+        return itemsByTicker.toList()
+            .sortedByDescending { (_, items) -> items.maxOfOrNull { it.id } ?: 0 }
+            .toMap()
     }
 
     private fun calculateTriggerProximity(uiState: WatchItemUiState): Double? {

@@ -100,21 +100,6 @@
 
     </HorizontalScrollView>
 
-    <TextView
-        android:id="@+id/sortModeLabel"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="12dp"
-        android:layout_marginTop="8dp"
-        android:layout_marginBottom="2dp"
-        android:textAppearance="?attr/textAppearanceLabelSmall"
-        android:textColor="?attr/colorOnSurfaceVariant"
-        android:visibility="gone"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/filterScroll"
-        tools:text="Sorterat: Bokstavsordning"
-        tools:visibility="visible" />
-
     <LinearLayout
         android:id="@+id/batchActionsBar"
         android:layout_width="0dp"
@@ -128,7 +113,7 @@
         android:padding="12dp"
         android:visibility="gone"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/sortModeLabel"
+        app:layout_constraintTop_toBottomOf="@id/filterScroll"
         app:layout_constraintEnd_toEndOf="parent"
         tools:visibility="visible">
 
@@ -138,7 +123,7 @@
             android:layout_height="wrap_content"
             android:textAppearance="?attr/textAppearanceLabelLarge"
             android:textColor="?attr/colorOnSurface"
-            tools:text="3 regler valda" />
+            tools:text="3 case valda" />
 
         <LinearLayout
             android:layout_width="match_parent"

@@ -4,9 +4,9 @@
     <string name="last_updated">Last updated: %1$s</string>
     <string name="icon_description">Icon</string>
 
-    <string name="alerts_empty_state">Inga regler ännu. Skapa en bevakning från en aktiesida för att se den här.</string>
-    <string name="alerts_empty_title">Inga regler ännu</string>
-    <string name="alerts_empty_subtitle">Skapa en bevakning för att börja bygga ditt regelbibliotek</string>
+    <string name="alerts_empty_state">Inga case ännu. Lägg till en aktie och skapa en bevakning för att se den här.</string>
+    <string name="alerts_empty_title">Inga case ännu</string>
+    <string name="alerts_empty_subtitle">Lägg till en aktie och börja bygga upp dina case</string>
 
     <string name="stocks_empty_title">Ingen översikt ännu</string>
     <string name="stocks_empty_subtitle">Tryck + för att lägga till ditt första case</string>
@@ -22,9 +22,9 @@
 
     <string name="tab_stocks">Översikt</string>
     <string name="tab_pairs">Par</string>
-    <string name="tab_alerts">Regler</string>
-    <string name="rules_title">Hantera dina regler</string>
-    <string name="rules_subtitle">Filtrera, redigera, pausa och rensa dina bevakningar från ett ställe.</string>
+    <string name="tab_alerts">Mina case</string>
+    <string name="rules_title">Hantera dina case</string>
+    <string name="rules_subtitle">Lägg till aktier, skapa bevakningar och hantera dina case från ett ställe.</string>
     <string name="filter_all">Alla</string>
     <string name="filter_active">Aktiva</string>
     <string name="filter_triggered">Triggade</string>
@@ -35,7 +35,7 @@
     <string name="batch_pause">Pausa</string>
     <string name="batch_delete">Ta bort</string>
     <string name="batch_cancel">Avsluta</string>
-    <string name="batch_selected_count">%1$d regler valda</string>
+    <string name="batch_selected_count">%1$d case valda</string>
 
     <string name="menu_add">Lägg till</string>
     <string name="title_add_stock">Lägg till aktie eller krypto</string>
@@ -70,7 +70,4 @@
     <string name="notes_dialog_title">Redigera anteckning</string>
 
     <!-- Sortering -->
-    <string name="sort_mode_alphabetical">Sortering: Bokstavsordning</string>
-    <string name="sort_mode_addition">Sortering: Tilläggsordning</string>
-    <string name="sort_label_alphabetical">Sorterat: Bokstavsordning</string>
 </resources>

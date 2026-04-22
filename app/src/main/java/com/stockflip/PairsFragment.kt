@@ -20,7 +20,6 @@ import com.stockflip.ui.WatchItemSkeletonList
 import com.stockflip.ui.theme.StockFlipTheme
 import com.google.android.material.snackbar.Snackbar
 import com.stockflip.databinding.FragmentPairsBinding
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 
 class PairsFragment : Fragment() {
@@ -167,35 +166,20 @@ class PairsFragment : Fragment() {
     private fun setupObservers() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                combine(
-                    viewModel.watchItemUiState,
-                    viewModel.pairsSortMode
-                ) { state, sortMode ->
-                    Pair(state, sortMode)
-                }.collect { (state, sortMode) ->
+                viewModel.watchItemUiState.collect { state ->
                     when (state) {
                         is UiState.Loading -> {
                             if (!binding.swipeRefreshLayout.isRefreshing) {
                                 binding.skeletonLoadingView.visibility = View.VISIBLE
                             }
-                            binding.sortModeLabel.visibility = View.GONE
                         }
                         is UiState.Success -> {
                             binding.skeletonLoadingView.visibility = View.GONE
                             binding.swipeRefreshLayout.isRefreshing = false
                             val pairs = state.data.filter { it.item.watchType is WatchType.PricePair }
                             TriggerSeenTracker.markAllSeen(pairs.map { it.item })
-                            groupedAdapter.submitGroupedList(pairs, sortMode)
+                            groupedAdapter.submitGroupedList(pairs)
                             binding.emptyStateContainer.visibility = if (pairs.isEmpty()) View.VISIBLE else View.GONE
-                            when (sortMode) {
-                                SortHelper.SortMode.ALPHABETICAL -> {
-                                    binding.sortModeLabel.text = getString(R.string.sort_label_alphabetical)
-                                    binding.sortModeLabel.visibility = View.VISIBLE
-                                }
-                                SortHelper.SortMode.ADDITION_ORDER -> {
-                                    binding.sortModeLabel.visibility = View.GONE
-                                }
-                            }
                         }
                         is UiState.Error -> {
                             binding.skeletonLoadingView.visibility = View.GONE
@@ -213,9 +197,5 @@ class PairsFragment : Fragment() {
         pendingDeleteSnackbar = null
         super.onDestroyView()
         _binding = null
-    }
-
-    companion object {
-        private const val TAG: String = "PairsFragment"
     }
 }

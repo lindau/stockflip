@@ -1,5 +1,7 @@
 package com.stockflip.testutil
 
+import com.stockflip.MetricHistoryDao
+import com.stockflip.MetricHistoryEntity
 import com.stockflip.StockNote
 import com.stockflip.StockNoteDao
 import com.stockflip.StockPair
@@ -106,3 +108,58 @@ class InMemoryTriggerHistoryDao : TriggerHistoryDao {
     }
 }
 
+class InMemoryMetricHistoryDao : MetricHistoryDao {
+    private val entries = mutableListOf<MetricHistoryEntity>()
+
+    override suspend fun insertMetricHistory(history: MetricHistoryEntity) {
+        entries.removeAll { it.id == history.id }
+        entries.add(history)
+    }
+
+    override suspend fun insertMetricHistoryList(historyList: List<MetricHistoryEntity>) {
+        historyList.forEach { insertMetricHistory(it) }
+    }
+
+    override suspend fun getMetricHistory(
+        symbol: String,
+        metricType: String,
+        startDate: Long,
+        endDate: Long
+    ): List<MetricHistoryEntity> =
+        entries.filter {
+            it.symbol == symbol &&
+                it.metricType == metricType &&
+                it.date in startDate..endDate
+        }.sortedBy { it.date }
+
+    override suspend fun getLatestHistory(
+        symbol: String,
+        metricType: String,
+        startDate: Long
+    ): List<MetricHistoryEntity> =
+        entries.filter {
+            it.symbol == symbol &&
+                it.metricType == metricType &&
+                it.date >= startDate
+        }.sortedBy { it.date }
+
+    override suspend fun getAllHistoryForMetric(
+        symbol: String,
+        metricType: String
+    ): List<MetricHistoryEntity> =
+        entries.filter {
+            it.symbol == symbol && it.metricType == metricType
+        }.sortedBy { it.date }
+
+    override suspend fun deleteOldHistory(olderThan: Long) {
+        entries.removeAll { it.date < olderThan }
+    }
+
+    override suspend fun deleteHistoryForMetric(symbol: String, metricType: String) {
+        entries.removeAll { it.symbol == symbol && it.metricType == metricType }
+    }
+
+    override suspend fun getLastUpdateDate(symbol: String, metricType: String): Long? =
+        entries.filter { it.symbol == symbol && it.metricType == metricType }
+            .maxOfOrNull { it.date }
+}

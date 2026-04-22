@@ -8,9 +8,9 @@ StockFlip låter dig bevaka aktier och kryptovalutor och få notiser när dina e
 - [Hur appen fungerar i bakgrunden](#hur-appen-fungerar-i-bakgrunden)
 - [Navigering i appen](#navigering-i-appen)
 - [Bevakningstyperna](#bevakningstyperna)
-  - [1. Prismål](#1-prismal-prisbevakning)
+  - [1. Målpris](#1-malpris)
   - [2. Dagsrörelse](#2-dagsrorelse)
-  - [3. 52-veckorshögsta](#3-52-veckorshogsta-drawdown)
+  - [3. Drawdown](#3-drawdown)
   - [4. Nyckeltal](#4-nyckeltal)
   - [5. Aktiepar](#5-aktiepar)
   - [6. Prisintervall](#6-prisintervall)
@@ -34,7 +34,7 @@ StockFlip låter dig bevaka aktier och kryptovalutor och få notiser när dina e
 | **Dagsrörelse** | Hur mycket aktiens pris förändrats i procent sedan föregående stängningskurs. |
 | **Drawdown** | Hur mycket aktiens pris har fallit från sin 52-veckorshögsta kurs, antingen i procent eller i kronor. |
 | **52-veckorshögsta** | Det högsta priset aktien handlades på under de senaste 52 veckorna. |
-| **Nyckeltal** | Finansiella mått som P/E-tal, P/S-tal och direktavkastning. |
+| **Nyckeltal** | Finansiella mått som P/E-tal, P/S-tal och utdelning. |
 | **P/E-tal** | Aktiekursen delat med vinst per aktie. Högt P/E = dyr värdering; lågt P/E = billig värdering. |
 | **P/S-tal** | Aktiekursen delat med omsättning per aktie. |
 | **Direktavkastning** | Utdelningen per aktie delat med aktiekursen, i procent. |
@@ -70,21 +70,21 @@ Notiser skickas direkt när ett villkor uppfylls. Trycker du på notisen öppnas
 
 Appen har tre flikar längst ned:
 
-- **Aktier** — alla dina bevakningar, grupperade per bolag
+- **Översikt** — ett läsläge som prioriterar vad som kräver din uppmärksamhet nu
 - **Par** — enbart aktiepar-bevakningar
-- **Bevakningar** — alla bevakningar samlade i en lista
+- **Mina case** — här lägger du till aktier och skapar, redigerar, pausar eller tar bort bevakningar
 
-I nuvarande appversion skapas nya bevakningar främst så här:
+I nuvarande appversion fungerar flikarna så här:
 
-- **Aktier:** tryck på `+`, sök fram en aktie eller krypto och öppna detaljvyn. Där kan du skapa prismål, dagsrörelse, drawdown och nyckeltal.
-- **Par:** gå till fliken **Par** och tryck på `+` för att skapa ett aktiepar.
-- **Bevakningar:** används för att överblicka, redigera, aktivera/inaktivera och ta bort befintliga bevakningar.
+- **Översikt:** visar sektioner som `Nytt och triggade`, `Nära att triggas`, `Aktiva case` och `Inaktiva`. Härifrån läser du läget, men nya aktier läggs inte till här.
+- **Par:** tryck på `+` för att skapa ett aktiepar.
+- **Mina case:** tryck på `+` för att lägga till en ny aktie eller kryptovaluta. Öppna sedan aktiens detaljsida och välj vilken typ av bevakning du vill skapa.
 
 ---
 
 ## Bevakningstyperna
 
-### 1. Prismål (Prisbevakning)
+### 1. Målpris
 
 **Vad det gör:** Skickar en notis när aktiens pris når ett målpris du sätter.
 
@@ -96,7 +96,7 @@ I nuvarande appversion skapas nya bevakningar främst så här:
 
 **Skapa en prismålsbevakning:**
 1. Sök upp aktien eller tryck på en befintlig bevakningskort för att öppna aktiedetaljvyn.
-2. Tryck på **Prisbevakning** i snabbåtgärdspanelen.
+2. Tryck på **Målpris**.
 3. Ange målpriset.
 4. Tryck **Spara**.
 
@@ -132,7 +132,7 @@ I nuvarande appversion skapas nya bevakningar främst så här:
 
 ---
 
-### 3. 52-veckorshögsta (Drawdown)
+### 3. Drawdown
 
 **Vad det gör:** Skickar en notis när aktien har fallit ett visst belopp eller en viss procent från sin 52-veckorshögsta kurs.
 
@@ -144,7 +144,7 @@ I nuvarande appversion skapas nya bevakningar främst så här:
 
 **Skapa en drawdown-bevakning:**
 1. Öppna aktiedetaljvyn (visar aktuell drawdown i headern).
-2. Tryck på **52-veckorshögsta**.
+2. Tryck på **Drawdown**.
 3. Välj Procent eller Kronor.
 4. Ange hur mycket nedgång som ska trigga larmet.
 5. Tryck **Spara**.
@@ -157,7 +157,7 @@ I nuvarande appversion skapas nya bevakningar främst så här:
 
 ### 4. Nyckeltal
 
-**Vad det gör:** Skickar en notis när ett finansiellt nyckeltal (P/E, P/S eller direktavkastning) når ett målvärde.
+**Vad det gör:** Skickar en notis när ett finansiellt nyckeltal (P/E, P/S eller utdelning) når ett målvärde.
 
 **Typ:** Återkommande — kan utlösas igen nästa handelsdag.
 
@@ -192,7 +192,7 @@ I nuvarande appversion skapas nya bevakningar främst så här:
 - **Notis när lika** — utlöses när priserna är praktiskt taget identiska (skiljer sig med mindre än 0,01)
 
 **Skapa en aktiepar-bevakning:**
-1. Tryck på **+**-knappen i Aktier- eller Par-fliken.
+1. Tryck på **+**-knappen i **Par**-fliken.
 2. Sök upp och välj den första aktien.
 3. Sök upp och välj den andra aktien.
 4. Ange prisskillnad om önskat, och/eller aktivera "Notis när lika".
@@ -244,12 +244,13 @@ I nuvarande appversion skapas nya bevakningar främst så här:
 
 Situation: Du vill köpa Volvo B om den faller till 220 kr (nuvarande pris: 260 kr).
 
-1. Sök efter "VOLV-B" och öppna aktiedetaljvyn.
-2. Tryck **Prisbevakning**.
-3. Ange `220` som målpris.
-4. Tryck **Spara**.
-5. Appen sätter automatiskt riktningen till "under 220 kr" och skickar en notis om priset faller till 220 kr eller lägre.
-6. När notisen kommit: tryck på den för att gå direkt till aktiedetaljvyn och se situationen.
+1. Gå till **Mina case** och tryck på `+`.
+2. Sök efter "VOLV-B" och öppna aktiedetaljvyn.
+3. Tryck **Målpris**.
+4. Ange `220` som målpris.
+5. Tryck **Spara**.
+6. Appen sätter automatiskt riktningen till "under 220 kr" och skickar en notis om priset faller till 220 kr eller lägre.
+7. När notisen kommit: tryck på den för att gå direkt till aktiedetaljvyn och se situationen.
 
 ---
 
@@ -257,7 +258,7 @@ Situation: Du vill köpa Volvo B om den faller till 220 kr (nuvarande pris: 260 
 
 Situation: Du vill veta om Ericsson rör sig mer än 4 % en dag, oavsett håll.
 
-1. Öppna aktiedetaljvyn för ERIC-B.
+1. Gå till **Mina case**, öppna aktiedetaljvyn för ERIC-B.
 2. Tryck **Dagsrörelse**.
 3. Ange `4` %.
 4. Välj **Båda håll**.
@@ -269,7 +270,7 @@ Situation: Du vill veta om Ericsson rör sig mer än 4 % en dag, oavsett håll.
 
 Situation: Du vill veta om Investor AB:s P/E-tal stiger över 25 (tecken på högt pris).
 
-1. Öppna aktiedetaljvyn för INVE-B.
+1. Gå till **Mina case**, öppna aktiedetaljvyn för INVE-B.
 2. Tryck **Nyckeltal**.
 3. Välj **P/E-tal**.
 4. Ange `25`.
@@ -306,9 +307,18 @@ Om du redan har äldre bevakningar av typen **Prisintervall** eller **Kombinerat
 
 Tryck på **reglaget** på bevakningskortet för att stänga av eller slå på en bevakning utan att ta bort den. En inaktiv bevakning kontrolleras inte och skickar inga notiser.
 
+### Masshantering i Mina case
+
+I fliken **Mina case** kan du långtrycka på en regel för att gå in i markeringsläge. Där kan du välja flera regler samtidigt och:
+
+- **Aktivera**
+- **Pausa**
+- **Ta bort**
+- **Avsluta markeringsläge**
+
 ### Återaktivera ett engångslarm
 
-Engångslarm (Prismål och 52-veckorshögsta) inaktiveras automatiskt efter utlösning.
+Engångslarm (Målpris och Drawdown) inaktiveras automatiskt efter utlösning.
 
 - Hitta bevakningen i listan — den visar "Triggad [datum]".
 - Tryck på kortet för att öppna redigeringsdialogen.
@@ -347,15 +357,15 @@ Utan notisbehörighet kan appen inte meddela dig när en bevakning utlöses — 
 
 ### Vad händer när en notis skickas
 
-- Notisen visas med titeln och en kort beskrivning av vad som triggades.
+- Notisen visar vad som faktiskt triggade, till exempel att ett målpris nåtts, att drawdown-nivån nåtts eller att ett nyckeltal passerat din nivå.
 - Trycker du på notisen öppnas StockFlip direkt på detaljvyn för den berörda aktien, eller pardetaljen för ett aktiepar.
-- Bevakningen är märkt som triggad med datum när du väl öppnar appen.
+- Du möts av en tydlig trigger-banner högst upp med varför du hamnade där och kan direkt **återaktivera** eller **ta bort** bevakningen.
 
 ### Engångslarm vs återkommande larm
 
 | | Engångslarm | Återkommande larm |
 |---|---|---|
-| **Typ** | Prismål, 52-veckorshögsta | Dagsrörelse, Nyckeltal, Aktiepar, Prisintervall, Kombinerat |
+| **Typ** | Målpris, Drawdown | Dagsrörelse, Nyckeltal, Aktiepar, Prisintervall, Kombinerat |
 | **Inaktiveras efter utlösning** | Ja | Nej |
 | **Återaktivering** | Manuell | Automatisk (nästa dag) |
 | **Kan utlösas igen samma dag** | Nej | Nej (max en gång per handelsdag) |
@@ -371,7 +381,7 @@ Utan notisbehörighet kan appen inte meddela dig när en bevakning utlöses — 
 - Om marknaden är stängd kontrollerar appen bara var 60:e minut.
 
 **Varför inaktiverades min bevakning automatiskt?**
-- Prismål och 52-veckorshögsta inaktiveras automatiskt när de utlöses. Det är avsiktligt för att undvika upprepade notiser för samma händelse.
+- Målpris och Drawdown inaktiveras automatiskt när de utlöses. Det är avsiktligt för att undvika upprepade notiser för samma händelse.
 
 **Kan jag ha flera bevakningar på samma aktie?**
 - Ja, du kan ha hur många bevakningar du vill på samma aktie, av olika eller samma typ.
