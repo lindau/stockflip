@@ -366,6 +366,10 @@ class MainActivity : AppCompatActivity() {
                     openHelpScreen()
                     true
                 }
+                R.id.menu_version -> {
+                    openChangelogScreen()
+                    true
+                }
                 else -> false
             }
         }
@@ -447,8 +451,25 @@ class MainActivity : AppCompatActivity() {
             onBackPressedDispatcher.onBackPressed()
         }
         supportFragmentManager.beginTransaction()
-            .replace(R.id.fragmentContainer, HelpFragment())
+            .replace(R.id.fragmentContainer, MarkdownAssetFragment.newInstance("manual.md"))
             .addToBackStack("help")
+            .commit()
+    }
+
+    private fun openChangelogScreen() {
+        binding.swipeRefreshLayout.visibility = View.GONE
+        binding.addPairButton.visibility = View.GONE
+        binding.topAppBar.title = "Ändringslogg"
+        binding.topAppBar.navigationIcon = androidx.appcompat.content.res.AppCompatResources.getDrawable(
+            this,
+            R.drawable.ic_arrow_back
+        )
+        binding.topAppBar.setNavigationOnClickListener {
+            onBackPressedDispatcher.onBackPressed()
+        }
+        supportFragmentManager.beginTransaction()
+            .replace(R.id.fragmentContainer, MarkdownAssetFragment.newInstance("changelog.md"))
+            .addToBackStack("changelog")
             .commit()
     }
 

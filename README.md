@@ -5,6 +5,7 @@ A personal Android app for monitoring stock prices and triggering push notificat
 ## Features
 
 - **3 main app areas** — `Översikt` for read-first prioritization, `Mina case` for setup and administration, and `Par` for pair alerts
+- **In-app changelog** — tap the version row in the app menu to open the latest local changelog
 - **5 primary alert flows in the current UI** — price targets, daily % moves, 52-week drawdowns, key metrics (PE/PS/yield), and spread between two tickers
 - **Legacy watch type support** — price ranges and composite AND/OR/NOT conditions remain supported in storage/rendering and can still be edited when they already exist
 - **Push notifications** with spam protection — at most one notification per alert per trading day
@@ -21,6 +22,7 @@ A personal Android app for monitoring stock prices and triggering push notificat
 - **Par** — add a stock pair from the `Par` tab with the floating `+` button
 - **Stock detail** — shows price snapshot, existing alerts for the selected stock, and buttons to add `Målpris`, `Drawdown`, `Dagsrörelse`, or `Nyckeltal`
 - **Help** — open the in-app help from the top app bar menu; it renders `app/src/main/assets/manual.md`
+- **Changelog** — tap the version row in the top app bar menu; it renders `app/src/main/assets/changelog.md`
 
 ## Supported Markets
 
@@ -118,6 +120,10 @@ Unit tests are fully offline and include MockWebServer fixtures for Yahoo Financ
 - `versionCode` follows total git commit count
 - `versionName` starts at `1.1.0` and increments the patch number automatically from that baseline
 - The app menu shows `BuildConfig.VERSION_NAME`
+
+## Maintenance
+
+- Update both `docs/CHANGELOG.md` and `app/src/main/assets/changelog.md` whenever user-facing changes are shipped so the in-app version view stays current.
 
 ## Requirements
 
