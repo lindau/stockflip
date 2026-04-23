@@ -156,6 +156,7 @@ class WatchDialogManager(
         val presetChipOne = dialogView.findViewById<Chip>(R.id.presetChipOne)
         val presetChipTwo = dialogView.findViewById<Chip>(R.id.presetChipTwo)
         val presetChipThree = dialogView.findViewById<Chip>(R.id.presetChipThree)
+        val presetChipFour = dialogView.findViewById<Chip>(R.id.presetChipFour)
 
         tickerInput?.parent?.let { parent ->
             if (parent is TextInputLayout) {
@@ -174,18 +175,23 @@ class WatchDialogManager(
         currentPrice?.let { price ->
             setPresetChip(
                 chip = presetChipOne,
+                label = "-5 % (${CurrencyHelper.formatPrice(price * 0.95, currentCurrency())})",
+                value = price * 0.95
+            ) { targetPriceInput.setText(CurrencyHelper.formatDecimal(it)) }
+            setPresetChip(
+                chip = presetChipTwo,
                 label = "-10 % (${CurrencyHelper.formatPrice(price * 0.90, currentCurrency())})",
                 value = price * 0.90
             ) { targetPriceInput.setText(CurrencyHelper.formatDecimal(it)) }
             setPresetChip(
-                chip = presetChipTwo,
-                label = "-15 % (${CurrencyHelper.formatPrice(price * 0.85, currentCurrency())})",
-                value = price * 0.85
+                chip = presetChipThree,
+                label = "+5 % (${CurrencyHelper.formatPrice(price * 1.05, currentCurrency())})",
+                value = price * 1.05
             ) { targetPriceInput.setText(CurrencyHelper.formatDecimal(it)) }
             setPresetChip(
-                chip = presetChipThree,
-                label = "-20 % (${CurrencyHelper.formatPrice(price * 0.80, currentCurrency())})",
-                value = price * 0.80
+                chip = presetChipFour,
+                label = "+10 % (${CurrencyHelper.formatPrice(price * 1.10, currentCurrency())})",
+                value = price * 1.10
             ) { targetPriceInput.setText(CurrencyHelper.formatDecimal(it)) }
         }
 
@@ -240,6 +246,7 @@ class WatchDialogManager(
         val presetChipOne = dialogView.findViewById<Chip>(R.id.presetChipOne)
         val presetChipTwo = dialogView.findViewById<Chip>(R.id.presetChipTwo)
         val presetChipThree = dialogView.findViewById<Chip>(R.id.presetChipThree)
+        val presetChipFour = dialogView.findViewById<Chip>(R.id.presetChipFour)
 
         tickerInput?.parent?.let { parent ->
             if (parent is TextInputLayout) {
@@ -270,20 +277,23 @@ class WatchDialogManager(
         fun applyDrawdownPresets(dropType: WatchType.DropType) {
             if (dropType == WatchType.DropType.PERCENTAGE) {
                 dropValueLayout.hint = "Nedgångsvärde (%)"
-                setPresetChip(presetChipOne, "10 %", 10.0) {
+                setPresetChip(presetChipOne, "5 %", 5.0) {
                     dropValueInput.setText(CurrencyHelper.formatDecimal(it))
                 }
-                setPresetChip(presetChipTwo, "15 %", 15.0) {
+                setPresetChip(presetChipTwo, "10 %", 10.0) {
                     dropValueInput.setText(CurrencyHelper.formatDecimal(it))
                 }
-                setPresetChip(presetChipThree, "20 %", 20.0) {
+                setPresetChip(presetChipThree, "15 %", 15.0) {
+                    dropValueInput.setText(CurrencyHelper.formatDecimal(it))
+                }
+                setPresetChip(presetChipFour, "20 %", 20.0) {
                     dropValueInput.setText(CurrencyHelper.formatDecimal(it))
                 }
             } else {
                 dropValueLayout.hint = "Nedgångsvärde ($currencySymbol)"
                 val high = stockData?.week52High
                 if (high != null && high > 0.0) {
-                    val values = listOf(high * 0.10, high * 0.15, high * 0.20)
+                    val values = listOf(high * 0.05, high * 0.10, high * 0.15, high * 0.20)
                     setPresetChip(presetChipOne, CurrencyHelper.formatPrice(values[0], currentCurrency()), values[0]) {
                         dropValueInput.setText(CurrencyHelper.formatDecimal(it))
                     }
@@ -291,6 +301,9 @@ class WatchDialogManager(
                         dropValueInput.setText(CurrencyHelper.formatDecimal(it))
                     }
                     setPresetChip(presetChipThree, CurrencyHelper.formatPrice(values[2], currentCurrency()), values[2]) {
+                        dropValueInput.setText(CurrencyHelper.formatDecimal(it))
+                    }
+                    setPresetChip(presetChipFour, CurrencyHelper.formatPrice(values[3], currentCurrency()), values[3]) {
                         dropValueInput.setText(CurrencyHelper.formatDecimal(it))
                     }
                 }
@@ -358,6 +371,7 @@ class WatchDialogManager(
         val presetChipOne = dialogView.findViewById<Chip>(R.id.presetChipOne)
         val presetChipTwo = dialogView.findViewById<Chip>(R.id.presetChipTwo)
         val presetChipThree = dialogView.findViewById<Chip>(R.id.presetChipThree)
+        val presetChipFour = dialogView.findViewById<Chip>(R.id.presetChipFour)
 
         val directions = arrayOf("Upp", "Ned", "Båda")
         val directionAdapter = ArrayAdapter(context, android.R.layout.simple_dropdown_item_1line, directions)
@@ -376,9 +390,10 @@ class WatchDialogManager(
             "Dagens rörelse är $sign${CurrencyHelper.formatDecimal(it)} %. Välj om du vill bevaka upp, ned eller båda håll."
         } ?: "Dagens rörelse saknas just nu. Välj en generell tröskel för större rörelser."
         triggerInfoText.text = "När dagsrörelsen passerar nivån markeras larmet som utlöst och kan återaktiveras senare."
-        setPresetChip(presetChipOne, "3 %", 3.0) { thresholdInput.setText(CurrencyHelper.formatDecimal(it)) }
-        setPresetChip(presetChipTwo, "5 %", 5.0) { thresholdInput.setText(CurrencyHelper.formatDecimal(it)) }
-        setPresetChip(presetChipThree, "8 %", 8.0) { thresholdInput.setText(CurrencyHelper.formatDecimal(it)) }
+        setPresetChip(presetChipOne, "2 %", 2.0) { thresholdInput.setText(CurrencyHelper.formatDecimal(it)) }
+        setPresetChip(presetChipTwo, "3 %", 3.0) { thresholdInput.setText(CurrencyHelper.formatDecimal(it)) }
+        setPresetChip(presetChipThree, "5 %", 5.0) { thresholdInput.setText(CurrencyHelper.formatDecimal(it)) }
+        setPresetChip(presetChipFour, "8 %", 8.0) { thresholdInput.setText(CurrencyHelper.formatDecimal(it)) }
 
         MaterialAlertDialogBuilder(context)
             .setTitle("Skapa dagsrörelse-bevakning")
@@ -434,6 +449,7 @@ class WatchDialogManager(
         val presetChipOne = dialogView.findViewById<Chip>(R.id.presetChipOne)
         val presetChipTwo = dialogView.findViewById<Chip>(R.id.presetChipTwo)
         val presetChipThree = dialogView.findViewById<Chip>(R.id.presetChipThree)
+        val presetChipFour = dialogView.findViewById<Chip>(R.id.presetChipFour)
 
         tickerInput.setText("$symbol - ${currentCompanyName()}", false)
         tickerInput.isEnabled = false
@@ -512,33 +528,24 @@ class WatchDialogManager(
                 "5 år: ${formatMetricValue(metricType, it.min)} - ${formatMetricValue(metricType, it.max)} | snitt ${formatMetricValue(metricType, it.average)}"
             } ?: "5 år: ingen historik"
 
-            val average = summary?.threeYear?.takeUnless { it.isEmpty() }?.average
-            val fallbackCurrent = currentValue ?: return
-            if (average != null && average > 0.0) {
-                setPresetChip(
-                    presetChipOne,
-                    "3-årssnitt (${formatMetricValue(metricType, average)})",
-                    average
-                ) { targetValueInput.setText(CurrencyHelper.formatDecimal(it)) }
-            } else {
-                presetChipOne.text = "3-årssnitt saknas"
-                presetChipOne.setOnClickListener(null)
+            val fallbackCurrent = currentValue ?: run {
+                listOf(presetChipOne, presetChipTwo, presetChipThree, presetChipFour).forEach { chip ->
+                    chip.text = "Värde saknas"
+                    chip.setOnClickListener(null)
+                }
+                return
             }
-
-            val secondValue = if (metricType == WatchType.MetricType.DIVIDEND_YIELD) fallbackCurrent * 1.10 else fallbackCurrent * 0.90
-            val thirdValue = if (metricType == WatchType.MetricType.DIVIDEND_YIELD) fallbackCurrent * 1.20 else fallbackCurrent * 0.80
-            val secondLabel = if (metricType == WatchType.MetricType.DIVIDEND_YIELD) "+10 %" else "-10 %"
-            val thirdLabel = if (metricType == WatchType.MetricType.DIVIDEND_YIELD) "+20 %" else "-20 %"
-            setPresetChip(
-                presetChipTwo,
-                "$secondLabel (${formatMetricValue(metricType, secondValue)})",
-                secondValue
-            ) { targetValueInput.setText(CurrencyHelper.formatDecimal(it)) }
-            setPresetChip(
-                presetChipThree,
-                "$thirdLabel (${formatMetricValue(metricType, thirdValue)})",
-                thirdValue
-            ) { targetValueInput.setText(CurrencyHelper.formatDecimal(it)) }
+            val multipliers = listOf(0.95, 0.90, 1.05, 1.10)
+            val labels = listOf("-5 %", "-10 %", "+5 %", "+10 %")
+            val chips = listOf(presetChipOne, presetChipTwo, presetChipThree, presetChipFour)
+            chips.forEachIndexed { index, chip ->
+                val value = fallbackCurrent * multipliers[index]
+                setPresetChip(
+                    chip,
+                    "${labels[index]} (${formatMetricValue(metricType, value)})",
+                    value
+                ) { targetValueInput.setText(CurrencyHelper.formatDecimal(it)) }
+            }
         }
         refreshMetricContext(selectedMetricType())
         metricTypeInput.doAfterTextChanged {

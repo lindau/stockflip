@@ -84,8 +84,7 @@ class GroupedWatchItemAdapter(
         private const val VIEW_TYPE_SEPARATOR = 4
         private const val TAG = "GroupedWatchItemAdapter"
         private const val VERY_CLOSE_THRESHOLD = 0.05
-        private const val CLOSE_THRESHOLD = 0.12
-        private const val NEAR_TRIGGER_SECTION_THRESHOLD = 0.20
+        private const val NEAR_TRIGGER_SECTION_THRESHOLD = 0.10
     }
 
     override fun getItemViewType(position: Int): Int {
@@ -279,6 +278,14 @@ class GroupedWatchItemAdapter(
                     null
                 }
             }
+            .groupBy { nearTriggerGroupingKey(it.uiState.item) }
+            .values
+            .mapNotNull { candidatesForGroup ->
+                candidatesForGroup.minWithOrNull(
+                    compareBy<OverviewCandidate> { it.proximity }
+                        .thenByDescending { it.uiState.item.id }
+                )
+            }
             .sortedBy { it.proximity }
             .map { it.uiState.item.id to it }
 
@@ -367,6 +374,23 @@ class GroupedWatchItemAdapter(
         return item.ticker
             ?: item.companyName
             ?: "${item.watchType.kind.name}-${item.id}"
+    }
+
+    private fun nearTriggerGroupingKey(item: WatchItem): String {
+        val stockKey = item.ticker
+            ?: item.companyName
+            ?: item.ticker1
+            ?: item.companyName1
+            ?: item.id.toString()
+
+        val typeKey = when (val watchType = item.watchType) {
+            is WatchType.KeyMetrics -> "${watchType.kind.name}:${watchType.metricType.name}"
+            is WatchType.DailyMove -> "${watchType.kind.name}:${watchType.direction.name}"
+            is WatchType.ATHBased -> "${watchType.kind.name}:${watchType.dropType.name}"
+            else -> watchType.kind.name
+        }
+
+        return "$stockKey|$typeKey"
     }
 
     private fun sortTriggeredItems(items: List<WatchItemUiState>): List<WatchItemUiState> {
