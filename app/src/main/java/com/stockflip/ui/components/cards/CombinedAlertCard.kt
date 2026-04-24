@@ -119,6 +119,8 @@ fun CombinedAlertCard(
                         Switch(
                             checked = item.isActive,
                             onCheckedChange = { onToggleActive() },
+                            colors = watchItemSwitchColors(),
+                            thumbContent = { watchItemSwitchThumb() },
                             modifier = Modifier
                                 .scale(0.7f)
                                 .align(Alignment.Top)

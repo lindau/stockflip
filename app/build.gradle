@@ -5,18 +5,25 @@ plugins {
 }
 
 // Auto-version från git: versionCode = antal commits, versionName startar på "1.1.0"
-def gitCommitCount = {
+def gitValue = { List<String> args, String fallback ->
     try {
-        def proc = ['git', 'rev-list', '--count', 'HEAD'].execute(null, rootDir)
+        def proc = args.execute(null, rootDir)
         proc.waitFor()
-        return proc.text.trim().toInteger()
+        def value = proc.text.trim()
+        return proc.exitValue() == 0 && !value.isEmpty() ? value : fallback
     } catch (ignored) {
-        return 1
+        return fallback
     }
-}()
+}
+
+def gitCommitCount = gitValue(['git', 'rev-list', '--count', 'HEAD'], '1').toInteger()
+def gitShortSha = gitValue(['git', 'rev-parse', '--short=8', 'HEAD'], 'unknown')
+def gitDirtySuffix = gitValue(['git', 'status', '--porcelain'], '').isEmpty() ? '' : '.dirty'
+def buildStamp = new Date().format('yyyyMMdd.HHmmss', TimeZone.getTimeZone('UTC'))
 
 def versionNameBaseCommit = 111
 def patchVersion = Math.max(gitCommitCount - versionNameBaseCommit, 0)
+def appVersionName = "1.1.${patchVersion}+${gitCommitCount}.${gitShortSha}${gitDirtySuffix}.${buildStamp}"
 
 android {
     namespace = 'com.stockflip'
@@ -27,7 +34,7 @@ android {
         minSdk 24
         targetSdk 35
         versionCode gitCommitCount
-        versionName "1.1.${patchVersion}"
+        versionName appVersionName
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         

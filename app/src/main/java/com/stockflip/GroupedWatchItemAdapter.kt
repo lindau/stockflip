@@ -289,6 +289,9 @@ class GroupedWatchItemAdapter(
             .sortedBy { it.proximity }
             .map { it.uiState.item.id to it }
 
+        val veryCloseItems = nearTriggerItems.filter { it.second.proximity <= VERY_CLOSE_THRESHOLD }
+        val closeItems = nearTriggerItems.filter { it.second.proximity > VERY_CLOSE_THRESHOLD }
+
         val nearTriggerIds = nearTriggerItems.map { it.first }.toSet()
         val triggeredIds = triggeredItems.map { it.item.id }.toSet()
 
@@ -308,9 +311,13 @@ class GroupedWatchItemAdapter(
         addOverviewSection(groupedList, "Nytt och triggade", triggeredItems)
         addOverviewSection(
             groupedList = groupedList,
+            header = "Mycket nära",
+            items = veryCloseItems.map { it.second.uiState }
+        )
+        addOverviewSection(
+            groupedList = groupedList,
             header = "Nära att triggas",
-            items = nearTriggerItems.map { it.second.uiState },
-            nearLabels = nearTriggerItems.associate { it.first to it.second.label }
+            items = closeItems.map { it.second.uiState }
         )
         addOverviewSection(groupedList, "Aktiva case", activeItems)
         addOverviewSection(groupedList, "Inaktiva", inactiveItems)

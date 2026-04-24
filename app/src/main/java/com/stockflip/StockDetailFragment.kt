@@ -6,7 +6,6 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
-import android.content.res.ColorStateList
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
@@ -526,14 +525,9 @@ class StockDetailFragment : Fragment() {
         if (nearest == null) {
             binding.levelsHeadlineText.text = "Inga aktiva nivåer ännu"
             binding.levelsSummaryText.text = "Skapa pris-, drawdown- eller värderingsnivåer för att få snabbare beslutsstöd här."
-            binding.levelsStatusChip.isVisible = false
         } else {
-            val label = proximityLabel(nearest.second)
             binding.levelsHeadlineText.text = "Närmast trigger: ${describeWatch(nearest.first.item, data)}"
             binding.levelsSummaryText.text = buildNearestSummary(nearest.first, nearest.second, activeAlerts.size, data)
-            binding.levelsStatusChip.text = label
-            binding.levelsStatusChip.isVisible = true
-            applyLevelsChipStyle(label)
         }
 
         binding.levelsPriceTargetText.text = buildLevelLine(
@@ -657,33 +651,6 @@ class StockDetailFragment : Fragment() {
             WatchType.DailyMoveDirection.DOWN -> (-currentChange).coerceAtLeast(0.0)
             WatchType.DailyMoveDirection.BOTH -> abs(currentChange)
         }
-    }
-
-    private fun proximityLabel(proximity: Double): String {
-        return when {
-            proximity <= VERY_CLOSE_THRESHOLD -> "Mycket nära"
-            proximity <= CLOSE_THRESHOLD -> "Nära trigger"
-            else -> "På avstånd"
-        }
-    }
-
-    private fun applyLevelsChipStyle(label: String) {
-        val backgroundAttr = when (label) {
-            "Mycket nära" -> com.google.android.material.R.attr.colorErrorContainer
-            "Nära trigger" -> com.google.android.material.R.attr.colorTertiaryContainer
-            else -> com.google.android.material.R.attr.colorSurfaceVariant
-        }
-        val textAttr = when (label) {
-            "Mycket nära" -> com.google.android.material.R.attr.colorOnErrorContainer
-            "Nära trigger" -> com.google.android.material.R.attr.colorOnTertiaryContainer
-            else -> com.google.android.material.R.attr.colorOnSurfaceVariant
-        }
-        binding.levelsStatusChip.chipBackgroundColor = ColorStateList.valueOf(
-            com.google.android.material.color.MaterialColors.getColor(binding.levelsStatusChip, backgroundAttr)
-        )
-        binding.levelsStatusChip.setTextColor(
-            com.google.android.material.color.MaterialColors.getColor(binding.levelsStatusChip, textAttr)
-        )
     }
 
     private fun currentMetricValueFor(metricType: WatchType.MetricType, data: StockDetailData): Double? {

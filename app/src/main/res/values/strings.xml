@@ -18,6 +18,7 @@
     <string name="alert_delete_positive">Ta bort</string>
     <string name="alert_delete_negative">Avbryt</string>
     <string name="alert_deleted">Bevakning borttagen</string>
+    <string name="alert_deactivated">Bevakning inaktiverad</string>
     <string name="alert_undo">Ångra</string>
 
     <string name="tab_stocks">Översikt</string>

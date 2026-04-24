@@ -185,26 +185,28 @@ class AlertsFragment : Fragment() {
                     }
                 // Återställ ItemTouchHelper-state direkt — DiffUtil animerar bort raden när Room uppdaterar
                 groupedAdapter.notifyItemChanged(position)
-                val itemToDelete = listItem.item
+                val watchItem = listItem.item
                 // Dismiss any pending snackbar from a previous swipe before showing the new one
                 pendingDeleteSnackbar?.dismiss()
-                val snackbar = Snackbar.make(binding.root, R.string.alert_deleted, Snackbar.LENGTH_LONG)
-                snackbar.setAction(R.string.alert_undo) { /* Do nothing — item stays */ }
-                snackbar.addCallback(object : Snackbar.Callback() {
-                    override fun onDismissed(transientBottomBar: Snackbar?, event: Int) {
-                        if (event != DISMISS_EVENT_ACTION) {
+                viewLifecycleOwner.lifecycleScope.launch {
+                    try {
+                        viewModel.toggleWatchItemActive(watchItem, false)
+                        val snackbar = Snackbar.make(binding.root, R.string.alert_deactivated, Snackbar.LENGTH_LONG)
+                        snackbar.setAction(R.string.alert_undo) {
                             viewLifecycleOwner.lifecycleScope.launch {
                                 try {
-                                    viewModel.deleteWatchItem(itemToDelete)
+                                    viewModel.toggleWatchItemActive(watchItem, true)
                                 } catch (e: Exception) {
-                                    Toast.makeText(requireContext(), e.message ?: "Kunde inte ta bort bevakning", Toast.LENGTH_LONG).show()
+                                    Toast.makeText(requireContext(), e.message ?: "Kunde inte återaktivera bevakning", Toast.LENGTH_LONG).show()
                                 }
                             }
                         }
+                        snackbar.show()
+                        pendingDeleteSnackbar = snackbar
+                    } catch (e: Exception) {
+                        Toast.makeText(requireContext(), e.message ?: "Kunde inte inaktivera bevakning", Toast.LENGTH_LONG).show()
                     }
-                })
-                snackbar.show()
-                pendingDeleteSnackbar = snackbar
+                }
             },
             onSwipedRight = { position ->
                 val listItem = groupedAdapter.currentList.getOrNull(position) as? GroupedListItem.WatchItemWrapper

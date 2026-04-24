@@ -118,7 +118,7 @@ Unit tests are fully offline and include MockWebServer fixtures for Yahoo Financ
 ## Versioning
 
 - `versionCode` follows total git commit count
-- `versionName` starts at `1.1.0` and increments the patch number automatically from that baseline
+- `versionName` starts at `1.1.0`, increments the patch number automatically from that baseline, and appends git/build metadata as `+<commit-count>.<short-sha>[.dirty].<yyyyMMdd.HHmmss>`
 - The app menu shows `BuildConfig.VERSION_NAME`
 
 ## Maintenance

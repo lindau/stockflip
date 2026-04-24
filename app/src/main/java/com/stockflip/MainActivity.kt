@@ -651,13 +651,8 @@ class MainActivity : AppCompatActivity() {
     private fun setupSwipeToDelete() {
         val callback = SwipeToDeleteCallback(
             context = this,
-            canSwipe = { position ->
-                val adapter = binding.stockPairsList.adapter as? GroupedWatchItemAdapter ?: return@SwipeToDeleteCallback false
-                val item = adapter.currentList.getOrNull(position) ?: return@SwipeToDeleteCallback false
-                item !is GroupedListItem.Header &&
-                    item !is GroupedListItem.GroupSeparator &&
-                    item !is GroupedListItem.OverviewSummary
-            },
+            // Översikt ska vara ett rent läsläge. Hantering sker i Mina case.
+            canSwipe = { false },
             onSwiped = { position ->
                 val adapter = binding.stockPairsList.adapter as? GroupedWatchItemAdapter ?: return@SwipeToDeleteCallback
                 val item = adapter.currentList.getOrNull(position) ?: return@SwipeToDeleteCallback

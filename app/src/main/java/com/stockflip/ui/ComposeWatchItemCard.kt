@@ -52,7 +52,13 @@ fun ComposeWatchItemCard(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .alpha(if (item.isActive) 1f else 0.82f)
+            .alpha(
+                when {
+                    item.isActive -> 1f
+                    showControls -> 1f
+                    else -> 0.82f
+                }
+            )
             .combinedClickable(
                 onClick = onItemClick,
                 onLongClick = onLongClick
