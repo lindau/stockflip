@@ -1,6 +1,7 @@
 package com.stockflip.ui.components.cards
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
@@ -13,7 +14,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.stockflip.WatchItem
 import com.stockflip.ui.theme.LocalOnTriggeredBadge
@@ -165,5 +168,34 @@ internal fun NearTriggerBadge() {
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSecondaryContainer,
         )
+    }
+}
+
+@Composable
+internal fun InlineAlertBadge(watchItem: WatchItem) {
+    when {
+        watchItem.isTriggered -> TriggeredBadge(watchItem.lastTriggeredDate)
+        LocalNearTriggerLabel.current != null -> NearTriggerBadge()
+    }
+}
+
+@Composable
+internal fun ConditionStatusRow(
+    text: String,
+    textColor: Color,
+    trailingBadge: (@Composable () -> Unit)? = null,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = text,
+            modifier = Modifier.weight(1f),
+            style = MaterialTheme.typography.bodyMedium,
+            color = textColor,
+        )
+        trailingBadge?.invoke()
     }
 }

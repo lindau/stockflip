@@ -304,7 +304,7 @@ class GroupedWatchItemAdapter(
             GroupedListItem.OverviewSummary(
                 nearTriggerCount = nearTriggerItems.size,
                 triggeredTodayCount = triggeredItems.count { it.item.lastTriggeredDate == today },
-                activeCount = stockItems.count { it.item.isActive }
+                activeCount = stockItems.count { it.item.isActive },
             )
         )
 
@@ -429,6 +429,12 @@ class GroupedWatchItemAdapter(
             ?: item.companyName1
             ?: item.ticker1
             ?: item.watchType.kind.displayName
+    }
+
+    private fun markOverviewItemSeen(item: WatchItem) {
+        if (displayMode != DisplayMode.OVERVIEW || !TriggerSeenTracker.isNew(item)) return
+        TriggerSeenTracker.markSeen(item)
+        rebuildAndSubmitList()
     }
 
     private fun sortWatchItemsAlphabetically(items: List<WatchItem>): List<WatchItem> {
@@ -623,6 +629,7 @@ class GroupedWatchItemAdapter(
                             if (selectionMode) {
                                 onItemLongClick?.invoke(item)
                             } else {
+                                markOverviewItemSeen(item)
                                 onItemClick(item)
                             }
                         },

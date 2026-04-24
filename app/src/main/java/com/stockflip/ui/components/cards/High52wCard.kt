@@ -66,6 +66,9 @@ fun High52wCard(
 
     val cardBorder = LocalCardBorder.current
     val showStockHeader = showControls || groupPosition == GroupPosition.ONLY || groupPosition == GroupPosition.FIRST
+    val listBadge = if (!showControls && (item.isTriggered || LocalNearTriggerLabel.current != null)) {
+        @Composable { InlineAlertBadge(item) }
+    } else null
 
     val animatedContainerColor by animateColorAsState(
         targetValue = if (isTriggered) MaterialTheme.colorScheme.tertiaryContainer else containerColor,
@@ -148,20 +151,20 @@ fun High52wCard(
                     )
                 }
 
-                Text(
+                ConditionStatusRow(
                     text = "Drawdown: ≥ $targetDropText från 52v-topp",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = if (isTriggered) MaterialTheme.colorScheme.tertiary
-                            else MaterialTheme.colorScheme.onSurfaceVariant,
+                    textColor = if (isTriggered) MaterialTheme.colorScheme.tertiary
+                        else MaterialTheme.colorScheme.onSurfaceVariant,
+                    trailingBadge = listBadge,
                 )
-                if (!item.isTriggered) {
+                if (!item.isTriggered && showControls) {
                     Spacer(modifier = Modifier.height(6.dp))
                     NearTriggerBadge()
                 }
 
                 TriggerHistoryRow(triggerHistory)
 
-                if (item.isTriggered) {
+                if (item.isTriggered && showControls) {
                     Spacer(modifier = Modifier.height(6.dp))
                     TriggeredBadge(item.lastTriggeredDate)
                 }

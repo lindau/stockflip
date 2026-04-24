@@ -4,7 +4,7 @@ plugins {
     id 'org.jetbrains.kotlin.plugin.compose'
 }
 
-// Auto-version från git: versionCode = antal commits, versionName startar på "1.1.0"
+// Auto-version: versionName visas som "1.1.<löpnummer>" och räknas upp vid varje app-build.
 def gitValue = { List<String> args, String fallback ->
     try {
         def proc = args.execute(null, rootDir)
@@ -17,13 +17,58 @@ def gitValue = { List<String> args, String fallback ->
 }
 
 def gitCommitCount = gitValue(['git', 'rev-list', '--count', 'HEAD'], '1').toInteger()
-def gitShortSha = gitValue(['git', 'rev-parse', '--short=8', 'HEAD'], 'unknown')
-def gitDirtySuffix = gitValue(['git', 'status', '--porcelain'], '').isEmpty() ? '' : '.dirty'
-def buildStamp = new Date().format('yyyyMMdd.HHmmss', TimeZone.getTimeZone('UTC'))
+def versionPropertiesFile = rootProject.file("version.properties")
+def versionProperties = new Properties()
 
-def versionNameBaseCommit = 111
-def patchVersion = Math.max(gitCommitCount - versionNameBaseCommit, 0)
-def appVersionName = "1.1.${patchVersion}+${gitCommitCount}.${gitShortSha}${gitDirtySuffix}.${buildStamp}"
+if (versionPropertiesFile.exists()) {
+    versionPropertiesFile.withInputStream { versionProperties.load(it) }
+}
+
+def currentPatchVersion = (versionProperties.getProperty("PATCH_VERSION") ?: "7").toInteger()
+def currentVersionCode = (versionProperties.getProperty("VERSION_CODE") ?: gitCommitCount.toString()).toInteger()
+def cliProjectProperties = gradle.startParameter.projectProperties
+def skipVersionBump = (cliProjectProperties["skipVersionBump"] ?: project.findProperty("skipVersionBump") ?: "false")
+    .toString()
+    .toBoolean()
+def versionBumpLockFile = rootProject.file(".gradle/version-bump.lock")
+def versionBumpLockTtlMs = 10 * 60 * 1000L
+
+def shouldIncrementBuildVersion = gradle.startParameter.taskNames.any { taskName ->
+    def normalizedTask = taskName.toLowerCase()
+    normalizedTask.contains("assemble") ||
+        normalizedTask.contains("bundle") ||
+        normalizedTask.contains("install") ||
+        normalizedTask.contains("compile")
+}
+
+def patchVersion = currentPatchVersion
+def appVersionCode = currentVersionCode
+
+def hasFreshVersionBumpLock = versionBumpLockFile.exists() &&
+    (System.currentTimeMillis() - versionBumpLockFile.lastModified()) < versionBumpLockTtlMs
+
+if (shouldIncrementBuildVersion && !skipVersionBump) {
+    if (!hasFreshVersionBumpLock) {
+        versionBumpLockFile.parentFile.mkdirs()
+        versionBumpLockFile.text = Long.toString(System.currentTimeMillis())
+
+        patchVersion = currentPatchVersion + 1
+        appVersionCode = currentVersionCode + 1
+        versionProperties.setProperty("PATCH_VERSION", patchVersion.toString())
+        versionProperties.setProperty("VERSION_CODE", appVersionCode.toString())
+        versionPropertiesFile.withOutputStream { output ->
+            versionProperties.store(output, "Managed by Gradle. Incremented once per app build.")
+        }
+    }
+}
+
+gradle.buildFinished {
+    if (versionBumpLockFile.exists()) {
+        versionBumpLockFile.delete()
+    }
+}
+
+def appVersionName = "1.1.${patchVersion}"
 
 android {
     namespace = 'com.stockflip'
@@ -33,7 +78,7 @@ android {
         applicationId "com.stockflip"
         minSdk 24
         targetSdk 35
-        versionCode gitCommitCount
+        versionCode appVersionCode
         versionName appVersionName
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"

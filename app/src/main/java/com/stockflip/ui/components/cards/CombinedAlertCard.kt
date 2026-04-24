@@ -100,6 +100,8 @@ fun CombinedAlertCard(
                             text = item.companyName ?: firstSymbol,
                             style = MaterialTheme.typography.titleMedium,
                             color = MaterialTheme.colorScheme.onSurface,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
                         )
                         Text(
                             text = firstSymbol,
