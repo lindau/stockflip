@@ -27,15 +27,6 @@ Unit tests are network-free and include MockWebServer fixtures for Yahoo chart r
 
 Live/network tests in `YahooFinanceServiceTest.kt` are annotated with `@Ignore` — remove the annotation to run them manually. Recommended test symbols: `VOLV-B.ST` (Swedish), `AAPL` (US), `BTC-USD` (crypto), `EQNR.OL` (Norway).
 
-## API Key Setup
-
-Add to `local.properties` (not committed to git):
-```
-FINNHUB_API_KEY=your_key_here
-```
-
-This is injected as `BuildConfig.FINNHUB_API_KEY` at build time.
-
 ## Architecture
 
 ### MVVM with Room + WorkManager
@@ -68,8 +59,6 @@ This is injected as `BuildConfig.FINNHUB_API_KEY` at build time.
 **`StockPairDatabase`** (Room, version 8) — three entities: `StockPair`, `WatchItem`, `MetricHistoryEntity`. `WatchType` is stored as a pipe-delimited string via `WatchTypeConverter`. Explicit migrations MIGRATION_4_5 through MIGRATION_7_8 are defined; schema files are exported to `app/schemas/`.
 
 **`MarketDataService`** (interface) — abstraction over Yahoo Finance. Implemented by `YahooFinanceService` (singleton object using Retrofit + OkHttp with cookie jar). `YahooMarketDataServiceImpl` delegates to this. Inject the interface in ViewModels and use cases to enable fake implementations in tests.
-
-**`FinnhubService`** — alternative data source used specifically for key metrics (PE, PS, Dividend Yield). Requires `FINNHUB_API_KEY` in `local.properties`.
 
 **`StockRepository`** — handles stock symbol search (Yahoo Finance autocomplete), with a TTL cache. Prioritizes exact ticker matches, then Swedish stocks, then alphabetical.
 
@@ -104,7 +93,7 @@ The app uses a **hybrid View/Compose** approach:
 - **Coroutine job-hantering:** Om `viewModelScope.launch` anropas från en funktion som kan triggas flera gånger (t.ex. vid användarinteraktion), spara alltid `Job`-referensen och avbryt föregående job innan ett nytt startas. Annars kan en äldre coroutine skriva ett gammalt `Error`-tillstånd ovanpå ett nyare lyckat resultat. Mönster: `private var myJob: Job? = null` / `myJob?.cancel(); myJob = viewModelScope.launch { ... }`
 - **Tester med StockDetailViewModel:** Använd INTE `advanceUntilIdle()` i tester som skapar en `StockDetailViewModel`. `observeAlerts()` samlar en oändlig `MutableStateFlow` vars `fetchPricesForItems()`-anrop schemalägger ny work, vilket gör att `advanceUntilIdle()` aldrig terminerar (hänger testsviten i timmar).
 - **Tester med MainViewModel:** Använd `runBlocking` istället för `runTest` i tester som skapar en `MainViewModel`. `startAutoRefresh()` kör en `while(true)`-loop som gör att `runTest`'s interna `advanceUntilIdle()` aldrig terminerar.
-- **Live nätverkstester:** Alla testklasser som gör riktiga nätverksanrop (t.ex. `FinnhubServiceTest`, `YahooFinanceServiceTest`) MÅSTE ha `@Ignore` på klassnivå. De får inte köras automatiskt i CI/CD eller vid vanlig `./gradlew testDebugUnitTest`.
+- **Live nätverkstester:** Alla testklasser som gör riktiga nätverksanrop (t.ex. `YahooFinanceServiceTest`) MÅSTE ha `@Ignore` på klassnivå. De får inte köras automatiskt i CI/CD eller vid vanlig `./gradlew testDebugUnitTest`.
 - **Robolectric:** Sätt `includeAndroidResources = false` i `testOptions` (i `build.gradle`). `includeAndroidResources = true` triggar Robolectric SDK-instrumentering för ALLA unit tests, även de utan `@RunWith(RobolectricTestRunner::class)`. Importera aldrig `org.robolectric.*` i testklasser som inte aktivt använder Robolectric-runnern.
 
 ## Dokumentation

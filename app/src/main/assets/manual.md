@@ -361,7 +361,7 @@ Utan notisbehörighet kan appen inte meddela dig när en bevakning utlöses — 
 - Ja, du kan ha hur många bevakningar du vill på samma aktie, av olika eller samma typ.
 
 **Hur hämtas nyckeltal (P/E etc.)?**
-- Via Finnhub (extern datatjänst). Nyckeltal uppdateras med lägre frekvens än kurser och kan ibland saknas för ovanliga aktier.
+- Via Yahoo Finance. Nyckeltal kan ibland saknas för ovanliga aktier eftersom appen inte använder någon separat klientnyckelbaserad fallback.
 
 **Vilka aktier kan jag bevaka?**
 - Alla aktier som finns på Yahoo Finance: svenska (OMX), amerikanska (NASDAQ/NYSE), krypto och mer. Svenska aktier söks med tickersuffix `.ST` (t.ex. `VOLV-B.ST`).
