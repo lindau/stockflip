@@ -55,7 +55,7 @@ MVVM with Room, StateFlow, WorkManager, and Retrofit.
 ```
 UI (Fragments + Compose)
    └── ViewModels (StateFlow)
-        └── MarketDataService (Yahoo Finance + Finnhub)
+        └── MarketDataService (Yahoo Finance)
              └── Room Database (StockPair, WatchItem, MetricHistoryEntity)
                   └── WorkManager (StockPriceUpdateWorker, MetricHistoryUpdateWorker)
 ```
@@ -85,17 +85,6 @@ UI (Fragments + Compose)
 
 - Android Studio Hedgehog or later
 - Android SDK 35
-- A free [Finnhub](https://finnhub.io) API key (for PE/PS/yield alerts)
-
-### API Key
-
-Create `local.properties` in the project root (not committed to git) and add:
-
-```properties
-FINNHUB_API_KEY=your_key_here
-```
-
-This is injected as `BuildConfig.FINNHUB_API_KEY` at build time.
 
 ### Build
 
@@ -132,8 +121,7 @@ Unit tests are fully offline and include MockWebServer fixtures for Yahoo Financ
 
 ## Data Sources
 
-- **Yahoo Finance** — prices, chart history, 52-week high/low, previous close. Uses the unofficial API via Retrofit with cookie handling.
-- **Finnhub** — PE ratio, PS ratio, dividend yield. Free tier: 60 req/min. Falls back to Yahoo Finance fields where available.
+- **Yahoo Finance** — prices, chart history, 52-week high/low, previous close och nyckeltal där Yahoo faktiskt levererar dem. Uses the unofficial API via Retrofit with cookie handling.
 
 ## License
 

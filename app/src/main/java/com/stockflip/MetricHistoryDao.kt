@@ -73,6 +73,9 @@ interface MetricHistoryDao {
         metricType: String
     ): List<MetricHistoryEntity>
 
+    @Query("SELECT * FROM metric_history")
+    suspend fun getAllEntries(): List<MetricHistoryEntity>
+
     /**
      * Tar bort gammal historik äldre än angivet datum.
      * Används för cleanup.
@@ -103,4 +106,3 @@ interface MetricHistoryDao {
     """)
     suspend fun getLastUpdateDate(symbol: String, metricType: String): Long?
 }
-

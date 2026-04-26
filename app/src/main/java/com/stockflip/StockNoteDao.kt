@@ -7,6 +7,9 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface StockNoteDao {
+    @Query("SELECT * FROM stock_notes")
+    suspend fun getAllNotes(): List<StockNote>
+
     @Query("SELECT * FROM stock_notes WHERE ticker = :ticker")
     fun getByTickerFlow(ticker: String): Flow<StockNote?>
 

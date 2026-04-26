@@ -29,7 +29,7 @@ class StockRepository(
     suspend fun searchStocks(query: String, includeCrypto: Boolean = true): Flow<SearchState> = flow {
         try {
             emit(SearchState.Loading)
-            Log.d(TAG, "Starting stock search for query: $query (includeCrypto: $includeCrypto)")
+            Log.d(TAG, "Starting stock search (includeCrypto: $includeCrypto)")
             
             if (query.length < 2) {
                 Log.d(TAG, "Query too short, returning empty list")
@@ -41,7 +41,7 @@ class StockRepository(
             val cacheKey = "${query.trim().lowercase()}_$includeCrypto"
             val cached = cache[cacheKey]
             if (cached != null && !isCacheExpired(cached.timestamp)) {
-                Log.d(TAG, "Returning cached results for query: $query")
+                Log.d(TAG, "Returning cached stock search results")
                 emit(SearchState.Success(cached.results))
                 return@flow
             }
@@ -54,7 +54,7 @@ class StockRepository(
                 else -> query
             }
             
-            Log.d(TAG, "Modified search query: $searchQuery")
+            Log.d(TAG, "Prepared stock search query")
             
             // Perform search
             val results = stockSearchService.searchStocks(searchQuery, includeCrypto)

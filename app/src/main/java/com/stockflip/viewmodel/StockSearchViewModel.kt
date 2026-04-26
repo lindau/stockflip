@@ -20,7 +20,7 @@ open class StockSearchViewModel(
     private var searchJob: Job? = null
 
     fun search(query: String, includeCrypto: Boolean = true) {
-        Log.d(TAG, "Starting search for query: $query (includeCrypto: $includeCrypto)")
+        Log.d(TAG, "Starting stock search (includeCrypto: $includeCrypto)")
         
         if (query.length < 2) {
             Log.d(TAG, "Query too short, clearing results")
@@ -31,16 +31,20 @@ open class StockSearchViewModel(
         searchJob?.cancel()
         searchJob = viewModelScope.launch {
             try {
-                Log.d(TAG, "Executing search for query: $query")
+                Log.d(TAG, "Executing stock search")
                 _searchState.value = SearchState.Loading
                 
                 repository.searchStocks(query, includeCrypto)
                     .collect { state ->
-                        Log.d(TAG, "Received search state: $state")
+                        when (state) {
+                            is SearchState.Loading -> Unit
+                            is SearchState.Success -> Log.d(TAG, "Stock search completed with ${state.results.size} results")
+                            is SearchState.Error -> Log.w(TAG, "Stock search failed")
+                        }
                         _searchState.value = state
                     }
             } catch (e: Exception) {
-                Log.e(TAG, "Error during search: ${e.message}")
+                Log.e(TAG, "Error during stock search: ${e.message}")
                 _searchState.value = SearchState.Error(e.message ?: "Unknown error", query)
             }
         }

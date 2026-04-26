@@ -2,7 +2,6 @@ package com.stockflip
 
 import android.util.Log
 import okhttp3.OkHttpClient
-import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.GET
@@ -84,21 +83,16 @@ object YahooFinanceService : MarketDataService {
     private const val TAG = "YahooFinanceService"
     private const val BASE_URL = "https://query1.finance.yahoo.com/"
     private const val SEARCH_URL = "https://query1.finance.yahoo.com/v1/finance/search"
-    
-    private val loggingInterceptor = HttpLoggingInterceptor().apply {
-        level = HttpLoggingInterceptor.Level.BODY
-    }
 
     // CookieManager to handle cookies automatically
     private val cookieManager = CookieManager().apply {
-        setCookiePolicy(CookiePolicy.ACCEPT_ALL)
+        setCookiePolicy(CookiePolicy.ACCEPT_ORIGINAL_SERVER)
     }
     private val cookieJar = JavaNetCookieJar(cookieManager)
     
     // Shared OkHttpClient with cookie support
     private val client = OkHttpClient.Builder()
         .cookieJar(cookieJar)
-        .addInterceptor(loggingInterceptor)
         .connectTimeout(15, TimeUnit.SECONDS)
         .readTimeout(15, TimeUnit.SECONDS)
         .build()
@@ -163,7 +157,7 @@ object YahooFinanceService : MarketDataService {
                 }
                 cookieResponse.close()
             } catch (e: java.net.SocketTimeoutException) {
-                Log.w(TAG, "Cookie request timed out after 5 seconds, continuing without cookie")
+                Log.w(TAG, "Cookie request timed out after 2 seconds, continuing without cookie")
             } catch (e: Exception) {
                 Log.w(TAG, "Cookie request failed: ${e.message}, continuing anyway")
             }
@@ -184,7 +178,7 @@ object YahooFinanceService : MarketDataService {
                     val fetchedCrumb = crumbResponse.body?.string()
                     if (!fetchedCrumb.isNullOrBlank()) {
                         crumb = fetchedCrumb.trim()
-                        Log.d(TAG, "Successfully fetched crumb: $crumb")
+                        Log.d(TAG, "Successfully fetched Yahoo crumb")
                     } else {
                         Log.e(TAG, "Crumb response was empty")
                     }
@@ -193,7 +187,7 @@ object YahooFinanceService : MarketDataService {
                 }
                 crumbResponse.close()
             } catch (e: java.net.SocketTimeoutException) {
-                Log.e(TAG, "Crumb request timed out after 5 seconds")
+                Log.e(TAG, "Crumb request timed out after 2 seconds")
             } catch (e: Exception) {
                 Log.e(TAG, "Error fetching crumb: ${e.message}", e)
             }
@@ -234,12 +228,11 @@ object YahooFinanceService : MarketDataService {
     }
 
     override suspend fun getKeyMetric(symbol: String, metricType: WatchType.MetricType): Double? = withContext(Dispatchers.IO) {
-        // Try Yahoo Finance first, unless circuit breaker is open
         try {
             if (consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {
                 val timeSinceLastFailure = System.currentTimeMillis() - lastFailureTime
                 if (timeSinceLastFailure < FAILURE_COOLDOWN_MS) {
-                    Log.w(TAG, "Yahoo Finance circuit breaker open (failures: $consecutiveFailures), skipping to fallback")
+                    Log.w(TAG, "Yahoo Finance circuit breaker open (failures: $consecutiveFailures)")
                     throw Exception("Circuit breaker open")
                 } else {
                     Log.i(TAG, "Circuit breaker cooldown expired, retrying Yahoo Finance")
@@ -247,7 +240,7 @@ object YahooFinanceService : MarketDataService {
                 }
             }
             
-            Log.d(TAG, "Fetching key metric ${metricType.name} for symbol: $symbol from Yahoo Finance")
+            Log.d(TAG, "Fetching key metric from Yahoo Finance")
             ensureCrumb()
             
             if (crumb == null) {
@@ -258,7 +251,7 @@ object YahooFinanceService : MarketDataService {
             var url = "https://query2.finance.yahoo.com/v10/finance/quoteSummary/$symbol?modules=summaryDetail"
             if (crumb != null) {
                 url += "&crumb=$crumb"
-                Log.d(TAG, "Using crumb in request: $crumb")
+                Log.d(TAG, "Using Yahoo crumb for quoteSummary request")
             } else {
                 Log.d(TAG, "Making request without crumb (may fail with 401)")
             }
@@ -268,7 +261,7 @@ object YahooFinanceService : MarketDataService {
                 .addHeader("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
                 .build()
                 
-            Log.d(TAG, "Making request to Yahoo Finance API: $url")
+            Log.d(TAG, "Making Yahoo Finance quoteSummary request")
             val response = client.newCall(request).execute()
             Log.d(TAG, "Yahoo Finance API response received: ${response.code} ${response.message}")
             
@@ -305,7 +298,7 @@ object YahooFinanceService : MarketDataService {
                         }
                         
                         if (value != null && !value.isNaN() && value > 0) {
-                            Log.d(TAG, "Successfully fetched ${metricType.name} for $symbol from Yahoo: $value")
+                            Log.d(TAG, "Successfully fetched ${metricType.name} from Yahoo")
                             return@withContext value
                         } else {
                             Log.w(TAG, "Could not extract ${metricType.name} from Yahoo response (value: $value)")
@@ -326,29 +319,16 @@ object YahooFinanceService : MarketDataService {
             }
             response.close()
         } catch (e: Exception) {
-            Log.e(TAG, "Error fetching key metric ${metricType.name} for $symbol from Yahoo: ${e.message}")
+            Log.e(TAG, "Error fetching key metric from Yahoo: ${e.message}")
             if (e.message != "Circuit breaker open") {
                 consecutiveFailures++
                 lastFailureTime = System.currentTimeMillis()
                 Log.w(TAG, "Yahoo failure count: $consecutiveFailures")
             }
+            return@withContext null
         }
 
-        // Fallback to Finnhub
-        try {
-            Log.d(TAG, "Falling back to Finnhub for key metric ${metricType.name} for symbol: $symbol")
-            val result = FinnhubService.getKeyMetric(symbol, metricType)
-            if (result == null) {
-                Log.w(TAG, "Finnhub returned null for ${metricType.name} for $symbol")
-            } else {
-                Log.d(TAG, "Finnhub returned ${metricType.name} for $symbol: $result")
-            }
-            return@withContext result
-        } catch (e: Exception) {
-            Log.e(TAG, "Error fetching key metric ${metricType.name} for $symbol from Finnhub: ${e.message}", e)
-            e.printStackTrace()
-            null
-        }
+        null
     }
 
     override suspend fun getATH(symbol: String): Double? {
@@ -396,7 +376,6 @@ object YahooFinanceService : MarketDataService {
     }
 
     override suspend fun getAllKeyMetrics(symbol: String): KeyMetrics? = withContext(Dispatchers.IO) {
-        // Försök Yahoo Finance först (ett anrop för alla tre nyckeltal)
         try {
             if (consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {
                 val timeSinceLastFailure = System.currentTimeMillis() - lastFailureTime
@@ -446,21 +425,11 @@ object YahooFinanceService : MarketDataService {
                 consecutiveFailures++
                 lastFailureTime = System.currentTimeMillis()
             }
-            Log.w(TAG, "Yahoo getAllKeyMetrics failed for $symbol: ${e.message}")
-        }
-
-        // Fallback till Finnhub (tre parallella anrop)
-        try {
-            val pe = FinnhubService.getKeyMetric(symbol, WatchType.MetricType.PE_RATIO)
-            val ps = FinnhubService.getKeyMetric(symbol, WatchType.MetricType.PS_RATIO)
-            val div = FinnhubService.getKeyMetric(symbol, WatchType.MetricType.DIVIDEND_YIELD)
-            if (pe != null || ps != null || div != null) {
-                KeyMetrics(peRatio = pe, psRatio = ps, dividendYield = div)
-            } else null
-        } catch (e: Exception) {
-            Log.e(TAG, "Finnhub getAllKeyMetrics failed for $symbol: ${e.message}")
+            Log.w(TAG, "Yahoo getAllKeyMetrics failed: ${e.message}")
             null
         }
+
+        null
     }
 
     @JvmStatic
@@ -479,7 +448,7 @@ object YahooFinanceService : MarketDataService {
                 "&enableEnhancedTrivialQuery=false" +
                 "&fields=symbol,shortname,exchange,quoteType,longname,typeDisp,market"
 
-            Log.d(TAG, "Searching crypto with URL: $url")
+            Log.d(TAG, "Searching crypto results for query length ${query.length}")
             
             val client = OkHttpClient.Builder()
                 .connectTimeout(10, TimeUnit.SECONDS)
@@ -504,7 +473,7 @@ object YahooFinanceService : MarketDataService {
                 return@withContext emptyList()
             }
             
-            Log.d(TAG, "Received crypto response: $responseBody")
+            Log.d(TAG, "Received crypto response (${responseBody.length} chars)")
             
             val jsonObject = JSONObject(responseBody)
             val quotes = jsonObject.optJSONArray("quotes") ?: return@withContext emptyList()
@@ -532,7 +501,7 @@ object YahooFinanceService : MarketDataService {
                 }
             }
             
-            Log.d(TAG, "Found ${results.size} crypto matching query: $query")
+            Log.d(TAG, "Found ${results.size} crypto search results")
             results
             
         } catch (e: Exception) {
@@ -560,7 +529,7 @@ object YahooFinanceService : MarketDataService {
                 "&exchange=STO" +
                 "&fields=symbol,shortname,exchange,quoteType,longname,typeDisp,market"
 
-            Log.d(TAG, "Searching stocks with URL: $equityUrl")
+            Log.d(TAG, "Searching stock results for query length ${query.length}")
             
             val client = OkHttpClient.Builder()
                 .connectTimeout(10, TimeUnit.SECONDS)
@@ -619,7 +588,7 @@ object YahooFinanceService : MarketDataService {
                 allResults.addAll(cryptoResults)
             }
             
-            Log.d(TAG, "Found ${allResults.size} total results (stocks + crypto) matching query: $query")
+            Log.d(TAG, "Found ${allResults.size} total search results")
             allResults
             
         } catch (e: Exception) {

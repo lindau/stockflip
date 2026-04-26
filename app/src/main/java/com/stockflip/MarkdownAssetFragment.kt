@@ -1,11 +1,13 @@
 package com.stockflip
 
 import android.content.res.Configuration
+import android.os.Build
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.webkit.WebResourceRequest
+import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.fragment.app.Fragment
@@ -19,21 +21,34 @@ class MarkdownAssetFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        val assetName = requireArguments().getString(ARG_ASSET_NAME) ?: "manual.md"
+        val assetName = requireArguments()
+            .getString(ARG_ASSET_NAME)
+            .takeIf { it in ALLOWED_ASSETS }
+            ?: DEFAULT_ASSET_NAME
         val wv = WebView(requireContext())
         webView = wv
         val isDark = (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) ==
             Configuration.UI_MODE_NIGHT_YES
         val markdown = requireContext().assets.open(assetName).bufferedReader().use { it.readText() }
-        wv.settings.javaScriptEnabled = false
+        with(wv.settings) {
+            javaScriptEnabled = false
+            domStorageEnabled = false
+            allowFileAccess = false
+            allowContentAccess = false
+            blockNetworkLoads = true
+            mixedContentMode = WebSettings.MIXED_CONTENT_NEVER_ALLOW
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                safeBrowsingEnabled = true
+            }
+        }
         wv.webViewClient = object : WebViewClient() {
             override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
                 val scheme = request.url.scheme ?: return true
-                return scheme != "file" && scheme != "about"
+                return scheme != "about"
             }
         }
         wv.loadDataWithBaseURL(
-            "file:///android_asset/",
+            "about:blank",
             markdownToHtml(markdown, isDark),
             "text/html",
             "UTF-8",
@@ -50,6 +65,8 @@ class MarkdownAssetFragment : Fragment() {
 
     companion object {
         private const val ARG_ASSET_NAME = "asset_name"
+        private const val DEFAULT_ASSET_NAME = "manual.md"
+        private val ALLOWED_ASSETS = setOf("manual.md", "changelog.md")
 
         fun newInstance(assetName: String): MarkdownAssetFragment {
             return MarkdownAssetFragment().apply {
@@ -67,6 +84,7 @@ private fun markdownToHtml(markdown: String, darkMode: Boolean): String {
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src data:; script-src 'none'; connect-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'none'">
 <style>${buildManualCss()}</style>
 </head>
 <body class="$themeClass">

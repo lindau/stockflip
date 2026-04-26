@@ -9,11 +9,10 @@ import java.util.concurrent.TimeUnit
 /**
  * Service för att hantera historisk nyckeltal-data.
  * 
- * Koordinerar hämtning från API och lagring i Room via MetricHistoryRepository.
+ * Koordinerar lagring i Room via MetricHistoryRepository.
  * 
  * Strategi:
- * - För nuvarande värden: Hämta från Finnhub/Yahoo Finance och spara dagligen
- * - För historisk data: Försök hämta från Finnhub financials, annars bygg historik över tid
+ * - Bygg historik över tid genom att spara nuvarande Yahoo-värden dagligen.
  */
 class MetricHistoryService(
     private val metricHistoryRepository: MetricHistoryRepository
@@ -23,8 +22,7 @@ class MetricHistoryService(
     /**
      * Hämtar och sparar historisk data för ett nyckeltal.
      * 
-     * Försöker först hämta historik från API, annars bygger historik genom att
-     * spara nuvarande värden regelbundet.
+     * Bygger historik genom att spara nuvarande värden regelbundet.
      * 
      * @param symbol Aktiens symbol
      * @param metricType Typ av nyckeltal
@@ -36,53 +34,12 @@ class MetricHistoryService(
         currentValue: Double?
     ) = withContext(Dispatchers.IO) {
         try {
-            // Kontrollera om historik behöver uppdateras (baserat på tid)
-            val needsUpdateByTime = metricHistoryRepository.needsUpdate(symbol, metricType, maxAgeHours = 24)
-            
-            // Kontrollera om vi har tillräckligt med historik (minst 1 års data)
-            val existingSummary = metricHistoryRepository.getMetricHistorySummary(symbol, metricType)
-            val hasEnoughHistory = existingSummary != null && 
-                existingSummary.oneYear.average > 0.0 && 
-                metricHistoryRepository.hasEnoughHistory(symbol, metricType, minDays = 365)
-            
-            if (!needsUpdateByTime && hasEnoughHistory) {
-                Log.d(TAG, "History for $symbol ${metricType.name} is up to date and has sufficient data")
+            if (currentValue == null || currentValue <= 0.0) {
+                Log.w(TAG, "Skipping history update for $symbol ${metricType.name} because current value is missing")
                 return@withContext
             }
-            
-            if (!needsUpdateByTime && !hasEnoughHistory) {
-                Log.d(TAG, "History for $symbol ${metricType.name} is recent but insufficient, fetching from Finnhub")
-            } else if (needsUpdateByTime) {
-                Log.d(TAG, "History for $symbol ${metricType.name} needs update, fetching from Finnhub")
-            }
 
-            Log.d(TAG, "Fetching historical data for $symbol ${metricType.name} from Finnhub")
-
-            // Försök hämta historik från Finnhub
-            val historyData = try {
-                FinnhubService.getMetricHistory(symbol, metricType, years = 5)
-            } catch (e: Exception) {
-                Log.e(TAG, "Error fetching history from Finnhub for $symbol ${metricType.name}: ${e.message}", e)
-                null
-            }
-            
-            if (historyData != null && historyData.isNotEmpty()) {
-                // Spara historisk data från API
-                val historyPairs = historyData.map { it.date to it.value }
-                metricHistoryRepository.saveMetricHistoryList(symbol, metricType, historyPairs)
-                Log.d(TAG, "Saved ${historyData.size} historical data points from Finnhub API for $symbol ${metricType.name}")
-                
-                // Logga datumintervall för debugging
-                val firstDate = historyData.minOfOrNull { it.date }?.let { 
-                    java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(java.util.Date(it))
-                } ?: "N/A"
-                val lastDate = historyData.maxOfOrNull { it.date }?.let { 
-                    java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(java.util.Date(it))
-                } ?: "N/A"
-                Log.d(TAG, "History data range: $firstDate to $lastDate")
-            } else {
-                Log.w(TAG, "No historical data from Finnhub for $symbol ${metricType.name} - will not save any data")
-            }
+            saveCurrentValueAsHistory(symbol, metricType, currentValue)
         } catch (e: Exception) {
             Log.e(TAG, "Error fetching and saving history: ${e.message}", e)
         }
@@ -91,7 +48,7 @@ class MetricHistoryService(
     /**
      * Hämtar MetricHistorySummary för en aktie och nyckeltal-typ.
      * 
-     * Om historik saknas eller är gammal, försöker hämta och uppdatera.
+     * Om historik saknas eller är gammal, sparas nuvarande värde som ny datapunkt.
      */
     suspend fun getOrFetchHistorySummary(
         symbol: String,
@@ -164,4 +121,3 @@ class MetricHistoryService(
         }
     }
 }
-

@@ -79,6 +79,9 @@ class InMemoryWatchItemDao(
 class InMemoryStockNoteDao : StockNoteDao {
     private val state: MutableStateFlow<Map<String, StockNote>> = MutableStateFlow(emptyMap())
 
+    override suspend fun getAllNotes(): List<StockNote> =
+        state.value.values.toList()
+
     override fun getByTickerFlow(ticker: String): Flow<StockNote?> =
         state.map { it[ticker] }
 
@@ -97,6 +100,9 @@ class InMemoryTriggerHistoryDao : TriggerHistoryDao {
     override suspend fun insert(entity: TriggerHistoryEntity) {
         if (entries.none { it.id == entity.id }) entries.add(entity)
     }
+
+    override suspend fun getAllEntries(): List<TriggerHistoryEntity> =
+        entries.toList()
 
     override suspend fun getLatest(id: Int, limit: Int): List<TriggerHistoryEntity> =
         entries.filter { it.watchItemId == id }
@@ -150,6 +156,9 @@ class InMemoryMetricHistoryDao : MetricHistoryDao {
         entries.filter {
             it.symbol == symbol && it.metricType == metricType
         }.sortedBy { it.date }
+
+    override suspend fun getAllEntries(): List<MetricHistoryEntity> =
+        entries.toList()
 
     override suspend fun deleteOldHistory(olderThan: Long) {
         entries.removeAll { it.date < olderThan }

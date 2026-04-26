@@ -1,12 +1,16 @@
 package com.stockflip
 
 import android.content.Context
+import androidx.room.withTransaction
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.migration.Migration
 import androidx.room.TypeConverters
 import androidx.sqlite.db.SupportSQLiteDatabase
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runBlocking
+import java.io.File
 
 @Database(
     entities = [StockPair::class, WatchItem::class, MetricHistoryEntity::class, TriggerHistoryEntity::class, StockNote::class],
@@ -22,6 +26,8 @@ abstract class StockPairDatabase : RoomDatabase() {
     abstract fun stockNoteDao(): StockNoteDao
 
     companion object {
+        private const val LEGACY_DATABASE_NAME = "stock_pair_database"
+        private const val ENCRYPTED_DATABASE_NAME = "stock_pair_database_secure"
         private const val CREATE_METRIC_HISTORY_TABLE_SQL = """
             CREATE TABLE IF NOT EXISTS metric_history (
                 id TEXT PRIMARY KEY NOT NULL,
@@ -161,32 +167,104 @@ abstract class StockPairDatabase : RoomDatabase() {
         private var INSTANCE: StockPairDatabase? = null
 
         fun getDatabase(context: Context): StockPairDatabase {
+            val appContext = context.applicationContext
+            AppSecurityManager.init(appContext)
+
             return INSTANCE ?: synchronized(this) {
-                val instance = Room.databaseBuilder(
-                    context.applicationContext,
-                    StockPairDatabase::class.java,
-                    "stock_pair_database"
+                migrateLegacyDatabaseIfNeeded(appContext)
+                val instance = buildDatabase(
+                    context = appContext,
+                    databaseName = ENCRYPTED_DATABASE_NAME,
+                    encrypted = true
                 )
-                .addMigrations(
-                    MIGRATION_4_5,
-                    MIGRATION_5_6,
-                    MIGRATION_6_7,
-                    MIGRATION_7_8,
-                    MIGRATION_8_9,
-                    MIGRATION_9_10,
-                    MIGRATION_10_11
-                )
-                .fallbackToDestructiveMigrationOnDowngrade(false)
-                .build()
                 INSTANCE = instance
                 instance
             }
+        }
+
+        private fun migrateLegacyDatabaseIfNeeded(context: Context) {
+            val legacyDb = context.getDatabasePath(LEGACY_DATABASE_NAME)
+            if (!legacyDb.exists()) {
+                return
+            }
+
+            val encryptedDb = context.getDatabasePath(ENCRYPTED_DATABASE_NAME)
+            if (encryptedDb.exists()) {
+                context.deleteDatabase(ENCRYPTED_DATABASE_NAME)
+                deleteDatabaseSidecars(encryptedDb)
+            }
+
+            runBlocking(Dispatchers.IO) {
+                val legacy = buildDatabase(context, LEGACY_DATABASE_NAME, encrypted = false)
+                val encrypted = buildDatabase(context, ENCRYPTED_DATABASE_NAME, encrypted = true)
+
+                try {
+                    migrateData(legacy, encrypted)
+                } finally {
+                    legacy.close()
+                    encrypted.close()
+                }
+            }
+
+            context.deleteDatabase(LEGACY_DATABASE_NAME)
+            deleteDatabaseSidecars(legacyDb)
+        }
+
+        private suspend fun migrateData(
+            legacy: StockPairDatabase,
+            encrypted: StockPairDatabase
+        ) {
+            val stockPairs = legacy.stockPairDao().getAllStockPairs()
+            val watchItems = legacy.watchItemDao().getAllWatchItems()
+            val metricHistory = legacy.metricHistoryDao().getAllEntries()
+            val triggerHistory = legacy.triggerHistoryDao().getAllEntries()
+            val notes = legacy.stockNoteDao().getAllNotes()
+
+            encrypted.withTransaction {
+                stockPairs.forEach { encrypted.stockPairDao().insertStockPair(it) }
+                watchItems.forEach { encrypted.watchItemDao().insertWatchItem(it) }
+                metricHistory.forEach { encrypted.metricHistoryDao().insertMetricHistory(it) }
+                triggerHistory.forEach { encrypted.triggerHistoryDao().insert(it) }
+                notes.forEach { encrypted.stockNoteDao().upsert(it) }
+            }
+        }
+
+        private fun buildDatabase(
+            context: Context,
+            databaseName: String,
+            encrypted: Boolean
+        ): StockPairDatabase {
+            val builder = Room.databaseBuilder(
+                context,
+                StockPairDatabase::class.java,
+                databaseName
+            ).addMigrations(
+                MIGRATION_4_5,
+                MIGRATION_5_6,
+                MIGRATION_6_7,
+                MIGRATION_7_8,
+                MIGRATION_8_9,
+                MIGRATION_9_10,
+                MIGRATION_10_11
+            ).fallbackToDestructiveMigrationOnDowngrade(false)
+
+            if (encrypted) {
+                builder.openHelperFactory(DatabaseEncryptionManager.createFactory(context))
+            }
+
+            return builder.build()
         }
 
         private fun createMetricHistorySchema(db: SupportSQLiteDatabase) {
             db.execSQL(CREATE_METRIC_HISTORY_TABLE_SQL)
             db.execSQL(CREATE_METRIC_HISTORY_SYMBOL_METRIC_INDEX_SQL)
             db.execSQL(CREATE_METRIC_HISTORY_DATE_INDEX_SQL)
+        }
+
+        private fun deleteDatabaseSidecars(databaseFile: File) {
+            File(databaseFile.path + "-wal").delete()
+            File(databaseFile.path + "-shm").delete()
+            File(databaseFile.path + "-journal").delete()
         }
     }
 } 

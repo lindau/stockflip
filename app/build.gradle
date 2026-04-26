@@ -83,15 +83,6 @@ android {
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         
-        // Read Finnhub API key from local.properties
-        def localProperties = new Properties()
-        def localPropertiesFile = rootProject.file("local.properties")
-        if (localPropertiesFile.exists()) {
-            localPropertiesFile.withInputStream { localProperties.load(it) }
-        }
-        def finnhubApiKey = localProperties.getProperty("FINNHUB_API_KEY", "")
-        buildConfigField "String", "FINNHUB_API_KEY", "\"$finnhubApiKey\""
-
         testOptions {
             unitTests {
                 returnDefaultValues = true
@@ -101,8 +92,12 @@ android {
     }
 
     buildTypes {
-        release {
+        debug {
             minifyEnabled false
+        }
+        release {
+            minifyEnabled true
+            shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
@@ -146,8 +141,8 @@ dependencies {
     implementation 'com.squareup.retrofit2:retrofit:2.11.0'
     implementation 'com.squareup.retrofit2:converter-gson:2.11.0'
     implementation 'com.squareup.okhttp3:okhttp:4.12.0'
-    implementation 'com.squareup.okhttp3:logging-interceptor:4.12.0'
     implementation 'com.squareup.okhttp3:okhttp-urlconnection:4.12.0'
+    implementation 'net.zetetic:sqlcipher-android:4.14.1'
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3'
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3'
     

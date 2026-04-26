@@ -3,6 +3,7 @@ package com.stockflip
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
@@ -47,12 +48,15 @@ import com.stockflip.ui.dialogs.focusInput
 import com.stockflip.repository.SearchState
 import com.stockflip.repository.StockRepository
 import com.stockflip.viewmodel.StockSearchViewModel
+import java.io.ByteArrayOutputStream
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
  * Main activity for the StockFlip application.
@@ -84,7 +88,15 @@ class MainActivity : AppCompatActivity() {
     ) { uri ->
         uri ?: return@registerForActivityResult
         lifecycleScope.launch {
-            val json = contentResolver.openInputStream(uri)?.bufferedReader()?.readText() ?: return@launch
+            val json = try {
+                readImportedBackupJson(uri) ?: return@launch
+            } catch (e: IllegalArgumentException) {
+                Toast.makeText(this@MainActivity, e.message ?: "Backupfilen kunde inte läsas", Toast.LENGTH_LONG).show()
+                return@launch
+            } catch (e: Exception) {
+                Toast.makeText(this@MainActivity, "Backupfilen kunde inte läsas", Toast.LENGTH_LONG).show()
+                return@launch
+            }
             showImportConfirmationDialog(json)
         }
     }
@@ -165,24 +177,43 @@ class MainActivity : AppCompatActivity() {
 
     private fun handleDeepLinkIntent(intent: Intent?) {
         if (intent == null) return
+        val hasProtectedExtras = intent.hasExtra(EXTRA_OPEN_PAIR_WATCH_ID) ||
+            intent.hasExtra(EXTRA_OPEN_TICKER) ||
+            intent.hasExtra(EXTRA_OPEN_WATCH_ID) ||
+            intent.hasExtra(EXTRA_TRIGGER_TITLE) ||
+            intent.hasExtra(EXTRA_TRIGGER_MESSAGE)
+        if (!hasProtectedExtras) return
+
+        val notificationToken = intent.getStringExtra(EXTRA_NOTIFICATION_TOKEN)
+        if (!NotificationNavigationSecurity.consumeToken(notificationToken)) {
+            Log.w(TAG, "Rejected navigation intent without a valid notification token")
+            clearProtectedIntentExtras(intent)
+            return
+        }
+
         val triggerTitle = intent.getStringExtra(EXTRA_TRIGGER_TITLE)
         val triggerMessage = intent.getStringExtra(EXTRA_TRIGGER_MESSAGE)
         val pairWatchItemId = intent.getIntExtra(EXTRA_OPEN_PAIR_WATCH_ID, -1)
         if (pairWatchItemId != -1) {
-            intent.removeExtra(EXTRA_OPEN_PAIR_WATCH_ID)
-            intent.removeExtra(EXTRA_TRIGGER_TITLE)
-            intent.removeExtra(EXTRA_TRIGGER_MESSAGE)
+            clearProtectedIntentExtras(intent)
             navigateToPairDetail(pairWatchItemId, triggerTitle, triggerMessage, openedFromNotification = true)
             return
         }
         val ticker = intent.getStringExtra(EXTRA_OPEN_TICKER) ?: return
         val watchItemId = intent.getIntExtra(EXTRA_OPEN_WATCH_ID, -1).takeIf { it > 0 }
-        intent.removeExtra(EXTRA_OPEN_TICKER)
-        intent.removeExtra(EXTRA_OPEN_WATCH_ID)
-        intent.removeExtra(EXTRA_TRIGGER_TITLE)
-        intent.removeExtra(EXTRA_TRIGGER_MESSAGE)
+        clearProtectedIntentExtras(intent)
         val companyName = intent.getStringExtra(EXTRA_OPEN_COMPANY)
         navigateToStockDetail(ticker, companyName, watchItemId, triggerTitle, triggerMessage, openedFromNotification = true)
+    }
+
+    private fun clearProtectedIntentExtras(intent: Intent) {
+        intent.removeExtra(EXTRA_OPEN_PAIR_WATCH_ID)
+        intent.removeExtra(EXTRA_OPEN_TICKER)
+        intent.removeExtra(EXTRA_OPEN_WATCH_ID)
+        intent.removeExtra(EXTRA_OPEN_COMPANY)
+        intent.removeExtra(EXTRA_TRIGGER_TITLE)
+        intent.removeExtra(EXTRA_TRIGGER_MESSAGE)
+        intent.removeExtra(EXTRA_NOTIFICATION_TOKEN)
     }
 
     private val backPressCallback = object : androidx.activity.OnBackPressedCallback(true) {
@@ -439,6 +470,35 @@ class MainActivity : AppCompatActivity() {
             .show()
     }
 
+    private suspend fun readImportedBackupJson(uri: Uri): String? = withContext(Dispatchers.IO) {
+        contentResolver.openAssetFileDescriptor(uri, "r")?.use { descriptor ->
+            val fileLength = descriptor.length
+            if (fileLength > MAX_IMPORT_BYTES) {
+                throw IllegalArgumentException("Backupfilen är för stor. Maxstorlek är 1 MB.")
+            }
+        }
+
+        contentResolver.openInputStream(uri)?.use { input ->
+            val output = ByteArrayOutputStream()
+            val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+            var totalBytes = 0
+
+            while (true) {
+                val bytesRead = input.read(buffer)
+                if (bytesRead == -1) break
+
+                totalBytes += bytesRead
+                if (totalBytes > MAX_IMPORT_BYTES) {
+                    throw IllegalArgumentException("Backupfilen är för stor. Maxstorlek är 1 MB.")
+                }
+
+                output.write(buffer, 0, bytesRead)
+            }
+
+            output.toString(Charsets.UTF_8.name())
+        }
+    }
+
     private fun openHelpScreen() {
         binding.swipeRefreshLayout.visibility = View.GONE
         binding.addPairButton.visibility = View.GONE
@@ -631,7 +691,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showError(message: String) {
-        Log.e(TAG, "Error state: $message")
+        Log.e(TAG, "Error state shown to user")
         binding.swipeRefreshLayout.isRefreshing = false
         Toast.makeText(this, message, Toast.LENGTH_LONG).show()
     }
@@ -857,12 +917,12 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun handleDeleteClick(item: WatchItem) {
-        Log.d(TAG, "Delete clicked for watch item: ${item.getDisplayName()}")
+        Log.d(TAG, "Delete clicked for watch item")
         showDeleteConfirmationDialog(item)
     }
 
     private fun handleEditClick(item: WatchItem) {
-        Log.d(TAG, "Edit clicked for watch item: ${item.getDisplayName()}")
+        Log.d(TAG, "Edit clicked for watch item")
         watchItemEditor.showEditWatchItemDialog(item)
     }
 
@@ -907,12 +967,10 @@ class MainActivity : AppCompatActivity() {
         // Set up item click listeners
         ticker1Input.setOnItemClickListener { _, _, position, _ ->
             selectedStock1 = adapter1.getItem(position)
-            Log.d(TAG, "Selected stock 1: $selectedStock1")
         }
 
         ticker2Input.setOnItemClickListener { _, _, position, _ ->
             selectedStock2 = adapter2.getItem(position)
-            Log.d(TAG, "Selected stock 2: $selectedStock2")
         }
 
         MaterialAlertDialogBuilder(this)
@@ -1020,7 +1078,6 @@ class MainActivity : AppCompatActivity() {
 
         lifecycleScope.launch {
             viewModel.searchState.collect { state ->
-                Log.d(TAG, "Search state changed for input ${input.id}: $state")
                 when (state) {
                     is SearchState.Loading -> Unit
                     is SearchState.Success -> {
@@ -1047,7 +1104,6 @@ class MainActivity : AppCompatActivity() {
         var textChangeJob: Job? = null
 
         input.doAfterTextChanged { text ->
-            Log.d(TAG, "Text changed in input ${input.id}: $text")
             textChangeJob?.cancel()
 
             if (text.isNullOrEmpty()) {
@@ -1151,5 +1207,8 @@ class MainActivity : AppCompatActivity() {
         const val EXTRA_TRIGGER_TITLE = "extra_trigger_title"
         /** Intent extra: human-readable trigger message for notification landing */
         const val EXTRA_TRIGGER_MESSAGE = "extra_trigger_message"
+        /** Intent extra: one-time token proving the navigation intent came from our own notification PendingIntent */
+        const val EXTRA_NOTIFICATION_TOKEN = "extra_notification_token"
+        private const val MAX_IMPORT_BYTES = 1_048_576
     }
 } 

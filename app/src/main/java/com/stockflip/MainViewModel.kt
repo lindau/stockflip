@@ -78,22 +78,22 @@ class MainViewModel(
                     async {
                         semaphore.withPermit {
                             try {
-                                Log.d(TAG, "Fetching prices for ${pair.ticker1} and ${pair.ticker2}")
+                                Log.d(TAG, "Fetching prices for stock pair")
                                 val price1 = yahooFinanceService.getStockPrice(pair.ticker1)
                                 val price2 = yahooFinanceService.getStockPrice(pair.ticker2)
 
                                 if (price1 != null && price2 != null) {
-                                    Log.d(TAG, "Got prices for ${pair.ticker1}: $price1, ${pair.ticker2}: $price2")
+                                    Log.d(TAG, "Fetched prices for stock pair")
                                     val updatedPair = pair.withCurrentPrices(price1, price2)
                                     stockPairDao.update(updatedPair)
-                                    Log.d(TAG, "Updated database with new prices for ${pair.ticker1}-${pair.ticker2}")
+                                    Log.d(TAG, "Updated stock pair prices in database")
                                     updatedPair
                                 } else {
-                                    Log.w(TAG, "Could not get prices for ${pair.ticker1} or ${pair.ticker2}, keeping existing prices")
+                                    Log.w(TAG, "Could not get prices for stock pair, keeping existing values")
                                     pair
                                 }
                             } catch (e: Exception) {
-                                Log.e(TAG, "Error fetching prices for ${pair.ticker1}-${pair.ticker2}: ${e.message}")
+                                Log.e(TAG, "Error fetching stock pair prices: ${e.message}")
                                 pair
                             }
                         }
@@ -111,7 +111,7 @@ class MainViewModel(
 
     suspend fun addStockPair(stockPair: StockPair) {
         try {
-            Log.d(TAG, "Adding new stock pair: ${stockPair.companyName1} - ${stockPair.companyName2}")
+            Log.d(TAG, "Adding stock pair")
             stockPairDao.insertStockPair(stockPair)
             refreshStockPairs() // Immediately refresh prices after adding
         } catch (e: Exception) {
@@ -122,7 +122,7 @@ class MainViewModel(
 
     suspend fun deleteStockPair(stockPair: StockPair) {
         try {
-            Log.d(TAG, "Deleting stock pair: ${stockPair.companyName1} - ${stockPair.companyName2}")
+            Log.d(TAG, "Deleting stock pair")
             stockPairDao.deleteStockPair(stockPair)
             loadStockPairs() // Reload the list after deleting
         } catch (e: Exception) {
@@ -133,7 +133,7 @@ class MainViewModel(
 
     suspend fun updateStockPair(stockPair: StockPair) {
         try {
-            Log.d(TAG, "Updating stock pair: ${stockPair.companyName1} - ${stockPair.companyName2}")
+            Log.d(TAG, "Updating stock pair")
             stockPairDao.update(stockPair)
             loadStockPairs() // Reload the list after updating
         } catch (e: Exception) {
@@ -202,14 +202,14 @@ class MainViewModel(
                     when (item.watchType) {
                         is WatchType.PricePair -> {
                             if (item.ticker1 != null && item.ticker2 != null) {
-                                Log.d(TAG, "Fetching prices for ${item.ticker1} and ${item.ticker2}")
+                                Log.d(TAG, "Fetching prices for pair watch item")
                                 val price1 = yahooFinanceService.getStockPrice(item.ticker1)
                                 val price2 = yahooFinanceService.getStockPrice(item.ticker2)
                                 if (price1 != null && price2 != null) {
-                                    Log.d(TAG, "Got prices for ${item.ticker1}: $price1, ${item.ticker2}: $price2")
+                                    Log.d(TAG, "Fetched prices for pair watch item")
                                     WatchItemUiState(item, LiveWatchData(currentPrice1 = price1, currentPrice2 = price2, lastUpdatedAt = now))
                                 } else {
-                                    Log.w(TAG, "Could not get prices for ${item.ticker1} or ${item.ticker2}")
+                                    Log.w(TAG, "Could not get prices for pair watch item")
                                     WatchItemUiState(item, LiveWatchData(updateFailed = true))
                                 }
                             } else {
@@ -218,14 +218,14 @@ class MainViewModel(
                         }
                         is WatchType.PriceTarget -> {
                             if (item.ticker != null) {
-                                Log.d(TAG, "Fetching price and daily change for ${item.ticker}")
+                                Log.d(TAG, "Fetching price and daily change for price target watch item")
                                 val price = yahooFinanceService.getStockPrice(item.ticker)
                                 val changePercent = yahooFinanceService.getDailyChangePercent(item.ticker)
                                 if (price != null) {
-                                    Log.d(TAG, "Got price for ${item.ticker}: $price, changePercent: $changePercent")
+                                    Log.d(TAG, "Fetched price for price target watch item")
                                     WatchItemUiState(item, LiveWatchData(currentPrice = price, currentDailyChangePercent = changePercent, lastUpdatedAt = now))
                                 } else {
-                                    Log.w(TAG, "Could not get price for ${item.ticker}")
+                                    Log.w(TAG, "Could not get price for price target watch item")
                                     WatchItemUiState(item, LiveWatchData(updateFailed = true))
                                 }
                             } else {
@@ -235,14 +235,14 @@ class MainViewModel(
                         is WatchType.KeyMetrics -> {
                             if (item.ticker != null) {
                                 val keyMetrics = item.watchType
-                                Log.d(TAG, "Fetching key metric ${keyMetrics.metricType.name} and price for ${item.ticker}")
+                                Log.d(TAG, "Fetching key metric and price for key metrics watch item")
                                 try {
                                     val metricValue = yahooFinanceService.getKeyMetric(item.ticker, keyMetrics.metricType)
                                     val price = yahooFinanceService.getStockPrice(item.ticker)
                                     val changePercent = yahooFinanceService.getDailyChangePercent(item.ticker)
-                                    Log.d(TAG, "getKeyMetric returned: $metricValue for ${item.ticker}")
+                                    Log.d(TAG, "Key metric request completed")
                                     if (metricValue != null) {
-                                        Log.d(TAG, "Got metric value for ${item.ticker}: $metricValue")
+                                        Log.d(TAG, "Fetched key metric value for key metrics watch item")
                                         WatchItemUiState(item, LiveWatchData(
                                             currentMetricValue = metricValue,
                                             metricValueAtCreation = metricValue,
@@ -253,26 +253,26 @@ class MainViewModel(
                                     } else if (price != null) {
                                         WatchItemUiState(item, LiveWatchData(currentPrice = price, currentDailyChangePercent = changePercent, lastUpdatedAt = now))
                                     } else {
-                                        Log.w(TAG, "Could not get metric value or price for ${item.ticker}")
+                                        Log.w(TAG, "Could not get metric value or price for key metrics watch item")
                                         WatchItemUiState(item, LiveWatchData(updateFailed = true))
                                     }
                                 } catch (e: Exception) {
-                                    Log.e(TAG, "Exception while fetching key metric for ${item.ticker}: ${e.message}", e)
+                                    Log.e(TAG, "Exception while fetching key metric: ${e.message}", e)
                                     WatchItemUiState(item, LiveWatchData(updateFailed = true))
                                 }
                             } else {
-                                Log.w(TAG, "Ticker is null for KeyMetrics watch item ${item.id}")
+                                Log.w(TAG, "Ticker is null for key metrics watch item")
                                 WatchItemUiState(item)
                             }
                         }
                         is WatchType.ATHBased -> {
                             if (item.ticker != null) {
-                                Log.d(TAG, "Fetching ATH, price and daily change for ${item.ticker}")
+                                Log.d(TAG, "Fetching ATH, price and daily change for ATH watch item")
                                 val ath = yahooFinanceService.getATH(item.ticker)
                                 val price = yahooFinanceService.getStockPrice(item.ticker)
                                 val changePercent = yahooFinanceService.getDailyChangePercent(item.ticker)
                                 if (ath != null && price != null) {
-                                    Log.d(TAG, "Got ATH for ${item.ticker}: $ath, Price: $price, changePercent: $changePercent")
+                                    Log.d(TAG, "Fetched ATH data for ATH watch item")
                                     WatchItemUiState(item, LiveWatchData(
                                         currentATH = ath,
                                         currentPrice = price,
@@ -282,7 +282,7 @@ class MainViewModel(
                                         lastUpdatedAt = now
                                     ))
                                 } else {
-                                    Log.w(TAG, "Could not get ATH or price for ${item.ticker}")
+                                    Log.w(TAG, "Could not get ATH or price for ATH watch item")
                                     WatchItemUiState(item, LiveWatchData(updateFailed = true))
                                 }
                             } else {
@@ -291,7 +291,7 @@ class MainViewModel(
                         }
                         is WatchType.PriceRange -> {
                             if (item.ticker != null) {
-                                Log.d(TAG, "Fetching price and daily change for ${item.ticker} (PriceRange)")
+                                Log.d(TAG, "Fetching price and daily change for range watch item")
                                 val price = yahooFinanceService.getStockPrice(item.ticker)
                                 val changePercent = yahooFinanceService.getDailyChangePercent(item.ticker)
                                 if (price != null) {
@@ -305,7 +305,7 @@ class MainViewModel(
                         }
                         is WatchType.DailyMove -> {
                             if (item.ticker != null) {
-                                Log.d(TAG, "Fetching price and daily change for ${item.ticker} (DailyMove)")
+                                Log.d(TAG, "Fetching price and daily change for daily move watch item")
                                 val price = yahooFinanceService.getStockPrice(item.ticker)
                                 val changePercent = yahooFinanceService.getDailyChangePercent(item.ticker)
                                 if (price != null) {
@@ -319,13 +319,13 @@ class MainViewModel(
                         }
                         is WatchType.Combined -> {
                             if (item.ticker != null) {
-                                Log.d(TAG, "Fetching price and daily change for combined alert ticker: ${item.ticker}")
+                                Log.d(TAG, "Fetching price and daily change for combined alert")
                                 val price = yahooFinanceService.getStockPrice(item.ticker)
                                 val changePercent = yahooFinanceService.getDailyChangePercent(item.ticker)
                                 if (price != null) {
                                     WatchItemUiState(item, LiveWatchData(currentPrice = price, currentDailyChangePercent = changePercent, lastUpdatedAt = now))
                                 } else {
-                                    Log.w(TAG, "Could not get price for combined alert ticker ${item.ticker}")
+                                    Log.w(TAG, "Could not get price for combined alert")
                                     WatchItemUiState(item, LiveWatchData(updateFailed = true))
                                 }
                             } else {
@@ -369,7 +369,7 @@ class MainViewModel(
 
     suspend fun addWatchItem(watchItem: WatchItem) {
         try {
-            Log.d(TAG, "Adding new watch item: ${watchItem.getDisplayName()}")
+            Log.d(TAG, "Adding watch item")
             watchItemDao.insertWatchItem(watchItem)
             syncWatchItemsAfterMutation()
         } catch (e: Exception) {
@@ -380,18 +380,18 @@ class MainViewModel(
 
     suspend fun deleteStockBySymbol(symbol: String) {
         try {
-            Log.d(TAG, "Deleting all watches for symbol: $symbol")
+            Log.d(TAG, "Deleting all watches for symbol")
             watchItemDao.deleteBySymbol(symbol)
             syncWatchItemsAfterMutation()
         } catch (e: Exception) {
-            Log.e(TAG, "Error deleting watches for $symbol: ${e.message}")
+            Log.e(TAG, "Error deleting watches for symbol: ${e.message}")
             _watchItemUiState.value = UiState.Error("Failed to delete watches: ${e.message}")
         }
     }
 
     suspend fun deleteWatchItem(watchItem: WatchItem) {
         try {
-            Log.d(TAG, "Deleting watch item: ${watchItem.getDisplayName()}")
+            Log.d(TAG, "Deleting watch item")
             watchItemDao.deleteWatchItem(watchItem)
             syncWatchItemsAfterMutation()
         } catch (e: Exception) {
@@ -412,7 +412,7 @@ class MainViewModel(
 
     suspend fun updateWatchItem(watchItem: WatchItem) {
         try {
-            Log.d(TAG, "Updating watch item: ${watchItem.getDisplayName()}")
+            Log.d(TAG, "Updating watch item")
             watchItemDao.update(watchItem.reactivate())
             syncWatchItemsAfterMutation()
         } catch (e: Exception) {

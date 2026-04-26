@@ -210,22 +210,22 @@ class YahooFinanceServiceTest {
         assertNotNull("ATH should not be null for $symbol", ath)
         assertTrue("ATH should be greater than 0", ath!! > 0.0)
         
-        // P/E ratio comes from Finnhub directly
+        // Key metric comes from Yahoo where available
         if (peRatio != null) {
             assertTrue("P/E ratio should be greater than 0", peRatio > 0.0)
             println("For $symbol:")
             println("  ATH: $ath (from Yahoo Finance)")
-            println("  P/E ratio: $peRatio (from Finnhub)")
+            println("  P/E ratio: $peRatio")
         } else {
             println("For $symbol:")
             println("  ATH: $ath (from Yahoo Finance)")
-            println("  P/E ratio: Not available (Finnhub API key might not be configured)")
+            println("  P/E ratio: Not available")
         }
     }
     
     @Test
-    fun `getKeyMetric should use Finnhub directly`() = runBlocking {
-        // Given - Yahoo Finance quoteSummary requires auth, so we use Finnhub directly
+    fun `getKeyMetric should return Yahoo-backed metric when available`() = runBlocking {
+        // Given
         val symbol = "EVO.ST"
         val metricType = WatchType.MetricType.PE_RATIO
         
@@ -233,12 +233,12 @@ class YahooFinanceServiceTest {
         val peRatio = YahooFinanceService.getKeyMetric(symbol, metricType)
         
         // Then
-        // Should get value from Finnhub (or null if API key not configured)
+        // Should get a value when Yahoo exposes the metric, otherwise null
         if (peRatio != null) {
             assertTrue("P/E ratio should be greater than 0", peRatio > 0.0)
-            println("✓ Successfully got P/E ratio from Finnhub for $symbol: $peRatio")
+            println("✓ Successfully got P/E ratio for $symbol: $peRatio")
         } else {
-            println("⚠ P/E ratio not available for $symbol (Finnhub API key might not be configured)")
+            println("⚠ P/E ratio not available for $symbol")
         }
     }
 } 

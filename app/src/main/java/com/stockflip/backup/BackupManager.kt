@@ -2,13 +2,16 @@ package com.stockflip.backup
 
 import android.content.Context
 import android.content.Intent
+import android.util.Base64
 import androidx.core.content.FileProvider
+import com.stockflip.AppSecurityManager
 import com.stockflip.StockPair
 import com.stockflip.WatchItem
 import com.stockflip.WatchTypeConverter
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
+import java.nio.charset.StandardCharsets
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -16,6 +19,9 @@ import java.util.Locale
 object BackupManager {
 
     private const val SUPPORTED_VERSION = 1
+    private const val SIGNATURE_VERSION = 1
+    private const val SIGNATURE_FIELD = "signature"
+    private const val SIGNATURE_VERSION_FIELD = "signatureVersion"
 
     fun exportToJson(watchItems: List<WatchItem>, stockPairs: List<StockPair>): String {
         val converter = WatchTypeConverter()
@@ -60,6 +66,7 @@ object BackupManager {
 
     fun importFromJson(json: String): BackupData {
         val root = JSONObject(json)
+        verifySignature(root)
         val version = root.getInt("version")
         if (version != SUPPORTED_VERSION) {
             throw IllegalArgumentException("Okänd backup-version: $version")
@@ -111,8 +118,9 @@ object BackupManager {
 
     fun shareFile(context: Context, json: String) {
         val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
-        val file = File(context.cacheDir, "stockflip_backup_$timestamp.json")
-        file.writeText(json)
+        val backupDir = File(context.cacheDir, "backups").apply { mkdirs() }
+        val file = File(backupDir, "stockflip_backup_$timestamp.json")
+        file.writeText(createSignedBackupJson(json))
 
         val uri = FileProvider.getUriForFile(
             context,
@@ -132,4 +140,91 @@ object BackupManager {
         val watchItems: List<WatchItem>,
         val stockPairs: List<StockPair>
     )
+
+    private fun createSignedBackupJson(json: String): String {
+        val root = JSONObject(json)
+        root.put(SIGNATURE_VERSION_FIELD, SIGNATURE_VERSION)
+        val signature = AppSecurityManager.signBackupPayload(canonicalPayload(root))
+        root.put(SIGNATURE_FIELD, signature)
+        return root.toString(2)
+    }
+
+    private fun verifySignature(root: JSONObject) {
+        val signatureVersion = root.optInt(SIGNATURE_VERSION_FIELD, -1)
+        val signature = root.optString(SIGNATURE_FIELD, "")
+
+        if (signatureVersion != SIGNATURE_VERSION || signature.isBlank()) {
+            throw IllegalArgumentException(
+                "Backupen saknar giltig signatur. Endast signerade backuper från den här appinstallationen kan importeras."
+            )
+        }
+
+        if (!AppSecurityManager.verifyBackupPayload(canonicalPayload(root), signature)) {
+            throw IllegalArgumentException("Backupens signatur är ogiltig eller backupen har ändrats.")
+        }
+    }
+
+    private fun canonicalPayload(root: JSONObject): String {
+        val builder = StringBuilder()
+        builder.append("version=").append(root.getInt("version")).append('\n')
+        builder.append("exportedAt=").append(encodeValue(root.opt("exportedAt"))).append('\n')
+        builder.append("watchItems=").append(canonicalWatchItems(root.getJSONArray("watchItems"))).append('\n')
+        builder.append("stockPairs=").append(canonicalStockPairs(root.getJSONArray("stockPairs")))
+        return builder.toString()
+    }
+
+    private fun canonicalWatchItems(array: JSONArray): String {
+        val builder = StringBuilder()
+        for (index in 0 until array.length()) {
+            val obj = array.getJSONObject(index)
+            appendField(builder, obj, "watchType")
+            appendField(builder, obj, "ticker")
+            appendField(builder, obj, "companyName")
+            appendField(builder, obj, "ticker1")
+            appendField(builder, obj, "ticker2")
+            appendField(builder, obj, "companyName1")
+            appendField(builder, obj, "companyName2")
+            appendField(builder, obj, "lastTriggeredDate")
+            appendField(builder, obj, "isTriggered")
+            appendField(builder, obj, "isActive")
+            builder.append('\n')
+        }
+        return builder.toString()
+    }
+
+    private fun canonicalStockPairs(array: JSONArray): String {
+        val builder = StringBuilder()
+        for (index in 0 until array.length()) {
+            val obj = array.getJSONObject(index)
+            appendField(builder, obj, "ticker1")
+            appendField(builder, obj, "ticker2")
+            appendField(builder, obj, "companyName1")
+            appendField(builder, obj, "companyName2")
+            appendField(builder, obj, "priceDifference")
+            appendField(builder, obj, "notifyWhenEqual")
+            builder.append('\n')
+        }
+        return builder.toString()
+    }
+
+    private fun appendField(builder: StringBuilder, obj: JSONObject, key: String) {
+        builder.append(key)
+            .append('=')
+            .append(encodeValue(obj.opt(key)))
+            .append('|')
+    }
+
+    private fun encodeValue(value: Any?): String {
+        if (value == null || value == JSONObject.NULL) {
+            return "null"
+        }
+
+        return when (value) {
+            is Boolean, is Number -> value.toString()
+            else -> Base64.encodeToString(
+                value.toString().toByteArray(StandardCharsets.UTF_8),
+                Base64.NO_WRAP
+            )
+        }
+    }
 }

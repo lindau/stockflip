@@ -92,7 +92,7 @@ class StockPriceUpdateWorker(
                (pair.priceDifference > 0 && abs(price1 - price2) >= pair.priceDifference)
         
         Log.d(TAG, """
-            Notification check for ${pair.companyName1} - ${pair.companyName2}:
+            Notification check for stock pair:
             Price difference: ${abs(price1 - price2)}
             Notify when equal: ${pair.notifyWhenEqual}
             Price difference threshold: ${pair.priceDifference}
@@ -122,6 +122,7 @@ class StockPriceUpdateWorker(
         triggerTitle: String? = null,
         triggerMessage: String? = null
     ) {
+        val notificationToken = NotificationNavigationSecurity.issueToken()
         val intent = Intent(applicationContext, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
             if (pairWatchItemId != null) {
@@ -133,6 +134,7 @@ class StockPriceUpdateWorker(
             }
             putExtra(MainActivity.EXTRA_TRIGGER_TITLE, triggerTitle ?: title)
             putExtra(MainActivity.EXTRA_TRIGGER_MESSAGE, triggerMessage ?: message)
+            putExtra(MainActivity.EXTRA_NOTIFICATION_TOKEN, notificationToken)
         }
 
         val pendingIntent = PendingIntent.getActivity(
@@ -141,6 +143,15 @@ class StockPriceUpdateWorker(
             intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
+
+        val publicVersion = NotificationCompat.Builder(applicationContext, StockPriceUpdater.CHANNEL_ID)
+            .setContentTitle(applicationContext.getString(R.string.app_name))
+            .setContentText("Öppna appen för att visa bevakningsdetaljer")
+            .setSmallIcon(android.R.drawable.ic_dialog_info)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setAutoCancel(true)
+            .setContentIntent(pendingIntent)
+            .build()
 
         val notification = NotificationCompat.Builder(applicationContext, StockPriceUpdater.CHANNEL_ID)
             .setContentTitle(title)
@@ -151,13 +162,14 @@ class StockPriceUpdateWorker(
             .setDefaults(NotificationCompat.DEFAULT_ALL)
             .setCategory(NotificationCompat.CATEGORY_ALARM)
             .setContentIntent(pendingIntent)  // Add the PendingIntent
-            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)  // Show on lock screen
+            .setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
+            .setPublicVersion(publicVersion)
             .build()
 
         val notificationManager = applicationContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         val notificationId = System.currentTimeMillis().toInt()
         notificationManager.notify(notificationId, notification)
-        Log.d(TAG, "Sent notification: $title - $message")
+        Log.d(TAG, "Sent trigger notification")
     }
 
     private suspend fun evaluateWatchItemAlerts(
@@ -203,7 +215,7 @@ class StockPriceUpdateWorker(
                 }
                 snapshots[ticker] = MarketSnapshot.forSingleStock(price, prevClose, week52High, metricsMap)
             } catch (e: Exception) {
-                Log.w(TAG, "Failed to fetch snapshot for $ticker: ${e.message}")
+                Log.w(TAG, "Failed to fetch market snapshot: ${e.message}")
             }
         }
 
@@ -245,10 +257,10 @@ class StockPriceUpdateWorker(
                     }
                     watchItemDao.update(updatedItem)
                     triggerHistoryRepository.record(item.id)
-                    Log.d(TAG, "WatchItem ${item.id} triggered: ${payload.title}")
+                    Log.d(TAG, "Watch item triggered")
                 }
             } catch (e: Exception) {
-                Log.w(TAG, "Failed to evaluate watch item ${item.id}: ${e.message}")
+                Log.w(TAG, "Failed to evaluate watch item: ${e.message}")
             }
         }
     }
