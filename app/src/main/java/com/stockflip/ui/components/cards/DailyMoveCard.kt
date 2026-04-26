@@ -61,6 +61,9 @@ fun DailyMoveCard(
     val isTriggered = item.isTriggered
     val cardBorder = LocalCardBorder.current
     val showStockHeader = showControls || groupPosition == GroupPosition.ONLY || groupPosition == GroupPosition.FIRST
+    val listBadge = if (!showControls && (item.isTriggered || LocalNearTriggerLabel.current != null)) {
+        @Composable { InlineAlertBadge(item) }
+    } else null
 
     val animatedContainerColor by animateColorAsState(
         targetValue = if (isTriggered) MaterialTheme.colorScheme.tertiaryContainer else containerColor,
@@ -120,6 +123,8 @@ fun DailyMoveCard(
                             Switch(
                                 checked = item.isActive,
                                 onCheckedChange = { onToggleActive() },
+                                colors = watchItemSwitchColors(),
+                                thumbContent = { watchItemSwitchThumb() },
                                 modifier = Modifier
                                     .scale(0.7f)
                                     .align(Alignment.Top)
@@ -143,16 +148,20 @@ fun DailyMoveCard(
                     )
                 }
 
-                Text(
+                ConditionStatusRow(
                     text = "Dagsrörelse: ≥ ${priceFormat(dailyMove.percentThreshold)}% ($directionText)",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = if (isTriggered) MaterialTheme.colorScheme.tertiary
-                            else MaterialTheme.colorScheme.onSurfaceVariant,
+                    textColor = if (isTriggered) MaterialTheme.colorScheme.tertiary
+                        else MaterialTheme.colorScheme.onSurfaceVariant,
+                    trailingBadge = listBadge,
                 )
+                if (!item.isTriggered && showControls) {
+                    Spacer(modifier = Modifier.height(6.dp))
+                    NearTriggerBadge()
+                }
 
                 TriggerHistoryRow(triggerHistory)
 
-                if (item.isTriggered) {
+                if (item.isTriggered && showControls) {
                     Spacer(modifier = Modifier.height(6.dp))
                     TriggeredBadge(item.lastTriggeredDate)
                 }

@@ -26,6 +26,11 @@ class StockPriceUpdateWorker(
     workerParams: WorkerParameters
 ) : CoroutineWorker(context, workerParams) {
 
+    private data class TriggerNotificationPayload(
+        val title: String,
+        val message: String
+    )
+
     override suspend fun doWork(): Result {
         var attempt = 1
         
@@ -107,18 +112,32 @@ class StockPriceUpdateWorker(
         }
     }
 
-    private fun showNotification(title: String, message: String, ticker: String? = null, companyName: String? = null) {
+    private fun showNotification(
+        title: String,
+        message: String,
+        ticker: String? = null,
+        companyName: String? = null,
+        pairWatchItemId: Int? = null,
+        watchItemId: Int? = null,
+        triggerTitle: String? = null,
+        triggerMessage: String? = null
+    ) {
         val intent = Intent(applicationContext, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
-            if (ticker != null) {
+            if (pairWatchItemId != null) {
+                putExtra(MainActivity.EXTRA_OPEN_PAIR_WATCH_ID, pairWatchItemId)
+            } else if (ticker != null) {
                 putExtra(MainActivity.EXTRA_OPEN_TICKER, ticker)
                 putExtra(MainActivity.EXTRA_OPEN_COMPANY, companyName)
+                watchItemId?.let { putExtra(MainActivity.EXTRA_OPEN_WATCH_ID, it) }
             }
+            putExtra(MainActivity.EXTRA_TRIGGER_TITLE, triggerTitle ?: title)
+            putExtra(MainActivity.EXTRA_TRIGGER_MESSAGE, triggerMessage ?: message)
         }
 
         val pendingIntent = PendingIntent.getActivity(
             applicationContext,
-            ticker?.hashCode() ?: 0,
+            pairWatchItemId ?: (ticker?.hashCode() ?: 0),
             intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
@@ -161,7 +180,7 @@ class StockPriceUpdateWorker(
             item.ticker2?.let { tickers.add(it) }
             if (item.watchType is WatchType.KeyMetrics) {
                 val ticker = item.ticker ?: continue
-                val metricType = (item.watchType as WatchType.KeyMetrics).metricType
+                val metricType = item.watchType.metricType
                 keyMetricNeeds.getOrPut(ticker) { mutableSetOf() }.add(metricType)
             }
         }
@@ -194,9 +213,30 @@ class StockPriceUpdateWorker(
                 if (!item.canTrigger(today)) continue
                 val triggered = evaluateWatchItem(item, snapshots) ?: continue
                 if (triggered) {
-                    val name = item.companyName ?: item.ticker ?: item.ticker1 ?: "Bevakning"
-                    val ticker = item.ticker ?: item.ticker1
-                    showNotification("Larm triggat", name, ticker, item.companyName)
+                    val payload = buildTriggerNotificationPayload(item, snapshots)
+                    when (item.watchType) {
+                        is WatchType.PricePair -> {
+                            showNotification(
+                                title = payload.title,
+                                message = payload.message,
+                                pairWatchItemId = item.id,
+                                triggerTitle = payload.title,
+                                triggerMessage = payload.message
+                            )
+                        }
+                        else -> {
+                            val ticker = item.ticker ?: item.ticker1
+                            showNotification(
+                                title = payload.title,
+                                message = payload.message,
+                                ticker = ticker,
+                                companyName = item.companyName,
+                                watchItemId = item.id,
+                                triggerTitle = payload.title,
+                                triggerMessage = payload.message
+                            )
+                        }
+                    }
                     val triggeredItem = item.markAsTriggered(today)
                     val updatedItem = when (item.watchType) {
                         is WatchType.PriceTarget, is WatchType.ATHBased ->
@@ -205,7 +245,7 @@ class StockPriceUpdateWorker(
                     }
                     watchItemDao.update(updatedItem)
                     triggerHistoryRepository.record(item.id)
-                    Log.d(TAG, "WatchItem ${item.id} triggered: $name")
+                    Log.d(TAG, "WatchItem ${item.id} triggered: ${payload.title}")
                 }
             } catch (e: Exception) {
                 Log.w(TAG, "Failed to evaluate watch item ${item.id}: ${e.message}")
@@ -249,6 +289,130 @@ class StockPriceUpdateWorker(
                 }
             }
         }
+    }
+
+    private fun buildTriggerNotificationPayload(
+        item: WatchItem,
+        snapshots: Map<String, MarketSnapshot>
+    ): TriggerNotificationPayload {
+        return when (val watchType = item.watchType) {
+            is WatchType.PriceTarget -> {
+                val ticker = item.ticker ?: ""
+                val price = snapshots[ticker]?.lastPrice
+                val directionText = if (watchType.direction == WatchType.PriceDirection.ABOVE) "nådde" else "föll till"
+                TriggerNotificationPayload(
+                    title = "${item.companyName ?: ticker} $directionText ${formatPrice(price ?: watchType.targetPrice)}",
+                    message = "Målpris ${formatPrice(watchType.targetPrice)} har nåtts."
+                )
+            }
+
+            is WatchType.ATHBased -> {
+                val ticker = item.ticker ?: ""
+                val snapshot = snapshots[ticker]
+                when (watchType.dropType) {
+                    WatchType.DropType.PERCENTAGE -> {
+                        val drawdown = snapshot?.let {
+                            val currentPrice = it.lastPrice
+                            val week52High = it.week52High
+                            if (currentPrice != null && week52High != null && week52High > 0.0) {
+                                ((week52High - currentPrice) / week52High) * 100
+                            } else null
+                        } ?: watchType.dropValue
+                        TriggerNotificationPayload(
+                            title = "${item.companyName ?: ticker} har fallit ${CurrencyHelper.formatDecimal(drawdown)} %",
+                            message = "Din drawdown-nivå på ${CurrencyHelper.formatDecimal(watchType.dropValue)} % är nådd."
+                        )
+                    }
+
+                    WatchType.DropType.ABSOLUTE -> {
+                        val drop = snapshot?.let {
+                            val currentPrice = it.lastPrice
+                            val week52High = it.week52High
+                            if (currentPrice != null && week52High != null) {
+                                week52High - currentPrice
+                            } else null
+                        } ?: watchType.dropValue
+                        TriggerNotificationPayload(
+                            title = "${item.companyName ?: ticker} har tappat ${formatPrice(drop)} från toppen",
+                            message = "Din drawdown-nivå på ${formatPrice(watchType.dropValue)} är nådd."
+                        )
+                    }
+                }
+            }
+
+            is WatchType.KeyMetrics -> {
+                val ticker = item.ticker ?: ""
+                val metricType = when (watchType.metricType) {
+                    WatchType.MetricType.PE_RATIO -> AlertRule.KeyMetricType.PE_RATIO
+                    WatchType.MetricType.PS_RATIO -> AlertRule.KeyMetricType.PS_RATIO
+                    WatchType.MetricType.DIVIDEND_YIELD -> AlertRule.KeyMetricType.DIVIDEND_YIELD
+                }
+                val currentValue = snapshots[ticker]?.keyMetrics?.get(metricType) ?: watchType.targetValue
+                val metricLabel = when (watchType.metricType) {
+                    WatchType.MetricType.PE_RATIO -> "P/E"
+                    WatchType.MetricType.PS_RATIO -> "P/S"
+                    WatchType.MetricType.DIVIDEND_YIELD -> "utdelning"
+                }
+                val relation = if (watchType.direction == WatchType.PriceDirection.ABOVE) "över" else "under"
+                TriggerNotificationPayload(
+                    title = "${item.companyName ?: ticker}: $metricLabel ${formatMetricValue(watchType.metricType, currentValue)}",
+                    message = "$metricLabel är nu $relation din nivå ${formatMetricValue(watchType.metricType, watchType.targetValue)}."
+                )
+            }
+
+            is WatchType.DailyMove -> {
+                val ticker = item.ticker ?: ""
+                val move = snapshots[ticker]?.getDailyChangePercent() ?: watchType.percentThreshold
+                TriggerNotificationPayload(
+                    title = "${item.companyName ?: ticker} rör sig ${signedPercent(move)} idag",
+                    message = "Din dagsrörelselarm på ${CurrencyHelper.formatDecimal(watchType.percentThreshold)} % har triggat."
+                )
+            }
+
+            is WatchType.PriceRange -> {
+                val ticker = item.ticker ?: ""
+                val price = snapshots[ticker]?.lastPrice
+                TriggerNotificationPayload(
+                    title = "${item.companyName ?: ticker} är nu inom ${formatPrice(watchType.minPrice)}-${formatPrice(watchType.maxPrice)}",
+                    message = "Aktuellt pris är ${formatPrice(price ?: watchType.minPrice)}."
+                )
+            }
+
+            is WatchType.PricePair -> {
+                val snapshotA = item.ticker1?.let { snapshots[it] }
+                val snapshotB = item.ticker2?.let { snapshots[it] }
+                val spread = if (snapshotA?.lastPrice != null && snapshotB?.lastPrice != null) {
+                    abs(snapshotA.lastPrice - snapshotB.lastPrice)
+                } else {
+                    watchType.priceDifference
+                }
+                TriggerNotificationPayload(
+                    title = "${item.companyName1 ?: item.ticker1}/${item.companyName2 ?: item.ticker2} spread ${formatPrice(spread)}",
+                    message = "Ditt parlarm har triggat${if (watchType.notifyWhenEqual && spread < PRICE_EQUALITY_THRESHOLD) " vid lika priser" else ""}."
+                )
+            }
+
+            is WatchType.Combined -> {
+                TriggerNotificationPayload(
+                    title = "Kombinerat larm triggat",
+                    message = item.getDisplayName()
+                )
+            }
+        }
+    }
+
+    private fun formatPrice(value: Double): String = "${CurrencyHelper.formatDecimal(value)} SEK"
+
+    private fun formatMetricValue(metricType: WatchType.MetricType, value: Double): String {
+        return when (metricType) {
+            WatchType.MetricType.DIVIDEND_YIELD -> "${CurrencyHelper.formatDecimal(value)}%"
+            else -> CurrencyHelper.formatDecimal(value)
+        }
+    }
+
+    private fun signedPercent(value: Double): String {
+        val sign = if (value >= 0) "+" else ""
+        return "$sign${CurrencyHelper.formatDecimal(value)} %"
     }
 
     companion object {

@@ -26,6 +26,11 @@ class PairDetailFragment : Fragment() {
     private val binding get() = _binding!!
 
     private lateinit var viewModel: PairDetailViewModel
+    private var triggerBannerDismissed = false
+
+    private fun syncOverviewInBackground() {
+        (activity as? MainActivity)?.syncWatchItemsAfterDetailChange()
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -67,6 +72,23 @@ class PairDetailFragment : Fragment() {
         }
         binding.toggleActiveButton.setOnClickListener {
             viewModel.toggleActive()
+            syncOverviewInBackground()
+        }
+        binding.triggerReactivateButton.setOnClickListener {
+            viewModel.reactivate()
+            triggerBannerDismissed = true
+            binding.triggerBannerCard.isVisible = false
+            syncOverviewInBackground()
+            Toast.makeText(requireContext(), "Bevakning återaktiverad", Toast.LENGTH_SHORT).show()
+        }
+        binding.triggerDeleteButton.setOnClickListener {
+            viewModel.deletePair()
+            triggerBannerDismissed = true
+            binding.triggerBannerCard.isVisible = false
+            syncOverviewInBackground()
+            Toast.makeText(requireContext(), "Bevakning borttagen", Toast.LENGTH_SHORT).show()
+            @Suppress("DEPRECATION")
+            requireActivity().onBackPressed()
         }
 
         observeState()
@@ -88,7 +110,13 @@ class PairDetailFragment : Fragment() {
                     }
                     is UiState.Success -> {
                         binding.loadingIndicator.isVisible = false
-                        renderPair(state.data)
+                        try {
+                            renderPair(state.data)
+                            renderTriggerBanner(state.data)
+                        } catch (e: Exception) {
+                            android.util.Log.e(TAG, "Error rendering pair detail: ${e.message}", e)
+                            Toast.makeText(requireContext(), "Kunde inte visa aktieparet", Toast.LENGTH_LONG).show()
+                        }
                     }
                     is UiState.Error -> {
                         binding.loadingIndicator.isVisible = false
@@ -104,15 +132,20 @@ class PairDetailFragment : Fragment() {
                     when (state) {
                         is UiState.Loading -> { /* no-op */ }
                         is UiState.Success -> {
-                            binding.spreadChartView.isVisible = true
-                            binding.spreadChartView.setContent {
-                                StockFlipTheme {
-                                    PairPerformanceChart(
-                                        data = state.data,
-                                        selectedPeriod = period,
-                                        onPeriodSelected = { viewModel.selectPeriod(it) }
-                                    )
+                            try {
+                                binding.spreadChartView.isVisible = true
+                                binding.spreadChartView.setContent {
+                                    StockFlipTheme {
+                                        PairPerformanceChart(
+                                            data = state.data,
+                                            selectedPeriod = period,
+                                            onPeriodSelected = { viewModel.selectPeriod(it) }
+                                        )
+                                    }
                                 }
+                            } catch (e: Exception) {
+                                android.util.Log.e(TAG, "Error rendering pair chart: ${e.message}", e)
+                                binding.spreadChartView.isVisible = false
                             }
                         }
                         is UiState.Error -> {
@@ -150,6 +183,24 @@ class PairDetailFragment : Fragment() {
         binding.statusValue.text = if (data.watchItem.isActive) "Aktiv" else "Inaktiv"
     }
 
+    private fun renderTriggerBanner(data: PairDetailData) {
+        if (triggerBannerDismissed) {
+            binding.triggerBannerCard.isVisible = false
+            return
+        }
+        val triggerTitle = arguments?.getString(ARG_TRIGGER_TITLE)
+        val triggerMessage = arguments?.getString(ARG_TRIGGER_MESSAGE)
+        val openedFromNotification = arguments?.getBoolean(ARG_OPENED_FROM_NOTIFICATION, false) == true
+        val shouldShow = openedFromNotification || data.watchItem.isTriggered
+        binding.triggerBannerCard.isVisible = shouldShow
+        if (!shouldShow) return
+
+        binding.triggerBannerTitle.text = triggerTitle ?: "Larm triggat: ${data.watchItem.getDisplayName()}"
+        binding.triggerBannerMessage.text = triggerMessage
+            ?: "Öppnad från notis. Bevakningen är nu markerad som utlöst."
+        binding.triggerReactivateButton.isVisible = data.watchItem.isTriggered
+    }
+
     private fun renderHistory(history: List<Long>) {
         if (history.isEmpty()) {
             binding.historyValue.text = "Ingen historik"
@@ -184,12 +235,24 @@ class PairDetailFragment : Fragment() {
     }
 
     companion object {
+        private const val TAG = "PairDetailFragment"
         private const val ARG_WATCH_ITEM_ID = "watch_item_id"
+        private const val ARG_TRIGGER_TITLE = "trigger_title"
+        private const val ARG_TRIGGER_MESSAGE = "trigger_message"
+        private const val ARG_OPENED_FROM_NOTIFICATION = "opened_from_notification"
 
-        fun newInstance(watchItemId: Int): PairDetailFragment {
+        fun newInstance(
+            watchItemId: Int,
+            triggerTitle: String? = null,
+            triggerMessage: String? = null,
+            openedFromNotification: Boolean = false
+        ): PairDetailFragment {
             return PairDetailFragment().apply {
                 arguments = Bundle().apply {
                     putInt(ARG_WATCH_ITEM_ID, watchItemId)
+                    putString(ARG_TRIGGER_TITLE, triggerTitle)
+                    putString(ARG_TRIGGER_MESSAGE, triggerMessage)
+                    putBoolean(ARG_OPENED_FROM_NOTIFICATION, openedFromNotification)
                 }
             }
         }

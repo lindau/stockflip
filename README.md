@@ -4,13 +4,25 @@ A personal Android app for monitoring stock prices and triggering push notificat
 
 ## Features
 
-- **7 alert types** — price targets, daily % moves, 52-week drawdowns, key metrics (PE/PS/yield), spread between two tickers, price ranges, and composite AND/OR/NOT conditions
+- **3 main app areas** — `Översikt` for read-first prioritization, `Mina case` for setup and administration, and `Par` for pair alerts
+- **In-app changelog** — tap the version row in the app menu to open the latest local changelog
+- **5 primary alert flows in the current UI** — price targets, daily % moves, 52-week drawdowns, key metrics (PE/PS/yield), and spread between two tickers
+- **Legacy watch type support** — price ranges and composite AND/OR/NOT conditions remain supported in storage/rendering and can still be edited when they already exist
 - **Push notifications** with spam protection — at most one notification per alert per trading day
 - **Market-aware background updates** — 1-minute refresh during open hours, 60-minute outside
 - **Interactive stock charts** — intraday and multi-period (1M, 3M, 6M, 1Y, 5Y) price history
 - **Key metrics tracking** — PE ratio, PS ratio, and dividend yield with historical trend storage
 - **Stock search** — Yahoo Finance autocomplete with exact-match and Swedish-stock prioritization
 - **Hybrid UI** — Fragment/View Binding structure with Jetpack Compose cards embedded via `ComposeView`
+
+## Current User Flows
+
+- **Översikt** — read-only overview of your cases with sections for triggered items, near-trigger items, active cases, and inactive cases
+- **Mina case** — add a stock or crypto with the floating `+` button, open its detail page, and create or manage alerts there; also filter, batch-manage, edit, pause, reactivate, and delete cases
+- **Par** — add a stock pair from the `Par` tab with the floating `+` button
+- **Stock detail** — shows price snapshot, existing alerts for the selected stock, and buttons to add `Målpris`, `Drawdown`, `Dagsrörelse`, or `Nyckeltal`
+- **Help** — open the in-app help from the top app bar menu; it renders `app/src/main/assets/manual.md`
+- **Changelog** — tap the version row in the top app bar menu; it renders `app/src/main/assets/changelog.md`
 
 ## Supported Markets
 
@@ -91,6 +103,16 @@ UI (Fragments + Compose)
 ```
 
 Unit tests are fully offline and include MockWebServer fixtures for Yahoo Finance responses. Live/network tests in `YahooFinanceServiceTest.kt` are annotated with `@Ignore` — remove the annotation to run them manually. Recommended test symbols: `VOLV-B.ST` (Sweden), `AAPL` (US), `BTC-USD` (crypto), `EQNR.OL` (Norway).
+
+## Versioning
+
+- `versionCode` follows total git commit count
+- `versionName` starts at `1.1.0`, increments the patch number automatically from that baseline, and appends git/build metadata as `+<commit-count>.<short-sha>[.dirty].<yyyyMMdd.HHmmss>`
+- The app menu shows `BuildConfig.VERSION_NAME`
+
+## Maintenance
+
+- Update both `docs/CHANGELOG.md` and `app/src/main/assets/changelog.md` whenever user-facing changes are shipped so the in-app version view stays current.
 
 ## Requirements
 

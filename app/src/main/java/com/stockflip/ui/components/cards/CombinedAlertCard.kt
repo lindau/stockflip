@@ -100,6 +100,8 @@ fun CombinedAlertCard(
                             text = item.companyName ?: firstSymbol,
                             style = MaterialTheme.typography.titleMedium,
                             color = MaterialTheme.colorScheme.onSurface,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
                         )
                         Text(
                             text = firstSymbol,
@@ -119,6 +121,8 @@ fun CombinedAlertCard(
                         Switch(
                             checked = item.isActive,
                             onCheckedChange = { onToggleActive() },
+                            colors = watchItemSwitchColors(),
+                            thumbContent = { watchItemSwitchThumb() },
                             modifier = Modifier
                                 .scale(0.7f)
                                 .align(Alignment.Top)

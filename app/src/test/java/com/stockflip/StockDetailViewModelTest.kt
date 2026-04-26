@@ -2,6 +2,7 @@ package com.stockflip
 
 import com.stockflip.repository.TriggerHistoryRepository
 import com.stockflip.testutil.FakeMarketDataService
+import com.stockflip.testutil.InMemoryMetricHistoryDao
 import com.stockflip.testutil.InMemoryStockNoteDao
 import com.stockflip.testutil.InMemoryTriggerHistoryDao
 import com.stockflip.testutil.InMemoryWatchItemDao
@@ -31,7 +32,8 @@ class StockDetailViewModelTest {
         )
 
         val viewModel = StockDetailViewModel(watchItemDao, marketDataService, "VOLV-B.ST",
-            TriggerHistoryRepository(InMemoryTriggerHistoryDao()), InMemoryStockNoteDao())
+            TriggerHistoryRepository(InMemoryTriggerHistoryDao()), InMemoryStockNoteDao(),
+            com.stockflip.repository.MetricHistoryRepository(InMemoryMetricHistoryDao()))
         viewModel.loadStockData()
         advanceUntilIdle()
         val state: UiState<StockDetailData> = viewModel.stockDataState.value
@@ -58,7 +60,8 @@ class StockDetailViewModelTest {
             companyNameBySymbol = mapOf("DELIA.OL" to "DELLIA GROUP")
         )
         val viewModel = StockDetailViewModel(watchItemDao, marketDataService, "DELIA.OL",
-            TriggerHistoryRepository(InMemoryTriggerHistoryDao()), InMemoryStockNoteDao())
+            TriggerHistoryRepository(InMemoryTriggerHistoryDao()), InMemoryStockNoteDao(),
+            com.stockflip.repository.MetricHistoryRepository(InMemoryMetricHistoryDao()))
         viewModel.loadStockData()
         advanceUntilIdle()
         val state: UiState<StockDetailData> = viewModel.stockDataState.value
@@ -83,7 +86,8 @@ class StockDetailViewModelTest {
         )
         val viewModel = StockDetailViewModel(
             InMemoryWatchItemDao(emptyList()), fake, "VOLV-B.ST",
-            TriggerHistoryRepository(InMemoryTriggerHistoryDao()), InMemoryStockNoteDao()
+            TriggerHistoryRepository(InMemoryTriggerHistoryDao()), InMemoryStockNoteDao(),
+            com.stockflip.repository.MetricHistoryRepository(InMemoryMetricHistoryDao())
         )
         // ViewModel init har anropat loadChartData() för DAY (null → 2s retry delay pending)
 
@@ -98,4 +102,3 @@ class StockDetailViewModelTest {
         )
     }
 }
-

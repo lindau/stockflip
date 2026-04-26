@@ -15,6 +15,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.checkbox.MaterialCheckBox
+import com.google.android.material.chip.Chip
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.textfield.MaterialAutoCompleteTextView
 import com.google.android.material.textfield.TextInputEditText
@@ -48,7 +49,8 @@ class WatchDialogManager(
     private val stockSearchViewModel: StockSearchViewModel,
     private val stockSearchViewModel2: StockSearchViewModel,
     private val symbol: String,
-    private val companyName: String?
+    private val companyName: String?,
+    private val onWatchChanged: () -> Unit = {}
 ) {
     private val context get() = fragment.requireContext()
     private val lifecycleScope get() = fragment.viewLifecycleOwner.lifecycleScope
@@ -66,19 +68,95 @@ class WatchDialogManager(
     private fun currentCurrency(): String =
         (viewModel.stockDataState.value as? UiState.Success<StockDetailData>)?.data?.currency ?: "SEK"
 
+    private fun currentStockData(): StockDetailData? =
+        (viewModel.stockDataState.value as? UiState.Success<StockDetailData>)?.data
+
+    private fun currentMetricHistory(metricType: WatchType.MetricType) =
+        viewModel.metricHistoryState.value[metricType]
+
     private fun currentCompanyName(): String =
         (viewModel.stockDataState.value as? UiState.Success<StockDetailData>)?.data?.companyName
             ?: companyName ?: ""
+
+    private fun setPresetChip(
+        chip: Chip,
+        label: String,
+        value: Double,
+        suffix: String = "",
+        onApply: (Double) -> Unit
+    ) {
+        chip.text = if (suffix.isNotEmpty()) "$label$suffix" else label
+        chip.setOnClickListener { onApply(value) }
+    }
+
+    private fun metricLabel(metricType: WatchType.MetricType): String {
+        return when (metricType) {
+            WatchType.MetricType.PE_RATIO -> "P/E"
+            WatchType.MetricType.PS_RATIO -> "P/S"
+            WatchType.MetricType.DIVIDEND_YIELD -> "utdelning"
+        }
+    }
+
+    private fun formatMetricValue(metricType: WatchType.MetricType, value: Double): String {
+        return when (metricType) {
+            WatchType.MetricType.DIVIDEND_YIELD -> "${CurrencyHelper.formatDecimal(value)}%"
+            else -> CurrencyHelper.formatDecimal(value)
+        }
+    }
+
+    private val editor by lazy {
+        WatchItemEditor(
+            context = context,
+            scope = lifecycleScope,
+            stockSearchViewModel = stockSearchViewModel,
+            stockSearchViewModel2 = stockSearchViewModel2,
+            allowSymbolEditing = false,
+            createStockAdapter = { createStockAdapter() },
+            setupStockSearch = { input, adapter, searchViewModel, includeCrypto ->
+                setupStockSearch(input, adapter, searchViewModel, includeCrypto)
+            },
+            onUpdateWatchItem = { updatedItem ->
+                viewModel.updateWatchItem(updatedItem)
+                onWatchChanged()
+            },
+            onDeleteRequested = { watchItem ->
+                showDeleteConfirmation(watchItem)
+            },
+            onBeforeDialog = { hideQuickActions() },
+            onDialogDismissed = { showQuickActions() },
+            currentCurrencyFor = { currentCurrency() },
+            currentPriceFor = {
+                (viewModel.stockDataState.value as? UiState.Success<StockDetailData>)?.data?.lastPrice
+            },
+            currentMetricValueFor = { watchItem ->
+                val data = (viewModel.stockDataState.value as? UiState.Success<StockDetailData>)?.data ?: return@WatchItemEditor null
+                val metricType = (watchItem.watchType as? WatchType.KeyMetrics)?.metricType ?: return@WatchItemEditor null
+                when (metricType) {
+                    WatchType.MetricType.PE_RATIO -> data.peRatio
+                    WatchType.MetricType.PS_RATIO -> data.psRatio
+                    WatchType.MetricType.DIVIDEND_YIELD -> data.dividendYield
+                }
+            }
+        )
+    }
 
     // -------------------------------------------------------------------------
     // Create-dialoger
     // -------------------------------------------------------------------------
 
-    fun showCreatePriceTargetDialog() {
+    fun showCreatePriceTargetDialog(suggestedTargetPrice: Double? = null) {
         val currencySymbol = currentCurrencySymbol()
+        val stockData = currentStockData()
+        val currentPrice = stockData?.lastPrice
         val dialogView = LayoutInflater.from(context).inflate(R.layout.dialog_add_price_target, null)
         val tickerInput = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.tickerInput)
         val targetPriceInput = dialogView.findViewById<TextInputEditText>(R.id.targetPriceInput)
+        val contextText = dialogView.findViewById<TextView>(R.id.contextText)
+        val triggerInfoText = dialogView.findViewById<TextView>(R.id.triggerInfoText)
+        val presetChipOne = dialogView.findViewById<Chip>(R.id.presetChipOne)
+        val presetChipTwo = dialogView.findViewById<Chip>(R.id.presetChipTwo)
+        val presetChipThree = dialogView.findViewById<Chip>(R.id.presetChipThree)
+        val presetChipFour = dialogView.findViewById<Chip>(R.id.presetChipFour)
 
         tickerInput?.parent?.let { parent ->
             if (parent is TextInputLayout) {
@@ -88,6 +166,34 @@ class WatchDialogManager(
             }
         }
         dialogView.findViewById<TextInputLayout>(R.id.targetPriceLayout)?.hint = "Målpris ($currencySymbol)"
+        suggestedTargetPrice?.let { targetPriceInput.setText(CurrencyHelper.formatDecimal(it)) }
+        contextText.text = currentPrice?.let {
+            "Nuvarande pris ${CurrencyHelper.formatPrice(it, currentCurrency())}. Välj en nivå under eller över dagens kurs."
+        } ?: "Nuvarande pris saknas just nu. Ange den nivå du vill bevaka."
+        triggerInfoText.text = "När målpriset nås markeras larmet som utlöst och kan återaktiveras senare."
+
+        currentPrice?.let { price ->
+            setPresetChip(
+                chip = presetChipOne,
+                label = "-5 % (${CurrencyHelper.formatPrice(price * 0.95, currentCurrency())})",
+                value = price * 0.95
+            ) { targetPriceInput.setText(CurrencyHelper.formatDecimal(it)) }
+            setPresetChip(
+                chip = presetChipTwo,
+                label = "-10 % (${CurrencyHelper.formatPrice(price * 0.90, currentCurrency())})",
+                value = price * 0.90
+            ) { targetPriceInput.setText(CurrencyHelper.formatDecimal(it)) }
+            setPresetChip(
+                chip = presetChipThree,
+                label = "+5 % (${CurrencyHelper.formatPrice(price * 1.05, currentCurrency())})",
+                value = price * 1.05
+            ) { targetPriceInput.setText(CurrencyHelper.formatDecimal(it)) }
+            setPresetChip(
+                chip = presetChipFour,
+                label = "+10 % (${CurrencyHelper.formatPrice(price * 1.10, currentCurrency())})",
+                value = price * 1.10
+            ) { targetPriceInput.setText(CurrencyHelper.formatDecimal(it)) }
+        }
 
         MaterialAlertDialogBuilder(context)
             .setTitle("Skapa målpris-bevakning")
@@ -97,9 +203,8 @@ class WatchDialogManager(
                 if (targetPriceStr.isNotEmpty()) {
                     val targetPrice = targetPriceStr.parseDecimal()
                     if (targetPrice != null && targetPrice > 0) {
-                        val currentPrice = (viewModel.stockDataState.value as? UiState.Success<StockDetailData>)
-                            ?.data?.lastPrice ?: 0.0
-                        val direction = if (currentPrice > 0.0 && currentPrice >= targetPrice)
+                        val latestPrice = currentStockData()?.lastPrice ?: 0.0
+                        val direction = if (latestPrice > 0.0 && latestPrice >= targetPrice)
                             WatchType.PriceDirection.BELOW else WatchType.PriceDirection.ABOVE
                         val watchType = WatchType.PriceTarget(targetPrice, direction)
                         lifecycleScope.launch {
@@ -107,6 +212,7 @@ class WatchDialogManager(
                                 Toast.makeText(context, "En bevakning med dessa inställningar finns redan", Toast.LENGTH_SHORT).show()
                             } else {
                                 viewModel.createAlert(watchType, currentCompanyName())
+                                onWatchChanged()
                                 Toast.makeText(context, "Målpris-bevakning skapad", Toast.LENGTH_SHORT).show()
                             }
                         }
@@ -124,12 +230,23 @@ class WatchDialogManager(
             }
     }
 
-    fun showCreateDrawdownDialog() {
+    fun showCreateDrawdownDialog(
+        suggestedDropType: WatchType.DropType = WatchType.DropType.PERCENTAGE,
+        suggestedDropValue: Double? = null
+    ) {
         val currencySymbol = currentCurrencySymbol()
+        val stockData = currentStockData()
         val dialogView = LayoutInflater.from(context).inflate(R.layout.dialog_add_ath_based, null)
         val tickerInput = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.tickerInput)
         val dropTypeInput = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.dropTypeInput)
         val dropValueInput = dialogView.findViewById<TextInputEditText>(R.id.dropValueInput)
+        val dropValueLayout = dialogView.findViewById<TextInputLayout>(R.id.dropValueLayout)
+        val contextText = dialogView.findViewById<TextView>(R.id.contextText)
+        val triggerInfoText = dialogView.findViewById<TextView>(R.id.triggerInfoText)
+        val presetChipOne = dialogView.findViewById<Chip>(R.id.presetChipOne)
+        val presetChipTwo = dialogView.findViewById<Chip>(R.id.presetChipTwo)
+        val presetChipThree = dialogView.findViewById<Chip>(R.id.presetChipThree)
+        val presetChipFour = dialogView.findViewById<Chip>(R.id.presetChipFour)
 
         tickerInput?.parent?.let { parent ->
             if (parent is TextInputLayout) {
@@ -142,7 +259,61 @@ class WatchDialogManager(
         val dropTypes = arrayOf("Procent", "Absolut ($currencySymbol)")
         val dropTypeAdapter = ArrayAdapter(context, android.R.layout.simple_dropdown_item_1line, dropTypes)
         dropTypeInput.setAdapter(dropTypeAdapter)
-        dropTypeInput.setText("Procent", false)
+        dropTypeInput.setText(
+            if (suggestedDropType == WatchType.DropType.PERCENTAGE) "Procent" else "Absolut ($currencySymbol)",
+            false
+        )
+        suggestedDropValue?.let { dropValueInput.setText(CurrencyHelper.formatDecimal(it)) }
+        contextText.text = buildString {
+            append("Aktuell drawdown ")
+            append(stockData?.drawdownPercent?.let { "${CurrencyHelper.formatDecimal(it)}%" } ?: "saknas")
+            stockData?.week52High?.let {
+                append(" från 52v högsta ${CurrencyHelper.formatPrice(it, currentCurrency())}")
+            }
+            append(".")
+        }
+        triggerInfoText.text = "När nedgångsnivån nås markeras larmet som utlöst och kan återaktiveras senare."
+
+        fun applyDrawdownPresets(dropType: WatchType.DropType) {
+            if (dropType == WatchType.DropType.PERCENTAGE) {
+                dropValueLayout.hint = "Nedgångsvärde (%)"
+                setPresetChip(presetChipOne, "5 %", 5.0) {
+                    dropValueInput.setText(CurrencyHelper.formatDecimal(it))
+                }
+                setPresetChip(presetChipTwo, "10 %", 10.0) {
+                    dropValueInput.setText(CurrencyHelper.formatDecimal(it))
+                }
+                setPresetChip(presetChipThree, "15 %", 15.0) {
+                    dropValueInput.setText(CurrencyHelper.formatDecimal(it))
+                }
+                setPresetChip(presetChipFour, "20 %", 20.0) {
+                    dropValueInput.setText(CurrencyHelper.formatDecimal(it))
+                }
+            } else {
+                dropValueLayout.hint = "Nedgångsvärde ($currencySymbol)"
+                val high = stockData?.week52High
+                if (high != null && high > 0.0) {
+                    val values = listOf(high * 0.05, high * 0.10, high * 0.15, high * 0.20)
+                    setPresetChip(presetChipOne, CurrencyHelper.formatPrice(values[0], currentCurrency()), values[0]) {
+                        dropValueInput.setText(CurrencyHelper.formatDecimal(it))
+                    }
+                    setPresetChip(presetChipTwo, CurrencyHelper.formatPrice(values[1], currentCurrency()), values[1]) {
+                        dropValueInput.setText(CurrencyHelper.formatDecimal(it))
+                    }
+                    setPresetChip(presetChipThree, CurrencyHelper.formatPrice(values[2], currentCurrency()), values[2]) {
+                        dropValueInput.setText(CurrencyHelper.formatDecimal(it))
+                    }
+                    setPresetChip(presetChipFour, CurrencyHelper.formatPrice(values[3], currentCurrency()), values[3]) {
+                        dropValueInput.setText(CurrencyHelper.formatDecimal(it))
+                    }
+                }
+            }
+        }
+        applyDrawdownPresets(suggestedDropType)
+        dropTypeInput.doAfterTextChanged {
+            val selectedType = if (it.toString() == "Procent") WatchType.DropType.PERCENTAGE else WatchType.DropType.ABSOLUTE
+            applyDrawdownPresets(selectedType)
+        }
 
         MaterialAlertDialogBuilder(context)
             .setTitle("Skapa drawdown-bevakning")
@@ -163,6 +334,7 @@ class WatchDialogManager(
                                 Toast.makeText(context, "En bevakning med dessa inställningar finns redan", Toast.LENGTH_SHORT).show()
                             } else {
                                 viewModel.createAlert(watchType, currentCompanyName())
+                                onWatchChanged()
                                 Toast.makeText(context, "Drawdown-bevakning skapad", Toast.LENGTH_SHORT).show()
                             }
                         }
@@ -180,7 +352,11 @@ class WatchDialogManager(
             }
     }
 
-    fun showCreateDailyMoveDialog() {
+    fun showCreateDailyMoveDialog(
+        suggestedThreshold: Double? = null,
+        suggestedDirection: WatchType.DailyMoveDirection = WatchType.DailyMoveDirection.BOTH
+    ) {
+        val stockData = currentStockData()
         val dialogView = LayoutInflater.from(context).inflate(R.layout.dialog_add_daily_move, null)
         val tickerInput = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.tickerInput)
         val tickerInputLayout = tickerInput?.parent as? TextInputLayout
@@ -190,10 +366,34 @@ class WatchDialogManager(
 
         val thresholdInput = dialogView.findViewById<TextInputEditText>(R.id.thresholdInput)
         val directionInput = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.directionInput)
+        val contextText = dialogView.findViewById<TextView>(R.id.contextText)
+        val triggerInfoText = dialogView.findViewById<TextView>(R.id.triggerInfoText)
+        val presetChipOne = dialogView.findViewById<Chip>(R.id.presetChipOne)
+        val presetChipTwo = dialogView.findViewById<Chip>(R.id.presetChipTwo)
+        val presetChipThree = dialogView.findViewById<Chip>(R.id.presetChipThree)
+        val presetChipFour = dialogView.findViewById<Chip>(R.id.presetChipFour)
 
         val directions = arrayOf("Upp", "Ned", "Båda")
         val directionAdapter = ArrayAdapter(context, android.R.layout.simple_dropdown_item_1line, directions)
         directionInput.setAdapter(directionAdapter)
+        directionInput.setText(
+            when (suggestedDirection) {
+                WatchType.DailyMoveDirection.UP -> "Upp"
+                WatchType.DailyMoveDirection.DOWN -> "Ned"
+                WatchType.DailyMoveDirection.BOTH -> "Båda"
+            },
+            false
+        )
+        suggestedThreshold?.let { thresholdInput.setText(CurrencyHelper.formatDecimal(it)) }
+        contextText.text = stockData?.dailyChangePercent?.let {
+            val sign = if (it >= 0) "+" else ""
+            "Dagens rörelse är $sign${CurrencyHelper.formatDecimal(it)} %. Välj om du vill bevaka upp, ned eller båda håll."
+        } ?: "Dagens rörelse saknas just nu. Välj en generell tröskel för större rörelser."
+        triggerInfoText.text = "När dagsrörelsen passerar nivån markeras larmet som utlöst och kan återaktiveras senare."
+        setPresetChip(presetChipOne, "2 %", 2.0) { thresholdInput.setText(CurrencyHelper.formatDecimal(it)) }
+        setPresetChip(presetChipTwo, "3 %", 3.0) { thresholdInput.setText(CurrencyHelper.formatDecimal(it)) }
+        setPresetChip(presetChipThree, "5 %", 5.0) { thresholdInput.setText(CurrencyHelper.formatDecimal(it)) }
+        setPresetChip(presetChipFour, "8 %", 8.0) { thresholdInput.setText(CurrencyHelper.formatDecimal(it)) }
 
         MaterialAlertDialogBuilder(context)
             .setTitle("Skapa dagsrörelse-bevakning")
@@ -216,6 +416,7 @@ class WatchDialogManager(
                                 Toast.makeText(context, "En bevakning med dessa inställningar finns redan", Toast.LENGTH_SHORT).show()
                             } else {
                                 viewModel.createAlert(watchType, currentCompanyName())
+                                onWatchChanged()
                                 Toast.makeText(context, "Dagsrörelse-bevakning skapad", Toast.LENGTH_SHORT).show()
                             }
                         }
@@ -233,22 +434,123 @@ class WatchDialogManager(
             }
     }
 
-    fun showCreateKeyMetricsDialog() {
-        val mainActivity = fragment.requireActivity() as? MainActivity ?: return
+    fun showCreateKeyMetricsDialog(
+        suggestedMetricType: WatchType.MetricType? = null,
+        suggestedTargetValue: Double? = null
+    ) {
+        val stockData = currentStockData()
         val dialogView = LayoutInflater.from(context).inflate(R.layout.dialog_add_key_metrics, null)
         val tickerInput = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.tickerInput)
         val metricTypeInput = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.metricTypeInput)
         val targetValueInput = dialogView.findViewById<TextInputEditText>(R.id.targetValueInput)
+        val targetValueLayout = dialogView.findViewById<TextInputLayout>(R.id.targetValueLayout)
+        val contextText = dialogView.findViewById<TextView>(R.id.contextText)
+        val triggerInfoText = dialogView.findViewById<TextView>(R.id.triggerInfoText)
+        val presetChipOne = dialogView.findViewById<Chip>(R.id.presetChipOne)
+        val presetChipTwo = dialogView.findViewById<Chip>(R.id.presetChipTwo)
+        val presetChipThree = dialogView.findViewById<Chip>(R.id.presetChipThree)
+        val presetChipFour = dialogView.findViewById<Chip>(R.id.presetChipFour)
 
         tickerInput.setText("$symbol - ${currentCompanyName()}", false)
         tickerInput.isEnabled = false
 
         val historyCard = dialogView.findViewById<CardView>(R.id.historyCard)
-        historyCard.visibility = View.GONE
+        val currentValueText = dialogView.findViewById<TextView>(R.id.currentValueText)
+        val historyOneYear = dialogView.findViewById<TextView>(R.id.historyOneYear)
+        val historyThreeYear = dialogView.findViewById<TextView>(R.id.historyThreeYear)
+        val historyFiveYear = dialogView.findViewById<TextView>(R.id.historyFiveYear)
+        historyCard.visibility = View.VISIBLE
 
         val metricTypes = arrayOf("P/E-tal", "P/S-tal", "Utdelningsprocent")
         val metricTypeAdapter = ArrayAdapter(context, android.R.layout.simple_dropdown_item_1line, metricTypes)
         metricTypeInput.setAdapter(metricTypeAdapter)
+        metricTypeInput.setText(
+            when (suggestedMetricType) {
+                WatchType.MetricType.PE_RATIO -> "P/E-tal"
+                WatchType.MetricType.PS_RATIO -> "P/S-tal"
+                WatchType.MetricType.DIVIDEND_YIELD -> "Utdelningsprocent"
+                null -> ""
+            },
+            false
+        )
+        suggestedTargetValue?.let { targetValueInput.setText(CurrencyHelper.formatDecimal(it)) }
+        triggerInfoText.text = "När nyckeltalet passerar din nivå markeras larmet som utlöst och kan återaktiveras senare."
+
+        fun selectedMetricType(): WatchType.MetricType? {
+            return when (metricTypeInput.text.toString()) {
+                "P/E-tal" -> WatchType.MetricType.PE_RATIO
+                "P/S-tal" -> WatchType.MetricType.PS_RATIO
+                "Utdelningsprocent" -> WatchType.MetricType.DIVIDEND_YIELD
+                else -> null
+            }
+        }
+
+        fun metricCurrentValue(metricType: WatchType.MetricType): Double? {
+            return when (metricType) {
+                WatchType.MetricType.PE_RATIO -> stockData?.peRatio
+                WatchType.MetricType.PS_RATIO -> stockData?.psRatio
+                WatchType.MetricType.DIVIDEND_YIELD -> stockData?.dividendYield
+            }
+        }
+
+        fun refreshMetricContext(metricType: WatchType.MetricType?) {
+            if (metricType == null) {
+                contextText.text = "Välj nyckeltal för att se kontext"
+                currentValueText.text = "Aktuellt värde saknas"
+                historyOneYear.text = ""
+                historyThreeYear.text = ""
+                historyFiveYear.text = ""
+                return
+            }
+
+            val currentValue = metricCurrentValue(metricType)
+            val summary = currentMetricHistory(metricType)
+            targetValueLayout.hint = when (metricType) {
+                WatchType.MetricType.DIVIDEND_YIELD -> "Målvärde (%)"
+                else -> "Målvärde"
+            }
+            contextText.text = buildString {
+                append("${metricLabel(metricType)} är ")
+                append(currentValue?.let { formatMetricValue(metricType, it) } ?: "okänt")
+                summary?.threeYear?.takeUnless { it.isEmpty() }?.average?.let {
+                    append(". 3-årssnitt ${formatMetricValue(metricType, it)}")
+                }
+                append(".")
+            }
+            currentValueText.text = "Nu: ${currentValue?.let { formatMetricValue(metricType, it) } ?: "-"}"
+            historyOneYear.text = summary?.oneYear?.takeUnless { it.isEmpty() }?.let {
+                "1 år: ${formatMetricValue(metricType, it.min)} - ${formatMetricValue(metricType, it.max)} | snitt ${formatMetricValue(metricType, it.average)}"
+            } ?: "1 år: ingen historik"
+            historyThreeYear.text = summary?.threeYear?.takeUnless { it.isEmpty() }?.let {
+                "3 år: ${formatMetricValue(metricType, it.min)} - ${formatMetricValue(metricType, it.max)} | snitt ${formatMetricValue(metricType, it.average)}"
+            } ?: "3 år: ingen historik"
+            historyFiveYear.text = summary?.fiveYear?.takeUnless { it.isEmpty() }?.let {
+                "5 år: ${formatMetricValue(metricType, it.min)} - ${formatMetricValue(metricType, it.max)} | snitt ${formatMetricValue(metricType, it.average)}"
+            } ?: "5 år: ingen historik"
+
+            val fallbackCurrent = currentValue ?: run {
+                listOf(presetChipOne, presetChipTwo, presetChipThree, presetChipFour).forEach { chip ->
+                    chip.text = "Värde saknas"
+                    chip.setOnClickListener(null)
+                }
+                return
+            }
+            val multipliers = listOf(0.95, 0.90, 1.05, 1.10)
+            val labels = listOf("-5 %", "-10 %", "+5 %", "+10 %")
+            val chips = listOf(presetChipOne, presetChipTwo, presetChipThree, presetChipFour)
+            chips.forEachIndexed { index, chip ->
+                val value = fallbackCurrent * multipliers[index]
+                setPresetChip(
+                    chip,
+                    "${labels[index]} (${formatMetricValue(metricType, value)})",
+                    value
+                ) { targetValueInput.setText(CurrencyHelper.formatDecimal(it)) }
+            }
+        }
+        refreshMetricContext(selectedMetricType())
+        metricTypeInput.doAfterTextChanged {
+            refreshMetricContext(selectedMetricType())
+        }
 
         MaterialAlertDialogBuilder(context)
             .setTitle("Skapa nyckeltalsbevakning")
@@ -265,12 +567,23 @@ class WatchDialogManager(
                     }
                     val targetValue = targetValueStr.parseDecimal()
                     if (metricType != null && targetValue != null && targetValue > 0) {
-                        val watchType = WatchType.KeyMetrics(metricType, targetValue, WatchType.PriceDirection.ABOVE)
+                        val currentValue = when (metricType) {
+                            WatchType.MetricType.PE_RATIO -> (viewModel.stockDataState.value as? UiState.Success<StockDetailData>)?.data?.peRatio
+                            WatchType.MetricType.PS_RATIO -> (viewModel.stockDataState.value as? UiState.Success<StockDetailData>)?.data?.psRatio
+                            WatchType.MetricType.DIVIDEND_YIELD -> (viewModel.stockDataState.value as? UiState.Success<StockDetailData>)?.data?.dividendYield
+                        } ?: 0.0
+                        val direction = if (currentValue > 0.0 && currentValue >= targetValue) {
+                            WatchType.PriceDirection.BELOW
+                        } else {
+                            WatchType.PriceDirection.ABOVE
+                        }
+                        val watchType = WatchType.KeyMetrics(metricType, targetValue, direction)
                         lifecycleScope.launch {
                             if (viewModel.isDuplicateWatch(watchType)) {
                                 Toast.makeText(context, "En bevakning med dessa inställningar finns redan", Toast.LENGTH_SHORT).show()
                             } else {
                                 viewModel.createAlert(watchType, currentCompanyName())
+                                onWatchChanged()
                                 Toast.makeText(context, "Nyckeltalsbevakning skapad", Toast.LENGTH_SHORT).show()
                             }
                         }
@@ -293,20 +606,7 @@ class WatchDialogManager(
     // -------------------------------------------------------------------------
 
     fun showEditWatchItemDialog(item: WatchItem) {
-        hideQuickActions()
-        when (item.watchType) {
-            is WatchType.PricePair -> showEditPricePairDialog(item)
-            is WatchType.PriceTarget -> showEditPriceTargetDialog(item)
-            is WatchType.PriceRange -> showEditPriceRangeDialog(item)
-            is WatchType.DailyMove -> showEditDailyMoveDialog(item)
-            is WatchType.ATHBased -> showEditDrawdownDialog(item)
-            is WatchType.KeyMetrics -> showEditKeyMetricsDialog(item)
-            is WatchType.Combined -> showEditCombinedAlertDialog(item)
-            else -> {
-                showQuickActions()
-                Toast.makeText(context, "Redigering för denna bevakningstyp stöds inte ännu", Toast.LENGTH_SHORT).show()
-            }
-        }
+        editor.showEditWatchItemDialog(item)
     }
 
     fun showDeleteConfirmation(watchItem: WatchItem) {
@@ -315,6 +615,7 @@ class WatchDialogManager(
             .setMessage("Är du säker på att du vill ta bort denna bevakning?")
             .setPositiveButton("Ta bort") { _, _ ->
                 viewModel.deleteAlert(watchItem)
+                onWatchChanged()
                 Toast.makeText(context, "Bevakning borttagen", Toast.LENGTH_SHORT).show()
             }
             .setNegativeButton("Avbryt", null)
@@ -344,612 +645,6 @@ class WatchDialogManager(
         builder.show().also { dialog ->
             dialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE)
             focusInput(noteInput)
-        }
-    }
-
-    // -------------------------------------------------------------------------
-    // Edit-dialoger (privata)
-    // -------------------------------------------------------------------------
-
-    private fun showEditPricePairDialog(item: WatchItem) {
-        if (item.watchType !is WatchType.PricePair) return
-        val pricePair = item.watchType
-        val dialogView = LayoutInflater.from(context).inflate(R.layout.dialog_add_stock_pair, null)
-        val ticker1Input = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.ticker1Input).apply { setText(item.ticker1) }
-        val ticker2Input = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.ticker2Input).apply { setText(item.ticker2) }
-        val priceDifferenceInput = dialogView.findViewById<TextInputEditText>(R.id.priceDifferenceInput).apply {
-            setText(CurrencyHelper.formatDecimal(pricePair.priceDifference))
-        }
-        val notifyWhenEqualCheckbox = dialogView.findViewById<MaterialCheckBox>(R.id.notifyWhenEqualCheckbox).apply {
-            isChecked = pricePair.notifyWhenEqual
-        }
-
-        val adapter1 = createStockAdapter()
-        val adapter2 = createStockAdapter()
-        setupStockSearch(ticker1Input, adapter1, stockSearchViewModel, includeCrypto = false)
-        setupStockSearch(ticker2Input, adapter2, stockSearchViewModel2, includeCrypto = false)
-
-        var selectedStock1: StockSearchResult? = null
-        var selectedStock2: StockSearchResult? = null
-
-        ticker1Input.setOnItemClickListener { _, _, position, _ -> selectedStock1 = adapter1.getItem(position) }
-        ticker2Input.setOnItemClickListener { _, _, position, _ -> selectedStock2 = adapter2.getItem(position) }
-
-        MaterialAlertDialogBuilder(context)
-            .setTitle("Redigera aktiepar")
-            .setView(dialogView)
-            .setOnDismissListener { showQuickActions() }
-            .setPositiveButton("Uppdatera") { _, _ ->
-                val ticker1Str = ticker1Input.text.toString().trim()
-                val ticker2Str = ticker2Input.text.toString().trim()
-                val priceDifferenceStr = priceDifferenceInput.text.toString()
-                val notifyWhenEqual = notifyWhenEqualCheckbox.isChecked
-                val finalTicker1 = selectedStock1?.symbol ?: ticker1Str
-                val finalTicker2 = selectedStock2?.symbol ?: ticker2Str
-                if (finalTicker1.isNotEmpty() && finalTicker2.isNotEmpty() && priceDifferenceStr.isNotEmpty()) {
-                    val priceDifference = priceDifferenceStr.parseDecimal() ?: 0.0
-                    val updatedItem = item.copy(
-                        watchType = WatchType.PricePair(priceDifference, notifyWhenEqual),
-                        ticker1 = finalTicker1,
-                        ticker2 = finalTicker2,
-                        companyName1 = selectedStock1?.name ?: item.companyName1,
-                        companyName2 = selectedStock2?.name ?: item.companyName2
-                    )
-                    viewModel.updateWatchItem(updatedItem)
-                    Toast.makeText(context, "Aktiepar uppdaterat", Toast.LENGTH_SHORT).show()
-                } else {
-                    Toast.makeText(context, "Fyll i alla fält", Toast.LENGTH_SHORT).show()
-                }
-            }
-            .setNeutralButton("Ta bort") { _, _ -> showDeleteConfirmation(item) }
-            .setNegativeButton("Avbryt", null)
-            .show().also { dialog ->
-                dialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE)
-                focusInput(priceDifferenceInput)
-            }
-    }
-
-    private fun showEditPriceTargetDialog(item: WatchItem, currentPrice: Double = 0.0) {
-        if (item.watchType !is WatchType.PriceTarget) return
-        val currencySymbol = currentCurrencySymbol()
-        val priceTarget = item.watchType
-        val dialogView = LayoutInflater.from(context).inflate(R.layout.dialog_add_price_target, null)
-        val tickerInput = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.tickerInput)
-        val tickerInputLayout = tickerInput.parent as? TextInputLayout
-        tickerInputLayout?.visibility = View.GONE
-        tickerInput.setText(item.ticker ?: "")
-        tickerInput.isEnabled = false
-
-        val targetPriceInput = dialogView.findViewById<TextInputEditText>(R.id.targetPriceInput).apply {
-            setText(CurrencyHelper.formatDecimal(priceTarget.targetPrice))
-        }
-        dialogView.findViewById<TextInputLayout>(R.id.targetPriceLayout)?.hint = "Målpris ($currencySymbol)"
-
-        val dialog = MaterialAlertDialogBuilder(context)
-            .setTitle("Redigera prisbevakning")
-            .setView(dialogView)
-            .setOnDismissListener { showQuickActions() }
-            .setPositiveButton("Uppdatera") { _, _ ->
-                val targetPriceStr = targetPriceInput.text.toString()
-                if (targetPriceStr.isNotEmpty()) {
-                    val targetPrice = targetPriceStr.parseDecimal()
-                    if (targetPrice != null && targetPrice > 0) {
-                        val existingDirection = (item.watchType as WatchType.PriceTarget).direction
-                        val direction = when {
-                            currentPrice > 0.0 && currentPrice >= targetPrice -> WatchType.PriceDirection.BELOW
-                            currentPrice > 0.0 -> WatchType.PriceDirection.ABOVE
-                            else -> existingDirection
-                        }
-                        val updatedItem = item.copy(watchType = WatchType.PriceTarget(targetPrice, direction))
-                        viewModel.updateWatchItem(updatedItem)
-                        Toast.makeText(context, "Bevakning uppdaterad", Toast.LENGTH_SHORT).show()
-                    } else {
-                        Toast.makeText(context, "Ange ett giltigt målpris", Toast.LENGTH_SHORT).show()
-                    }
-                } else {
-                    Toast.makeText(context, "Ange ett målpris", Toast.LENGTH_SHORT).show()
-                }
-            }
-            .setNeutralButton("Ta bort") { _, _ -> showDeleteConfirmation(item) }
-            .setNegativeButton("Avbryt", null)
-            .create()
-        dialog.show()
-        dialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE)
-        focusInput(targetPriceInput)
-    }
-
-    private fun showEditPriceRangeDialog(item: WatchItem) {
-        val currency = currentCurrency()
-        showEditPriceRangeDialog(
-            context = context,
-            item = item,
-            currency = currency,
-            onUpdate = { minPrice, maxPrice ->
-                val updatedItem = item.copy(watchType = WatchType.PriceRange(minPrice, maxPrice))
-                viewModel.updateWatchItem(updatedItem)
-                Toast.makeText(context, context.getString(R.string.toast_watch_updated), Toast.LENGTH_SHORT).show()
-            },
-            onDelete = { showDeleteConfirmation(item) },
-            onDismiss = { showQuickActions() }
-        )
-    }
-
-    private fun showEditDailyMoveDialog(item: WatchItem) {
-        if (item.watchType !is WatchType.DailyMove) return
-        val dailyMove = item.watchType
-        val dialogView = LayoutInflater.from(context).inflate(R.layout.dialog_add_daily_move, null)
-        val tickerInput = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.tickerInput)
-        val tickerInputLayout = tickerInput?.parent as? TextInputLayout
-        tickerInputLayout?.visibility = View.GONE
-        tickerInput?.setText(item.ticker ?: "")
-        tickerInput?.isEnabled = false
-
-        val thresholdInput = dialogView.findViewById<TextInputEditText>(R.id.thresholdInput).apply {
-            setText(CurrencyHelper.formatDecimal(dailyMove.percentThreshold))
-        }
-        val directionInput = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.directionInput).apply {
-            setText(when (dailyMove.direction) {
-                WatchType.DailyMoveDirection.UP -> "Upp"
-                WatchType.DailyMoveDirection.DOWN -> "Ned"
-                WatchType.DailyMoveDirection.BOTH -> "Båda"
-            })
-        }
-
-        val directions = arrayOf("Upp", "Ned", "Båda")
-        val directionAdapter = ArrayAdapter(context, android.R.layout.simple_dropdown_item_1line, directions)
-        directionInput.setAdapter(directionAdapter)
-
-        val dialog = MaterialAlertDialogBuilder(context)
-            .setTitle("Redigera dagsrörelse-bevakning")
-            .setView(dialogView)
-            .setOnDismissListener { showQuickActions() }
-            .setPositiveButton("Uppdatera") { _, _ ->
-                val thresholdStr = thresholdInput.text.toString()
-                val directionStr = directionInput.text.toString()
-                if (thresholdStr.isNotEmpty() && directionStr.isNotEmpty()) {
-                    val threshold = thresholdStr.parseDecimal()
-                    val direction = when (directionStr) {
-                        "Upp" -> WatchType.DailyMoveDirection.UP
-                        "Ned" -> WatchType.DailyMoveDirection.DOWN
-                        "Båda" -> WatchType.DailyMoveDirection.BOTH
-                        else -> WatchType.DailyMoveDirection.BOTH
-                    }
-                    if (threshold != null && threshold > 0) {
-                        val updatedItem = item.copy(watchType = WatchType.DailyMove(threshold, direction))
-                        viewModel.updateWatchItem(updatedItem)
-                        Toast.makeText(context, "Bevakning uppdaterad", Toast.LENGTH_SHORT).show()
-                    } else {
-                        Toast.makeText(context, "Ange ett giltigt tröskelvärde", Toast.LENGTH_SHORT).show()
-                    }
-                } else {
-                    Toast.makeText(context, "Fyll i alla fält", Toast.LENGTH_SHORT).show()
-                }
-            }
-            .setNeutralButton("Ta bort") { _, _ -> showDeleteConfirmation(item) }
-            .setNegativeButton("Avbryt", null)
-            .create()
-        dialog.show()
-        dialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE)
-        focusInput(thresholdInput)
-    }
-
-    private fun showEditDrawdownDialog(item: WatchItem) {
-        if (item.watchType !is WatchType.ATHBased) return
-        val currencySymbol = currentCurrencySymbol()
-        val athBased = item.watchType
-        val dialogView = LayoutInflater.from(context).inflate(R.layout.dialog_add_ath_based, null)
-        val tickerInput = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.tickerInput)
-        val tickerInputLayout = tickerInput.parent as? TextInputLayout
-        tickerInputLayout?.visibility = View.GONE
-        tickerInput.setText(item.ticker ?: "")
-        tickerInput.isEnabled = false
-
-        val absoluteLabel = "Absolut ($currencySymbol)"
-        val dropTypeInput = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.dropTypeInput).apply {
-            setText(when (athBased.dropType) {
-                WatchType.DropType.PERCENTAGE -> "Procent"
-                WatchType.DropType.ABSOLUTE -> absoluteLabel
-            })
-        }
-        val dropValueInput = dialogView.findViewById<TextInputEditText>(R.id.dropValueInput).apply {
-            setText(CurrencyHelper.formatDecimal(athBased.dropValue))
-        }
-
-        val dropTypes = arrayOf("Procent", absoluteLabel)
-        val dropTypeAdapter = ArrayAdapter(context, android.R.layout.simple_dropdown_item_1line, dropTypes)
-        dropTypeInput.setAdapter(dropTypeAdapter)
-
-        val dialog = MaterialAlertDialogBuilder(context)
-            .setTitle("Redigera drawdown-bevakning")
-            .setView(dialogView)
-            .setOnDismissListener { showQuickActions() }
-            .setPositiveButton("Uppdatera") { _, _ ->
-                val dropTypeStr = dropTypeInput.text.toString()
-                val dropValueStr = dropValueInput.text.toString()
-                if (dropTypeStr.isNotEmpty() && dropValueStr.isNotEmpty()) {
-                    val dropType = when (dropTypeStr) {
-                        "Procent" -> WatchType.DropType.PERCENTAGE
-                        else -> WatchType.DropType.ABSOLUTE
-                    }
-                    val dropValue = dropValueStr.parseDecimal()
-                    if (dropValue != null && dropValue > 0) {
-                        val updatedItem = item.copy(watchType = WatchType.ATHBased(dropType, dropValue))
-                        viewModel.updateWatchItem(updatedItem)
-                        Toast.makeText(context, "Bevakning uppdaterad", Toast.LENGTH_SHORT).show()
-                    } else {
-                        Toast.makeText(context, "Ange ett giltigt värde", Toast.LENGTH_SHORT).show()
-                    }
-                } else {
-                    Toast.makeText(context, "Fyll i alla fält", Toast.LENGTH_SHORT).show()
-                }
-            }
-            .setNeutralButton("Ta bort") { _, _ -> showDeleteConfirmation(item) }
-            .setNegativeButton("Avbryt", null)
-            .create()
-        dialog.show()
-        dialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE)
-        focusInput(dropValueInput)
-    }
-
-    private fun showEditKeyMetricsDialog(item: WatchItem, currentMetricValue: Double = 0.0) {
-        if (item.watchType !is WatchType.KeyMetrics) return
-        val keyMetrics = item.watchType
-        val itemSymbol = item.ticker ?: symbol
-        val itemCompanyName = (viewModel.stockDataState.value as? UiState.Success<StockDetailData>)?.data?.companyName
-            ?: item.companyName ?: ""
-
-        val dialogView = LayoutInflater.from(context).inflate(R.layout.dialog_add_key_metrics, null)
-        val tickerInput = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.tickerInput)
-        val tickerInputLayout = tickerInput.parent as? TextInputLayout
-        tickerInputLayout?.visibility = View.GONE
-        tickerInput.setText("$itemSymbol - $itemCompanyName")
-        tickerInput.isEnabled = false
-
-        val metricTypeInput = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.metricTypeInput).apply {
-            setText(when (keyMetrics.metricType) {
-                WatchType.MetricType.PE_RATIO -> "P/E-tal"
-                WatchType.MetricType.PS_RATIO -> "P/S-tal"
-                WatchType.MetricType.DIVIDEND_YIELD -> "Utdelningsprocent"
-            })
-        }
-        val targetValueInput = dialogView.findViewById<TextInputEditText>(R.id.targetValueInput).apply {
-            setText(CurrencyHelper.formatDecimal(keyMetrics.targetValue))
-        }
-
-        val historyCard = dialogView.findViewById<CardView>(R.id.historyCard)
-        historyCard.visibility = View.GONE
-
-        val metricTypes = arrayOf("P/E-tal", "P/S-tal", "Utdelningsprocent")
-        val metricTypeAdapter = ArrayAdapter(context, android.R.layout.simple_dropdown_item_1line, metricTypes)
-        metricTypeInput.setAdapter(metricTypeAdapter)
-
-        val dialog = MaterialAlertDialogBuilder(context)
-            .setTitle("Redigera nyckeltalsbevakning")
-            .setView(dialogView)
-            .setOnDismissListener { showQuickActions() }
-            .setPositiveButton("Uppdatera") { _, _ ->
-                val metricTypeStr = metricTypeInput.text.toString()
-                val targetValueStr = targetValueInput.text.toString()
-                if (metricTypeStr.isNotEmpty() && targetValueStr.isNotEmpty()) {
-                    val metricType = when (metricTypeStr) {
-                        "P/E-tal" -> WatchType.MetricType.PE_RATIO
-                        "P/S-tal" -> WatchType.MetricType.PS_RATIO
-                        "Utdelningsprocent" -> WatchType.MetricType.DIVIDEND_YIELD
-                        else -> null
-                    }
-                    val targetValue = targetValueStr.parseDecimal()
-                    if (metricType != null && targetValue != null && targetValue > 0) {
-                        val existingMetricDirection = (item.watchType as WatchType.KeyMetrics).direction
-                        val direction = when {
-                            currentMetricValue > 0.0 && currentMetricValue >= targetValue -> WatchType.PriceDirection.BELOW
-                            currentMetricValue > 0.0 -> WatchType.PriceDirection.ABOVE
-                            else -> existingMetricDirection
-                        }
-                        val updatedItem = item.copy(watchType = WatchType.KeyMetrics(metricType, targetValue, direction))
-                        viewModel.updateWatchItem(updatedItem)
-                        Toast.makeText(context, "Bevakning uppdaterad", Toast.LENGTH_SHORT).show()
-                    } else {
-                        Toast.makeText(context, "Ange giltiga värden", Toast.LENGTH_SHORT).show()
-                    }
-                } else {
-                    Toast.makeText(context, "Fyll i alla fält", Toast.LENGTH_SHORT).show()
-                }
-            }
-            .setNeutralButton("Ta bort") { _, _ -> showDeleteConfirmation(item) }
-            .setNegativeButton("Avbryt", null)
-            .create()
-        dialog.show()
-        dialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE)
-        focusInput(targetValueInput)
-    }
-
-    private fun showEditCombinedAlertDialog(watchItem: WatchItem) {
-        val combined = watchItem.watchType as? WatchType.Combined ?: return
-        val expression = combined.expression
-
-        val decompositionResult = decomposeExpression(expression)
-        if (decompositionResult == null) {
-            showQuickActions()
-            Toast.makeText(context, "Detta kombinerat larm kan inte redigeras (komplex struktur)", Toast.LENGTH_LONG).show()
-            return
-        }
-
-        val (itemSymbol, conditions) = decompositionResult
-
-        val dialogView = LayoutInflater.from(context).inflate(R.layout.dialog_add_combined_alert, null)
-        val symbolInput = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.symbolInput)
-        val conditionsRecyclerView = dialogView.findViewById<androidx.recyclerview.widget.RecyclerView>(R.id.conditionsRecyclerView)
-        val addConditionButton = dialogView.findViewById<MaterialButton>(R.id.addConditionButton)
-        val previewText = dialogView.findViewById<TextView>(R.id.previewText)
-
-        conditionsRecyclerView.layoutManager = LinearLayoutManager(context)
-
-        lateinit var conditionAdapter: ConditionBuilderAdapter
-
-        conditionAdapter = ConditionBuilderAdapter(
-            onConditionTypeChanged = { _, _ ->
-                updatePreview(conditionAdapter, symbolInput.text.toString(), previewText)
-            },
-            onValueChanged = { _, _ ->
-                updatePreview(conditionAdapter, symbolInput.text.toString(), previewText)
-            },
-            onOperatorChanged = { _, _ ->
-                updatePreview(conditionAdapter, symbolInput.text.toString(), previewText)
-            },
-            onRemove = { position ->
-                conditionAdapter.removeCondition(position)
-                updatePreview(conditionAdapter, symbolInput.text.toString(), previewText)
-            }
-        )
-
-        conditionAdapter.setConditions(conditions)
-        conditionsRecyclerView.adapter = conditionAdapter
-
-        val stockAdapter = createStockAdapter()
-        symbolInput.setAdapter(stockAdapter)
-        symbolInput.setText(itemSymbol, false)
-
-        setupStockSearch(symbolInput, stockAdapter, stockSearchViewModel, includeCrypto = true)
-
-        symbolInput.setOnItemClickListener { _, _, position, _ ->
-            val selectedItem = stockAdapter.getItem(position)
-            val newSymbol = selectedItem?.symbol ?: symbolInput.text.toString()
-            updatePreview(conditionAdapter, newSymbol, previewText)
-        }
-
-        addConditionButton.setOnClickListener {
-            conditionAdapter.addCondition()
-            updatePreview(conditionAdapter, symbolInput.text.toString(), previewText)
-        }
-
-        updatePreview(conditionAdapter, itemSymbol, previewText)
-
-        MaterialAlertDialogBuilder(context)
-            .setTitle("Redigera kombinerat larm")
-            .setView(dialogView)
-            .setPositiveButton("Spara") { _, _ ->
-                val newSymbol = symbolInput.text.toString().trim()
-                val newConditions = conditionAdapter.getConditions()
-
-                if (newSymbol.isEmpty()) {
-                    Toast.makeText(context, "Välj en aktie", Toast.LENGTH_SHORT).show()
-                    return@setPositiveButton
-                }
-                if (newConditions.isEmpty()) {
-                    Toast.makeText(context, "Lägg till minst ett villkor", Toast.LENGTH_SHORT).show()
-                    return@setPositiveButton
-                }
-
-                val validConditions = newConditions.filter {
-                    it.value.isNotEmpty() && it.value.parseDecimal() != null
-                }
-
-                if (validConditions.size != newConditions.size) {
-                    Toast.makeText(context, "Alla villkor måste ha giltigt värde", Toast.LENGTH_SHORT).show()
-                    return@setPositiveButton
-                }
-
-                val newExpression = buildAlertExpression(newSymbol, validConditions)
-                if (newExpression == null) {
-                    Toast.makeText(context, "Kunde inte skapa uttryck", Toast.LENGTH_SHORT).show()
-                    return@setPositiveButton
-                }
-
-                lifecycleScope.launch {
-                    try {
-                        val updatedWatchItem = watchItem.copy(
-                            watchType = WatchType.Combined(newExpression),
-                            ticker = newSymbol
-                        )
-                        viewModel.updateWatchItem(updatedWatchItem)
-                        Toast.makeText(context, "Kombinerat larm uppdaterat", Toast.LENGTH_SHORT).show()
-                    } catch (e: Exception) {
-                        Toast.makeText(context, "Kunde inte uppdatera kombinerat larm: ${e.message}", Toast.LENGTH_LONG).show()
-                    }
-                }
-            }
-            .setNeutralButton("Ta bort") { _, _ -> showDeleteConfirmation(watchItem) }
-            .setNegativeButton("Avbryt", null)
-            .show()
-    }
-
-    // -------------------------------------------------------------------------
-    // Combined alert-hjälpare
-    // -------------------------------------------------------------------------
-
-    private fun decomposeExpression(expression: AlertExpression): Pair<String, List<ConditionBuilderAdapter.ConditionData>>? {
-        val conditions = mutableListOf<ConditionBuilderAdapter.ConditionData>()
-        var currentSymbol: String? = null
-
-        fun extractRules(expr: AlertExpression, operator: String? = null): Boolean {
-            return when (expr) {
-                is AlertExpression.Single -> {
-                    val rule = expr.rule
-                    val ruleSymbol = when (rule) {
-                        is AlertRule.SinglePrice -> rule.symbol
-                        is AlertRule.SingleDrawdownFromHigh -> rule.symbol
-                        is AlertRule.SingleDailyMove -> rule.symbol
-                        is AlertRule.SingleKeyMetric -> rule.symbol
-                        is AlertRule.PairSpread -> return false
-                    }
-
-                    if (currentSymbol == null) {
-                        currentSymbol = ruleSymbol
-                    } else if (currentSymbol != ruleSymbol) {
-                        return false
-                    }
-
-                    val conditionData = when (rule) {
-                        is AlertRule.SinglePrice -> ConditionBuilderAdapter.ConditionData(
-                            conditionType = "Pris",
-                            direction = if (rule.comparisonType == AlertRule.PriceComparisonType.ABOVE) "Över" else "Under",
-                            value = rule.priceLimit.toString(),
-                            operator = operator
-                        )
-                        is AlertRule.SingleDrawdownFromHigh -> ConditionBuilderAdapter.ConditionData(
-                            conditionType = "52w High Drop",
-                            direction = "Över",
-                            value = rule.dropValue.toString(),
-                            operator = operator
-                        )
-                        is AlertRule.SingleDailyMove -> ConditionBuilderAdapter.ConditionData(
-                            conditionType = "Dagsrörelse",
-                            direction = "Över",
-                            value = rule.percentThreshold.toString(),
-                            operator = operator
-                        )
-                        is AlertRule.SingleKeyMetric -> {
-                            val conditionType = when (rule.metricType) {
-                                AlertRule.KeyMetricType.PE_RATIO -> "P/E-tal"
-                                AlertRule.KeyMetricType.PS_RATIO -> "P/S-tal"
-                                AlertRule.KeyMetricType.DIVIDEND_YIELD -> "Utdelningsprocent"
-                            }
-                            ConditionBuilderAdapter.ConditionData(
-                                conditionType = conditionType,
-                                direction = if (rule.direction == AlertRule.PriceComparisonType.ABOVE) "Över" else "Under",
-                                value = rule.targetValue.toString(),
-                                operator = operator
-                            )
-                        }
-                        else -> return false
-                    }
-
-                    conditions.add(conditionData)
-                    true
-                }
-                is AlertExpression.And -> {
-                    val leftOk = extractRules(expr.left, null)
-                    if (!leftOk) return false
-                    extractRules(expr.right, "OCH")
-                }
-                is AlertExpression.Or -> {
-                    val leftOk = extractRules(expr.left, null)
-                    if (!leftOk) return false
-                    extractRules(expr.right, "ELLER")
-                }
-                is AlertExpression.Not -> false
-            }
-        }
-
-        val success = extractRules(expression)
-        if (!success || currentSymbol == null || conditions.isEmpty()) return null
-
-        if (conditions.isNotEmpty()) {
-            conditions[0].operator = null
-        }
-
-        return Pair(currentSymbol!!, conditions.toList())
-    }
-
-    private fun updatePreview(
-        adapter: ConditionBuilderAdapter,
-        currentSymbol: String,
-        previewText: TextView
-    ) {
-        val conditions = adapter.getConditions()
-        if (currentSymbol.isEmpty()) {
-            previewText.text = "Välj en aktie"
-            previewText.setTextColor(context.getColor(android.R.color.darker_gray))
-            return
-        }
-        if (conditions.isEmpty()) {
-            previewText.text = "Lägg till minst ett villkor"
-            previewText.setTextColor(context.getColor(android.R.color.darker_gray))
-            return
-        }
-        val expression = buildAlertExpression(currentSymbol, conditions)
-        if (expression != null) {
-            previewText.text = expression.getDescription()
-            previewText.setTextColor(context.getColor(android.R.color.black))
-        } else {
-            previewText.text = "Ofullständiga villkor"
-            previewText.setTextColor(context.getColor(android.R.color.holo_red_dark))
-        }
-    }
-
-    private fun buildAlertExpression(
-        currentSymbol: String,
-        conditions: List<ConditionBuilderAdapter.ConditionData>
-    ): AlertExpression? {
-        if (conditions.isEmpty()) return null
-
-        val rules = conditions.mapNotNull { condition -> buildAlertRule(currentSymbol, condition) }
-        if (rules.isEmpty()) return null
-
-        var expression: AlertExpression = AlertExpression.Single(rules.first())
-
-        for (i in 1 until rules.size) {
-            val nextExpression = AlertExpression.Single(rules[i])
-            val operator = conditions[i].operator ?: "OCH"
-            expression = if (operator.contains("OCH")) {
-                AlertExpression.And(expression, nextExpression)
-            } else {
-                AlertExpression.Or(expression, nextExpression)
-            }
-        }
-
-        return expression
-    }
-
-    private fun buildAlertRule(currentSymbol: String, condition: ConditionBuilderAdapter.ConditionData): AlertRule? {
-        val value = condition.value.parseDecimal() ?: return null
-
-        return when (condition.conditionType) {
-            "Pris" -> {
-                val comparisonType = when (condition.direction) {
-                    "Över" -> AlertRule.PriceComparisonType.ABOVE
-                    "Under" -> AlertRule.PriceComparisonType.BELOW
-                    else -> return null
-                }
-                AlertRule.SinglePrice(currentSymbol, comparisonType, value)
-            }
-            "P/E-tal" -> {
-                val direction = when (condition.direction) {
-                    "Över" -> AlertRule.PriceComparisonType.ABOVE
-                    "Under" -> AlertRule.PriceComparisonType.BELOW
-                    else -> return null
-                }
-                AlertRule.SingleKeyMetric(currentSymbol, AlertRule.KeyMetricType.PE_RATIO, value, direction)
-            }
-            "P/S-tal" -> {
-                val direction = when (condition.direction) {
-                    "Över" -> AlertRule.PriceComparisonType.ABOVE
-                    "Under" -> AlertRule.PriceComparisonType.BELOW
-                    else -> return null
-                }
-                AlertRule.SingleKeyMetric(currentSymbol, AlertRule.KeyMetricType.PS_RATIO, value, direction)
-            }
-            "Utdelningsprocent" -> {
-                val direction = when (condition.direction) {
-                    "Över" -> AlertRule.PriceComparisonType.ABOVE
-                    "Under" -> AlertRule.PriceComparisonType.BELOW
-                    else -> return null
-                }
-                AlertRule.SingleKeyMetric(currentSymbol, AlertRule.KeyMetricType.DIVIDEND_YIELD, value, direction)
-            }
-            "52w High Drop" -> AlertRule.SingleDrawdownFromHigh(currentSymbol, AlertRule.DrawdownDropType.PERCENTAGE, value)
-            "Dagsrörelse" -> AlertRule.SingleDailyMove(currentSymbol, value, AlertRule.DailyMoveDirection.BOTH)
-            else -> null
         }
     }
 

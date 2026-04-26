@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -29,6 +30,7 @@ import com.stockflip.LiveWatchData
 import com.stockflip.WatchItem
 import com.stockflip.WatchType
 import com.stockflip.ui.components.StatusStripe
+import com.stockflip.ui.components.StockSummaryRow
 import com.stockflip.ui.theme.GroupPosition
 import com.stockflip.ui.theme.LocalCardBorder
 import com.stockflip.ui.theme.groupShape
@@ -53,6 +55,9 @@ fun PriceRangeCard(
     val isTriggered = live.currentPrice >= priceRange.minPrice && live.currentPrice <= priceRange.maxPrice
 
     val cardBorder = LocalCardBorder.current
+    val listBadge = if (!showControls && (item.isTriggered || LocalNearTriggerLabel.current != null)) {
+        @Composable { InlineAlertBadge(item) }
+    } else null
 
     val animatedContainerColor by animateColorAsState(
         targetValue = if (isTriggered) MaterialTheme.colorScheme.tertiaryContainer else containerColor,
@@ -89,48 +94,65 @@ fun PriceRangeCard(
             ) {
                 val currency = CurrencyHelper.getCurrencyFromSymbol(item.ticker)
 
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.Top,
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = item.companyName ?: item.ticker ?: "",
-                            style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.onSurface,
-                        )
-                        if (item.ticker != null) {
+                if (showControls && onToggleActive != null) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.Top,
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = item.ticker,
-                                style = MaterialTheme.typography.labelMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                text = item.companyName ?: item.ticker ?: "",
+                                style = MaterialTheme.typography.titleMedium,
+                                color = MaterialTheme.colorScheme.onSurface,
                             )
+                            if (item.ticker != null) {
+                                Text(
+                                    text = item.ticker,
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
                         }
-                    }
-                    if (showControls && onToggleActive != null) {
                         Switch(
                             checked = item.isActive,
                             onCheckedChange = { onToggleActive() },
+                            colors = watchItemSwitchColors(),
+                            thumbContent = { watchItemSwitchThumb() },
                             modifier = Modifier
                                 .scale(0.7f)
                                 .align(Alignment.Top)
                                 .offset(y = (-12).dp),
                         )
                     }
+                } else {
+                    StockSummaryRow(
+                        companyName = item.companyName,
+                        ticker = item.ticker,
+                        price = live.currentPrice,
+                        dailyChangePercent = live.currentDailyChangePercent,
+                        currency = currency,
+                        showPrice = live.currentPrice > 0,
+                    )
+                    HorizontalDivider(
+                        modifier = Modifier.padding(vertical = 8.dp),
+                        color = MaterialTheme.colorScheme.outlineVariant,
+                    )
                 }
 
-                Spacer(modifier = Modifier.height(6.dp))
-
-                Text(
+                ConditionStatusRow(
                     text = "Mål: Pris mellan ${CurrencyHelper.formatPrice(priceRange.minPrice, currency)} – ${CurrencyHelper.formatPrice(priceRange.maxPrice, currency)}",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = if (isTriggered) MaterialTheme.colorScheme.tertiary
-                            else MaterialTheme.colorScheme.onSurfaceVariant,
+                    textColor = if (isTriggered) MaterialTheme.colorScheme.tertiary
+                        else MaterialTheme.colorScheme.onSurfaceVariant,
+                    trailingBadge = listBadge,
                 )
+                if (!item.isTriggered && showControls) {
+                    Spacer(modifier = Modifier.height(6.dp))
+                    NearTriggerBadge()
+                }
 
                 TriggerHistoryRow(triggerHistory)
 
-                if (item.isTriggered) {
+                if (item.isTriggered && showControls) {
                     Spacer(modifier = Modifier.height(6.dp))
                     TriggeredBadge(item.lastTriggeredDate)
                 }

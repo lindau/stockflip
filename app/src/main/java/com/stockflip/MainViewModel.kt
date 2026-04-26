@@ -27,12 +27,6 @@ class MainViewModel(
     private val _watchItemUiState = MutableStateFlow<UiState<List<WatchItemUiState>>>(UiState.Loading)
     val watchItemUiState: StateFlow<UiState<List<WatchItemUiState>>> = _watchItemUiState.asStateFlow()
 
-    private val _alertSortMode = MutableStateFlow(SortHelper.SortMode.ADDITION_ORDER)
-    val alertSortMode: StateFlow<SortHelper.SortMode> = _alertSortMode.asStateFlow()
-
-    private val _pairsSortMode = MutableStateFlow(SortHelper.SortMode.ADDITION_ORDER)
-    val pairsSortMode: StateFlow<SortHelper.SortMode> = _pairsSortMode.asStateFlow()
-
     private var isRefreshing = false
 
     init {
@@ -149,6 +143,10 @@ class MainViewModel(
     }
 
     suspend fun loadWatchItems() {
+        loadWatchItems(forceShowStaleData = false)
+    }
+
+    suspend fun loadWatchItems(forceShowStaleData: Boolean) {
         try {
             Log.d(TAG, "Loading watch items from database")
             _watchItemUiState.value = UiState.Loading
@@ -160,7 +158,7 @@ class MainViewModel(
             // so we need to refresh to get the actual values
             val hasKeyMetrics = items.any { it.watchType is WatchType.KeyMetrics }
             
-            if (hasKeyMetrics) {
+            if (hasKeyMetrics && !forceShowStaleData) {
                 Log.d(TAG, "Found KeyMetrics items, keeping Loading state until refresh completes")
                 // Don't set Success state yet - wait for refreshWatchItems() to complete
                 // This ensures KeyMetrics values are loaded before showing UI
@@ -175,7 +173,7 @@ class MainViewModel(
         }
     }
 
-    suspend fun refreshWatchItems() {
+    suspend fun refreshWatchItems(showLoading: Boolean = true) {
         // Prevent concurrent refresh calls
         if (isRefreshing) {
             Log.d(TAG, "Refresh already in progress, skipping duplicate call")
@@ -185,8 +183,10 @@ class MainViewModel(
         isRefreshing = true
         try {
             Log.d(TAG, "=== START refreshWatchItems() ===")
-            _watchItemUiState.value = UiState.Loading
-            Log.d(TAG, "Set UI state to Loading")
+            if (showLoading) {
+                _watchItemUiState.value = UiState.Loading
+                Log.d(TAG, "Set UI state to Loading")
+            }
 
             val items = watchItemDao.getAllWatchItems()
             Log.d(TAG, "Found ${items.size} watch items to refresh")
@@ -357,7 +357,9 @@ class MainViewModel(
             Log.d(TAG, "=== END refreshWatchItems() - SUCCESS ===")
         } catch (e: Exception) {
             Log.e(TAG, "=== END refreshWatchItems() - ERROR: ${e.message} ===", e)
-            _watchItemUiState.value = UiState.Error("Failed to refresh watch items: ${e.message}")
+            if (showLoading) {
+                _watchItemUiState.value = UiState.Error("Failed to refresh watch items: ${e.message}")
+            }
             Log.d(TAG, "Set UI state to Error")
         } finally {
             isRefreshing = false
@@ -369,7 +371,7 @@ class MainViewModel(
         try {
             Log.d(TAG, "Adding new watch item: ${watchItem.getDisplayName()}")
             watchItemDao.insertWatchItem(watchItem)
-            refreshWatchItems() // Immediately refresh prices after adding
+            syncWatchItemsAfterMutation()
         } catch (e: Exception) {
             Log.e(TAG, "Error adding watch item: ${e.message}")
             _watchItemUiState.value = UiState.Error("Failed to add watch item: ${e.message}")
@@ -380,7 +382,7 @@ class MainViewModel(
         try {
             Log.d(TAG, "Deleting all watches for symbol: $symbol")
             watchItemDao.deleteBySymbol(symbol)
-            loadWatchItems()
+            syncWatchItemsAfterMutation()
         } catch (e: Exception) {
             Log.e(TAG, "Error deleting watches for $symbol: ${e.message}")
             _watchItemUiState.value = UiState.Error("Failed to delete watches: ${e.message}")
@@ -391,19 +393,11 @@ class MainViewModel(
         try {
             Log.d(TAG, "Deleting watch item: ${watchItem.getDisplayName()}")
             watchItemDao.deleteWatchItem(watchItem)
-            loadWatchItems() // Reload the list after deleting
+            syncWatchItemsAfterMutation()
         } catch (e: Exception) {
             Log.e(TAG, "Error deleting watch item: ${e.message}")
             _watchItemUiState.value = UiState.Error("Failed to delete watch item: ${e.message}")
         }
-    }
-
-    fun setAlertSortMode(mode: SortHelper.SortMode) {
-        _alertSortMode.value = mode
-    }
-
-    fun setPairsSortMode(mode: SortHelper.SortMode) {
-        _pairsSortMode.value = mode
     }
 
     suspend fun toggleWatchItemActive(watchItem: WatchItem, isActive: Boolean) {
@@ -420,10 +414,18 @@ class MainViewModel(
         try {
             Log.d(TAG, "Updating watch item: ${watchItem.getDisplayName()}")
             watchItemDao.update(watchItem.reactivate())
-            loadWatchItems() // Reload the list after updating
+            syncWatchItemsAfterMutation()
         } catch (e: Exception) {
             Log.e(TAG, "Error updating watch item: ${e.message}")
             _watchItemUiState.value = UiState.Error("Failed to update watch item: ${e.message}")
+        }
+    }
+
+    private suspend fun syncWatchItemsAfterMutation() {
+        // Reflect structural DB changes immediately, then refresh live prices in the background.
+        loadWatchItems(forceShowStaleData = true)
+        viewModelScope.launch {
+            refreshWatchItems(showLoading = false)
         }
     }
 

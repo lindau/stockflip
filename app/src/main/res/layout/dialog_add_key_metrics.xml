@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
@@ -42,7 +43,56 @@
 
     </com.google.android.material.textfield.TextInputLayout>
 
+    <TextView
+        android:id="@+id/contextText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="12dp"
+        android:textAppearance="?attr/textAppearanceBodyMedium"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        android:text="Välj nyckeltal för att se kontext"
+        tools:text="P/E är 21,4. Du kan utgå från 3-årssnittet eller sätta en egen nivå." />
+
+    <com.google.android.material.chip.ChipGroup
+        android:id="@+id/presetChipGroup"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="12dp"
+        app:chipSpacingHorizontal="6dp"
+        app:chipSpacingVertical="6dp">
+
+        <com.google.android.material.chip.Chip
+            android:id="@+id/presetChipOne"
+            style="@style/Widget.Material3.Chip.Assist"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="3-årssnitt" />
+
+        <com.google.android.material.chip.Chip
+            android:id="@+id/presetChipTwo"
+            style="@style/Widget.Material3.Chip.Assist"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="-10 %" />
+
+        <com.google.android.material.chip.Chip
+            android:id="@+id/presetChipThree"
+            style="@style/Widget.Material3.Chip.Assist"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="+5 %" />
+
+        <com.google.android.material.chip.Chip
+            android:id="@+id/presetChipFour"
+            style="@style/Widget.Material3.Chip.Assist"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="+10 %" />
+
+    </com.google.android.material.chip.ChipGroup>
+
     <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/targetValueLayout"
         style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -116,5 +166,12 @@
 
     </androidx.cardview.widget.CardView>
 
-</LinearLayout>
+    <TextView
+        android:id="@+id/triggerInfoText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textAppearance="?attr/textAppearanceBodySmall"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        android:text="När larmet triggar markeras det som utlöst och kan återaktiveras senare." />
 
+</LinearLayout>

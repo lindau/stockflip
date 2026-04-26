@@ -3,21 +3,6 @@
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <item
-        android:id="@+id/menu_sort"
-        android:title="Sortera"
-        android:icon="@android:drawable/ic_menu_sort_by_size"
-        app:showAsAction="never">
-        <menu>
-            <item
-                android:id="@+id/menu_sort_alphabetical"
-                android:title="Bokstavsordning" />
-            <item
-                android:id="@+id/menu_sort_addition"
-                android:title="Tilläggsordning" />
-        </menu>
-    </item>
-
-    <item
         android:id="@+id/menu_theme"
         android:title="Tema"
         app:showAsAction="never" />
@@ -40,7 +25,6 @@
     <item
         android:id="@+id/menu_version"
         android:title="Version"
-        android:enabled="false"
         app:showAsAction="never" />
 
 </menu>

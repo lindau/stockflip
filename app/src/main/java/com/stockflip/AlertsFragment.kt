@@ -21,10 +21,18 @@ import com.stockflip.ui.theme.StockFlipTheme
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import com.stockflip.databinding.FragmentAlertsBinding
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 
 class AlertsFragment : Fragment() {
+
+    private enum class AlertsFilter {
+        ALL,
+        ACTIVE,
+        TRIGGERED,
+        PRICE,
+        METRICS,
+        PAIRS,
+    }
 
     private var _binding: FragmentAlertsBinding? = null
     private val binding get() = _binding!!
@@ -46,6 +54,10 @@ class AlertsFragment : Fragment() {
 
     private lateinit var groupedAdapter: GroupedWatchItemAdapter
     private var pendingDeleteSnackbar: Snackbar? = null
+    private var currentFilter: AlertsFilter = AlertsFilter.ALL
+    private var latestItems: List<WatchItemUiState> = emptyList()
+    private val selectedRuleIds: MutableSet<Int> = mutableSetOf()
+    private var selectionMode: Boolean = false
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -63,8 +75,39 @@ class AlertsFragment : Fragment() {
                 WatchItemSkeletonList(count = 4)
             }
         }
+        setupFilters()
+        setupBatchActions()
         setupRecyclerView()
         setupObservers()
+    }
+
+    private fun setupFilters() {
+        binding.filterChipGroup.setOnCheckedStateChangeListener { _, checkedIds ->
+            currentFilter = when (checkedIds.firstOrNull()) {
+                R.id.filterActiveChip -> AlertsFilter.ACTIVE
+                R.id.filterTriggeredChip -> AlertsFilter.TRIGGERED
+                R.id.filterPriceChip -> AlertsFilter.PRICE
+                R.id.filterMetricsChip -> AlertsFilter.METRICS
+                R.id.filterPairsChip -> AlertsFilter.PAIRS
+                else -> AlertsFilter.ALL
+            }
+            renderFilteredList()
+        }
+    }
+
+    private fun setupBatchActions() {
+        binding.batchActivateButton.setOnClickListener {
+            applyBatchUpdate { it.setActive(true) }
+        }
+        binding.batchPauseButton.setOnClickListener {
+            applyBatchUpdate { it.setActive(false) }
+        }
+        binding.batchDeleteButton.setOnClickListener {
+            applyBatchDelete()
+        }
+        binding.batchCancelButton.setOnClickListener {
+            exitSelectionMode()
+        }
     }
 
     private fun setupRecyclerView() {
@@ -94,11 +137,22 @@ class AlertsFragment : Fragment() {
                 (requireActivity() as? MainActivity)?.showEditDialogFromAlerts(watchItem)
             },
             onItemClick = { watchItem ->
-                val symbol = watchItem.ticker ?: watchItem.ticker1 ?: return@GroupedWatchItemAdapter
-                (requireActivity() as? MainActivity)?.navigateToStockDetailFromAlerts(
-                    symbol = symbol,
-                    companyName = watchItem.companyName
-                )
+                if (selectionMode) {
+                    toggleSelection(watchItem)
+                } else {
+                    val symbol = watchItem.ticker ?: watchItem.ticker1 ?: return@GroupedWatchItemAdapter
+                    (requireActivity() as? MainActivity)?.navigateToStockDetailFromAlerts(
+                        symbol = symbol,
+                        companyName = watchItem.companyName
+                    )
+                }
+            },
+            onItemLongClick = { watchItem ->
+                if (!selectionMode) {
+                    enterSelectionMode(watchItem)
+                } else {
+                    toggleSelection(watchItem)
+                }
             }
         )
 
@@ -120,6 +174,7 @@ class AlertsFragment : Fragment() {
         val swipeCallback = SwipeToDeleteCallback(
             context = requireContext(),
             canSwipe = { position ->
+                if (selectionMode) return@SwipeToDeleteCallback false
                 groupedAdapter.currentList.getOrNull(position) is GroupedListItem.WatchItemWrapper
             },
             onSwiped = { position ->
@@ -130,26 +185,28 @@ class AlertsFragment : Fragment() {
                     }
                 // Återställ ItemTouchHelper-state direkt — DiffUtil animerar bort raden när Room uppdaterar
                 groupedAdapter.notifyItemChanged(position)
-                val itemToDelete = listItem.item
+                val watchItem = listItem.item
                 // Dismiss any pending snackbar from a previous swipe before showing the new one
                 pendingDeleteSnackbar?.dismiss()
-                val snackbar = Snackbar.make(binding.root, R.string.alert_deleted, Snackbar.LENGTH_LONG)
-                snackbar.setAction(R.string.alert_undo) { /* Do nothing — item stays */ }
-                snackbar.addCallback(object : Snackbar.Callback() {
-                    override fun onDismissed(transientBottomBar: Snackbar?, event: Int) {
-                        if (event != DISMISS_EVENT_ACTION) {
+                viewLifecycleOwner.lifecycleScope.launch {
+                    try {
+                        viewModel.toggleWatchItemActive(watchItem, false)
+                        val snackbar = Snackbar.make(binding.root, R.string.alert_deactivated, Snackbar.LENGTH_LONG)
+                        snackbar.setAction(R.string.alert_undo) {
                             viewLifecycleOwner.lifecycleScope.launch {
                                 try {
-                                    viewModel.deleteWatchItem(itemToDelete)
+                                    viewModel.toggleWatchItemActive(watchItem, true)
                                 } catch (e: Exception) {
-                                    Toast.makeText(requireContext(), e.message ?: "Kunde inte ta bort bevakning", Toast.LENGTH_LONG).show()
+                                    Toast.makeText(requireContext(), e.message ?: "Kunde inte återaktivera bevakning", Toast.LENGTH_LONG).show()
                                 }
                             }
                         }
+                        snackbar.show()
+                        pendingDeleteSnackbar = snackbar
+                    } catch (e: Exception) {
+                        Toast.makeText(requireContext(), e.message ?: "Kunde inte inaktivera bevakning", Toast.LENGTH_LONG).show()
                     }
-                })
-                snackbar.show()
-                pendingDeleteSnackbar = snackbar
+                }
             },
             onSwipedRight = { position ->
                 val listItem = groupedAdapter.currentList.getOrNull(position) as? GroupedListItem.WatchItemWrapper
@@ -173,52 +230,160 @@ class AlertsFragment : Fragment() {
     private fun setupObservers() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                combine(
-                    viewModel.watchItemUiState,
-                    viewModel.alertSortMode
-                ) { state, sortMode ->
-                    Pair(state, sortMode)
-                }.collect { (state, sortMode) ->
+                viewModel.watchItemUiState.collect { state ->
                     when (state) {
                         is UiState.Loading -> {
                             if (!binding.swipeRefreshLayout.isRefreshing) {
                                 binding.skeletonLoadingView.visibility = View.VISIBLE
                             }
-                            binding.sortModeLabel.visibility = View.GONE
                         }
                         is UiState.Success -> {
                             binding.skeletonLoadingView.visibility = View.GONE
                             binding.swipeRefreshLayout.isRefreshing = false
-                            val items = state.data
-                            TriggerSeenTracker.markAllSeen(items.map { it.item })
-                            groupedAdapter.submitGroupedList(items, sortMode)
-                            binding.emptyStateContainer.visibility = if (items.isEmpty()) {
-                                View.VISIBLE
-                            } else {
-                                View.GONE
-                            }
-                            // Update sort mode label
-                            when (sortMode) {
-                                SortHelper.SortMode.ALPHABETICAL -> {
-                                    binding.sortModeLabel.text = getString(R.string.sort_label_alphabetical)
-                                    binding.sortModeLabel.visibility = View.VISIBLE
-                                }
-                                SortHelper.SortMode.ADDITION_ORDER -> {
-                                    binding.sortModeLabel.visibility = View.GONE
-                                }
-                            }
+                            latestItems = state.data
+                            TriggerSeenTracker.markAllSeen(latestItems.map { it.item })
+                            renderFilteredList()
                         }
                         is UiState.Error -> {
                             binding.skeletonLoadingView.visibility = View.GONE
                             binding.swipeRefreshLayout.isRefreshing = false
                             binding.emptyStateContainer.visibility = View.VISIBLE
                             binding.emptyStateText.text = state.message
-                            binding.sortModeLabel.visibility = View.GONE
                         }
                     }
                 }
             }
         }
+    }
+
+    private fun renderFilteredList() {
+        val filteredItems = latestItems.filter { uiState ->
+            when (currentFilter) {
+                AlertsFilter.ALL -> true
+                AlertsFilter.ACTIVE -> uiState.item.isActive
+                AlertsFilter.TRIGGERED -> uiState.item.isTriggered
+                AlertsFilter.PRICE -> when (uiState.item.watchType) {
+                    is WatchType.PriceTarget,
+                    is WatchType.ATHBased,
+                    is WatchType.DailyMove,
+                    is WatchType.PriceRange -> true
+                    else -> false
+                }
+                AlertsFilter.METRICS -> uiState.item.watchType is WatchType.KeyMetrics
+                AlertsFilter.PAIRS -> uiState.item.watchType is WatchType.PricePair
+            }
+        }
+
+        val visibleIds = filteredItems.map { it.item.id }.toSet()
+        selectedRuleIds.retainAll(visibleIds)
+        if (selectionMode && selectedRuleIds.isEmpty()) {
+            selectionMode = false
+        }
+
+        groupedAdapter.submitGroupedList(filteredItems)
+        groupedAdapter.setSelectionMode(selectionMode)
+        groupedAdapter.setSelectedItemIds(selectedRuleIds)
+        updateBatchActionState()
+        val showEmpty = filteredItems.isEmpty()
+        binding.emptyStateContainer.visibility = if (showEmpty) View.VISIBLE else View.GONE
+        if (showEmpty) {
+            binding.emptyStateTitle.text = when (currentFilter) {
+                AlertsFilter.ALL -> getString(R.string.alerts_empty_title)
+                AlertsFilter.ACTIVE -> "Inga aktiva case"
+                AlertsFilter.TRIGGERED -> "Inga triggade case"
+                AlertsFilter.PRICE -> "Inga priscase"
+                AlertsFilter.METRICS -> "Inga nyckeltalscase"
+                AlertsFilter.PAIRS -> "Inga parcase"
+            }
+            binding.emptyStateText.text = when (currentFilter) {
+                AlertsFilter.ALL -> getString(R.string.alerts_empty_subtitle)
+                AlertsFilter.ACTIVE -> "Aktivera ett case eller skapa ett nytt för att se det här."
+                AlertsFilter.TRIGGERED -> "Här visas case som nyligen har utlöst."
+                AlertsFilter.PRICE -> "Skapa prismål, drawdown eller dagsrörelse för att få en prislista här."
+                AlertsFilter.METRICS -> "Skapa ett P/E-, P/S- eller yield-larm för att fylla den här vyn."
+                AlertsFilter.PAIRS -> "Skapa ett aktiepar för att hantera parkonvergens här."
+            }
+        }
+    }
+
+    private fun enterSelectionMode(firstItem: WatchItem) {
+        selectionMode = true
+        selectedRuleIds.clear()
+        selectedRuleIds.add(firstItem.id)
+        groupedAdapter.setSelectionMode(true)
+        groupedAdapter.setSelectedItemIds(selectedRuleIds)
+        updateBatchActionState()
+    }
+
+    private fun toggleSelection(watchItem: WatchItem) {
+        if (!selectionMode) return
+        if (!selectedRuleIds.add(watchItem.id)) {
+            selectedRuleIds.remove(watchItem.id)
+        }
+        if (selectedRuleIds.isEmpty()) {
+            exitSelectionMode()
+        } else {
+            groupedAdapter.setSelectedItemIds(selectedRuleIds)
+            updateBatchActionState()
+        }
+    }
+
+    private fun exitSelectionMode() {
+        selectionMode = false
+        selectedRuleIds.clear()
+        groupedAdapter.setSelectionMode(false)
+        updateBatchActionState()
+    }
+
+    private fun updateBatchActionState() {
+        binding.batchActionsBar.visibility = if (selectionMode) View.VISIBLE else View.GONE
+        if (selectionMode) {
+            binding.batchSelectionCount.text = getString(R.string.batch_selected_count, selectedRuleIds.size)
+        }
+    }
+
+    private fun selectedItems(): List<WatchItem> {
+        return latestItems
+            .filter { it.item.id in selectedRuleIds }
+            .map { it.item }
+    }
+
+    private fun applyBatchUpdate(transform: (WatchItem) -> WatchItem) {
+        val items = selectedItems()
+        if (items.isEmpty()) return
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                items.forEach { watchItem ->
+                    viewModel.updateWatchItem(transform(watchItem))
+                }
+                exitSelectionMode()
+            } catch (e: Exception) {
+                Toast.makeText(requireContext(), e.message ?: "Kunde inte uppdatera case", Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+
+    private fun applyBatchDelete() {
+        val items = selectedItems()
+        if (items.isEmpty()) return
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle("Ta bort case")
+            .setMessage("Ta bort ${items.size} valda case?")
+            .setPositiveButton("Ta bort") { _, _ ->
+                viewLifecycleOwner.lifecycleScope.launch {
+                    try {
+                        items.forEach { watchItem ->
+                            viewModel.deleteWatchItem(watchItem)
+                        }
+                        exitSelectionMode()
+                        Toast.makeText(requireContext(), "Case borttagna", Toast.LENGTH_SHORT).show()
+                    } catch (e: Exception) {
+                        Toast.makeText(requireContext(), e.message ?: "Kunde inte ta bort case", Toast.LENGTH_LONG).show()
+                    }
+                }
+            }
+            .setNegativeButton("Avbryt", null)
+            .show()
     }
 
     private fun showDeleteConfirmation(watchItem: WatchItem) {
@@ -250,4 +415,3 @@ class AlertsFragment : Fragment() {
         private const val TAG: String = "AlertsFragment"
     }
 }
-

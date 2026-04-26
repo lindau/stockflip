@@ -1,17 +1,22 @@
 package com.stockflip.ui.components.cards
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.stockflip.WatchItem
 import com.stockflip.ui.theme.LocalOnTriggeredBadge
@@ -25,6 +30,7 @@ import java.util.Locale
  * Sätts av [ComposeWatchItemCard] baserat på [TriggerSeenTracker].
  */
 val LocalIsNewTrigger = compositionLocalOf { false }
+val LocalNearTriggerLabel = compositionLocalOf<String?> { null }
 
 /**
  * Hjälpfunktioner för kortkomponenter.
@@ -35,6 +41,21 @@ internal fun formatAlertStatus(watchItem: WatchItem): String {
         watchItem.isTriggered -> "Status: Triggad (${watchItem.lastTriggeredDate ?: "idag"})"
         else -> "Status: Aktiv"
     }
+}
+
+@Composable
+internal fun watchItemSwitchColors() = SwitchDefaults.colors(
+    checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
+    checkedTrackColor = MaterialTheme.colorScheme.primary,
+    checkedBorderColor = MaterialTheme.colorScheme.primary,
+    uncheckedThumbColor = MaterialTheme.colorScheme.onSurfaceVariant,
+    uncheckedTrackColor = MaterialTheme.colorScheme.surface,
+    uncheckedBorderColor = MaterialTheme.colorScheme.outline,
+)
+
+@Composable
+internal fun watchItemSwitchThumb() {
+    Spacer(modifier = Modifier.size(SwitchDefaults.IconSize))
 }
 
 /**
@@ -97,8 +118,10 @@ internal fun TriggeredBadge(lastTriggeredDate: String? = null) {
             lastTriggeredDate == null || lastTriggeredDate == today -> "Utlöst idag"
             else -> try {
                 val parsed = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).parse(lastTriggeredDate)
-                val formatted = SimpleDateFormat("d MMM", Locale("sv", "SE")).format(parsed!!)
-                "Utlöst $formatted"
+                parsed?.let {
+                    val formatted = SimpleDateFormat("d MMM", Locale("sv", "SE")).format(it)
+                    "Utlöst $formatted"
+                } ?: "Utlöst idag"
             } catch (_: Exception) {
                 "Utlöst idag"
             }
@@ -129,5 +152,50 @@ internal fun TriggeredBadge(lastTriggeredDate: String? = null) {
                 color = LocalOnTriggeredBadge.current,
             )
         }
+    }
+}
+
+@Composable
+internal fun NearTriggerBadge() {
+    val label = LocalNearTriggerLabel.current ?: return
+    Surface(
+        shape = MaterialTheme.shapes.small,
+        color = MaterialTheme.colorScheme.secondaryContainer,
+    ) {
+        Text(
+            text = label,
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSecondaryContainer,
+        )
+    }
+}
+
+@Composable
+internal fun InlineAlertBadge(watchItem: WatchItem) {
+    when {
+        watchItem.isTriggered -> TriggeredBadge(watchItem.lastTriggeredDate)
+        LocalNearTriggerLabel.current != null -> NearTriggerBadge()
+    }
+}
+
+@Composable
+internal fun ConditionStatusRow(
+    text: String,
+    textColor: Color,
+    trailingBadge: (@Composable () -> Unit)? = null,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = text,
+            modifier = Modifier.weight(1f),
+            style = MaterialTheme.typography.bodyMedium,
+            color = textColor,
+        )
+        trailingBadge?.invoke()
     }
 }

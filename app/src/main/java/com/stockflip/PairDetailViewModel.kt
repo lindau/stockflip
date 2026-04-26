@@ -70,6 +70,15 @@ class PairDetailViewModel(
         }
     }
 
+    fun reactivate() {
+        viewModelScope.launch {
+            val current = (_pairState.value as? UiState.Success)?.data?.watchItem ?: return@launch
+            watchItemDao.update(current.reactivate().copy(isActive = true))
+            loadPair()
+            loadHistory()
+        }
+    }
+
     fun deletePair() {
         viewModelScope.launch {
             val current = (_pairState.value as? UiState.Success)?.data?.watchItem ?: return@launch
@@ -140,21 +149,35 @@ class PairDetailViewModel(
     private fun loadChart() {
         chartJob?.cancel()
         chartJob = viewModelScope.launch {
-            _chartState.value = UiState.Loading
-            val item = watchItemDao.getWatchItemById(watchItemId)
-            if (item == null || item.watchType !is WatchType.PricePair) {
-                _chartState.value = UiState.Error("Ingen data")
-                return@launch
+            try {
+                _chartState.value = UiState.Loading
+                val item = watchItemDao.getWatchItemById(watchItemId)
+                if (item == null || item.watchType !is WatchType.PricePair) {
+                    _chartState.value = UiState.Error("Ingen data")
+                    return@launch
+                }
+                val symbolA = item.ticker1
+                val symbolB = item.ticker2
+                if (symbolA.isNullOrBlank() || symbolB.isNullOrBlank()) {
+                    Log.w(TAG, "Missing pair symbols for watch item $watchItemId")
+                    _chartState.value = UiState.Error("Ofullständigt aktiepar")
+                    return@launch
+                }
+
+                val period = _selectedPeriod.value
+                val chartA = marketDataService.getIntradayChart(symbolA, period)
+                val chartB = marketDataService.getIntradayChart(symbolB, period)
+
+                val pairChart = buildPairChart(item, chartA, chartB)
+                _chartState.value = if (pairChart != null) {
+                    UiState.Success(pairChart)
+                } else {
+                    UiState.Error("Ingen data")
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error loading pair chart: ${e.message}", e)
+                _chartState.value = UiState.Error("Kunde inte ladda grafen")
             }
-            val symbolA = item.ticker1 ?: return@launch
-            val symbolB = item.ticker2 ?: return@launch
-
-            val period = _selectedPeriod.value
-            val chartA = marketDataService.getIntradayChart(symbolA, period)
-            val chartB = marketDataService.getIntradayChart(symbolB, period)
-
-            val pairChart = buildPairChart(item, chartA, chartB)
-            _chartState.value = if (pairChart != null) UiState.Success(pairChart) else UiState.Error("Ingen data")
         }
     }
 
@@ -183,6 +206,17 @@ class PairDetailViewModel(
                 val normalizedB = normalizeSeries(commonTimestamps, pricesB)
                 if (normalizedA.values.isNotEmpty() && normalizedB.values.isNotEmpty()) {
                     val spreadPrices = pricesA.zip(pricesB) { a, b -> a - b }
+                    if (spreadPrices.isEmpty()) {
+                        Log.w(TAG, "Spread price series is empty for pair chart")
+                        return buildFallbackPairChart(
+                            chartA = chartA,
+                            chartB = chartB,
+                            pairType = pairType,
+                            stockALabel = stockALabel,
+                            stockBLabel = stockBLabel,
+                            lastTradeTimestamp = lastTradeTimestamp
+                        )
+                    }
                     val currentSpread = spreadPrices.lastOrNull()
                     return PairChartData(
                         stockALabel = stockALabel,
@@ -245,6 +279,10 @@ class PairDetailViewModel(
     }
 
     private fun normalizeSeries(timestamps: List<Long>, prices: List<Double>): PairChartSeries {
+        if (timestamps.isEmpty() || prices.isEmpty() || timestamps.size != prices.size) {
+            Log.w(TAG, "Invalid pair series lengths: timestamps=${timestamps.size}, prices=${prices.size}")
+            return PairChartSeries(emptyList(), emptyList())
+        }
         val basePrice = prices.firstOrNull()?.takeIf { it > 0.0 } ?: return PairChartSeries(emptyList(), emptyList())
         return PairChartSeries(
             timestamps = timestamps,

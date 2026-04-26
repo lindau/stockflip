@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -100,11 +101,6 @@ fun PairPerformanceChart(
             )
         }
 
-        LegendRow(
-            stockALabel = data.stockALabel,
-            stockBLabel = data.stockBLabel
-        )
-
         NormalizedComparisonChart(
             seriesA = data.normalizedA,
             seriesB = data.normalizedB,
@@ -143,10 +139,11 @@ fun PairPerformanceChart(
 @Composable
 private fun LegendRow(
     stockALabel: String,
-    stockBLabel: String
+    stockBLabel: String,
+    modifier: Modifier = Modifier
 ) {
     Row(
-        modifier = Modifier.padding(top = 12.dp),
+        modifier = modifier,
         horizontalArrangement = Arrangement.spacedBy(16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -201,123 +198,137 @@ private fun NormalizedComparisonChart(
     val chartMax = max(maxValue, 100.0)
     val range = (chartMax - chartMin).coerceAtLeast(0.5)
 
-    Canvas(
+    Box(
         modifier = modifier
             .fillMaxWidth()
             .height(200.dp)
     ) {
-        val yLabelWidth = 54.dp.toPx()
-        val rightPadding = 18.dp.toPx()
-        val xLabelHeight = 20.dp.toPx()
-        val chartLeft = yLabelWidth
-        val chartTop = 8.dp.toPx()
-        val chartRight = size.width - rightPadding
-        val chartBottom = size.height - xLabelHeight
-        val chartWidth = chartRight - chartLeft
-        val chartHeight = chartBottom - chartTop
+        Canvas(
+            modifier = Modifier.fillMaxSize()
+        ) {
+            val yLabelWidth = 54.dp.toPx()
+            val rightPadding = 18.dp.toPx()
+            val xLabelHeight = 20.dp.toPx()
+            val chartLeft = yLabelWidth
+            val chartTop = 34.dp.toPx()
+            val chartRight = size.width - rightPadding
+            val chartBottom = size.height - xLabelHeight
+            val chartWidth = chartRight - chartLeft
+            val chartHeight = chartBottom - chartTop
 
-        fun xFor(index: Int, count: Int): Float {
-            return chartLeft + index * (chartWidth / (count - 1).coerceAtLeast(1).toFloat())
-        }
+            fun xFor(index: Int, count: Int): Float {
+                return chartLeft + index * (chartWidth / (count - 1).coerceAtLeast(1).toFloat())
+            }
 
-        fun yFor(value: Double): Float {
-            return chartTop + (chartHeight * (1.0 - (value - chartMin) / range)).toFloat()
-        }
+            fun yFor(value: Double): Float {
+                return chartTop + (chartHeight * (1.0 - (value - chartMin) / range)).toFloat()
+            }
 
-        val yTicks = listOf(chartMax, 100.0, chartMin).distinct()
-        yTicks.forEach { tick ->
-            val y = yFor(tick)
-            drawLine(
-                color = if (abs(tick - 100.0) < 0.01) baselineColor else gridColor,
-                start = Offset(chartLeft, y),
-                end = Offset(chartRight, y),
-                strokeWidth = if (abs(tick - 100.0) < 0.01) 1.2.dp.toPx() else 0.9.dp.toPx()
-            )
-            val text = CurrencyHelper.formatDecimal(tick)
-            val measured = textMeasurer.measure(text, labelStyle)
-            drawText(
-                textMeasurer = textMeasurer,
-                text = text,
-                style = labelStyle,
-                topLeft = Offset(
-                    x = (yLabelWidth - measured.size.width - 4.dp.toPx()).coerceAtLeast(0f),
-                    y = y - measured.size.height / 2f
+            val yTicks = listOf(chartMax, 100.0, chartMin).distinct()
+            yTicks.forEach { tick ->
+                val y = yFor(tick)
+                drawLine(
+                    color = if (abs(tick - 100.0) < 0.01) baselineColor else gridColor,
+                    start = Offset(chartLeft, y),
+                    end = Offset(chartRight, y),
+                    strokeWidth = if (abs(tick - 100.0) < 0.01) 1.2.dp.toPx() else 0.9.dp.toPx()
                 )
-            )
-        }
-
-        drawSeries(
-            values = seriesA.values,
-            color = primaryColor,
-            chartLeft = chartLeft,
-            chartTop = chartTop,
-            chartBottom = chartBottom,
-            chartWidth = chartWidth,
-            minValue = chartMin,
-            range = range,
-            style = SeriesStyle.SOLID_CIRCLE
-        )
-        drawSeries(
-            values = seriesB.values,
-            color = secondaryColor,
-            chartLeft = chartLeft,
-            chartTop = chartTop,
-            chartBottom = chartBottom,
-            chartWidth = chartWidth,
-            minValue = chartMin,
-            range = range,
-            style = SeriesStyle.DASHED_SQUARE
-        )
-
-        buildXLabels(timestamps, selectedPeriod).forEach { (index, label) ->
-            val x = xFor(index, timestamps.size)
-            val measured = textMeasurer.measure(label, labelStyle)
-            drawText(
-                textMeasurer = textMeasurer,
-                text = label,
-                style = labelStyle,
-                topLeft = Offset(
-                    x = (x - measured.size.width / 2f).coerceIn(chartLeft, chartRight - measured.size.width),
-                    y = chartBottom + 3.dp.toPx()
-                )
-            )
-        }
-
-        listOf(
-            Triple(stockALabel, seriesA.values.last(), primaryColor),
-            Triple(stockBLabel, seriesB.values.last(), secondaryColor)
-        ).map { (label, value, color) ->
-            val measured = textMeasurer.measure(label, labelStyle)
-            Triple(
-                measured,
-                Offset(
-                    x = (chartRight - measured.size.width - 4.dp.toPx()).coerceAtLeast(chartLeft),
-                    y = (yFor(value) - measured.size.height / 2f)
-                        .coerceIn(chartTop, chartBottom - measured.size.height)
-                ),
-                color
-            )
-        }.let { positioned ->
-            val separated = separateLabelPositions(
-                items = positioned.map { Triple(it.first, it.second.x, it.second.y) },
-                minGap = 6.dp.toPx(),
-                minY = chartTop,
-                maxY = chartBottom
-            )
-            separated.forEachIndexed { index, adjusted ->
-                val (measured, _, color) = positioned[index]
-                val label = if (index == 0) stockALabel else stockBLabel
+                val text = CurrencyHelper.formatDecimal(tick)
+                val measured = textMeasurer.measure(text, labelStyle)
+                val maxLabelY = (chartBottom - measured.size.height).coerceAtLeast(chartTop)
                 drawText(
                     textMeasurer = textMeasurer,
-                    text = label,
-                    style = labelStyle.copy(color = color),
+                    text = text,
+                    style = labelStyle,
                     topLeft = Offset(
-                        x = adjusted.x,
-                        y = adjusted.y
+                        x = (yLabelWidth - measured.size.width - 4.dp.toPx()).coerceAtLeast(0f),
+                        y = (y - measured.size.height / 2f).coerceIn(chartTop, maxLabelY)
                     )
                 )
             }
+
+            drawSeries(
+                values = seriesA.values,
+                color = primaryColor,
+                chartLeft = chartLeft,
+                chartTop = chartTop,
+                chartBottom = chartBottom,
+                chartWidth = chartWidth,
+                minValue = chartMin,
+                range = range,
+                style = SeriesStyle.SOLID_CIRCLE
+            )
+            drawSeries(
+                values = seriesB.values,
+                color = secondaryColor,
+                chartLeft = chartLeft,
+                chartTop = chartTop,
+                chartBottom = chartBottom,
+                chartWidth = chartWidth,
+                minValue = chartMin,
+                range = range,
+                style = SeriesStyle.DASHED_SQUARE
+            )
+
+            buildXLabels(timestamps, selectedPeriod).forEach { (index, label) ->
+                val x = xFor(index, timestamps.size)
+                val measured = textMeasurer.measure(label, labelStyle)
+                drawText(
+                    textMeasurer = textMeasurer,
+                    text = label,
+                    style = labelStyle,
+                    topLeft = Offset(
+                        x = (x - measured.size.width / 2f).coerceIn(chartLeft, chartRight - measured.size.width),
+                        y = chartBottom + 3.dp.toPx()
+                    )
+                )
+            }
+
+            listOf(
+                Triple(stockALabel, seriesA.values.last(), primaryColor),
+                Triple(stockBLabel, seriesB.values.last(), secondaryColor)
+            ).map { (label, value, color) ->
+                val measured = textMeasurer.measure(label, labelStyle)
+                val maxLabelY = (chartBottom - measured.size.height).coerceAtLeast(chartTop)
+                Triple(
+                    measured,
+                    Offset(
+                        x = (chartRight - measured.size.width - 4.dp.toPx()).coerceAtLeast(chartLeft),
+                        y = (yFor(value) - measured.size.height / 2f)
+                            .coerceIn(chartTop, maxLabelY)
+                    ),
+                    color
+                )
+            }.let { positioned ->
+                val separated = separateLabelPositions(
+                    items = positioned.map { Triple(it.first, it.second.x, it.second.y) },
+                    minGap = 6.dp.toPx(),
+                    minY = chartTop,
+                    maxY = chartBottom
+                )
+                separated.forEachIndexed { index, adjusted ->
+                    val (measured, _, color) = positioned[index]
+                    val label = if (index == 0) stockALabel else stockBLabel
+                    drawText(
+                        textMeasurer = textMeasurer,
+                        text = label,
+                        style = labelStyle.copy(color = color),
+                        topLeft = Offset(
+                            x = adjusted.x,
+                            y = adjusted.y
+                        )
+                    )
+                }
+            }
         }
+
+        LegendRow(
+            stockALabel = stockALabel,
+            stockBLabel = stockBLabel,
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .padding(start = 60.dp, top = 8.dp)
+        )
     }
 }
 
@@ -446,13 +457,14 @@ private fun SpreadMiniChart(
             )
             val text = formatSignedDecimal(tick)
             val measured = textMeasurer.measure(text, labelStyle)
+            val maxLabelY = (chartBottom - measured.size.height).coerceAtLeast(chartTop)
             drawText(
                 textMeasurer = textMeasurer,
                 text = text,
                 style = labelStyle,
                 topLeft = Offset(
                     x = (yLabelWidth - measured.size.width - 4.dp.toPx()).coerceAtLeast(0f),
-                    y = y - measured.size.height / 2f
+                    y = (y - measured.size.height / 2f).coerceIn(chartTop, maxLabelY)
                 )
             )
         }
@@ -681,7 +693,8 @@ private fun separateLabelPositions(
     if (items.isEmpty()) return emptyList()
 
     val sorted = items.mapIndexed { index, (measured, x, y) ->
-        Pair(index, Triple(measured, x, y.coerceIn(minY, maxY - measured.size.height)))
+        val maxAllowedY = (maxY - measured.size.height).coerceAtLeast(minY)
+        Pair(index, Triple(measured, x, y.coerceIn(minY, maxAllowedY)))
     }.sortedBy { it.second.third }
 
     val adjusted = mutableListOf<Pair<Int, Triple<androidx.compose.ui.text.TextLayoutResult, Float, Float>>>()
@@ -689,15 +702,20 @@ private fun separateLabelPositions(
         val (measured, x, desiredY) = item
         val previous = adjusted.lastOrNull()
         val minAllowedY = previous?.let { it.second.third + it.second.first.size.height + minGap } ?: minY
-        adjusted += index to Triple(measured, x, desiredY.coerceAtLeast(minAllowedY))
+        val maxAllowedY = (maxY - measured.size.height).coerceAtLeast(minY)
+        adjusted += index to Triple(
+            measured,
+            x,
+            desiredY.coerceAtLeast(minAllowedY).coerceAtMost(maxAllowedY)
+        )
     }
 
     for (i in adjusted.indices.reversed()) {
         val (index, current) = adjusted[i]
         val maxAllowedY = if (i == adjusted.lastIndex) {
-            maxY - current.first.size.height
+            (maxY - current.first.size.height).coerceAtLeast(minY)
         } else {
-            adjusted[i + 1].second.third - current.first.size.height - minGap
+            (adjusted[i + 1].second.third - current.first.size.height - minGap).coerceAtLeast(minY)
         }
         adjusted[i] = index to Triple(current.first, current.second, current.third.coerceAtMost(maxAllowedY))
     }
@@ -706,9 +724,10 @@ private fun separateLabelPositions(
         .sortedBy { it.first }
         .map { (_, item) ->
             val (measured, x, y) = item
+            val maxAllowedY = (maxY - measured.size.height).coerceAtLeast(minY)
             Offset(
                 x = x,
-                y = y.coerceIn(minY, maxY - measured.size.height)
+                y = y.coerceIn(minY, maxAllowedY)
             )
         }
 }

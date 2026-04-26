@@ -1,6 +1,7 @@
 package com.stockflip
 
 import androidx.room.Entity
+import androidx.room.Index
 import androidx.room.PrimaryKey
 
 /**
@@ -8,7 +9,13 @@ import androidx.room.PrimaryKey
  * 
  * Varje rad representerar ett nyckeltal-värde vid en specifik tidpunkt.
  */
-@Entity(tableName = "metric_history")
+@Entity(
+    tableName = "metric_history",
+    indices = [
+        Index(value = ["symbol", "metricType"]),
+        Index(value = ["date"])
+    ]
+)
 data class MetricHistoryEntity(
     @PrimaryKey val id: String, // Format: "SYMBOL_METRICTYPE_TIMESTAMP"
     val symbol: String,
@@ -25,4 +32,3 @@ data class MetricHistoryEntity(
         }
     }
 }
-

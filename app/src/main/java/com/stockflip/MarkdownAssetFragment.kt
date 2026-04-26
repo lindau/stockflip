@@ -10,7 +10,7 @@ import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.fragment.app.Fragment
 
-class HelpFragment : Fragment() {
+class MarkdownAssetFragment : Fragment() {
 
     private var webView: WebView? = null
 
@@ -19,16 +19,16 @@ class HelpFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
+        val assetName = requireArguments().getString(ARG_ASSET_NAME) ?: "manual.md"
         val wv = WebView(requireContext())
         webView = wv
         val isDark = (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) ==
             Configuration.UI_MODE_NIGHT_YES
-        val markdown = requireContext().assets.open("manual.md").bufferedReader().use { it.readText() }
+        val markdown = requireContext().assets.open(assetName).bufferedReader().use { it.readText() }
         wv.settings.javaScriptEnabled = false
         wv.webViewClient = object : WebViewClient() {
             override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
                 val scheme = request.url.scheme ?: return true
-                // Allow local file navigation (fragment anchors), block everything else
                 return scheme != "file" && scheme != "about"
             }
         }
@@ -47,11 +47,19 @@ class HelpFragment : Fragment() {
         webView = null
         super.onDestroyView()
     }
-}
 
-// ---------------------------------------------------------------------------
-// Markdown → HTML converter (handles the subset used in manual.md)
-// ---------------------------------------------------------------------------
+    companion object {
+        private const val ARG_ASSET_NAME = "asset_name"
+
+        fun newInstance(assetName: String): MarkdownAssetFragment {
+            return MarkdownAssetFragment().apply {
+                arguments = Bundle().apply {
+                    putString(ARG_ASSET_NAME, assetName)
+                }
+            }
+        }
+    }
+}
 
 private fun markdownToHtml(markdown: String, darkMode: Boolean): String {
     val themeClass = if (darkMode) "dark" else "light"
@@ -123,7 +131,6 @@ private fun buildManualBody(markdown: String): String {
     while (i < lines.size) {
         val line = lines[i]
 
-        // Code block fence
         if (line.trimStart().startsWith("```")) {
             if (!inCodeBlock) {
                 closeList()
@@ -133,47 +140,65 @@ private fun buildManualBody(markdown: String): String {
                 inCodeBlock = false
                 sb.append("<pre><code>${esc(codeLines.toString().trimEnd('\n'))}</code></pre>\n")
             }
-            i++; continue
+            i++
+            continue
         }
-        if (inCodeBlock) { codeLines.append(line).append('\n'); i++; continue }
+        if (inCodeBlock) {
+            codeLines.append(line).append('\n')
+            i++
+            continue
+        }
 
-        // Table (collect all consecutive | lines)
         if (line.startsWith("|")) {
             closeList()
             val tableRows = mutableListOf<String>()
-            while (i < lines.size && lines[i].startsWith("|")) { tableRows.add(lines[i]); i++ }
+            while (i < lines.size && lines[i].startsWith("|")) {
+                tableRows.add(lines[i])
+                i++
+            }
             sb.append(buildManualTable(tableRows))
             continue
         }
 
-        // List items
         val isSubItem = line.startsWith("  - ")
         val isUnordered = line.startsWith("- ") && !line.startsWith("---")
         val isOrdered = line.matches(Regex("^\\d+\\. .*"))
 
         when {
             isOrdered -> {
-                if (currentListTag != "ol") { closeList(); sb.append("<ol>\n"); currentListTag = "ol" }
+                if (currentListTag != "ol") {
+                    closeList()
+                    sb.append("<ol>\n")
+                    currentListTag = "ol"
+                }
                 sb.append("<li>${fmt(line.replace(Regex("^\\d+\\. "), ""))}</li>\n")
             }
             isSubItem -> {
-                if (currentListTag != "ul") { closeList(); sb.append("<ul>\n"); currentListTag = "ul" }
+                if (currentListTag != "ul") {
+                    closeList()
+                    sb.append("<ul>\n")
+                    currentListTag = "ul"
+                }
                 sb.append("<li class=\"sub\">${fmt(line.drop(4))}</li>\n")
             }
             isUnordered -> {
-                if (currentListTag != "ul") { closeList(); sb.append("<ul>\n"); currentListTag = "ul" }
+                if (currentListTag != "ul") {
+                    closeList()
+                    sb.append("<ul>\n")
+                    currentListTag = "ul"
+                }
                 sb.append("<li>${fmt(line.drop(2))}</li>\n")
             }
             else -> {
                 closeList()
                 when {
-                    line.startsWith("# ")   -> sb.append("<h1 id=\"${toId(line.drop(2))}\">${fmt(line.drop(2))}</h1>\n")
-                    line.startsWith("## ")  -> sb.append("<h2 id=\"${toId(line.drop(3))}\">${fmt(line.drop(3))}</h2>\n")
+                    line.startsWith("# ") -> sb.append("<h1 id=\"${toId(line.drop(2))}\">${fmt(line.drop(2))}</h1>\n")
+                    line.startsWith("## ") -> sb.append("<h2 id=\"${toId(line.drop(3))}\">${fmt(line.drop(3))}</h2>\n")
                     line.startsWith("### ") -> sb.append("<h3 id=\"${toId(line.drop(4))}\">${fmt(line.drop(4))}</h3>\n")
-                    line.startsWith("---")  -> sb.append("<hr>\n")
-                    line.startsWith("> ")   -> sb.append("<blockquote><p>${fmt(line.drop(2))}</p></blockquote>\n")
-                    line.isBlank()          -> { /* spacing handled by CSS margins */ }
-                    else                    -> sb.append("<p>${fmt(line)}</p>\n")
+                    line.startsWith("---") -> sb.append("<hr>\n")
+                    line.startsWith("> ") -> sb.append("<blockquote><p>${fmt(line.drop(2))}</p></blockquote>\n")
+                    line.isBlank() -> Unit
+                    else -> sb.append("<p>${fmt(line)}</p>\n")
                 }
             }
         }
