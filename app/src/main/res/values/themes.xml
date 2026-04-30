@@ -86,13 +86,9 @@
 
     <!-- Dialog styling -->
     <style name="Theme.StockFlip.Dialog" parent="ThemeOverlay.Material3.Dialog">
-        <item name="colorSurface">?attr/colorSurface</item>
-        <item name="colorOnSurface">?attr/colorOnSurface</item>
     </style>
 
     <!-- BottomSheet styling -->
     <style name="Theme.StockFlip.BottomSheet" parent="ThemeOverlay.Material3.BottomSheetDialog">
-        <item name="colorSurface">?attr/colorSurface</item>
-        <item name="colorOnSurface">?attr/colorOnSurface</item>
     </style>
 </resources>

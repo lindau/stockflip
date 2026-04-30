@@ -1,12 +1,18 @@
 package com.stockflip
 
 import android.view.ViewGroup
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.unit.dp
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
+import com.stockflip.ui.ComposeWatchItemCard
 import com.stockflip.ui.ComposeWatchItemCardWithControls
 import com.stockflip.CurrencyHelper
+import com.stockflip.ui.WatchItemCardPresentation
 import com.stockflip.ui.theme.StockFlipTheme
 
 /**
@@ -18,7 +24,8 @@ class AlertAdapter(
     private val onReactivate: (WatchItem) -> Unit,
     private val onDelete: (WatchItem) -> Unit,
     private val onEdit: (WatchItem) -> Unit,
-    private val useVariantBackground: Boolean = false
+    private val useVariantBackground: Boolean = false,
+    private val useClarityPresentation: Boolean = false,
 ) : ListAdapter<WatchItemUiState, AlertAdapter.AlertViewHolder>(AlertDiffCallback()) {
 
     private var triggerHistory: Map<Int, List<Long>> = emptyMap()
@@ -49,17 +56,33 @@ class AlertAdapter(
                         androidx.compose.material3.MaterialTheme.colorScheme.surfaceVariant
                     else
                         androidx.compose.material3.MaterialTheme.colorScheme.surface
-                    ComposeWatchItemCardWithControls(
-                        item = watchItem,
-                        live = uiState.live,
-                        priceFormat = { value -> CurrencyHelper.formatDecimal(value) },
-                        onToggleActive = { onToggleActive(watchItem) },
-                        onReactivate = { onReactivate(watchItem) },
-                        onDelete = { onDelete(watchItem) },
-                        onEdit = { onEdit(watchItem) },
-                        containerColor = containerColor,
-                        triggerHistory = triggerHistory[watchItem.id] ?: emptyList()
-                    )
+                    if (useClarityPresentation) {
+                        ComposeWatchItemCard(
+                            item = watchItem,
+                            live = uiState.live,
+                            priceFormat = { value -> CurrencyHelper.formatDecimal(value) },
+                            onItemClick = { onEdit(watchItem) },
+                            containerColor = containerColor,
+                            triggerHistory = triggerHistory[watchItem.id] ?: emptyList(),
+                            isNew = TriggerSeenTracker.isNew(watchItem),
+                            watchItemCardPresentation = WatchItemCardPresentation.ClarityCase,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 8.dp, vertical = 6.dp),
+                        )
+                    } else {
+                        ComposeWatchItemCardWithControls(
+                            item = watchItem,
+                            live = uiState.live,
+                            priceFormat = { value -> CurrencyHelper.formatDecimal(value) },
+                            onToggleActive = { onToggleActive(watchItem) },
+                            onReactivate = { onReactivate(watchItem) },
+                            onDelete = { onDelete(watchItem) },
+                            onEdit = { onEdit(watchItem) },
+                            containerColor = containerColor,
+                            triggerHistory = triggerHistory[watchItem.id] ?: emptyList()
+                        )
+                    }
                 }
             }
         }
@@ -75,5 +98,4 @@ class AlertAdapter(
         }
     }
 }
-
 

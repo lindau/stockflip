@@ -25,7 +25,7 @@
             android:layout_height="wrap_content"
             android:layout_marginBottom="12dp"
             android:visibility="gone"
-            app:cardCornerRadius="12dp"
+            app:cardCornerRadius="18dp"
             app:cardElevation="0dp"
             app:strokeColor="?attr/colorOutlineVariant"
             app:strokeWidth="1dp"
@@ -35,7 +35,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:padding="12dp">
+                android:padding="16dp">
 
                 <TextView
                     android:id="@+id/triggerBannerTitle"
@@ -77,10 +77,19 @@
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
+        <androidx.compose.ui.platform.ComposeView
+            android:id="@+id/pairClarityPanel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="0dp"
+            android:layout_marginBottom="12dp" />
+
         <LinearLayout
+            android:id="@+id/legacyPairHeader"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
+            android:visibility="gone"
             android:weightSum="2">
 
             <LinearLayout
@@ -143,9 +152,11 @@
         </LinearLayout>
 
         <com.google.android.material.card.MaterialCardView
+            android:id="@+id/legacyPairConditionCard"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
+            android:visibility="gone"
             app:cardBackgroundColor="?attr/colorSurfaceContainerLow"
             app:cardCornerRadius="20dp"
             app:cardElevation="0dp"
@@ -235,23 +246,28 @@
         </com.google.android.material.card.MaterialCardView>
 
         <TextView
+            android:id="@+id/legacyPairChartLabel"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
             android:text="Prisskillnadsgraf"
+            android:visibility="gone"
             android:textAppearance="@style/TextAppearance.Material3.TitleMedium" />
 
         <androidx.compose.ui.platform.ComposeView
             android:id="@+id/spreadChartView"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="6dp" />
+            android:layout_marginTop="6dp"
+            android:visibility="gone" />
 
         <LinearLayout
+            android:id="@+id/legacyPairActions"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
-            android:orientation="horizontal">
+            android:orientation="horizontal"
+            android:visibility="gone">
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/editPairButton"
@@ -272,10 +288,12 @@
         </LinearLayout>
 
         <TextView
+            android:id="@+id/legacyPairHistoryLabel"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
             android:text="Senaste triggers"
+            android:visibility="gone"
             android:textAppearance="@style/TextAppearance.Material3.TitleMedium" />
 
         <TextView
@@ -284,6 +302,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="6dp"
             android:text="Ingen historik"
+            android:visibility="gone"
             android:textAppearance="@style/TextAppearance.Material3.BodyMedium" />
 
     </LinearLayout>

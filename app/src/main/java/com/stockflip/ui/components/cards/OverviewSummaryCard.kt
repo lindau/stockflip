@@ -21,7 +21,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.unit.dp
-import com.stockflip.ui.theme.ListCardShape
 import com.stockflip.ui.theme.LocalCardBorder
 import com.stockflip.ui.theme.NordikNumericStyle
 
@@ -40,7 +39,7 @@ fun OverviewSummaryCard(
         colors = CardDefaults.cardColors(
             containerColor = colorScheme.primaryContainer,
         ),
-        shape = ListCardShape,
+        shape = RoundedCornerShape(22.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         border = BorderStroke(1.dp, cardBorder),
     ) {

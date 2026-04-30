@@ -121,7 +121,13 @@ class MainActivity : AppCompatActivity() {
         ALERTS
     }
 
+    private enum class OverviewMode {
+        CASES,
+        STOCKS
+    }
+
     private var currentMainTab: MainTab = MainTab.STOCKS
+    private var overviewMode: OverviewMode = OverviewMode.CASES
     private var lastWatchItems: List<WatchItemUiState> = emptyList()
     private var detailSyncJob: Job? = null
     private val watchItemEditor by lazy {
@@ -236,14 +242,17 @@ class MainActivity : AppCompatActivity() {
                         .setInterpolator(android.view.animation.DecelerateInterpolator())
                         .start()
                     binding.swipeRefreshLayout.visibility = View.VISIBLE
+                    binding.overviewModeScroll.visibility = View.VISIBLE
                     binding.addPairButton.visibility = View.GONE
                     showWatchItemSuccess(lastWatchItems)
                 } else if (belowName == "pairs") {
                     // Återgår till PairsFragment
                     currentMainTab = MainTab.PAIRS
+                    binding.overviewModeScroll.visibility = View.GONE
                     binding.addPairButton.visibility = View.VISIBLE
                 } else if (belowName == "alerts") {
                     currentMainTab = MainTab.ALERTS
+                    binding.overviewModeScroll.visibility = View.GONE
                     binding.addPairButton.visibility = View.VISIBLE
                 }
                 // else: återgår till ett annat fragment (alerts etc.) — currentMainTab redan korrekt
@@ -260,6 +269,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun initializeUI() {
         setupRecyclerView()
+        setupOverviewModeToggle()
         setupSwipeToDelete()
         setupObservers()
         setupSwipeRefresh()
@@ -279,6 +289,7 @@ class MainActivity : AppCompatActivity() {
                     val previousTab = currentMainTab
                     currentMainTab = MainTab.STOCKS
                     binding.swipeRefreshLayout.visibility = View.VISIBLE
+                    binding.overviewModeScroll.visibility = View.VISIBLE
                     binding.addPairButton.visibility = View.GONE
                     supportFragmentManager.popBackStack(
                         null,
@@ -302,6 +313,7 @@ class MainActivity : AppCompatActivity() {
                 R.id.menu_pairs -> {
                     val previousTab = currentMainTab
                     currentMainTab = MainTab.PAIRS
+                    binding.overviewModeScroll.visibility = View.GONE
                     binding.addPairButton.visibility = View.VISIBLE
                     showPairsToolbar()
                     val screenWidth = resources.displayMetrics.widthPixels.toFloat()
@@ -337,6 +349,7 @@ class MainActivity : AppCompatActivity() {
                 R.id.menu_alerts -> {
                     val previousTab = currentMainTab
                     currentMainTab = MainTab.ALERTS
+                    binding.overviewModeScroll.visibility = View.GONE
                     binding.addPairButton.visibility = View.VISIBLE
                     showAlertsToolbar()
                     val screenWidth = resources.displayMetrics.widthPixels.toFloat()
@@ -501,6 +514,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun openHelpScreen() {
         binding.swipeRefreshLayout.visibility = View.GONE
+        binding.overviewModeScroll.visibility = View.GONE
         binding.addPairButton.visibility = View.GONE
         binding.topAppBar.title = "Hjälp"
         binding.topAppBar.navigationIcon = androidx.appcompat.content.res.AppCompatResources.getDrawable(
@@ -518,6 +532,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun openChangelogScreen() {
         binding.swipeRefreshLayout.visibility = View.GONE
+        binding.overviewModeScroll.visibility = View.GONE
         binding.addPairButton.visibility = View.GONE
         binding.topAppBar.title = "Ändringslogg"
         binding.topAppBar.navigationIcon = androidx.appcompat.content.res.AppCompatResources.getDrawable(
@@ -535,6 +550,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun openAddStock() {
         binding.swipeRefreshLayout.visibility = View.GONE
+        binding.overviewModeScroll.visibility = View.GONE
         binding.addPairButton.visibility = View.GONE
         binding.topAppBar.title = getString(R.string.title_add_stock)
         binding.topAppBar.navigationIcon = androidx.appcompat.content.res.AppCompatResources.getDrawable(
@@ -562,18 +578,21 @@ class MainActivity : AppCompatActivity() {
         binding.topAppBar.title = getString(R.string.tab_stocks)
         binding.topAppBar.navigationIcon = null
         binding.addPairButton.visibility = View.GONE
+        binding.overviewModeScroll.visibility = View.VISIBLE
     }
 
     private fun showPairsToolbar() {
         binding.topAppBar.title = getString(R.string.tab_pairs)
         binding.topAppBar.navigationIcon = null
         binding.addPairButton.visibility = View.VISIBLE
+        binding.overviewModeScroll.visibility = View.GONE
     }
 
     private fun showAlertsToolbar() {
         binding.topAppBar.title = getString(R.string.tab_alerts)
         binding.topAppBar.navigationIcon = null
         binding.addPairButton.visibility = View.VISIBLE
+        binding.overviewModeScroll.visibility = View.GONE
     }
 
     private fun initializeUpdates() {
@@ -673,14 +692,7 @@ class MainActivity : AppCompatActivity() {
         binding.swipeRefreshLayout.isRefreshing = false
         Log.d(TAG, "Refresh indicator hidden")
 
-        val adapter = binding.stockPairsList.adapter as? GroupedWatchItemAdapter
-        if (adapter != null) {
-            Log.d(TAG, "Adapter found, calling submitOverviewList with ${filteredData.size} items")
-            adapter.submitOverviewList(filteredData)
-            Log.d(TAG, "submitOverviewList called successfully")
-        } else {
-            Log.e(TAG, "CRITICAL: Adapter is null! Cannot update UI")
-        }
+        renderStocksOverview(filteredData)
 
         val showEmpty = filteredData.isEmpty()
         binding.emptyStateContainer.visibility = if (showEmpty) View.VISIBLE else View.GONE
@@ -694,6 +706,38 @@ class MainActivity : AppCompatActivity() {
         Log.e(TAG, "Error state shown to user")
         binding.swipeRefreshLayout.isRefreshing = false
         Toast.makeText(this, message, Toast.LENGTH_LONG).show()
+    }
+
+    private fun setupOverviewModeToggle() {
+        binding.overviewModeChipGroup.check(R.id.overviewModeCasesChip)
+        binding.overviewModeChipGroup.setOnCheckedStateChangeListener { _, checkedIds ->
+            overviewMode = when (checkedIds.firstOrNull()) {
+                R.id.overviewModeStocksChip -> OverviewMode.STOCKS
+                else -> OverviewMode.CASES
+            }
+            if (currentMainTab == MainTab.STOCKS) {
+                showWatchItemSuccess(lastWatchItems)
+            }
+        }
+    }
+
+    private fun renderStocksOverview(filteredData: List<WatchItemUiState>) {
+        val adapter = binding.stockPairsList.adapter as? GroupedWatchItemAdapter
+        if (adapter == null) {
+            Log.e(TAG, "CRITICAL: Adapter is null! Cannot update UI")
+            return
+        }
+
+        when (overviewMode) {
+            OverviewMode.CASES -> {
+                Log.d(TAG, "Rendering overview case list with ${filteredData.size} items")
+                adapter.submitOverviewList(filteredData)
+            }
+            OverviewMode.STOCKS -> {
+                Log.d(TAG, "Rendering overview stock list with ${filteredData.size} items")
+                adapter.submitStocksList(filteredData)
+            }
+        }
     }
 
     private fun setupRecyclerView() {
@@ -734,9 +778,15 @@ class MainActivity : AppCompatActivity() {
                             showDeleteSingleWatchDialog(item.item)
                         }
                     }
-                    is GroupedListItem.OverviewSummary -> {
-                        adapter.notifyItemChanged(position)
-                    }
+	                    is GroupedListItem.OverviewSummary -> {
+	                        adapter.notifyItemChanged(position)
+	                    }
+	                    is GroupedListItem.AlertsSummary -> {
+	                        adapter.notifyItemChanged(position)
+	                    }
+	                    is GroupedListItem.StocksHeader -> {
+	                        adapter.notifyItemChanged(position)
+	                    }
                     is GroupedListItem.Header -> {}
                     is GroupedListItem.GroupSeparator -> {}
                 }
@@ -860,6 +910,7 @@ class MainActivity : AppCompatActivity() {
         // FAB döljs direkt; swipeRefreshLayout döljs efter animationen (280ms) så
         // att huvudinnehållet syns bakom det inkommande kortet under transition.
         binding.addPairButton.visibility = View.GONE
+        binding.overviewModeScroll.visibility = View.GONE
         binding.swipeRefreshLayout.postDelayed({
             binding.swipeRefreshLayout.visibility = View.GONE
         }, 300L)
@@ -911,6 +962,7 @@ class MainActivity : AppCompatActivity() {
             .commit()
 
         binding.addPairButton.visibility = View.GONE
+        binding.overviewModeScroll.visibility = View.GONE
         binding.swipeRefreshLayout.postDelayed({
             binding.swipeRefreshLayout.visibility = View.GONE
         }, 300L)

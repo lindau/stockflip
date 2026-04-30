@@ -24,7 +24,7 @@ import kotlinx.coroutines.flow.combine
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-import com.stockflip.ui.components.IntradayChart
+import com.stockflip.ui.components.cards.ClarityStockDetailPanel
 import com.stockflip.ui.theme.StockFlipTheme
 import kotlin.math.abs
 
@@ -51,6 +51,8 @@ class StockDetailFragment : Fragment() {
     private lateinit var stockSearchViewModel2: StockSearchViewModel
     private lateinit var dialogManager: WatchDialogManager
     private var latestStockData: StockDetailData? = null
+    private var latestChartData: IntradayChartData? = null
+    private var latestChartPeriod: ChartPeriod = ChartPeriod.DAY
     private var latestAlerts: List<WatchItemUiState> = emptyList()
     private var latestMetricHistory: Map<WatchType.MetricType, MetricHistorySummary> = emptyMap()
     private var triggerBannerDismissed = false
@@ -216,7 +218,8 @@ class StockDetailFragment : Fragment() {
             onEdit = { watchItem ->
                 dialogManager.showEditWatchItemDialog(watchItem)
             },
-            useVariantBackground = true
+            useVariantBackground = true,
+            useClarityPresentation = true
         )
 
         binding.alertsRecyclerView.apply {
@@ -284,6 +287,7 @@ class StockDetailFragment : Fragment() {
                         binding.swipeRefreshLayout.isRefreshing = false
                         latestStockData = state.data
                         displayStockData(state.data)
+                        renderClarityStockPanel()
                         renderDecisionSupport()
                     }
                     is UiState.Error -> {
@@ -325,21 +329,20 @@ class StockDetailFragment : Fragment() {
         viewLifecycleOwner.lifecycleScope.launch {
             combine(viewModel.chartState, viewModel.selectedPeriod) { state, period -> state to period }
                 .collect { (state, period) ->
+                    latestChartPeriod = period
+                    binding.intradayChartView.isVisible = false
                     when (state) {
-                        is UiState.Loading -> { /* behåll synligheten under periodobyte */ }
-                        is UiState.Success -> {
-                            binding.intradayChartView.isVisible = true
-                            binding.intradayChartView.setContent {
-                                StockFlipTheme {
-                                    IntradayChart(
-                                        data = state.data,
-                                        selectedPeriod = period,
-                                        onPeriodSelected = { viewModel.selectPeriod(it) }
-                                    )
-                                }
-                            }
+                        is UiState.Loading -> {
+                            renderClarityStockPanel()
                         }
-                        is UiState.Error -> binding.intradayChartView.isVisible = false
+                        is UiState.Success -> {
+                            latestChartData = state.data
+                            renderClarityStockPanel()
+                        }
+                        is UiState.Error -> {
+                            latestChartData = null
+                            renderClarityStockPanel()
+                        }
                     }
                 }
         }
@@ -473,6 +476,20 @@ class StockDetailFragment : Fragment() {
             val timeStr = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(data.lastUpdatedAt))
             binding.lastUpdatedText.text = "Uppdaterad $timeStr"
             binding.lastUpdatedText.isVisible = true
+        }
+    }
+
+    private fun renderClarityStockPanel() {
+        val data = latestStockData ?: return
+        binding.stockClarityPanel.setContent {
+            StockFlipTheme {
+                ClarityStockDetailPanel(
+                    data = data,
+                    chartData = latestChartData,
+                    selectedPeriod = latestChartPeriod,
+                    onPeriodSelected = { viewModel.selectPeriod(it) },
+                )
+            }
         }
     }
 

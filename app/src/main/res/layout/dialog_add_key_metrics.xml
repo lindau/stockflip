@@ -8,7 +8,7 @@
     android:padding="16dp">
 
     <com.google.android.material.textfield.TextInputLayout
-        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+        style="@style/Widget.StockFlip.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginBottom="16dp"
@@ -25,7 +25,7 @@
     </com.google.android.material.textfield.TextInputLayout>
 
     <com.google.android.material.textfield.TextInputLayout
-        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+        style="@style/Widget.StockFlip.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginBottom="16dp"
@@ -63,28 +63,28 @@
 
         <com.google.android.material.chip.Chip
             android:id="@+id/presetChipOne"
-            style="@style/Widget.Material3.Chip.Assist"
+            style="@style/Widget.StockFlip.AssistChip"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="3-årssnitt" />
 
         <com.google.android.material.chip.Chip
             android:id="@+id/presetChipTwo"
-            style="@style/Widget.Material3.Chip.Assist"
+            style="@style/Widget.StockFlip.AssistChip"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="-10 %" />
 
         <com.google.android.material.chip.Chip
             android:id="@+id/presetChipThree"
-            style="@style/Widget.Material3.Chip.Assist"
+            style="@style/Widget.StockFlip.AssistChip"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="+5 %" />
 
         <com.google.android.material.chip.Chip
             android:id="@+id/presetChipFour"
-            style="@style/Widget.Material3.Chip.Assist"
+            style="@style/Widget.StockFlip.AssistChip"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="+10 %" />
@@ -93,7 +93,7 @@
 
     <com.google.android.material.textfield.TextInputLayout
         android:id="@+id/targetValueLayout"
-        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+        style="@style/Widget.StockFlip.TextInputLayout.OutlinedBox"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginBottom="16dp"
@@ -117,8 +117,8 @@
         android:layout_marginTop="16dp"
         android:layout_marginBottom="16dp"
         android:visibility="gone"
-        app:cardCornerRadius="8dp"
-        app:cardElevation="2dp">
+        app:cardCornerRadius="18dp"
+        app:cardElevation="0dp">
 
         <LinearLayout
             android:layout_width="match_parent"

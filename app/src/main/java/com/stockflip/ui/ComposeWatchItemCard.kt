@@ -18,6 +18,7 @@ import com.stockflip.ui.components.cards.LocalIsNewTrigger
 import com.stockflip.ui.components.cards.LocalNearTriggerLabel
 import com.stockflip.ui.theme.GroupPosition
 import com.stockflip.ui.theme.NP
+import com.stockflip.ui.components.cards.ClarityCaseCard
 import com.stockflip.ui.components.cards.CombinedAlertCard
 import com.stockflip.ui.components.cards.DailyMoveCard
 import com.stockflip.ui.components.cards.High52wCard
@@ -27,6 +28,11 @@ import com.stockflip.ui.components.cards.PairCardPresentation
 import com.stockflip.ui.components.cards.PriceRangeCard
 import com.stockflip.CurrencyHelper
 import com.stockflip.ui.components.cards.PriceTargetCard
+
+enum class WatchItemCardPresentation {
+    Default,
+    ClarityCase,
+}
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -45,28 +51,31 @@ fun ComposeWatchItemCard(
     nearTriggerLabel: String? = null,
     onLongClick: (() -> Unit)? = null,
     pairCardPresentation: PairCardPresentation = PairCardPresentation.Default,
+    watchItemCardPresentation: WatchItemCardPresentation = WatchItemCardPresentation.Default,
     modifier: Modifier = Modifier,
 ) {
     val usesClarityPairCard = item.watchType is com.stockflip.WatchType.PricePair &&
         pairCardPresentation == PairCardPresentation.Clarity &&
         !showControls
+    val usesClarityCaseCard = watchItemCardPresentation == WatchItemCardPresentation.ClarityCase &&
+        !showControls
     // Vertical outer padding: group items connect tightly — only ONLY/FIRST get top spacing,
     // only ONLY/LAST get bottom spacing.
-    val paddingTop = if (usesClarityPairCard) {
+    val paddingTop = if (usesClarityPairCard || usesClarityCaseCard) {
         6.dp
     } else if (groupPosition == GroupPosition.ONLY || groupPosition == GroupPosition.FIRST) {
         NP.cardOuterV
     } else {
         0.dp
     }
-    val paddingBottom = if (usesClarityPairCard) {
+    val paddingBottom = if (usesClarityPairCard || usesClarityCaseCard) {
         6.dp
     } else if (groupPosition == GroupPosition.ONLY || groupPosition == GroupPosition.LAST) {
         NP.cardOuterV
     } else {
         0.dp
     }
-    val horizontalPadding = if (usesClarityPairCard) 8.dp else NP.cardOuterH
+    val horizontalPadding = if (usesClarityPairCard || usesClarityCaseCard) 8.dp else NP.cardOuterH
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -87,7 +96,15 @@ fun ComposeWatchItemCard(
             LocalIsNewTrigger provides isNew,
             LocalNearTriggerLabel provides nearTriggerLabel,
         ) {
-        when (item.watchType) {
+        if (usesClarityCaseCard) {
+            ClarityCaseCard(
+                item = item,
+                live = live,
+                priceFormat = priceFormat,
+                containerColor = containerColor,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        } else when (item.watchType) {
             is com.stockflip.WatchType.PricePair -> {
                 PairCard(
                     item = item,

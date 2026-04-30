@@ -9,12 +9,16 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.unit.dp
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.stockflip.databinding.ItemSectionHeaderBinding
 import com.stockflip.ui.ComposeWatchItemCard
+import com.stockflip.ui.WatchItemCardPresentation
+import com.stockflip.ui.components.cards.ClarityAlertsSummaryCard
 import com.stockflip.ui.components.cards.MultipleWatchesCard
+import com.stockflip.ui.components.cards.MultipleWatchesPresentation
 import com.stockflip.ui.components.cards.OverviewSummaryCard
 import com.stockflip.ui.components.cards.PairCardPresentation
 import com.stockflip.ui.theme.GroupPosition
@@ -23,10 +27,21 @@ import com.stockflip.ui.theme.StockFlipTheme
 import kotlin.math.abs
 
 sealed class GroupedListItem {
+    data class AlertsSummary(
+        val triggeredTodayCount: Int,
+        val activeCount: Int,
+        val totalCount: Int,
+    ) : GroupedListItem()
+
     data class OverviewSummary(
         val nearTriggerCount: Int,
         val triggeredTodayCount: Int,
         val activeCount: Int,
+    ) : GroupedListItem()
+
+    data class StocksHeader(
+        val stockCount: Int,
+        val watchCount: Int,
     ) : GroupedListItem()
 
     data class Header(val title: String) : GroupedListItem()
@@ -65,12 +80,15 @@ class GroupedWatchItemAdapter(
     private val collapsedSections = mutableSetOf<String>()
     private var displayMode: DisplayMode = DisplayMode.GROUPED
     private var allWatchItems: List<WatchItemUiState> = emptyList()
+    private var alertsSummaryItems: List<WatchItemUiState> = emptyList()
     private var selectionMode: Boolean = false
     private var selectedItemIds: Set<Int> = emptySet()
 
     private enum class DisplayMode {
         GROUPED,
         OVERVIEW,
+        STOCKS,
+        ALERTS,
     }
 
     private data class OverviewCandidate(
@@ -85,6 +103,8 @@ class GroupedWatchItemAdapter(
         private const val VIEW_TYPE_WATCH_ITEM = 2
         private const val VIEW_TYPE_MULTIPLE_WATCHES = 3
         private const val VIEW_TYPE_SEPARATOR = 4
+        private const val VIEW_TYPE_STOCKS_HEADER = 5
+        private const val VIEW_TYPE_ALERTS_SUMMARY = 6
         private const val TAG = "GroupedWatchItemAdapter"
         private const val VERY_CLOSE_THRESHOLD = 0.05
         private const val NEAR_TRIGGER_SECTION_THRESHOLD = 0.10
@@ -92,7 +112,9 @@ class GroupedWatchItemAdapter(
 
     override fun getItemViewType(position: Int): Int {
         return when (getItem(position)) {
+            is GroupedListItem.AlertsSummary -> VIEW_TYPE_ALERTS_SUMMARY
             is GroupedListItem.OverviewSummary -> VIEW_TYPE_SUMMARY
+            is GroupedListItem.StocksHeader -> VIEW_TYPE_STOCKS_HEADER
             is GroupedListItem.Header -> VIEW_TYPE_HEADER
             is GroupedListItem.WatchItemWrapper -> VIEW_TYPE_WATCH_ITEM
             is GroupedListItem.MultipleWatchesWrapper -> VIEW_TYPE_MULTIPLE_WATCHES
@@ -102,6 +124,15 @@ class GroupedWatchItemAdapter(
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
         return when (viewType) {
+            VIEW_TYPE_ALERTS_SUMMARY -> {
+                val composeView = ComposeView(parent.context)
+                composeView.layoutParams = ViewGroup.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT
+                )
+                AlertsSummaryViewHolder(composeView)
+            }
+
             VIEW_TYPE_SUMMARY -> {
                 val composeView = ComposeView(parent.context)
                 composeView.layoutParams = ViewGroup.LayoutParams(
@@ -109,6 +140,15 @@ class GroupedWatchItemAdapter(
                     ViewGroup.LayoutParams.WRAP_CONTENT
                 )
                 OverviewSummaryViewHolder(composeView)
+            }
+
+            VIEW_TYPE_STOCKS_HEADER -> {
+                val composeView = ComposeView(parent.context)
+                composeView.layoutParams = ViewGroup.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT
+                )
+                StocksHeaderViewHolder(composeView)
             }
 
             VIEW_TYPE_HEADER -> {
@@ -154,8 +194,16 @@ class GroupedWatchItemAdapter(
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
         when (val item = getItem(position)) {
+            is GroupedListItem.AlertsSummary -> {
+                (holder as AlertsSummaryViewHolder).bind(item)
+            }
+
             is GroupedListItem.OverviewSummary -> {
                 (holder as OverviewSummaryViewHolder).bind(item)
+            }
+
+            is GroupedListItem.StocksHeader -> {
+                (holder as StocksHeaderViewHolder).bind(item)
             }
 
             is GroupedListItem.Header -> {
@@ -187,19 +235,40 @@ class GroupedWatchItemAdapter(
         when (displayMode) {
             DisplayMode.GROUPED -> buildFilteredList(allWatchItems)
             DisplayMode.OVERVIEW -> buildOverviewList(allWatchItems)
+            DisplayMode.STOCKS -> buildStocksList(allWatchItems)
+            DisplayMode.ALERTS -> buildAlertsList(allWatchItems)
         }
     }
 
     fun submitGroupedList(items: List<WatchItemUiState>) {
         displayMode = DisplayMode.GROUPED
         allWatchItems = items
+        alertsSummaryItems = emptyList()
         buildFilteredList(items)
     }
 
     fun submitOverviewList(items: List<WatchItemUiState>) {
         displayMode = DisplayMode.OVERVIEW
         allWatchItems = items
+        alertsSummaryItems = emptyList()
         buildOverviewList(items)
+    }
+
+    fun submitStocksList(items: List<WatchItemUiState>) {
+        displayMode = DisplayMode.STOCKS
+        allWatchItems = items
+        alertsSummaryItems = emptyList()
+        buildStocksList(items)
+    }
+
+    fun submitAlertsList(
+        items: List<WatchItemUiState>,
+        summaryItems: List<WatchItemUiState> = items,
+    ) {
+        displayMode = DisplayMode.ALERTS
+        allWatchItems = items
+        alertsSummaryItems = summaryItems
+        buildAlertsList(items)
     }
 
     fun setSelectionMode(enabled: Boolean) {
@@ -256,6 +325,84 @@ class GroupedWatchItemAdapter(
 
         addTickerGroupSection(groupedList, "Aktier", sortedStocksByTicker)
         addTickerGroupSection(groupedList, "Krypto", sortedCryptoByTicker)
+
+        submitList(groupedList)
+    }
+
+    private fun buildAlertsList(items: List<WatchItemUiState>) {
+        val today = WatchItem.getTodayDateString()
+        val summarySource = alertsSummaryItems.ifEmpty { items }
+        val groupedList = mutableListOf<GroupedListItem>()
+
+        if (items.isNotEmpty()) {
+            groupedList.add(
+                GroupedListItem.AlertsSummary(
+                    triggeredTodayCount = summarySource.count { it.item.isTriggered && it.item.lastTriggeredDate == today },
+                    activeCount = summarySource.count { it.item.isActive },
+                    totalCount = summarySource.size,
+                )
+            )
+        }
+
+        sortAlertsForClarity(items).forEach { uiState ->
+            groupedList.add(
+                GroupedListItem.WatchItemWrapper(
+                    item = uiState.item,
+                    live = uiState.live,
+                    groupPosition = GroupPosition.ONLY,
+                )
+            )
+        }
+
+        submitList(groupedList)
+    }
+
+    private fun sortAlertsForClarity(items: List<WatchItemUiState>): List<WatchItemUiState> {
+        return items.sortedWith(
+            compareByDescending<WatchItemUiState> { it.item.isTriggered || TriggerSeenTracker.isNew(it.item) }
+                .thenBy { if (it.item.isActive) 0 else 1 }
+                .thenBy { overviewDisplayName(it.item).lowercase() }
+                .thenBy { it.item.watchType.kind.displayName.lowercase() }
+                .thenByDescending { it.item.id }
+        )
+    }
+
+    private fun buildStocksList(items: List<WatchItemUiState>) {
+        val stockItems = items.filter {
+            it.item.watchType !is WatchType.PricePair && it.item.ticker != null
+        }
+        val groups = stockItems
+            .groupBy { requireNotNull(it.item.ticker) }
+            .toList()
+            .sortedBy { (symbol, groupItems) ->
+                groupItems.firstOrNull()?.item?.companyName?.lowercase() ?: symbol.lowercase()
+            }
+
+        val groupedList = mutableListOf<GroupedListItem>()
+        if (groups.isNotEmpty()) {
+            groupedList.add(
+                GroupedListItem.StocksHeader(
+                    stockCount = groups.size,
+                    watchCount = stockItems.size,
+                )
+            )
+        }
+
+        groups.forEach { (symbol, groupItems) ->
+            val representative = groupItems.first()
+            val live = groupItems.firstOrNull { it.live.currentPrice > 0.0 }?.live ?: representative.live
+            groupedList.add(
+                GroupedListItem.MultipleWatchesWrapper(
+                    symbol = symbol,
+                    companyName = representative.item.companyName,
+                    watchCount = groupItems.size,
+                    triggeredCount = groupItems.count { it.item.isTriggered || TriggerSeenTracker.isNew(it.item) },
+                    currentPrice = live.currentPrice,
+                    dailyChangePercent = live.currentDailyChangePercent,
+                    watchItems = groupItems.map { it.item },
+                )
+            )
+        }
 
         submitList(groupedList)
     }
@@ -349,17 +496,12 @@ class GroupedWatchItemAdapter(
             if (groupIndex > 0) {
                 groupedList.add(GroupedListItem.GroupSeparator(groupedList.size))
             }
-            groupItems.forEachIndexed { index, uiState ->
-                val groupPosition = when (index) {
-                    0 -> if (groupItems.size == 1) GroupPosition.ONLY else GroupPosition.FIRST
-                    groupItems.lastIndex -> GroupPosition.LAST
-                    else -> GroupPosition.MIDDLE
-                }
+            groupItems.forEach { uiState ->
                 groupedList.add(
                     GroupedListItem.WatchItemWrapper(
                         item = uiState.item,
                         live = uiState.live,
-                        groupPosition = groupPosition,
+                        groupPosition = GroupPosition.ONLY,
                         nearTriggerLabel = nearLabels[uiState.item.id]
                     )
                 )
@@ -576,6 +718,25 @@ class GroupedWatchItemAdapter(
         }
     }
 
+    inner class AlertsSummaryViewHolder(
+        private val composeView: ComposeView
+    ) : RecyclerView.ViewHolder(composeView) {
+        fun bind(summary: GroupedListItem.AlertsSummary) {
+            composeView.setContent {
+                StockFlipTheme {
+                    ClarityAlertsSummaryCard(
+                        triggeredTodayCount = summary.triggeredTodayCount,
+                        activeCount = summary.activeCount,
+                        totalCount = summary.totalCount,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 8.dp, vertical = 6.dp)
+                    )
+                }
+            }
+        }
+    }
+
     inner class OverviewSummaryViewHolder(
         private val composeView: ComposeView
     ) : RecyclerView.ViewHolder(composeView) {
@@ -590,6 +751,33 @@ class GroupedWatchItemAdapter(
                             .fillMaxWidth()
                             .padding(horizontal = NP.cardOuterH, vertical = NP.cardOuterV)
                     )
+                }
+            }
+        }
+    }
+
+    inner class StocksHeaderViewHolder(
+        private val composeView: ComposeView
+    ) : RecyclerView.ViewHolder(composeView) {
+        fun bind(header: GroupedListItem.StocksHeader) {
+            composeView.setContent {
+                StockFlipTheme {
+                    androidx.compose.foundation.layout.Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 10.dp)
+                    ) {
+                        androidx.compose.material3.Text(
+                            text = "Aktier",
+                            style = androidx.compose.material3.MaterialTheme.typography.headlineMedium,
+                            color = androidx.compose.material3.MaterialTheme.colorScheme.onBackground,
+                        )
+                        androidx.compose.material3.Text(
+                            text = "${header.stockCount} aktier · ${header.watchCount} bevakningar",
+                            style = androidx.compose.material3.MaterialTheme.typography.bodyMedium,
+                            color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
                 }
             }
         }
@@ -643,6 +831,11 @@ class GroupedWatchItemAdapter(
                         onLongClick = if (onItemLongClick != null) ({ onItemLongClick.invoke(item) }) else null,
                         containerColor = effectiveContainerColor,
                         pairCardPresentation = pairCardPresentation,
+                        watchItemCardPresentation = if (displayMode == DisplayMode.OVERVIEW || displayMode == DisplayMode.ALERTS) {
+                            WatchItemCardPresentation.ClarityCase
+                        } else {
+                            WatchItemCardPresentation.Default
+                        },
                     )
                 }
             }
@@ -663,10 +856,11 @@ class GroupedWatchItemAdapter(
                         currentPrice = wrapper.currentPrice,
                         dailyChangePercent = wrapper.dailyChangePercent,
                         priceFormat = { value -> CurrencyHelper.formatDecimal(value) },
+                        presentation = MultipleWatchesPresentation.Clarity,
                         modifier = Modifier
                             .fillMaxWidth()
                             .clickable(onClick = onClick)
-                            .padding(horizontal = NP.cardOuterH, vertical = NP.cardOuterV)
+                            .padding(horizontal = 8.dp, vertical = 6.dp)
                     )
                 }
             }
@@ -676,7 +870,9 @@ class GroupedWatchItemAdapter(
     class GroupedListItemDiffCallback : DiffUtil.ItemCallback<GroupedListItem>() {
         override fun areItemsTheSame(oldItem: GroupedListItem, newItem: GroupedListItem): Boolean {
             return when {
+                oldItem is GroupedListItem.AlertsSummary && newItem is GroupedListItem.AlertsSummary -> true
                 oldItem is GroupedListItem.OverviewSummary && newItem is GroupedListItem.OverviewSummary -> true
+                oldItem is GroupedListItem.StocksHeader && newItem is GroupedListItem.StocksHeader -> true
                 oldItem is GroupedListItem.Header && newItem is GroupedListItem.Header ->
                     oldItem.title == newItem.title
                 oldItem is GroupedListItem.WatchItemWrapper && newItem is GroupedListItem.WatchItemWrapper ->
@@ -691,7 +887,11 @@ class GroupedWatchItemAdapter(
 
         override fun areContentsTheSame(oldItem: GroupedListItem, newItem: GroupedListItem): Boolean {
             return when {
+                oldItem is GroupedListItem.AlertsSummary && newItem is GroupedListItem.AlertsSummary ->
+                    oldItem == newItem
                 oldItem is GroupedListItem.OverviewSummary && newItem is GroupedListItem.OverviewSummary ->
+                    oldItem == newItem
+                oldItem is GroupedListItem.StocksHeader && newItem is GroupedListItem.StocksHeader ->
                     oldItem == newItem
                 oldItem is GroupedListItem.Header && newItem is GroupedListItem.Header ->
                     oldItem.title == newItem.title

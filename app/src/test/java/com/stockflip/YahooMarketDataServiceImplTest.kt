@@ -75,6 +75,76 @@ class YahooMarketDataServiceImplTest {
     }
 
     @Test
+    fun `getDailyChangePercent returns direct market change percent when present`() = kotlinx.coroutines.runBlocking {
+        mockWebServer.enqueue(okResponse("""
+            {
+              "chart": {
+                "result": [
+                  {
+                    "meta": {
+                      "regularMarketPrice": 300.12,
+                      "regularMarketPreviousClose": 295.0,
+                      "regularMarketChangePercent": -1.25
+                    }
+                  }
+                ],
+                "error": null
+              }
+            }
+        """.trimIndent()))
+
+        val actualChangePercent: Double? = service.getDailyChangePercent("VOLV-B.ST")
+
+        assertEquals(-1.25, actualChangePercent!!, 0.0001)
+    }
+
+    @Test
+    fun `getDailyChangePercent falls back to chart previous close`() = kotlinx.coroutines.runBlocking {
+        mockWebServer.enqueue(okResponse("""
+            {
+              "chart": {
+                "result": [
+                  {
+                    "meta": {
+                      "regularMarketPrice": 300.12,
+                      "chartPreviousClose": 295.0
+                    }
+                  }
+                ],
+                "error": null
+              }
+            }
+        """.trimIndent()))
+
+        val actualChangePercent: Double? = service.getDailyChangePercent("VOLV-B.ST")
+        val expectedChangePercent: Double = ((300.12 - 295.0) / 295.0) * 100.0
+
+        assertEquals(expectedChangePercent, actualChangePercent!!, 0.0001)
+    }
+
+    @Test
+    fun `getPreviousClose falls back to chart previous close`() = kotlinx.coroutines.runBlocking {
+        mockWebServer.enqueue(okResponse("""
+            {
+              "chart": {
+                "result": [
+                  {
+                    "meta": {
+                      "chartPreviousClose": 295.0
+                    }
+                  }
+                ],
+                "error": null
+              }
+            }
+        """.trimIndent()))
+
+        val actualPreviousClose: Double? = service.getPreviousClose("VOLV-B.ST")
+
+        assertEquals(295.0, actualPreviousClose!!, 0.0001)
+    }
+
+    @Test
     fun `getAllTimeHigh returns highest historical high`() = kotlinx.coroutines.runBlocking {
         mockWebServer.enqueue(okResponse("""
             {

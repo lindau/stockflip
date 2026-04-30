@@ -112,7 +112,7 @@ class YahooMarketDataServiceImpl(
                 Log.e(TAG, "No result found while fetching previous close")
                 return@withContext null
             }
-            val previousClose: Double? = result.meta?.regularMarketPreviousClose
+            val previousClose: Double? = (result.meta?.regularMarketPreviousClose ?: result.meta?.chartPreviousClose)
             if (previousClose == null || previousClose.isNaN() || previousClose <= 0.0) {
                 Log.w(TAG, "No valid previous close found")
                 return@withContext null
@@ -135,9 +135,23 @@ class YahooMarketDataServiceImpl(
                 Log.e(TAG, "No result found while fetching daily change")
                 return@withContext null
             }
-            val currentPrice: Double? = result.meta?.regularMarketPrice
-            val previousClose: Double? = result.meta?.regularMarketPreviousClose
-            if (currentPrice == null || previousClose == null || previousClose <= 0.0) {
+            val meta: Meta = result.meta ?: run {
+                Log.e(TAG, "No meta found while fetching daily change")
+                return@withContext null
+            }
+            val directChangePercent = meta.regularMarketChangePercent?.takeIf { !it.isNaN() }
+            if (directChangePercent != null) {
+                return@withContext directChangePercent
+            }
+            val currentPrice: Double? = meta.regularMarketPrice
+            val previousClose: Double? = meta.regularMarketPreviousClose ?: meta.chartPreviousClose
+            if (
+                currentPrice == null ||
+                currentPrice.isNaN() ||
+                previousClose == null ||
+                previousClose.isNaN() ||
+                previousClose <= 0.0
+            ) {
                 Log.w(TAG, "Cannot compute daily change from response data")
                 return@withContext null
             }

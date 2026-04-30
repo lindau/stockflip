@@ -29,16 +29,17 @@
                 android:textAppearance="?attr/textAppearanceLabelLarge"
                 android:textColor="?attr/colorOnSurfaceVariant"
                 android:layout_marginStart="12dp"
-                android:layout_marginBottom="4dp" />
+                android:layout_marginBottom="4dp"
+                android:visibility="gone" />
 
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/triggerBannerCard"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginHorizontal="12dp"
+                android:layout_marginHorizontal="16dp"
                 android:layout_marginBottom="12dp"
                 android:visibility="gone"
-                app:cardCornerRadius="12dp"
+                app:cardCornerRadius="18dp"
                 app:cardElevation="0dp"
                 app:strokeWidth="1dp"
                 app:strokeColor="?attr/colorOutlineVariant"
@@ -48,7 +49,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:padding="12dp">
+                    android:padding="16dp">
 
                     <TextView
                         android:id="@+id/triggerBannerTitle"
@@ -93,17 +94,27 @@
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
+            <androidx.compose.ui.platform.ComposeView
+                android:id="@+id/stockClarityPanel"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="16dp"
+                android:layout_marginBottom="16dp" />
+
             <!-- Stock Info Card — behåller kortstrukturen för pris + nyckeltal -->
             <com.google.android.material.card.MaterialCardView
+                android:id="@+id/stockInfoCard"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="12dp"
                 android:layout_marginEnd="12dp"
                 android:layout_marginBottom="16dp"
-                app:cardCornerRadius="10dp"
+                android:visibility="gone"
+                app:cardCornerRadius="22dp"
                 app:cardElevation="0dp"
                 app:strokeWidth="1dp"
-                app:strokeColor="?attr/colorOutlineVariant">
+                app:strokeColor="?attr/colorOutlineVariant"
+                tools:visibility="visible">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -419,9 +430,9 @@
                 android:id="@+id/yourLevelsCard"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginHorizontal="12dp"
+                android:layout_marginHorizontal="16dp"
                 android:layout_marginBottom="16dp"
-                app:cardCornerRadius="10dp"
+                app:cardCornerRadius="18dp"
                 app:cardElevation="0dp"
                 app:strokeWidth="1dp"
                 app:strokeColor="?attr/colorOutlineVariant">
@@ -430,7 +441,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:padding="12dp">
+                    android:padding="16dp">
 
                     <LinearLayout
                         android:layout_width="match_parent"
@@ -479,10 +490,10 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Bevakningar"
-                android:textAppearance="?attr/textAppearanceLabelLarge"
-                android:textColor="?attr/colorOnSurfaceVariant"
-                android:layout_marginStart="12dp"
-                android:layout_marginBottom="4dp" />
+                android:textAppearance="?attr/textAppearanceTitleMedium"
+                android:textColor="?attr/colorOnSurface"
+                android:layout_marginStart="20dp"
+                android:layout_marginBottom="6dp" />
 
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/alertsRecyclerView"
@@ -509,7 +520,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:paddingHorizontal="12dp"
+                android:paddingHorizontal="16dp"
                 android:paddingTop="12dp"
                 android:paddingBottom="4dp">
 
@@ -525,33 +536,33 @@
                 <com.google.android.material.chip.ChipGroup
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    app:chipSpacingVertical="4dp"
-                    app:chipSpacingHorizontal="4dp">
+                    app:chipSpacingVertical="8dp"
+                    app:chipSpacingHorizontal="8dp">
 
                     <com.google.android.material.chip.Chip
                         android:id="@+id/createPriceTargetButton"
-                        style="@style/Widget.Material3.Chip.Assist"
+                        style="@style/Widget.StockFlip.AssistChip"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Målpris" />
 
                     <com.google.android.material.chip.Chip
                         android:id="@+id/createDrawdownButton"
-                        style="@style/Widget.Material3.Chip.Assist"
+                        style="@style/Widget.StockFlip.AssistChip"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Drawdown" />
 
                     <com.google.android.material.chip.Chip
                         android:id="@+id/createDailyMoveButton"
-                        style="@style/Widget.Material3.Chip.Assist"
+                        style="@style/Widget.StockFlip.AssistChip"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Dagsrörelse" />
 
                     <com.google.android.material.chip.Chip
                         android:id="@+id/createKeyMetricsButton"
-                        style="@style/Widget.Material3.Chip.Assist"
+                        style="@style/Widget.StockFlip.AssistChip"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Nyckeltal" />
@@ -563,18 +574,21 @@
             <!-- Anteckningar -->
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/notesCard"
-                style="@style/Widget.Material3.CardView.Elevated"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginHorizontal="12dp"
+                android:layout_marginHorizontal="16dp"
                 android:layout_marginTop="12dp"
-                android:layout_marginBottom="16dp">
+                android:layout_marginBottom="16dp"
+                app:cardCornerRadius="18dp"
+                app:cardElevation="0dp"
+                app:strokeWidth="1dp"
+                app:strokeColor="?attr/colorOutlineVariant">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:padding="12dp">
+                    android:padding="16dp">
 
                     <TextView
                         android:layout_width="match_parent"

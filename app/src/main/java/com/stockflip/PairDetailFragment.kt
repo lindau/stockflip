@@ -12,7 +12,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import com.stockflip.databinding.FragmentPairDetailBinding
 import com.stockflip.repository.TriggerHistoryRepository
-import com.stockflip.ui.components.PairPerformanceChart
+import com.stockflip.ui.components.cards.ClarityPairDetailPanel
 import com.stockflip.ui.theme.StockFlipTheme
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
@@ -27,6 +27,10 @@ class PairDetailFragment : Fragment() {
 
     private lateinit var viewModel: PairDetailViewModel
     private var triggerBannerDismissed = false
+    private var latestPairData: PairDetailData? = null
+    private var latestChartData: PairChartData? = null
+    private var latestChartPeriod: ChartPeriod = ChartPeriod.DAY
+    private var latestHistory: List<Long> = emptyList()
 
     private fun syncOverviewInBackground() {
         (activity as? MainActivity)?.syncWatchItemsAfterDetailChange()
@@ -66,13 +70,9 @@ class PairDetailFragment : Fragment() {
         }
         viewModel = ViewModelProvider(this, factory)[PairDetailViewModel::class.java]
 
-        binding.editPairButton.setOnClickListener {
-            val data = (viewModel.pairState.value as? UiState.Success)?.data ?: return@setOnClickListener
-            (requireActivity() as? MainActivity)?.showEditDialogFromPairs(data.watchItem)
-        }
+        binding.editPairButton.setOnClickListener { editPair() }
         binding.toggleActiveButton.setOnClickListener {
-            viewModel.toggleActive()
-            syncOverviewInBackground()
+            togglePairActive()
         }
         binding.triggerReactivateButton.setOnClickListener {
             viewModel.reactivate()
@@ -110,8 +110,10 @@ class PairDetailFragment : Fragment() {
                     }
                     is UiState.Success -> {
                         binding.loadingIndicator.isVisible = false
+                        latestPairData = state.data
                         try {
                             renderPair(state.data)
+                            renderClarityPairPanel()
                             renderTriggerBanner(state.data)
                         } catch (e: Exception) {
                             android.util.Log.e(TAG, "Error rendering pair detail: ${e.message}", e)
@@ -133,23 +135,19 @@ class PairDetailFragment : Fragment() {
                         is UiState.Loading -> { /* no-op */ }
                         is UiState.Success -> {
                             try {
-                                binding.spreadChartView.isVisible = true
-                                binding.spreadChartView.setContent {
-                                    StockFlipTheme {
-                                        PairPerformanceChart(
-                                            data = state.data,
-                                            selectedPeriod = period,
-                                            onPeriodSelected = { viewModel.selectPeriod(it) }
-                                        )
-                                    }
-                                }
+                                latestChartData = state.data
+                                latestChartPeriod = period
+                                binding.spreadChartView.isVisible = false
+                                renderClarityPairPanel()
                             } catch (e: Exception) {
                                 android.util.Log.e(TAG, "Error rendering pair chart: ${e.message}", e)
                                 binding.spreadChartView.isVisible = false
                             }
                         }
                         is UiState.Error -> {
+                            latestChartData = null
                             binding.spreadChartView.isVisible = false
+                            renderClarityPairPanel()
                         }
                     }
                 }
@@ -157,7 +155,36 @@ class PairDetailFragment : Fragment() {
 
         viewLifecycleOwner.lifecycleScope.launch {
             viewModel.historyState.collect { history ->
+                latestHistory = history
                 renderHistory(history)
+                renderClarityPairPanel()
+            }
+        }
+    }
+
+    private fun editPair() {
+        val data = latestPairData ?: (viewModel.pairState.value as? UiState.Success)?.data ?: return
+        (requireActivity() as? MainActivity)?.showEditDialogFromPairs(data.watchItem)
+    }
+
+    private fun togglePairActive() {
+        viewModel.toggleActive()
+        syncOverviewInBackground()
+    }
+
+    private fun renderClarityPairPanel() {
+        val data = latestPairData ?: return
+        binding.pairClarityPanel.setContent {
+            StockFlipTheme {
+                ClarityPairDetailPanel(
+                    data = data,
+                    chartData = latestChartData,
+                    selectedPeriod = latestChartPeriod,
+                    history = latestHistory,
+                    onPeriodSelected = { viewModel.selectPeriod(it) },
+                    onEdit = { editPair() },
+                    onToggleActive = { togglePairActive() },
+                )
             }
         }
     }

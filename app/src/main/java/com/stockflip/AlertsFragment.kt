@@ -280,9 +280,10 @@ class AlertsFragment : Fragment() {
             selectionMode = false
         }
 
-        groupedAdapter.submitGroupedList(filteredItems)
+        groupedAdapter.submitAlertsList(filteredItems, latestItems)
         groupedAdapter.setSelectionMode(selectionMode)
         groupedAdapter.setSelectedItemIds(selectedRuleIds)
+        updateHeaderState()
         updateBatchActionState()
         val showEmpty = filteredItems.isEmpty()
         binding.emptyStateContainer.visibility = if (showEmpty) View.VISIBLE else View.GONE
@@ -304,6 +305,16 @@ class AlertsFragment : Fragment() {
                 AlertsFilter.PAIRS -> "Skapa ett aktiepar för att hantera parkonvergens här."
             }
         }
+    }
+
+    private fun updateHeaderState() {
+        val today = WatchItem.getTodayDateString()
+        val triggeredTodayCount = latestItems.count {
+            it.item.isTriggered && it.item.lastTriggeredDate == today
+        }
+        val activeCount = latestItems.count { it.item.isActive }
+        binding.rulesTitle.text = "Bevakningar"
+        binding.rulesSubtitle.text = "$triggeredTodayCount utlösta idag · $activeCount aktiva"
     }
 
     private fun enterSelectionMode(firstItem: WatchItem) {

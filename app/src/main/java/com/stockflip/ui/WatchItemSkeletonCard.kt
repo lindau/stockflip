@@ -12,7 +12,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.unit.dp
-import com.stockflip.ui.theme.NP
 
 @Composable
 fun WatchItemSkeletonCard(modifier: Modifier = Modifier) {
@@ -42,10 +41,10 @@ fun WatchItemSkeletonCard(modifier: Modifier = Modifier) {
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = NP.cardOuterH, vertical = NP.cardOuterV)
-            .clip(RoundedCornerShape(12.dp))
+            .padding(horizontal = 16.dp, vertical = 5.dp)
+            .clip(RoundedCornerShape(22.dp))
             .background(brush)
-            .height(72.dp)
+            .height(104.dp)
     )
 }
 
