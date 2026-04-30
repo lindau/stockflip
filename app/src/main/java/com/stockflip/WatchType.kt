@@ -26,7 +26,7 @@ sealed class WatchType {
             isLegacyManaged = false
         ),
         ATH_BASED(
-            displayName = "52-veckorshögsta",
+            displayName = "Drawdown",
             isLegacyManaged = false
         ),
         PRICE_RANGE(
@@ -76,14 +76,25 @@ sealed class WatchType {
     }
 
     /**
-     * Watch for when a stock has dropped from its All-Time High (ATH).
-     * Använder 52-veckors högsta enligt PRD.
+     * Watch for when a stock has dropped from a selected high reference.
      */
     data class ATHBased(
         val dropType: DropType,
-        val dropValue: Double
+        val dropValue: Double,
+        val reference: HighReference = HighReference.FIFTY_TWO_WEEK_HIGH
     ) : WatchType() {
         override val kind: Kind = Kind.ATH_BASED
+
+        init {
+            when (dropType) {
+                DropType.PERCENTAGE -> require(dropValue > 0 && dropValue <= 100) {
+                    "dropValue måste vara mellan 0 och 100 för PERCENTAGE"
+                }
+                DropType.ABSOLUTE -> require(dropValue > 0) {
+                    "dropValue måste vara större än 0 för ABSOLUTE"
+                }
+            }
+        }
     }
 
     /**
@@ -142,8 +153,13 @@ sealed class WatchType {
     }
 
     enum class DropType {
-        PERCENTAGE,  // Drop in percentage from ATH (52w high)
-        ABSOLUTE     // Drop in absolute value (SEK) from ATH (52w high)
+        PERCENTAGE,  // Drop in percentage from selected high
+        ABSOLUTE     // Drop in absolute value from selected high
+    }
+
+    enum class HighReference {
+        FIFTY_TWO_WEEK_HIGH,
+        ALL_TIME_HIGH
     }
 
     enum class DailyMoveDirection {

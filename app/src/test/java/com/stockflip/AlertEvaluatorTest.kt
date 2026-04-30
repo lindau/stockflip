@@ -209,6 +209,43 @@ class AlertEvaluatorTest {
     }
 
     @Test
+    fun `evaluate SingleDrawdownFromHigh should return true when all-time high drawdown is reached`() {
+        val rule = AlertRule.SingleDrawdownFromHigh(
+            symbol = "AAPL",
+            dropType = AlertRule.DrawdownDropType.PERCENTAGE,
+            dropValue = 25.0,
+            reference = AlertRule.HighReference.ALL_TIME_HIGH
+        )
+        val snapshot = MarketSnapshot.forSingleStock(
+            lastPrice = 75.0,
+            previousClose = null,
+            allTimeHigh = 100.0
+        )
+
+        val result = AlertEvaluator.evaluate(rule, snapshot)
+
+        assertTrue("Should trigger when all-time-high drawdown is reached", result)
+    }
+
+    @Test
+    fun `evaluate SingleDrawdownFromHigh should return false when allTimeHigh is null`() {
+        val rule = AlertRule.SingleDrawdownFromHigh(
+            symbol = "AAPL",
+            dropType = AlertRule.DrawdownDropType.PERCENTAGE,
+            dropValue = 25.0,
+            reference = AlertRule.HighReference.ALL_TIME_HIGH
+        )
+        val snapshot = MarketSnapshot.forSingleStock(
+            lastPrice = 75.0,
+            previousClose = null
+        )
+
+        val result = AlertEvaluator.evaluate(rule, snapshot)
+
+        assertFalse("Should not trigger when allTimeHigh is null", result)
+    }
+
+    @Test
     fun `evaluate SingleDailyMove UP should return true when daily change is above threshold`() {
         // Given
         val rule = AlertRule.SingleDailyMove(

@@ -74,6 +74,41 @@ class YahooMarketDataServiceImplTest {
         assertEquals(expectedChangePercent, actualChangePercent!!, 0.0001)
     }
 
+    @Test
+    fun `getAllTimeHigh returns highest historical high`() = kotlinx.coroutines.runBlocking {
+        mockWebServer.enqueue(okResponse("""
+            {
+              "chart": {
+                "result": [
+                  {
+                    "meta": {
+                      "regularMarketPrice": 300.12,
+                      "fiftyTwoWeekHigh": 320.0,
+                      "regularMarketDayHigh": 301.0
+                    },
+                    "timestamp": [1, 2, 3],
+                    "indicators": {
+                      "quote": [
+                        {
+                          "high": [310.0, 450.5, 400.0],
+                          "close": [300.0, 430.0, 390.0]
+                        }
+                      ]
+                    }
+                  }
+                ],
+                "error": null
+              }
+            }
+        """.trimIndent()))
+
+        val actualHigh = service.getAllTimeHigh("VOLV-B.ST")
+
+        assertEquals(450.5, actualHigh!!, 0.0001)
+        val request = mockWebServer.takeRequest()
+        assertEquals("/v8/finance/chart/VOLV-B.ST?range=max&interval=1mo", request.path)
+    }
+
     private fun okResponse(body: String): MockResponse {
         return MockResponse()
             .setResponseCode(200)
@@ -87,4 +122,3 @@ class YahooMarketDataServiceImplTest {
         return inputStream.bufferedReader(Charsets.UTF_8).use { it.readText() }
     }
 }
-

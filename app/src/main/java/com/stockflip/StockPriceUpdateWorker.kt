@@ -186,14 +186,29 @@ class StockPriceUpdateWorker(
         // Collect unique tickers and which key metrics are needed per ticker
         val tickers = mutableSetOf<String>()
         val keyMetricNeeds = mutableMapOf<String, MutableSet<WatchType.MetricType>>()
+        val week52HighNeeds = mutableSetOf<String>()
+        val allTimeHighNeeds = mutableSetOf<String>()
         for (item in activeItems) {
             item.ticker?.let { tickers.add(it) }
             item.ticker1?.let { tickers.add(it) }
             item.ticker2?.let { tickers.add(it) }
-            if (item.watchType is WatchType.KeyMetrics) {
-                val ticker = item.ticker ?: continue
-                val metricType = item.watchType.metricType
-                keyMetricNeeds.getOrPut(ticker) { mutableSetOf() }.add(metricType)
+            when (val watchType = item.watchType) {
+                is WatchType.KeyMetrics -> {
+                    val ticker = item.ticker ?: continue
+                    keyMetricNeeds.getOrPut(ticker) { mutableSetOf() }.add(watchType.metricType)
+                }
+                is WatchType.ATHBased -> item.ticker?.let {
+                    when (watchType.reference) {
+                        WatchType.HighReference.FIFTY_TWO_WEEK_HIGH -> week52HighNeeds.add(it)
+                        WatchType.HighReference.ALL_TIME_HIGH -> allTimeHighNeeds.add(it)
+                    }
+                }
+                is WatchType.Combined -> {
+                    tickers.addAll(watchType.expression.getSymbols())
+                    week52HighNeeds.addAll(watchType.expression.week52HighSymbols())
+                    allTimeHighNeeds.addAll(watchType.expression.allTimeHighSymbols())
+                }
+                else -> Unit
             }
         }
 
@@ -203,7 +218,8 @@ class StockPriceUpdateWorker(
             try {
                 val price = marketDataService.getStockPrice(ticker)
                 val prevClose = marketDataService.getPreviousClose(ticker)
-                val week52High = marketDataService.getATH(ticker)
+                val week52High = if (ticker in week52HighNeeds) marketDataService.getATH(ticker) else null
+                val allTimeHigh = if (ticker in allTimeHighNeeds) marketDataService.getAllTimeHigh(ticker) else null
                 val metricsMap = mutableMapOf<AlertRule.KeyMetricType, Double>()
                 keyMetricNeeds[ticker]?.forEach { metricType ->
                     val alertMetricType = when (metricType) {
@@ -213,7 +229,13 @@ class StockPriceUpdateWorker(
                     }
                     marketDataService.getKeyMetric(ticker, metricType)?.let { metricsMap[alertMetricType] = it }
                 }
-                snapshots[ticker] = MarketSnapshot.forSingleStock(price, prevClose, week52High, metricsMap)
+                snapshots[ticker] = MarketSnapshot.forSingleStock(
+                    lastPrice = price,
+                    previousClose = prevClose,
+                    week52High = week52High,
+                    keyMetrics = metricsMap,
+                    allTimeHigh = allTimeHigh
+                )
             } catch (e: Exception) {
                 Log.w(TAG, "Failed to fetch market snapshot: ${e.message}")
             }
@@ -303,6 +325,32 @@ class StockPriceUpdateWorker(
         }
     }
 
+    private fun AlertExpression.week52HighSymbols(): Set<String> {
+        return when (this) {
+            is AlertExpression.Single -> when (val singleRule = this.rule) {
+                is AlertRule.SingleDrawdownFromHigh ->
+                    if (singleRule.reference == AlertRule.HighReference.FIFTY_TWO_WEEK_HIGH) setOf(singleRule.symbol) else emptySet()
+                else -> emptySet()
+            }
+            is AlertExpression.And -> left.week52HighSymbols() + right.week52HighSymbols()
+            is AlertExpression.Or -> left.week52HighSymbols() + right.week52HighSymbols()
+            is AlertExpression.Not -> inner.week52HighSymbols()
+        }
+    }
+
+    private fun AlertExpression.allTimeHighSymbols(): Set<String> {
+        return when (this) {
+            is AlertExpression.Single -> when (val singleRule = this.rule) {
+                is AlertRule.SingleDrawdownFromHigh ->
+                    if (singleRule.reference == AlertRule.HighReference.ALL_TIME_HIGH) setOf(singleRule.symbol) else emptySet()
+                else -> emptySet()
+            }
+            is AlertExpression.And -> left.allTimeHighSymbols() + right.allTimeHighSymbols()
+            is AlertExpression.Or -> left.allTimeHighSymbols() + right.allTimeHighSymbols()
+            is AlertExpression.Not -> inner.allTimeHighSymbols()
+        }
+    }
+
     private fun buildTriggerNotificationPayload(
         item: WatchItem,
         snapshots: Map<String, MarketSnapshot>
@@ -321,17 +369,28 @@ class StockPriceUpdateWorker(
             is WatchType.ATHBased -> {
                 val ticker = item.ticker ?: ""
                 val snapshot = snapshots[ticker]
+                val referenceLabel = when (watchType.reference) {
+                    WatchType.HighReference.FIFTY_TWO_WEEK_HIGH -> "52v högsta"
+                    WatchType.HighReference.ALL_TIME_HIGH -> "högsta pris"
+                }
+                fun selectedHigh(snapshot: MarketSnapshot?): Double? {
+                    return when (watchType.reference) {
+                        WatchType.HighReference.FIFTY_TWO_WEEK_HIGH -> snapshot?.week52High
+                        WatchType.HighReference.ALL_TIME_HIGH -> snapshot?.allTimeHigh
+                    }
+                }
                 when (watchType.dropType) {
                     WatchType.DropType.PERCENTAGE -> {
                         val drawdown = snapshot?.let {
                             val currentPrice = it.lastPrice
-                            val week52High = it.week52High
-                            if (currentPrice != null && week52High != null && week52High > 0.0) {
-                                ((week52High - currentPrice) / week52High) * 100
+                            val high = selectedHigh(it)
+                            if (currentPrice != null && high != null && high > 0.0) {
+                                val effectiveHigh = if (currentPrice > high) currentPrice else high
+                                ((effectiveHigh - currentPrice) / effectiveHigh) * 100
                             } else null
                         } ?: watchType.dropValue
                         TriggerNotificationPayload(
-                            title = "${item.companyName ?: ticker} har fallit ${CurrencyHelper.formatDecimal(drawdown)} %",
+                            title = "${item.companyName ?: ticker} har fallit ${CurrencyHelper.formatDecimal(drawdown)} % från $referenceLabel",
                             message = "Din drawdown-nivå på ${CurrencyHelper.formatDecimal(watchType.dropValue)} % är nådd."
                         )
                     }
@@ -339,13 +398,14 @@ class StockPriceUpdateWorker(
                     WatchType.DropType.ABSOLUTE -> {
                         val drop = snapshot?.let {
                             val currentPrice = it.lastPrice
-                            val week52High = it.week52High
-                            if (currentPrice != null && week52High != null) {
-                                week52High - currentPrice
+                            val high = selectedHigh(it)
+                            if (currentPrice != null && high != null) {
+                                val effectiveHigh = if (currentPrice > high) currentPrice else high
+                                effectiveHigh - currentPrice
                             } else null
                         } ?: watchType.dropValue
                         TriggerNotificationPayload(
-                            title = "${item.companyName ?: ticker} har tappat ${formatPrice(drop)} från toppen",
+                            title = "${item.companyName ?: ticker} har tappat ${formatPrice(drop)} från $referenceLabel",
                             message = "Din drawdown-nivå på ${formatPrice(watchType.dropValue)} är nådd."
                         )
                     }

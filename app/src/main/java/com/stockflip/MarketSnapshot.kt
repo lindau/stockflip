@@ -8,6 +8,7 @@ package com.stockflip
  * - lastPrice
  * - previousClose (för dagsförändring)
  * - week52High (för drawdown)
+ * - allTimeHigh (för historisk drawdown)
  * - dailyChangePercent (beräknat från lastPrice och previousClose)
  * 
  * Enligt PRD Fas 2 behöver vi även:
@@ -30,6 +31,11 @@ data class MarketSnapshot(
      * 52-veckors högsta (används för drawdown-bevakning)
      */
     val week52High: Double? = null,
+
+    /**
+     * Historiskt högsta pris (används för bevakning från högsta pris).
+     */
+    val allTimeHigh: Double? = null,
     
     /**
      * Nyckeltal (används för KeyMetrics-bevakning, Fas 2).
@@ -59,12 +65,14 @@ data class MarketSnapshot(
             lastPrice: Double?,
             previousClose: Double?,
             week52High: Double? = null,
-            keyMetrics: Map<AlertRule.KeyMetricType, Double> = emptyMap()
+            keyMetrics: Map<AlertRule.KeyMetricType, Double> = emptyMap(),
+            allTimeHigh: Double? = null
         ): MarketSnapshot {
             return MarketSnapshot(
                 lastPrice = lastPrice,
                 previousCloseOrPriceB = previousClose,
                 week52High = week52High,
+                allTimeHigh = allTimeHigh,
                 keyMetrics = keyMetrics
             )
         }
@@ -79,9 +87,9 @@ data class MarketSnapshot(
             return MarketSnapshot(
                 lastPrice = priceA,
                 previousCloseOrPriceB = priceB,
-                week52High = null
+                week52High = null,
+                allTimeHigh = null
             )
         }
     }
 }
-

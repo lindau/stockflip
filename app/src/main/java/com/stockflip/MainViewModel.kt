@@ -267,22 +267,26 @@ class MainViewModel(
                         }
                         is WatchType.ATHBased -> {
                             if (item.ticker != null) {
-                                Log.d(TAG, "Fetching ATH, price and daily change for ATH watch item")
-                                val ath = yahooFinanceService.getATH(item.ticker)
+                                Log.d(TAG, "Fetching drawdown high, price and daily change for watch item")
+                                val high = when (item.watchType.reference) {
+                                    WatchType.HighReference.FIFTY_TWO_WEEK_HIGH -> yahooFinanceService.getATH(item.ticker)
+                                    WatchType.HighReference.ALL_TIME_HIGH -> yahooFinanceService.getAllTimeHigh(item.ticker)
+                                }
                                 val price = yahooFinanceService.getStockPrice(item.ticker)
                                 val changePercent = yahooFinanceService.getDailyChangePercent(item.ticker)
-                                if (ath != null && price != null) {
-                                    Log.d(TAG, "Fetched ATH data for ATH watch item")
+                                if (high != null && price != null && high > 0.0) {
+                                    Log.d(TAG, "Fetched drawdown data for watch item")
+                                    val effectiveHigh = if (price > high) price else high
                                     WatchItemUiState(item, LiveWatchData(
-                                        currentATH = ath,
+                                        currentATH = effectiveHigh,
                                         currentPrice = price,
-                                        currentDropPercentage = ((ath - price) / ath) * 100,
-                                        currentDropAbsolute = ath - price,
+                                        currentDropPercentage = ((effectiveHigh - price) / effectiveHigh) * 100,
+                                        currentDropAbsolute = effectiveHigh - price,
                                         currentDailyChangePercent = changePercent,
                                         lastUpdatedAt = now
                                     ))
                                 } else {
-                                    Log.w(TAG, "Could not get ATH or price for ATH watch item")
+                                    Log.w(TAG, "Could not get drawdown high or price for watch item")
                                     WatchItemUiState(item, LiveWatchData(updateFailed = true))
                                 }
                             } else {

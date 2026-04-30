@@ -69,7 +69,11 @@ sealed class AlertExpression {
                         }
                     }
                     is AlertRule.SingleDrawdownFromHigh -> {
-                        "${rule.symbol} drawdown ${rule.dropValue}${if (rule.dropType == AlertRule.DrawdownDropType.PERCENTAGE) "%" else " SEK"}"
+                        val reference = when (rule.reference) {
+                            AlertRule.HighReference.FIFTY_TWO_WEEK_HIGH -> "52v"
+                            AlertRule.HighReference.ALL_TIME_HIGH -> "högsta pris"
+                        }
+                        "${rule.symbol} drawdown från $reference ${rule.dropValue}${if (rule.dropType == AlertRule.DrawdownDropType.PERCENTAGE) "%" else " SEK"}"
                     }
                     is AlertRule.SingleDailyMove -> {
                         "${rule.symbol} dagsrörelse ${rule.percentThreshold}%"
@@ -90,4 +94,3 @@ sealed class AlertExpression {
         }
     }
 }
-

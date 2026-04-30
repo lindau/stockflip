@@ -17,6 +17,7 @@ import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.stockflip.ui.SwipeToDeleteCallback
 import com.stockflip.ui.WatchItemSkeletonList
+import com.stockflip.ui.components.cards.PairCardPresentation
 import com.stockflip.ui.theme.StockFlipTheme
 import com.google.android.material.snackbar.Snackbar
 import com.stockflip.databinding.FragmentPairsBinding
@@ -100,7 +101,9 @@ class PairsFragment : Fragment() {
             },
             onItemClick = { watchItem ->
                 (requireActivity() as? MainActivity)?.navigateToPairDetailFromPairs(watchItem.id)
-            }
+            },
+            pairCardPresentation = PairCardPresentation.Clarity,
+            showPricePairHeader = false,
         )
 
         binding.pairsRecyclerView.apply {

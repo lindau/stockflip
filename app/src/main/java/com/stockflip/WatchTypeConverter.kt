@@ -14,7 +14,7 @@ class WatchTypeConverter {
             is WatchType.PricePair -> "PRICE_PAIR|${watchType.priceDifference}|${watchType.notifyWhenEqual}"
             is WatchType.PriceTarget -> "PRICE_TARGET|${watchType.targetPrice}|${watchType.direction.name}"
             is WatchType.KeyMetrics -> "KEY_METRICS|${watchType.metricType.name}|${watchType.targetValue}|${watchType.direction.name}"
-            is WatchType.ATHBased -> "ATH_BASED|${watchType.dropType.name}|${watchType.dropValue}"
+            is WatchType.ATHBased -> "ATH_BASED|${watchType.dropType.name}|${watchType.dropValue}|${watchType.reference.name}"
             is WatchType.PriceRange -> "PRICE_RANGE|${watchType.minPrice}|${watchType.maxPrice}"
             is WatchType.DailyMove -> "DAILY_MOVE|${watchType.percentThreshold}|${watchType.direction.name}"
             is WatchType.Combined -> {
@@ -45,7 +45,14 @@ class WatchTypeConverter {
             )
             "ATH_BASED" -> WatchType.ATHBased(
                 dropType = WatchType.DropType.valueOf(parts[1]),
-                dropValue = parts[2].toDouble()
+                dropValue = parts[2].toDouble(),
+                reference = parts.getOrNull(3)?.let { WatchType.HighReference.valueOf(it) }
+                    ?: WatchType.HighReference.FIFTY_TWO_WEEK_HIGH
+            )
+            "ALL_TIME_HIGH_DROP" -> WatchType.ATHBased(
+                dropType = WatchType.DropType.PERCENTAGE,
+                dropValue = parts[1].toDouble(),
+                reference = WatchType.HighReference.ALL_TIME_HIGH
             )
             "PRICE_RANGE" -> WatchType.PriceRange(
                 minPrice = parts[1].toDouble(),
@@ -67,4 +74,3 @@ class WatchTypeConverter {
         }
     }
 }
-

@@ -92,23 +92,24 @@ object AlertEvaluator {
     }
 
     /**
-     * Utvärderar drawdown från 52-veckors högsta.
+     * Utvärderar drawdown från vald toppnivå.
      * Stödjer både procentuell och absolut nedgång.
-     * Enligt PRD: "procentuell nedgång från 52w high ≥ Y %"
      */
     private fun evaluateSingleDrawdownFromHigh(
         rule: AlertRule.SingleDrawdownFromHigh,
         snapshot: MarketSnapshot
     ): Boolean {
         val currentPrice = snapshot.lastPrice ?: return false
-        val week52High = snapshot.week52High ?: return false
-        
-        if (week52High <= 0) {
+        val high = when (rule.reference) {
+            AlertRule.HighReference.FIFTY_TWO_WEEK_HIGH -> snapshot.week52High
+            AlertRule.HighReference.ALL_TIME_HIGH -> snapshot.allTimeHigh
+        } ?: return false
+
+        if (high <= 0) {
             return false
         }
-        
-        // Använd det högsta värdet (nuvarande pris eller 52w high)
-        val effectiveHigh = if (currentPrice > week52High) currentPrice else week52High
+
+        val effectiveHigh = if (currentPrice > high) currentPrice else high
         
         return when (rule.dropType) {
             AlertRule.DrawdownDropType.PERCENTAGE -> {
@@ -178,4 +179,3 @@ object AlertEvaluator {
         }
     }
 }
-

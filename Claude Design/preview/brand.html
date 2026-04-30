@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><title>Brand — Nordisk Precision</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  html, body { margin:0; background: var(--np-background); color: var(--np-text-primary); font-family: var(--np-font-sans); }
+  .wrap { padding: 40px 48px; max-width: 1120px; margin: 0 auto; }
+  .eyebrow { font: 500 11px/1 var(--np-font-sans); letter-spacing: 0.6px; text-transform: uppercase; color: var(--np-text-tertiary); margin: 0 0 10px; }
+  .h1 { font-family: var(--np-font-display); font-weight: 400; font-size: 44px; line-height: 1.08; margin: 0 0 8px; }
+  .sub { font: 400 15px/1.5 var(--np-font-sans); color: var(--np-text-secondary); max-width: 680px; margin: 0 0 40px; }
+  h2 { font-family: var(--np-font-display); font-weight:400; font-size: 22px; margin: 32px 0 6px; }
+  .desc { font: 400 13px/1.5 var(--np-font-sans); color: var(--np-text-secondary); margin: 0 0 18px; max-width: 680px; }
+  .logos { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  .logo { background: var(--np-surface); border: 1px solid var(--np-card-border); border-radius: var(--np-radius-lg); padding: 24px; text-align: center; }
+  .logo img { width: 120px; height: 120px; object-fit: contain; }
+  .logo.dark { background: #09111D; border-color: #213345; color: #F2F5F7; }
+  .logo .nm { font: 600 12px/1 var(--np-font-sans); margin-top: 12px; letter-spacing: 0.4px; text-transform: uppercase; color: var(--np-text-tertiary); }
+  .logo.dark .nm { color: #B5C0CB; }
+
+  .mastcard { background: #09111D; color: #F2F5F7; border-radius: var(--np-radius-2xl); padding: 44px; position: relative; overflow: hidden; }
+  .mastcard .kicker { font: 500 11px/1 var(--np-font-sans); letter-spacing: 0.7px; text-transform: uppercase; color: #3AB7A4; }
+  .mastcard h3 { font-family: var(--np-font-display); font-weight: 400; font-size: 56px; line-height: 1.02; margin: 12px 0 18px; letter-spacing: -0.01em; max-width: 720px; }
+  .mastcard p { font: 400 16px/1.55 var(--np-font-sans); color: #B5C0CB; max-width: 640px; margin: 0; }
+  .mastcard .bar { position: absolute; right: -60px; top: -60px; width: 280px; height: 280px; background: radial-gradient(circle at 30% 30%, rgba(58,183,164,0.32), transparent 62%); }
+
+  .voice { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .vc { background: var(--np-surface); border: 1px solid var(--np-card-border); border-radius: var(--np-radius-lg); padding: 20px 22px; }
+  .vc .yn { font: 600 11px/1 var(--np-font-sans); letter-spacing: 0.6px; text-transform: uppercase; margin-bottom: 10px; }
+  .vc.do .yn { color: var(--np-price-up); } .vc.dont .yn { color: var(--np-price-down); }
+  .vc ul { margin: 0; padding-left: 18px; }
+  .vc li { font: 400 14px/1.55 var(--np-font-sans); color: var(--np-text-primary); margin-bottom: 6px; }
+  .vc li em { font-style: normal; color: var(--np-text-tertiary); }
+</style></head>
+<body>
+<div class="wrap">
+  <p class="eyebrow">Design system · Brand</p>
+  <h1 class="h1">StockFlip</h1>
+  <p class="sub">Nordisk Precision — a quiet instrument panel for stock and crypto alerts. Calm surfaces, precise numbers, Swedish copy voice.</p>
+
+  <div class="mastcard">
+    <div class="bar"></div>
+    <div class="kicker">Nordisk Precision</div>
+    <h3>Du bevakar tickerna. Vi berättar när något händer.</h3>
+    <p>Sju larmtyper, marknadsklocka i bakgrunden, och inga aviseringar när börsen är stängd. Byggt för en användare, stämt för tusen.</p>
+  </div>
+
+  <h2>App mark</h2>
+  <p class="desc">Launcher icon and its roundels. Pine-teal ground with a stylized chart glyph.</p>
+  <div class="logos">
+    <div class="logo"><img src="../assets/ic_launcher_playstore.png" alt="StockFlip launcher"/><div class="nm">Play Store · 512</div></div>
+    <div class="logo"><img src="../assets/ic_launcher.png" alt="StockFlip launcher square"/><div class="nm">Adaptive · xxxhdpi</div></div>
+    <div class="logo dark"><img src="../assets/ic_launcher_round.png" alt="StockFlip launcher round"/><div class="nm">Round · on surface</div></div>
+  </div>
+
+  <h2>Voice — do &amp; don't</h2>
+  <div class="voice">
+    <div class="vc do">
+      <div class="yn">Do — Swedish, literal, calm</div>
+      <ul>
+        <li>&ldquo;Prismål 145,00 SEK&rdquo; <em>· names the metric</em></li>
+        <li>&ldquo;Utlöst idag 14:32&rdquo; <em>· time-stamped, no hype</em></li>
+        <li>&ldquo;Tryck + för att bevaka en aktie&rdquo; <em>· second-person "du"</em></li>
+        <li>&ldquo;Kunde inte uppdatera bevakning&rdquo; <em>· states the fact</em></li>
+      </ul>
+    </div>
+    <div class="vc dont">
+      <div class="yn">Don't — English, exclamatory, vague</div>
+      <ul>
+        <li>&ldquo;🎉 Price target hit!&rdquo; <em>· wrong language, marketing tone</em></li>
+        <li>&ldquo;Something exciting happened!&rdquo; <em>· no metric, exclaimed</em></li>
+        <li>&ldquo;Tap here to add!&rdquo; <em>· exclamation, vague verb</em></li>
+        <li>&ldquo;Oops! We had a problem 🙁&rdquo; <em>· apology + emoji</em></li>
+      </ul>
+    </div>
+  </div>
+</div>
+</body></html>

@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="sv"><head>
+<meta charset="UTF-8">
+<title>Variant B · Ledger — StockFlip</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<link rel="stylesheet" href="variants.css">
+<style>
+  html, body { margin: 0; background: #07090C; font-family: var(--va-sf); color: #E9ECF1; min-height: 100vh; }
+  .canvas { padding: 56px 40px 80px; }
+  header { max-width: 1900px; margin: 0 auto 32px; }
+  .eyebrow { font-size: 11px; letter-spacing: 1.4px; text-transform: uppercase; color: #6FE3C7; margin: 0 0 10px; font-weight: 600; font-family: var(--va-mono); }
+  h1 { font-size: 48px; font-weight: 700; letter-spacing: -1.2px; margin: 0 0 10px; line-height: 1.05; font-family: var(--va-mono); color: #E9ECF1; }
+  .lede { font-size: 16px; line-height: 1.5; color: #8A94A3; max-width: 720px; margin: 0; }
+  .meta { display: flex; gap: 14px; margin-top: 18px; flex-wrap: wrap; }
+  .meta .pill { font-size: 10.5px; padding: 5px 10px; background: #121519; border: 1px solid #222831; color: #8A94A3; font-family: var(--va-mono); letter-spacing: 0.6px; }
+  .meta .pill .k { color: #55606E; margin-right: 6px; }
+  .strip { max-width: 1900px; margin: 0 auto; display: flex; gap: 36px; justify-content: center; flex-wrap: wrap; }
+  .cell { display: flex; flex-direction: column; align-items: center; gap: 16px; }
+  .cap { text-align: center; }
+  .cap .t { font-size: 13px; font-weight: 600; letter-spacing: 0.4px; color: #E9ECF1; font-family: var(--va-mono); }
+  .cap .s { font-size: 10px; color: #55606E; letter-spacing: 1.2px; text-transform: uppercase; margin-top: 4px; font-family: var(--va-mono); }
+  .crumb { display: inline-flex; gap: 8px; align-items: center; font-size: 11px; color: #55606E; margin-bottom: 14px; font-family: var(--va-mono); letter-spacing: 0.6px; }
+  .crumb a { color: #55606E; text-decoration: none; }
+  .crumb a:hover { color: #6FE3C7; }
+</style></head>
+<body>
+  <header class="canvas" style="padding-bottom:0">
+    <div class="crumb"><a href="index.html">← ALLA VARIANTER</a> <span style="opacity:0.4">/</span> <span>VARIANT B</span></div>
+    <p class="eyebrow">Variant B · Bloomberg-inspirerad</p>
+    <h1>Ledger</h1>
+    <p class="lede">Mörk grafit, monotypografi överallt, instrumentpanel-täthet. Hierarki via justering och färg snarare än storlek. Fosforteal upp, dämpad röd ned. Siffrorna är huvudpersonen. Tabellrader alternerar i diskret zebrastil. Triggade larm bär en amber och en tunn vänsterstreck — som en post i en logg.</p>
+    <div class="meta">
+      <span class="pill"><span class="k">DENSITY</span>HIGH</span>
+      <span class="pill"><span class="k">SURFACE</span>#0B0D10</span>
+      <span class="pill"><span class="k">TINT</span>6FE3C7 PHOSPHOR</span>
+      <span class="pill"><span class="k">FIRED</span>F4C25F</span>
+      <span class="pill"><span class="k">FONT</span>JETBRAINS MONO ALL</span>
+      <span class="pill"><span class="k">CORNERS</span>4 / 8 / 12</span>
+    </div>
+  </header>
+
+  <div id="root"></div>
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+  <script type="text/babel" src="device.jsx"></script>
+  <script type="text/babel" src="variant_b_ledger.jsx"></script>
+  <script type="text/babel">
+    const D = window.VariantDevice; const B = window.VariantB;
+    const navProps = {
+      variantClass: "va-ledger", frameTone: "dark", statusTint: "#E9ECF1",
+      navBg: "#0B0D10", navIconOn: "#6FE3C7", navIconOff: "#55606E", navDivider: "#222831",
+      navLabels: ["STOCKS","PAIRS","ALERTS"],
+    };
+    const App = () => (
+      <div className="canvas" style={{paddingTop:0}}>
+        <div className="strip">
+          <div className="cell" data-screen-label="B.1 Watchlist"><D {...navProps} activeTab={0}><B.Stocks/></D><div className="cap"><div className="t">WATCHLIST</div><div className="s">TABULAR · ZEBRA · SPARK</div></div></div>
+          <div className="cell" data-screen-label="B.2 Pairs"><D {...navProps} activeTab={1}><B.Pairs/></D><div className="cap"><div className="t">PAIRS</div><div className="s">RATIO · Z-SCORE BAR</div></div></div>
+          <div className="cell" data-screen-label="B.3 Alerts"><D {...navProps} activeTab={2}><B.Alerts/></D><div className="cap"><div className="t">ALERTS</div><div className="s">LOG-STYLE · FIRED AMBER</div></div></div>
+          <div className="cell" data-screen-label="B.4 Detail"><D {...navProps} activeTab={0}><B.Detail/></D><div className="cap"><div className="t">DETAIL — ERIC-B</div><div className="s">CHART · STATS · ALERTS</div></div></div>
+        </div>
+      </div>
+    );
+    ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+  </script>
+</body></html>

@@ -43,17 +43,19 @@ sealed class AlertRule {
     }
 
     /**
-     * Single-stock: Drawdown från 52-veckors högsta.
+     * Single-stock: Drawdown från vald toppnivå.
      * 
      * @param symbol Aktiens symbol
      * @param dropType Typ av nedgång: PERCENTAGE eller ABSOLUTE
      * @param dropValue För PERCENTAGE: procentuell nedgång (t.ex. 15.0 för 15%)
      *                  För ABSOLUTE: absolut nedgång i SEK (t.ex. 50.0 för 50 SEK)
+     * @param reference Toppnivå att jämföra mot: 52-veckorshögsta eller historiskt högsta pris
      */
     data class SingleDrawdownFromHigh(
         val symbol: String,
         val dropType: DrawdownDropType,
-        val dropValue: Double
+        val dropValue: Double,
+        val reference: HighReference = HighReference.FIFTY_TWO_WEEK_HIGH
     ) : AlertRule() {
         init {
             when (dropType) {
@@ -136,8 +138,16 @@ sealed class AlertRule {
      * Typ av nedgång för drawdown-bevakning.
      */
     enum class DrawdownDropType {
-        PERCENTAGE,  // Procentuell nedgång från 52w high
-        ABSOLUTE     // Absolut nedgång i SEK från 52w high
+        PERCENTAGE,  // Procentuell nedgång från vald toppnivå
+        ABSOLUTE     // Absolut nedgång från vald toppnivå
+    }
+
+    /**
+     * Referenspunkt för drawdown-bevakning.
+     */
+    enum class HighReference {
+        FIFTY_TWO_WEEK_HIGH,
+        ALL_TIME_HIGH
     }
 
     /**
@@ -149,4 +159,3 @@ sealed class AlertRule {
         DIVIDEND_YIELD   // Dividend yield percentage
     }
 }
-

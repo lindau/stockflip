@@ -109,6 +109,7 @@ object AlertExpressionConverter {
                     put("symbol", rule.symbol)
                     put("dropType", rule.dropType.name)
                     put("dropValue", rule.dropValue)
+                    put("reference", rule.reference.name)
                 }
             }
             is AlertRule.SingleDailyMove -> {
@@ -154,7 +155,19 @@ object AlertExpressionConverter {
                 AlertRule.SingleDrawdownFromHigh(
                     symbol = json.getString("symbol"),
                     dropType = AlertRule.DrawdownDropType.valueOf(json.getString("dropType")),
-                    dropValue = json.getDouble("dropValue")
+                    dropValue = json.getDouble("dropValue"),
+                    reference = json.optString("reference")
+                        .takeIf { it.isNotBlank() }
+                        ?.let { AlertRule.HighReference.valueOf(it) }
+                        ?: AlertRule.HighReference.FIFTY_TWO_WEEK_HIGH
+                )
+            }
+            "SingleDrawdownFromAllTimeHigh" -> {
+                AlertRule.SingleDrawdownFromHigh(
+                    symbol = json.getString("symbol"),
+                    dropType = AlertRule.DrawdownDropType.PERCENTAGE,
+                    dropValue = json.getDouble("dropPercentage"),
+                    reference = AlertRule.HighReference.ALL_TIME_HIGH
                 )
             }
             "SingleDailyMove" -> {
@@ -176,4 +189,3 @@ object AlertExpressionConverter {
         }
     }
 }
-

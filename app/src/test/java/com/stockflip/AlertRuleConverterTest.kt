@@ -94,6 +94,30 @@ class AlertRuleConverterTest {
         assertEquals("AAPL", drawdown.symbol)
         assertEquals(AlertRule.DrawdownDropType.PERCENTAGE, drawdown.dropType)
         assertEquals(10.0, drawdown.dropValue, 0.01)
+        assertEquals(AlertRule.HighReference.FIFTY_TWO_WEEK_HIGH, drawdown.reference)
+    }
+
+    @Test
+    fun `toAlertRule should convert ATHBased all-time reference to SingleDrawdownFromHigh AlertRule`() {
+        val watchItem = WatchItem(
+            watchType = WatchType.ATHBased(
+                dropType = WatchType.DropType.PERCENTAGE,
+                dropValue = 15.0,
+                reference = WatchType.HighReference.ALL_TIME_HIGH
+            ),
+            ticker = "AAPL",
+            companyName = "Apple"
+        )
+
+        val alertRule = AlertRuleConverter.toAlertRule(watchItem)
+
+        assertNotNull("Should convert ATHBased to AlertRule", alertRule)
+        assertTrue("Should be SingleDrawdownFromHigh", alertRule is AlertRule.SingleDrawdownFromHigh)
+        val drawdown = alertRule as AlertRule.SingleDrawdownFromHigh
+        assertEquals("AAPL", drawdown.symbol)
+        assertEquals(AlertRule.DrawdownDropType.PERCENTAGE, drawdown.dropType)
+        assertEquals(15.0, drawdown.dropValue, 0.01)
+        assertEquals(AlertRule.HighReference.ALL_TIME_HIGH, drawdown.reference)
     }
 
     @Test

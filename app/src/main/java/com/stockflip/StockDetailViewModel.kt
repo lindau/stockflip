@@ -111,6 +111,25 @@ class StockDetailViewModel(
                 _stockDataState.value = UiState.Success(stockData)
                 Log.d(TAG, "Loaded stock data for $symbol")
 
+                launch {
+                    try {
+                        val allTimeHigh = yahooFinanceService.getAllTimeHigh(symbol)
+                        if (allTimeHigh != null && lastPrice != null && allTimeHigh > 0.0) {
+                            val effectiveHigh = if (lastPrice > allTimeHigh) lastPrice else allTimeHigh
+                            val allTimeDrawdownPercent = ((effectiveHigh - lastPrice) / effectiveHigh) * 100
+                            val currentData = (_stockDataState.value as? UiState.Success<StockDetailData>)?.data ?: stockData
+                            _stockDataState.value = UiState.Success(
+                                currentData.copy(
+                                    allTimeHigh = effectiveHigh,
+                                    allTimeDrawdownPercent = allTimeDrawdownPercent
+                                )
+                            )
+                        }
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Error loading all-time high for $symbol: ${e.message}", e)
+                    }
+                }
+
                 if (!StockSearchResult.isCryptoSymbol(symbol)) {
                     launch { loadMetricHistory() }
                 } else {
@@ -123,7 +142,8 @@ class StockDetailViewModel(
                         try {
                             val metrics = yahooFinanceService.getAllKeyMetrics(symbol)
                             if (metrics != null) {
-                                _stockDataState.value = UiState.Success(stockData.copy(
+                                val currentData = (_stockDataState.value as? UiState.Success<StockDetailData>)?.data ?: stockData
+                                _stockDataState.value = UiState.Success(currentData.copy(
                                     peRatio = metrics.peRatio,
                                     psRatio = metrics.psRatio,
                                     dividendYield = metrics.dividendYield
@@ -163,7 +183,7 @@ class StockDetailViewModel(
                 try {
                     val activeItems = fetchPricesForItems(items.filter { it.isActive })
                     val inactiveItems = items.filter { !it.isActive }.map { WatchItemUiState(it) }
-                    val updatedAlerts = activeItems + inactiveItems
+                    val updatedAlerts = sortAlertsForStockPage(activeItems + inactiveItems)
                     _alertsState.value = UiState.Success(updatedAlerts)
                     val history = items.associate { item ->
                         item.id to triggerHistoryRepository.getLatest(item.id)
@@ -175,6 +195,59 @@ class StockDetailViewModel(
                     _alertsState.value = UiState.Error("Kunde inte ladda alerts: ${e.message}")
                 }
             }
+        }
+    }
+
+    private fun sortAlertsForStockPage(alerts: List<WatchItemUiState>): List<WatchItemUiState> {
+        return alerts.sortedWith(
+            compareBy<WatchItemUiState> { stockPageWatchTypeRank(it.item.watchType) }
+                .thenBy { stockPageScaleGroupRank(it.item.watchType) }
+                .thenBy { stockPageScaleStart(it.item.watchType) }
+                .thenBy { stockPageScaleEnd(it.item.watchType) }
+                .thenBy { if (it.item.isActive) 0 else 1 }
+                .thenBy { if (it.item.isTriggered) 1 else 0 }
+                .thenBy { it.item.getDisplayName().lowercase() }
+                .thenBy { it.item.id }
+        )
+    }
+
+    private fun stockPageWatchTypeRank(watchType: WatchType): Int {
+        return when (watchType) {
+            is WatchType.PriceTarget -> 0
+            is WatchType.PriceRange -> 1
+            is WatchType.ATHBased -> 2
+            is WatchType.KeyMetrics -> 3
+            is WatchType.DailyMove -> 4
+            is WatchType.Combined -> 5
+            is WatchType.PricePair -> 6
+        }
+    }
+
+    private fun stockPageScaleGroupRank(watchType: WatchType): Int {
+        return when (watchType) {
+            is WatchType.ATHBased -> watchType.reference.ordinal * 10 + watchType.dropType.ordinal
+            is WatchType.KeyMetrics -> watchType.metricType.ordinal * 10 + watchType.direction.ordinal
+            is WatchType.DailyMove -> watchType.direction.ordinal
+            else -> 0
+        }
+    }
+
+    private fun stockPageScaleStart(watchType: WatchType): Double {
+        return when (watchType) {
+            is WatchType.PriceTarget -> watchType.targetPrice
+            is WatchType.PriceRange -> watchType.minPrice
+            is WatchType.ATHBased -> watchType.dropValue
+            is WatchType.KeyMetrics -> watchType.targetValue
+            is WatchType.DailyMove -> watchType.percentThreshold
+            is WatchType.PricePair -> watchType.priceDifference
+            is WatchType.Combined -> Double.MAX_VALUE
+        }
+    }
+
+    private fun stockPageScaleEnd(watchType: WatchType): Double {
+        return when (watchType) {
+            is WatchType.PriceRange -> watchType.maxPrice
+            else -> Double.MAX_VALUE
         }
     }
 
@@ -206,15 +279,27 @@ class StockDetailViewModel(
                 }
                 is WatchType.ATHBased -> {
                     val ticker = item.ticker ?: symbol
-                    val ath = yahooFinanceService.getATH(ticker)
+                    val high = when (item.watchType.reference) {
+                        WatchType.HighReference.FIFTY_TWO_WEEK_HIGH -> yahooFinanceService.getATH(ticker)
+                        WatchType.HighReference.ALL_TIME_HIGH -> yahooFinanceService.getAllTimeHigh(ticker)
+                    }
                     val price = yahooFinanceService.getStockPrice(ticker)
                     val changePercent = yahooFinanceService.getDailyChangePercent(ticker)
                     when {
-                        ath != null && price != null -> WatchItemUiState(item, LiveWatchData(
-                            currentATH = ath, currentPrice = price,
-                            currentDropPercentage = ((ath - price) / ath) * 100,
-                            currentDropAbsolute = ath - price,
-                            currentDailyChangePercent = changePercent, lastUpdatedAt = now))
+                        high != null && price != null && high > 0.0 -> {
+                            val effectiveHigh = if (price > high) price else high
+                            WatchItemUiState(
+                                item,
+                                LiveWatchData(
+                                    currentATH = effectiveHigh,
+                                    currentPrice = price,
+                                    currentDropPercentage = ((effectiveHigh - price) / effectiveHigh) * 100,
+                                    currentDropAbsolute = effectiveHigh - price,
+                                    currentDailyChangePercent = changePercent,
+                                    lastUpdatedAt = now
+                                )
+                            )
+                        }
                         price != null -> WatchItemUiState(item, LiveWatchData(currentPrice = price, currentDailyChangePercent = changePercent, lastUpdatedAt = now))
                         else -> WatchItemUiState(item, LiveWatchData(updateFailed = true))
                     }
@@ -247,7 +332,7 @@ class StockDetailViewModel(
                 val items = watchItemDao.getAllWatchItems().filter { watchItem ->
                     watchItem.ticker == symbol || watchItem.ticker1 == symbol || watchItem.ticker2 == symbol
                 }
-                val updatedAlerts = fetchPricesForItems(items)
+                val updatedAlerts = sortAlertsForStockPage(fetchPricesForItems(items))
                 _alertsState.value = UiState.Success(updatedAlerts)
                 Log.d(TAG, "Manual refresh: ${updatedAlerts.size} alerts for $symbol")
             } catch (e: Exception) {
@@ -424,6 +509,8 @@ data class StockDetailData(
     val exchange: String? = null,
     val dailyChangePercent: Double?,
     val drawdownPercent: Double?,
+    val allTimeHigh: Double? = null,
+    val allTimeDrawdownPercent: Double? = null,
     val peRatio: Double? = null,
     val psRatio: Double? = null,
     val dividendYield: Double? = null,

@@ -46,6 +46,18 @@ class WatchTypeConverterTest {
     }
 
     @Test
+    fun `roundtrip ATHBased with all-time high reference`() {
+        val watchType = WatchType.ATHBased(
+            dropType = WatchType.DropType.PERCENTAGE,
+            dropValue = 25.0,
+            reference = WatchType.HighReference.ALL_TIME_HIGH
+        )
+        val encoded = converter.fromWatchType(watchType)
+        val decoded = converter.toWatchType(encoded)
+        assertEquals(watchType, decoded)
+    }
+
+    @Test
     fun `roundtrip PriceRange`() {
         val watchType = WatchType.PriceRange(minPrice = 90.0, maxPrice = 120.0)
         val encoded = converter.fromWatchType(watchType)

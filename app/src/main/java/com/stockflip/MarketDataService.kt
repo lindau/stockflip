@@ -34,6 +34,7 @@ interface MarketDataService {
     suspend fun getPreviousClose(symbol: String): Double?
     suspend fun getDailyChangePercent(symbol: String): Double?
     suspend fun getATH(symbol: String): Double?
+    suspend fun getAllTimeHigh(symbol: String): Double?
     suspend fun get52WeekLow(symbol: String): Double?
     suspend fun getCurrency(symbol: String): String?
     suspend fun getExchange(symbol: String): String?
@@ -43,4 +44,3 @@ interface MarketDataService {
     suspend fun getStockDetailSnapshot(symbol: String): StockDetailSnapshot?
     suspend fun getIntradayChart(symbol: String, period: ChartPeriod = ChartPeriod.DAY): IntradayChartData?
 }
-
