@@ -45,6 +45,7 @@ fun ComposeWatchItemCard(
     showStatus: Boolean = false,
     showControls: Boolean = false,
     onToggleActive: (() -> Unit)? = null,
+    onReactivate: (() -> Unit)? = null,
     containerColor: Color = MaterialTheme.colorScheme.surface,
     triggerHistory: List<Long> = emptyList(),
     isNew: Boolean = false,
@@ -102,6 +103,8 @@ fun ComposeWatchItemCard(
                 live = live,
                 priceFormat = priceFormat,
                 containerColor = containerColor,
+                onToggleActive = onToggleActive,
+                onReactivate = onReactivate,
                 modifier = Modifier.fillMaxWidth(),
             )
         } else when (item.watchType) {

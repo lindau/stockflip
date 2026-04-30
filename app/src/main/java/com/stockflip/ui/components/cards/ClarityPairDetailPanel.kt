@@ -11,10 +11,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
@@ -57,7 +55,6 @@ fun ClarityPairDetailPanel(
     history: List<Long>,
     onPeriodSelected: (ChartPeriod) -> Unit,
     onEdit: () -> Unit,
-    onToggleActive: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -75,10 +72,8 @@ fun ClarityPairDetailPanel(
             ClarityPairChartLoadingCard()
         }
         ClarityPairActionCard(
-            data = data,
             history = history,
             onEdit = onEdit,
-            onToggleActive = onToggleActive,
         )
     }
 }
@@ -345,10 +340,8 @@ private fun ClarityPairChartLoadingCard() {
 
 @Composable
 private fun ClarityPairActionCard(
-    data: PairDetailData,
     history: List<Long>,
     onEdit: () -> Unit,
-    onToggleActive: () -> Unit,
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -358,22 +351,12 @@ private fun ClarityPairActionCard(
         border = BorderStroke(1.dp, LocalCardBorder.current),
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                OutlinedButton(
-                    onClick = onEdit,
-                    modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(12.dp),
-                ) {
-                    Text("Redigera")
-                }
-                FilledTonalButton(
-                    onClick = onToggleActive,
-                    modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.filledTonalButtonColors(),
-                ) {
-                    Text(if (data.watchItem.isActive) "Inaktivera" else "Aktivera")
-                }
+            OutlinedButton(
+                onClick = onEdit,
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
+            ) {
+                Text("Redigera")
             }
 
             Text(

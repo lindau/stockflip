@@ -77,6 +77,52 @@ class WatchItemTest {
     }
 
     @Test
+    fun `reactivate sets alert active`() {
+        val item = WatchItem(
+            watchType = WatchType.PriceTarget(100.0, WatchType.PriceDirection.BELOW),
+            ticker = "AAPL",
+            isTriggered = true,
+            isActive = false
+        )
+
+        val updated = item.reactivate()
+
+        assertTrue(updated.isActive)
+    }
+
+    @Test
+    fun `reactivate sets price target direction below when current price is above target`() {
+        val item = WatchItem(
+            watchType = WatchType.PriceTarget(100.0, WatchType.PriceDirection.ABOVE),
+            ticker = "AAPL",
+            isTriggered = true,
+            isActive = false
+        )
+
+        val updated = item.reactivate(currentPrice = 105.0)
+        val updatedType = updated.watchType as WatchType.PriceTarget
+
+        assertEquals(WatchType.PriceDirection.BELOW, updatedType.direction)
+        assertTrue(updated.isActive)
+        assertFalse(updated.isTriggered)
+    }
+
+    @Test
+    fun `reactivate sets price target direction above when current price is below target`() {
+        val item = WatchItem(
+            watchType = WatchType.PriceTarget(100.0, WatchType.PriceDirection.BELOW),
+            ticker = "AAPL",
+            isTriggered = true,
+            isActive = false
+        )
+
+        val updated = item.reactivate(currentPrice = 95.0)
+        val updatedType = updated.watchType as WatchType.PriceTarget
+
+        assertEquals(WatchType.PriceDirection.ABOVE, updatedType.direction)
+    }
+
+    @Test
     fun `setActive updates active flag`() {
         val item = WatchItem(
             watchType = WatchType.PriceTarget(100.0, WatchType.PriceDirection.BELOW),

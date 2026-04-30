@@ -12,7 +12,7 @@ package com.stockflip
  * - dailyChangePercent (beräknat från lastPrice och previousClose)
  * 
  * Enligt PRD Fas 2 behöver vi även:
- * - keyMetrics (P/E, P/S, Dividend Yield)
+     * - keyMetrics (P/E, P/S, Dividend Yield, vinst/aktie)
  */
 data class MarketSnapshot(
     /**

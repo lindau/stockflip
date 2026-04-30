@@ -155,7 +155,7 @@ object AlertEvaluator {
 
     /**
      * Utvärderar nyckeltal-bevakning (Fas 2).
-     * Stödjer P/E, P/S och Dividend Yield.
+     * Stödjer P/E, P/S, Dividend Yield och vinst/aktie.
      */
     private fun evaluateSingleKeyMetric(
         rule: AlertRule.SingleKeyMetric,

@@ -35,6 +35,18 @@ class WatchTypeConverterTest {
     }
 
     @Test
+    fun `roundtrip KeyMetrics earnings per share`() {
+        val watchType = WatchType.KeyMetrics(
+            metricType = WatchType.MetricType.EARNINGS_PER_SHARE,
+            targetValue = 8.5,
+            direction = WatchType.PriceDirection.ABOVE
+        )
+        val encoded = converter.fromWatchType(watchType)
+        val decoded = converter.toWatchType(encoded)
+        assertEquals(watchType, decoded)
+    }
+
+    @Test
     fun `roundtrip ATHBased`() {
         val watchType = WatchType.ATHBased(
             dropType = WatchType.DropType.PERCENTAGE,

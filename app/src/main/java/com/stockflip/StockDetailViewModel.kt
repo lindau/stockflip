@@ -146,7 +146,10 @@ class StockDetailViewModel(
                                 _stockDataState.value = UiState.Success(currentData.copy(
                                     peRatio = metrics.peRatio,
                                     psRatio = metrics.psRatio,
-                                    dividendYield = metrics.dividendYield
+                                    dividendYield = metrics.dividendYield,
+                                    earningsPerShare = metrics.earningsPerShare,
+                                    marketCap = metrics.marketCap,
+                                    returnOnEquity = metrics.returnOnEquity
                                 ))
                             }
                         } catch (e: Exception) {
@@ -395,7 +398,7 @@ class StockDetailViewModel(
     fun reactivateAlert(watchItem: WatchItem) {
         viewModelScope.launch {
             try {
-                val updated = watchItem.reactivate()
+                val updated = watchItem.reactivate(currentPriceForReactivation(watchItem))
                 watchItemDao.update(updated)
                 Log.d(TAG, "Reactivated alert ${watchItem.id}")
             } catch (e: Exception) {
@@ -416,6 +419,23 @@ class StockDetailViewModel(
             } catch (e: Exception) {
                 Log.e(TAG, "Error toggling alert: ${e.message}", e)
             }
+        }
+    }
+
+    private suspend fun currentPriceForReactivation(watchItem: WatchItem): Double? {
+        if (watchItem.watchType !is WatchType.PriceTarget) return null
+        val stockDataPrice = (_stockDataState.value as? UiState.Success<StockDetailData>)
+            ?.data
+            ?.lastPrice
+            ?.takeIf { it > 0.0 }
+        if (stockDataPrice != null) return stockDataPrice
+
+        val ticker = watchItem.ticker ?: symbol
+        return try {
+            yahooFinanceService.getStockPrice(ticker)
+        } catch (e: Exception) {
+            Log.w(TAG, "Could not fetch current price for reactivation: ${e.message}")
+            null
         }
     }
 
@@ -514,5 +534,8 @@ data class StockDetailData(
     val peRatio: Double? = null,
     val psRatio: Double? = null,
     val dividendYield: Double? = null,
+    val earningsPerShare: Double? = null,
+    val marketCap: Double? = null,
+    val returnOnEquity: Double? = null,
     val lastUpdatedAt: Long = 0L
 )

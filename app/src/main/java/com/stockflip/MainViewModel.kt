@@ -405,13 +405,26 @@ class MainViewModel(
     }
 
     suspend fun toggleWatchItemActive(watchItem: WatchItem, isActive: Boolean) {
-        val updatedWatchItem: WatchItem = watchItem.setActive(isActive)
-        updateWatchItem(updatedWatchItem)
+        try {
+            Log.d(TAG, "Toggling watch item active state")
+            watchItemDao.update(watchItem.setActive(isActive))
+            syncWatchItemsAfterMutation()
+        } catch (e: Exception) {
+            Log.e(TAG, "Error toggling watch item active state: ${e.message}")
+            _watchItemUiState.value = UiState.Error("Failed to update watch item: ${e.message}")
+        }
     }
 
     suspend fun reactivateWatchItem(watchItem: WatchItem) {
-        val updatedWatchItem: WatchItem = watchItem.reactivate()
-        updateWatchItem(updatedWatchItem)
+        try {
+            Log.d(TAG, "Reactivating watch item")
+            val updatedWatchItem: WatchItem = watchItem.reactivate(currentPriceForReactivation(watchItem))
+            watchItemDao.update(updatedWatchItem)
+            syncWatchItemsAfterMutation()
+        } catch (e: Exception) {
+            Log.e(TAG, "Error reactivating watch item: ${e.message}")
+            _watchItemUiState.value = UiState.Error("Failed to update watch item: ${e.message}")
+        }
     }
 
     suspend fun updateWatchItem(watchItem: WatchItem) {
@@ -430,6 +443,25 @@ class MainViewModel(
         loadWatchItems(forceShowStaleData = true)
         viewModelScope.launch {
             refreshWatchItems(showLoading = false)
+        }
+    }
+
+    private suspend fun currentPriceForReactivation(watchItem: WatchItem): Double? {
+        if (watchItem.watchType !is WatchType.PriceTarget) return null
+        val livePrice = (_watchItemUiState.value as? UiState.Success<List<WatchItemUiState>>)
+            ?.data
+            ?.firstOrNull { it.item.id == watchItem.id }
+            ?.live
+            ?.currentPrice
+            ?.takeIf { it > 0.0 }
+        if (livePrice != null) return livePrice
+
+        val ticker = watchItem.ticker ?: watchItem.ticker1 ?: return null
+        return try {
+            yahooFinanceService.getStockPrice(ticker)
+        } catch (e: Exception) {
+            Log.w(TAG, "Could not fetch current price for reactivation: ${e.message}")
+            null
         }
     }
 

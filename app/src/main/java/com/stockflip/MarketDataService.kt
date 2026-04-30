@@ -16,12 +16,15 @@ data class StockDetailSnapshot(
 )
 
 /**
- * Nyckeltal för en aktie (P/E, P/S, Direktavkastning).
+ * Nyckeltal för en aktie (P/E, P/S, Direktavkastning, Vinst/aktie, börsvärde, ROE).
  */
 data class KeyMetrics(
     val peRatio: Double?,
     val psRatio: Double?,
-    val dividendYield: Double?
+    val dividendYield: Double?,
+    val earningsPerShare: Double? = null,
+    val marketCap: Double? = null,
+    val returnOnEquity: Double? = null
 )
 
 /**

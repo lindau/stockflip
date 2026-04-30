@@ -80,10 +80,11 @@ sealed class AlertExpression {
                     }
                     is AlertRule.SingleKeyMetric -> {
                         val metricName = when (rule.metricType) {
-                            AlertRule.KeyMetricType.PE_RATIO -> "P/E"
-                            AlertRule.KeyMetricType.PS_RATIO -> "P/S"
-                            AlertRule.KeyMetricType.DIVIDEND_YIELD -> "Yield"
-                        }
+	                            AlertRule.KeyMetricType.PE_RATIO -> "P/E"
+	                            AlertRule.KeyMetricType.PS_RATIO -> "P/S"
+	                            AlertRule.KeyMetricType.DIVIDEND_YIELD -> "Yield"
+	                            AlertRule.KeyMetricType.EARNINGS_PER_SHARE -> "Vinst/aktie"
+	                        }
                         "${rule.symbol} $metricName ${if (rule.direction == AlertRule.PriceComparisonType.ABOVE) "≥" else "≤"} ${rule.targetValue}"
                     }
                 }

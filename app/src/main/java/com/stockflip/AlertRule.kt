@@ -96,7 +96,7 @@ sealed class AlertRule {
      * Single-stock: Nyckeltal-bevakning (Fas 2).
      * 
      * @param symbol Aktiens symbol
-     * @param metricType Typ av nyckeltal: PE_RATIO, PS_RATIO, eller DIVIDEND_YIELD
+     * @param metricType Typ av nyckeltal: PE_RATIO, PS_RATIO, DIVIDEND_YIELD eller EARNINGS_PER_SHARE
      * @param targetValue Tröskelvärde för nyckeltalet
      * @param direction Riktning: ABOVE (≥ targetValue) eller BELOW (≤ targetValue)
      */
@@ -156,6 +156,7 @@ sealed class AlertRule {
     enum class KeyMetricType {
         PE_RATIO,        // Price-to-Earnings ratio
         PS_RATIO,        // Price-to-Sales ratio
-        DIVIDEND_YIELD   // Dividend yield percentage
+        DIVIDEND_YIELD,  // Dividend yield percentage
+        EARNINGS_PER_SHARE // Earnings per share
     }
 }

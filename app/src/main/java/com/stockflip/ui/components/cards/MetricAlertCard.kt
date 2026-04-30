@@ -52,21 +52,22 @@ fun MetricAlertCard(
 ) {
     val keyMetrics = item.watchType as? WatchType.KeyMetrics ?: return
 
-    val metricTypeName = when (keyMetrics.metricType) {
-        WatchType.MetricType.PE_RATIO       -> "P/E"
-        WatchType.MetricType.PS_RATIO       -> "P/S"
-        WatchType.MetricType.DIVIDEND_YIELD -> "Direktavkastning"
-    }
+	    val metricTypeName = when (keyMetrics.metricType) {
+	        WatchType.MetricType.PE_RATIO       -> "P/E"
+	        WatchType.MetricType.PS_RATIO       -> "P/S"
+	        WatchType.MetricType.DIVIDEND_YIELD -> "Direktavkastning"
+	        WatchType.MetricType.EARNINGS_PER_SHARE -> "Vinst/aktie"
+	    }
 
     val directionText = when (keyMetrics.direction) {
         WatchType.PriceDirection.ABOVE -> "Över"
         WatchType.PriceDirection.BELOW -> "Under"
     }
 
-    val targetValueText = when (keyMetrics.metricType) {
-        WatchType.MetricType.DIVIDEND_YIELD -> "${priceFormat(keyMetrics.targetValue)}%"
-        else                                -> priceFormat(keyMetrics.targetValue)
-    }
+	    val targetValueText = when (keyMetrics.metricType) {
+	        WatchType.MetricType.DIVIDEND_YIELD -> "${priceFormat(keyMetrics.targetValue)}%"
+	        else                                -> priceFormat(keyMetrics.targetValue)
+	    }
 
     val isTriggered = live.currentMetricValue != 0.0 && when (keyMetrics.direction) {
         WatchType.PriceDirection.ABOVE -> live.currentMetricValue >= keyMetrics.targetValue

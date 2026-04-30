@@ -2,17 +2,22 @@ package com.stockflip.ui.components.cards
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.NotificationsActive
+import androidx.compose.material.icons.filled.NotificationsNone
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -26,22 +31,17 @@ import com.stockflip.ui.theme.NordikNumericStyle
 
 @Composable
 fun ClarityAlertsSummaryCard(
-    triggeredTodayCount: Int,
-    activeCount: Int,
-    totalCount: Int,
+    triggeredCount: Int,
+    onTriggeredClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val colorScheme = MaterialTheme.colorScheme
-    val highlightCount = if (triggeredTodayCount > 0) triggeredTodayCount else activeCount
-    val title = if (triggeredTodayCount > 0) {
-        "$triggeredTodayCount utlösta larm"
-    } else {
-        "$activeCount aktiva larm"
-    }
-    val label = if (triggeredTodayCount > 0) "Nya aviseringar" else "Aktiva bevakningar"
+    val hasTriggered = triggeredCount > 0
 
     Card(
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier
+            .fillMaxWidth()
+            .clickable(onClick = onTriggeredClick),
         colors = CardDefaults.cardColors(containerColor = colorScheme.surface),
         shape = RoundedCornerShape(22.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
@@ -50,15 +50,15 @@ fun ClarityAlertsSummaryCard(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(18.dp),
-            horizontalArrangement = Arrangement.spacedBy(14.dp),
+                .padding(horizontal = 18.dp, vertical = 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Box(
                 modifier = Modifier
-                    .size(46.dp)
+                    .size(44.dp)
                     .background(
-                        color = if (triggeredTodayCount > 0) {
+                        color = if (hasTriggered) {
                             colorScheme.tertiaryContainer
                         } else {
                             colorScheme.primaryContainer
@@ -67,36 +67,37 @@ fun ClarityAlertsSummaryCard(
                     ),
                 contentAlignment = Alignment.Center,
             ) {
-                Text(
-                    text = highlightCount.toString(),
-                    style = NordikNumericStyle.copy(fontSize = 20.sp, lineHeight = 24.sp),
-                    color = if (triggeredTodayCount > 0) colorScheme.onTertiaryContainer else colorScheme.onPrimaryContainer,
+                Icon(
+                    imageVector = if (hasTriggered) Icons.Default.NotificationsActive else Icons.Default.NotificationsNone,
+                    contentDescription = null,
+                    tint = if (hasTriggered) colorScheme.onTertiaryContainer else colorScheme.onPrimaryContainer,
+                    modifier = Modifier.size(22.dp),
                 )
             }
 
-            Column(modifier = Modifier.weight(1f)) {
+            Row(
+                modifier = Modifier.weight(1f),
+                horizontalArrangement = Arrangement.spacedBy(7.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
                 Text(
-                    text = label,
-                    style = MaterialTheme.typography.bodySmall.copy(fontSize = 13.sp, lineHeight = 17.sp),
-                    color = colorScheme.onSurfaceVariant,
-                )
-                Text(
-                    text = title,
-                    modifier = Modifier.padding(top = 2.dp),
-                    style = MaterialTheme.typography.titleLarge.copy(
-                        fontSize = 22.sp,
-                        lineHeight = 28.sp,
-                        fontWeight = FontWeight.Bold,
-                    ),
+                    text = triggeredCount.toString(),
+                    style = NordikNumericStyle.copy(fontSize = 26.sp, lineHeight = 30.sp),
                     color = colorScheme.onSurface,
                 )
                 Text(
-                    text = "$activeCount aktiva · $totalCount totalt",
-                    modifier = Modifier.padding(top = 2.dp),
-                    style = MaterialTheme.typography.bodySmall,
+                    text = "Utlösta larm",
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                     color = colorScheme.onSurfaceVariant,
                 )
             }
+
+            Icon(
+                imageVector = Icons.Default.ChevronRight,
+                contentDescription = null,
+                tint = colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(22.dp),
+            )
         }
     }
 }

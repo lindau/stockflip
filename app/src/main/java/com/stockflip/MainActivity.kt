@@ -692,7 +692,7 @@ class MainActivity : AppCompatActivity() {
         binding.swipeRefreshLayout.isRefreshing = false
         Log.d(TAG, "Refresh indicator hidden")
 
-        renderStocksOverview(filteredData)
+        renderStocksOverview(data)
 
         val showEmpty = filteredData.isEmpty()
         binding.emptyStateContainer.visibility = if (showEmpty) View.VISIBLE else View.GONE

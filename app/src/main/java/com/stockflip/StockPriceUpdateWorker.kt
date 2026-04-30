@@ -222,11 +222,12 @@ class StockPriceUpdateWorker(
                 val allTimeHigh = if (ticker in allTimeHighNeeds) marketDataService.getAllTimeHigh(ticker) else null
                 val metricsMap = mutableMapOf<AlertRule.KeyMetricType, Double>()
                 keyMetricNeeds[ticker]?.forEach { metricType ->
-                    val alertMetricType = when (metricType) {
-                        WatchType.MetricType.PE_RATIO -> AlertRule.KeyMetricType.PE_RATIO
-                        WatchType.MetricType.PS_RATIO -> AlertRule.KeyMetricType.PS_RATIO
-                        WatchType.MetricType.DIVIDEND_YIELD -> AlertRule.KeyMetricType.DIVIDEND_YIELD
-                    }
+	                    val alertMetricType = when (metricType) {
+	                        WatchType.MetricType.PE_RATIO -> AlertRule.KeyMetricType.PE_RATIO
+	                        WatchType.MetricType.PS_RATIO -> AlertRule.KeyMetricType.PS_RATIO
+	                        WatchType.MetricType.DIVIDEND_YIELD -> AlertRule.KeyMetricType.DIVIDEND_YIELD
+	                        WatchType.MetricType.EARNINGS_PER_SHARE -> AlertRule.KeyMetricType.EARNINGS_PER_SHARE
+	                    }
                     marketDataService.getKeyMetric(ticker, metricType)?.let { metricsMap[alertMetricType] = it }
                 }
                 snapshots[ticker] = MarketSnapshot.forSingleStock(
@@ -418,12 +419,14 @@ class StockPriceUpdateWorker(
                     WatchType.MetricType.PE_RATIO -> AlertRule.KeyMetricType.PE_RATIO
                     WatchType.MetricType.PS_RATIO -> AlertRule.KeyMetricType.PS_RATIO
                     WatchType.MetricType.DIVIDEND_YIELD -> AlertRule.KeyMetricType.DIVIDEND_YIELD
+                    WatchType.MetricType.EARNINGS_PER_SHARE -> AlertRule.KeyMetricType.EARNINGS_PER_SHARE
                 }
                 val currentValue = snapshots[ticker]?.keyMetrics?.get(metricType) ?: watchType.targetValue
                 val metricLabel = when (watchType.metricType) {
                     WatchType.MetricType.PE_RATIO -> "P/E"
                     WatchType.MetricType.PS_RATIO -> "P/S"
                     WatchType.MetricType.DIVIDEND_YIELD -> "utdelning"
+                    WatchType.MetricType.EARNINGS_PER_SHARE -> "vinst/aktie"
                 }
                 val relation = if (watchType.direction == WatchType.PriceDirection.ABOVE) "över" else "under"
                 TriggerNotificationPayload(

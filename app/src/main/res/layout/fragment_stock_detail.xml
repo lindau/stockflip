@@ -297,7 +297,7 @@
 
                     </LinearLayout>
 
-                    <!-- Nyckeltal-rad: P/E, P/S, Direktavkastning (dold för krypto) -->
+                    <!-- Nyckeltal-rad: P/E, P/S, Direktavkastning, Vinst/aktie (dold för krypto) -->
                     <LinearLayout
                         android:id="@+id/keyMetricsRow"
                         android:layout_width="match_parent"
@@ -386,9 +386,36 @@
                                 android:textColor="?attr/colorOnSurface"
                                 tools:text="3,50%" />
 
-                        </LinearLayout>
+	                        </LinearLayout>
 
-                    </LinearLayout>
+	                        <!-- Vinst/aktie -->
+	                        <LinearLayout
+	                            android:layout_width="0dp"
+	                            android:layout_height="match_parent"
+	                            android:layout_weight="1"
+	                            android:orientation="vertical"
+	                            android:background="@drawable/bg_stat_cell"
+	                            android:padding="8dp"
+	                            android:layout_marginHorizontal="4dp">
+
+	                            <TextView
+	                                android:layout_width="wrap_content"
+	                                android:layout_height="wrap_content"
+	                                android:text="Vinst/aktie"
+	                                android:textAppearance="?attr/textAppearanceLabelSmall"
+	                                android:textColor="?attr/colorOnSurfaceVariant" />
+
+	                            <TextView
+	                                android:id="@+id/earningsPerShareValue"
+	                                android:layout_width="wrap_content"
+	                                android:layout_height="wrap_content"
+	                                android:textAppearance="?attr/textAppearanceTitleMedium"
+	                                android:textColor="?attr/colorOnSurface"
+	                                tools:text="12,40" />
+
+	                        </LinearLayout>
+
+	                    </LinearLayout>
 
                     <TextView
                         android:id="@+id/lastUpdatedText"

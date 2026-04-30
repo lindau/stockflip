@@ -17,6 +17,7 @@ import java.net.CookiePolicy
 import okhttp3.JavaNetCookieJar
 import okhttp3.Request
 import kotlinx.coroutines.delay
+import kotlin.math.abs
 
 interface YahooFinanceApi {
     @GET("v8/finance/chart/{symbol}")
@@ -252,7 +253,7 @@ object YahooFinanceService : MarketDataService {
             }
             
             // Construct URL with crumb if available
-            var url = "https://query2.finance.yahoo.com/v10/finance/quoteSummary/$symbol?modules=summaryDetail"
+            var url = "https://query2.finance.yahoo.com/v10/finance/quoteSummary/$symbol?modules=summaryDetail,defaultKeyStatistics,financialData"
             if (crumb != null) {
                 url += "&crumb=$crumb"
                 Log.d(TAG, "Using Yahoo crumb for quoteSummary request")
@@ -278,26 +279,33 @@ object YahooFinanceService : MarketDataService {
                     val quoteSummary = jsonObject.optJSONObject("quoteSummary")
                     val result = quoteSummary?.optJSONArray("result")?.optJSONObject(0)
                     val summaryDetail = result?.optJSONObject("summaryDetail")
-                    
-                    if (summaryDetail != null) {
-                        Log.d(TAG, "Found summaryDetail in response")
+                    val defaultKeyStatistics = result?.optJSONObject("defaultKeyStatistics")
+
+                    if (summaryDetail != null || defaultKeyStatistics != null) {
+                        Log.d(TAG, "Found key metric modules in response")
                         val value = when (metricType) {
                             WatchType.MetricType.PE_RATIO -> {
-                                val pe = summaryDetail.optJSONObject("trailingPE")?.optDouble("raw")
+                                val pe = summaryDetail?.optJSONObject("trailingPE")?.optDouble("raw")
                                 if (pe == null || pe.isNaN()) {
-                                    summaryDetail.optJSONObject("forwardPE")?.optDouble("raw")
+                                    summaryDetail?.optJSONObject("forwardPE")?.optDouble("raw")
                                 } else pe
                             }
                             WatchType.MetricType.PS_RATIO -> {
-                                summaryDetail.optJSONObject("priceToSalesTrailing12Months")?.optDouble("raw")
+                                summaryDetail?.optJSONObject("priceToSalesTrailing12Months")?.optDouble("raw")
                             }
                             WatchType.MetricType.DIVIDEND_YIELD -> {
                                 // Try dividendYield first, then trailingAnnualDividendYield (common for non-US stocks)
-                                val yield = summaryDetail.optJSONObject("dividendYield")?.optDouble("raw")
+                                val yield = summaryDetail?.optJSONObject("dividendYield")?.optDouble("raw")
                                     ?.takeIf { !it.isNaN() && it > 0 }
-                                    ?: summaryDetail.optJSONObject("trailingAnnualDividendYield")?.optDouble("raw")
+                                    ?: summaryDetail?.optJSONObject("trailingAnnualDividendYield")?.optDouble("raw")
                                         ?.takeIf { !it.isNaN() && it > 0 }
                                 if (yield != null) yield * 100 else null
+                            }
+                            WatchType.MetricType.EARNINGS_PER_SHARE -> {
+                                defaultKeyStatistics?.optJSONObject("trailingEps")?.optDouble("raw")
+                                    ?.takeIf { !it.isNaN() && it > 0 }
+                                    ?: defaultKeyStatistics?.optJSONObject("forwardEps")?.optDouble("raw")
+                                        ?.takeIf { !it.isNaN() && it > 0 }
                             }
                         }
                         
@@ -308,7 +316,7 @@ object YahooFinanceService : MarketDataService {
                             Log.w(TAG, "Could not extract ${metricType.name} from Yahoo response (value: $value)")
                         }
                     } else {
-                        Log.w(TAG, "No summaryDetail found in Yahoo response. Result: ${result != null}, quoteSummary: ${quoteSummary != null}")
+                        Log.w(TAG, "No key metric modules found in Yahoo response. Result: ${result != null}, quoteSummary: ${quoteSummary != null}")
                     }
                 } else {
                     Log.w(TAG, "Yahoo Finance response body is null")
@@ -405,7 +413,7 @@ object YahooFinanceService : MarketDataService {
             }
 
             ensureCrumb()
-            var url = "https://query2.finance.yahoo.com/v10/finance/quoteSummary/$symbol?modules=summaryDetail"
+            var url = "https://query2.finance.yahoo.com/v10/finance/quoteSummary/$symbol?modules=summaryDetail,defaultKeyStatistics,financialData"
             if (crumb != null) url += "&crumb=$crumb"
 
             val request = Request.Builder()
@@ -417,22 +425,48 @@ object YahooFinanceService : MarketDataService {
             if (response.isSuccessful) {
                 val body = response.body?.string()
                 if (body != null) {
-                    val summaryDetail = JSONObject(body)
-                        .optJSONObject("quoteSummary")
-                        ?.optJSONArray("result")
-                        ?.optJSONObject(0)
-                        ?.optJSONObject("summaryDetail")
+	                    val summaryDetail = JSONObject(body)
+	                        .optJSONObject("quoteSummary")
+	                        ?.optJSONArray("result")
+	                        ?.optJSONObject(0)
+	                        ?.optJSONObject("summaryDetail")
+                        val defaultKeyStatistics = JSONObject(body)
+                            .optJSONObject("quoteSummary")
+                            ?.optJSONArray("result")
+                            ?.optJSONObject(0)
+                            ?.optJSONObject("defaultKeyStatistics")
+                        val financialData = JSONObject(body)
+                            .optJSONObject("quoteSummary")
+                            ?.optJSONArray("result")
+                            ?.optJSONObject(0)
+                            ?.optJSONObject("financialData")
 
-                    if (summaryDetail != null) {
-                        val pe = summaryDetail.optJSONObject("trailingPE")?.optDouble("raw").takeIf { it != null && !it.isNaN() && it > 0 }
-                            ?: summaryDetail.optJSONObject("forwardPE")?.optDouble("raw").takeIf { it != null && !it.isNaN() && it > 0 }
-                        val ps = summaryDetail.optJSONObject("priceToSalesTrailing12Months")?.optDouble("raw").takeIf { it != null && !it.isNaN() && it > 0 }
-                        val yieldRaw = summaryDetail.optJSONObject("dividendYield")?.optDouble("raw")
-                        val dividendYield = if (yieldRaw != null && !yieldRaw.isNaN() && yieldRaw > 0) yieldRaw * 100 else null
+		                    if (summaryDetail != null || defaultKeyStatistics != null || financialData != null) {
+		                        val pe = summaryDetail?.optJSONObject("trailingPE")?.optDouble("raw").takeIf { it != null && !it.isNaN() && it > 0 }
+		                            ?: summaryDetail?.optJSONObject("forwardPE")?.optDouble("raw").takeIf { it != null && !it.isNaN() && it > 0 }
+		                        val ps = summaryDetail?.optJSONObject("priceToSalesTrailing12Months")?.optDouble("raw").takeIf { it != null && !it.isNaN() && it > 0 }
+		                        val yieldRaw = summaryDetail?.optJSONObject("dividendYield")?.optDouble("raw")
+		                        val dividendYield = if (yieldRaw != null && !yieldRaw.isNaN() && yieldRaw > 0) yieldRaw * 100 else null
+                                val marketCap = summaryDetail?.optJSONObject("marketCap")?.optDouble("raw")
+                                    ?.takeIf { !it.isNaN() && it > 0 }
+                                val returnOnEquityRaw = financialData?.optJSONObject("returnOnEquity")?.optDouble("raw")
+                                    ?.takeIf { !it.isNaN() }
+                                val returnOnEquity = returnOnEquityRaw?.let { if (abs(it) <= 1.0) it * 100 else it }
+	                        val earningsPerShare = defaultKeyStatistics?.optJSONObject("trailingEps")?.optDouble("raw")
+	                            ?.takeIf { !it.isNaN() && it > 0 }
+	                            ?: defaultKeyStatistics?.optJSONObject("forwardEps")?.optDouble("raw")
+	                                ?.takeIf { !it.isNaN() && it > 0 }
 
-                        response.close()
-                        return@withContext KeyMetrics(peRatio = pe, psRatio = ps, dividendYield = dividendYield)
-                    }
+	                        response.close()
+	                        return@withContext KeyMetrics(
+                                peRatio = pe,
+                                psRatio = ps,
+                                dividendYield = dividendYield,
+                                earningsPerShare = earningsPerShare,
+                                marketCap = marketCap,
+                                returnOnEquity = returnOnEquity
+                            )
+	                    }
                 }
             } else if (response.code == 401) {
                 crumb = null

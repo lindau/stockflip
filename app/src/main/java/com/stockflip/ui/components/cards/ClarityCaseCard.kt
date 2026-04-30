@@ -6,9 +6,11 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
@@ -16,12 +18,17 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -44,6 +51,8 @@ fun ClarityCaseCard(
     live: LiveWatchData = LiveWatchData(),
     priceFormat: (Double) -> String,
     containerColor: Color = MaterialTheme.colorScheme.surface,
+    onToggleActive: (() -> Unit)? = null,
+    onReactivate: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
     val colorScheme = MaterialTheme.colorScheme
@@ -73,6 +82,8 @@ fun ClarityCaseCard(
     } else {
         containerColor
     }
+    val canReactivateOneTimeAlert = item.isTriggered &&
+        (item.watchType is WatchType.PriceTarget || item.watchType is WatchType.ATHBased)
 
     Card(
         modifier = modifier.fillMaxWidth(),
@@ -141,20 +152,60 @@ fun ClarityCaseCard(
                 )
             }
 
-            Text(
-                text = status,
-                modifier = Modifier
-                    .align(Alignment.Top)
-                    .background(statusBackground, RoundedCornerShape(6.dp))
-                    .padding(horizontal = 8.dp, vertical = 3.dp),
-                style = MaterialTheme.typography.labelSmall.copy(
-                    fontSize = 11.sp,
-                    lineHeight = 14.sp,
-                    fontWeight = FontWeight.SemiBold,
-                ),
-                color = statusColor,
-                maxLines = 1,
-            )
+            Column(
+                modifier = Modifier.align(Alignment.Top),
+                horizontalAlignment = Alignment.End,
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Text(
+                    text = status,
+                    modifier = Modifier
+                        .background(statusBackground, RoundedCornerShape(6.dp))
+                        .padding(horizontal = 8.dp, vertical = 3.dp),
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontSize = 11.sp,
+                        lineHeight = 14.sp,
+                        fontWeight = FontWeight.SemiBold,
+                    ),
+                    color = statusColor,
+                    maxLines = 1,
+                )
+                if (canReactivateOneTimeAlert && onReactivate != null) {
+                    TextButton(
+                        onClick = onReactivate,
+                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
+                        modifier = Modifier
+                            .heightIn(min = 32.dp)
+                            .semantics { contentDescription = "Återaktivera bevakning" },
+                    ) {
+                        Text(
+                            text = "Återaktivera",
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontSize = 11.sp,
+                                lineHeight = 14.sp,
+                                fontWeight = FontWeight.SemiBold,
+                            ),
+                            maxLines = 1,
+                        )
+                    }
+                } else if (onToggleActive != null) {
+                    Switch(
+                        checked = item.isActive,
+                        onCheckedChange = { onToggleActive() },
+                        colors = watchItemSwitchColors(),
+                        thumbContent = { watchItemSwitchThumb() },
+                        modifier = Modifier
+                            .scale(0.72f)
+                            .semantics {
+                                contentDescription = if (item.isActive) {
+                                    "Inaktivera bevakning"
+                                } else {
+                                    "Aktivera bevakning"
+                                }
+                            },
+                    )
+                }
+            }
         }
     }
 }
@@ -183,11 +234,12 @@ private fun clarityCaseTitle(item: WatchItem, priceFormat: (Double) -> String): 
     return when (val watchType = item.watchType) {
         is WatchType.PriceTarget -> "Prismål ${CurrencyHelper.formatPrice(watchType.targetPrice, currency)}"
         is WatchType.KeyMetrics -> {
-            val metric = when (watchType.metricType) {
-                WatchType.MetricType.PE_RATIO -> "P/E"
-                WatchType.MetricType.PS_RATIO -> "P/S"
-                WatchType.MetricType.DIVIDEND_YIELD -> "Direktavk."
-            }
+	            val metric = when (watchType.metricType) {
+	                WatchType.MetricType.PE_RATIO -> "P/E"
+	                WatchType.MetricType.PS_RATIO -> "P/S"
+	                WatchType.MetricType.DIVIDEND_YIELD -> "Direktavk."
+	                WatchType.MetricType.EARNINGS_PER_SHARE -> "Vinst/aktie"
+	            }
             val direction = when (watchType.direction) {
                 WatchType.PriceDirection.ABOVE -> "över"
                 WatchType.PriceDirection.BELOW -> "under"
@@ -292,10 +344,10 @@ private fun formatMetricTarget(
     watchType: WatchType.KeyMetrics,
     priceFormat: (Double) -> String,
 ): String {
-    return when (watchType.metricType) {
-        WatchType.MetricType.DIVIDEND_YIELD -> "${priceFormat(watchType.targetValue)} %"
-        else -> priceFormat(watchType.targetValue)
-    }
+	    return when (watchType.metricType) {
+	        WatchType.MetricType.DIVIDEND_YIELD -> "${priceFormat(watchType.targetValue)} %"
+	        else -> priceFormat(watchType.targetValue)
+	    }
 }
 
 private fun formatDropTarget(

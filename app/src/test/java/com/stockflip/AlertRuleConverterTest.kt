@@ -168,6 +168,29 @@ class AlertRuleConverterTest {
     }
 
     @Test
+    fun `toAlertRule should convert earnings per share WatchItem to SingleKeyMetric AlertRule`() {
+        val watchItem = WatchItem(
+            watchType = WatchType.KeyMetrics(
+                WatchType.MetricType.EARNINGS_PER_SHARE,
+                8.5,
+                WatchType.PriceDirection.BELOW
+            ),
+            ticker = "AAPL",
+            companyName = "Apple"
+        )
+
+        val alertRule = AlertRuleConverter.toAlertRule(watchItem)
+
+        assertNotNull("Should convert EPS KeyMetrics to AlertRule", alertRule)
+        assertTrue("Should be SingleKeyMetric", alertRule is AlertRule.SingleKeyMetric)
+        val keyMetric = alertRule as AlertRule.SingleKeyMetric
+        assertEquals("AAPL", keyMetric.symbol)
+        assertEquals(AlertRule.KeyMetricType.EARNINGS_PER_SHARE, keyMetric.metricType)
+        assertEquals(8.5, keyMetric.targetValue, 0.01)
+        assertEquals(AlertRule.PriceComparisonType.BELOW, keyMetric.direction)
+    }
+
+    @Test
     fun `toAlertRule should return null when ticker is missing`() {
         // Given
         val watchItem = WatchItem(

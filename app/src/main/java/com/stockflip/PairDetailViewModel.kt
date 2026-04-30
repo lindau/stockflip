@@ -61,19 +61,10 @@ class PairDetailViewModel(
         loadHistory()
     }
 
-    fun toggleActive() {
-        viewModelScope.launch {
-            val current = (_pairState.value as? UiState.Success)?.data?.watchItem ?: return@launch
-            val updated = current.setActive(!current.isActive)
-            watchItemDao.update(updated)
-            loadPair()
-        }
-    }
-
     fun reactivate() {
         viewModelScope.launch {
             val current = (_pairState.value as? UiState.Success)?.data?.watchItem ?: return@launch
-            watchItemDao.update(current.reactivate().copy(isActive = true))
+            watchItemDao.update(current.reactivate())
             loadPair()
             loadHistory()
         }

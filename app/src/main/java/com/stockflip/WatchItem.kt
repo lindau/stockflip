@@ -99,10 +99,32 @@ data class WatchItem(
     /**
      * Återaktiverar alerten (tar bort triggad-status).
      *
-     * @return Ny WatchItem med isTriggered = false och lastTriggeredDate = null
+     * @return Ny WatchItem med isTriggered = false, lastTriggeredDate = null och isActive = true
      */
-    fun reactivate(): WatchItem {
-        return copy(isTriggered = false, lastTriggeredDate = null)
+    fun reactivate(currentPrice: Double? = null): WatchItem {
+        val updatedWatchType = when (val type = watchType) {
+            is WatchType.PriceTarget -> {
+                currentPrice
+                    ?.takeIf { it > 0.0 }
+                    ?.let { price ->
+                        type.copy(
+                            direction = if (price >= type.targetPrice) {
+                                WatchType.PriceDirection.BELOW
+                            } else {
+                                WatchType.PriceDirection.ABOVE
+                            }
+                        )
+                    }
+                    ?: type
+            }
+            else -> watchType
+        }
+        return copy(
+            watchType = updatedWatchType,
+            isTriggered = false,
+            lastTriggeredDate = null,
+            isActive = true
+        )
     }
 
     /**

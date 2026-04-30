@@ -62,6 +62,8 @@ class AlertAdapter(
                             live = uiState.live,
                             priceFormat = { value -> CurrencyHelper.formatDecimal(value) },
                             onItemClick = { onEdit(watchItem) },
+                            onToggleActive = { onToggleActive(watchItem) },
+                            onReactivate = { onReactivate(watchItem) },
                             containerColor = containerColor,
                             triggerHistory = triggerHistory[watchItem.id] ?: emptyList(),
                             isNew = TriggerSeenTracker.isNew(watchItem),
@@ -98,4 +100,3 @@ class AlertAdapter(
         }
     }
 }
-

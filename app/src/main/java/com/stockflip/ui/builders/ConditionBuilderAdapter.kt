@@ -101,7 +101,7 @@ class ConditionBuilderAdapter(
             }
 
             // Setup condition type
-            val conditionTypes = arrayOf("Pris", "P/E-tal", "P/S-tal", "Utdelningsprocent", "Drawdown", "Dagsrörelse")
+	            val conditionTypes = arrayOf("Pris", "P/E-tal", "P/S-tal", "Utdelningsprocent", "Vinst/aktie", "Drawdown", "Dagsrörelse")
             val conditionTypeAdapter = ArrayAdapter(itemView.context, android.R.layout.simple_dropdown_item_1line, conditionTypes)
             conditionTypeInput.setAdapter(conditionTypeAdapter)
             conditionTypeInput.setText(condition.conditionType, false)

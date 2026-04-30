@@ -177,11 +177,12 @@ class WatchItemEditor(
         val tickerInputLayout = tickerInput.parent as? TextInputLayout
         val metricTypeInput = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.metricTypeInput).apply {
             setText(
-                when (keyMetrics.metricType) {
-                    WatchType.MetricType.PE_RATIO -> "P/E-tal"
-                    WatchType.MetricType.PS_RATIO -> "P/S-tal"
-                    WatchType.MetricType.DIVIDEND_YIELD -> "Utdelningsprocent"
-                },
+	                when (keyMetrics.metricType) {
+	                    WatchType.MetricType.PE_RATIO -> "P/E-tal"
+	                    WatchType.MetricType.PS_RATIO -> "P/S-tal"
+	                    WatchType.MetricType.DIVIDEND_YIELD -> "Utdelningsprocent"
+	                    WatchType.MetricType.EARNINGS_PER_SHARE -> "Vinst/aktie"
+	                },
                 false
             )
         }
@@ -201,7 +202,7 @@ class WatchItemEditor(
             tickerInput.isEnabled = false
         }
 
-        val metricTypes = arrayOf("P/E-tal", "P/S-tal", "Utdelningsprocent")
+	        val metricTypes = arrayOf("P/E-tal", "P/S-tal", "Utdelningsprocent", "Vinst/aktie")
         metricTypeInput.setAdapter(ArrayAdapter(context, android.R.layout.simple_dropdown_item_1line, metricTypes))
 
         MaterialAlertDialogBuilder(context)
@@ -212,10 +213,11 @@ class WatchItemEditor(
                 val finalTicker = selectedStock?.symbol ?: tickerInput.text.toString().trim()
                 val targetValue = targetValueInput.text.toString().parseDecimal()
                 val metricType = when (metricTypeInput.text.toString()) {
-                    "P/E-tal" -> WatchType.MetricType.PE_RATIO
-                    "P/S-tal" -> WatchType.MetricType.PS_RATIO
-                    "Utdelningsprocent" -> WatchType.MetricType.DIVIDEND_YIELD
-                    else -> null
+	                    "P/E-tal" -> WatchType.MetricType.PE_RATIO
+	                    "P/S-tal" -> WatchType.MetricType.PS_RATIO
+	                    "Utdelningsprocent" -> WatchType.MetricType.DIVIDEND_YIELD
+	                    "Vinst/aktie" -> WatchType.MetricType.EARNINGS_PER_SHARE
+	                    else -> null
                 }
                 if (finalTicker.isNotEmpty() && metricType != null && targetValue != null && targetValue > 0) {
                     val existingDirection = keyMetrics.direction
@@ -531,10 +533,11 @@ class WatchItemEditor(
                         )
                         is AlertRule.SingleKeyMetric -> {
                             val conditionType = when (rule.metricType) {
-                                AlertRule.KeyMetricType.PE_RATIO -> "P/E-tal"
-                                AlertRule.KeyMetricType.PS_RATIO -> "P/S-tal"
-                                AlertRule.KeyMetricType.DIVIDEND_YIELD -> "Utdelningsprocent"
-                            }
+	                                AlertRule.KeyMetricType.PE_RATIO -> "P/E-tal"
+	                                AlertRule.KeyMetricType.PS_RATIO -> "P/S-tal"
+	                                AlertRule.KeyMetricType.DIVIDEND_YIELD -> "Utdelningsprocent"
+	                                AlertRule.KeyMetricType.EARNINGS_PER_SHARE -> "Vinst/aktie"
+	                            }
                             ConditionBuilderAdapter.ConditionData(
                                 conditionType = conditionType,
                                 direction = if (rule.direction == AlertRule.PriceComparisonType.ABOVE) "Över" else "Under",
@@ -646,14 +649,22 @@ class WatchItemEditor(
                 }
                 AlertRule.SingleKeyMetric(currentSymbol, AlertRule.KeyMetricType.PS_RATIO, value, direction)
             }
-            "Utdelningsprocent" -> {
-                val direction = when (condition.direction) {
-                    "Över" -> AlertRule.PriceComparisonType.ABOVE
-                    "Under" -> AlertRule.PriceComparisonType.BELOW
-                    else -> return null
-                }
-                AlertRule.SingleKeyMetric(currentSymbol, AlertRule.KeyMetricType.DIVIDEND_YIELD, value, direction)
-            }
+	            "Utdelningsprocent" -> {
+	                val direction = when (condition.direction) {
+	                    "Över" -> AlertRule.PriceComparisonType.ABOVE
+	                    "Under" -> AlertRule.PriceComparisonType.BELOW
+	                    else -> return null
+	                }
+	                AlertRule.SingleKeyMetric(currentSymbol, AlertRule.KeyMetricType.DIVIDEND_YIELD, value, direction)
+	            }
+	            "Vinst/aktie" -> {
+	                val direction = when (condition.direction) {
+	                    "Över" -> AlertRule.PriceComparisonType.ABOVE
+	                    "Under" -> AlertRule.PriceComparisonType.BELOW
+	                    else -> return null
+	                }
+	                AlertRule.SingleKeyMetric(currentSymbol, AlertRule.KeyMetricType.EARNINGS_PER_SHARE, value, direction)
+	            }
             "Drawdown" -> AlertRule.SingleDrawdownFromHigh(
                 currentSymbol,
                 AlertRule.DrawdownDropType.PERCENTAGE,

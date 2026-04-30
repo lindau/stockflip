@@ -90,11 +90,12 @@ class WatchDialogManager(
     }
 
     private fun metricLabel(metricType: WatchType.MetricType): String {
-        return when (metricType) {
-            WatchType.MetricType.PE_RATIO -> "P/E"
-            WatchType.MetricType.PS_RATIO -> "P/S"
-            WatchType.MetricType.DIVIDEND_YIELD -> "utdelning"
-        }
+	        return when (metricType) {
+	            WatchType.MetricType.PE_RATIO -> "P/E"
+	            WatchType.MetricType.PS_RATIO -> "P/S"
+	            WatchType.MetricType.DIVIDEND_YIELD -> "utdelning"
+	            WatchType.MetricType.EARNINGS_PER_SHARE -> "vinst/aktie"
+	        }
     }
 
     private fun formatMetricValue(metricType: WatchType.MetricType, value: Double): String {
@@ -132,10 +133,11 @@ class WatchDialogManager(
                 val data = (viewModel.stockDataState.value as? UiState.Success<StockDetailData>)?.data ?: return@WatchItemEditor null
                 val metricType = (watchItem.watchType as? WatchType.KeyMetrics)?.metricType ?: return@WatchItemEditor null
                 when (metricType) {
-                    WatchType.MetricType.PE_RATIO -> data.peRatio
-                    WatchType.MetricType.PS_RATIO -> data.psRatio
-                    WatchType.MetricType.DIVIDEND_YIELD -> data.dividendYield
-                }
+	                    WatchType.MetricType.PE_RATIO -> data.peRatio
+	                    WatchType.MetricType.PS_RATIO -> data.psRatio
+	                    WatchType.MetricType.DIVIDEND_YIELD -> data.dividendYield
+	                    WatchType.MetricType.EARNINGS_PER_SHARE -> data.earningsPerShare
+	                }
             }
         )
     }
@@ -505,15 +507,16 @@ class WatchDialogManager(
         val historyFiveYear = dialogView.findViewById<TextView>(R.id.historyFiveYear)
         historyCard.visibility = View.VISIBLE
 
-        val metricTypes = arrayOf("P/E-tal", "P/S-tal", "Utdelningsprocent")
+	        val metricTypes = arrayOf("P/E-tal", "P/S-tal", "Utdelningsprocent", "Vinst/aktie")
         val metricTypeAdapter = ArrayAdapter(context, android.R.layout.simple_dropdown_item_1line, metricTypes)
         metricTypeInput.setAdapter(metricTypeAdapter)
         metricTypeInput.setText(
             when (suggestedMetricType) {
-                WatchType.MetricType.PE_RATIO -> "P/E-tal"
-                WatchType.MetricType.PS_RATIO -> "P/S-tal"
-                WatchType.MetricType.DIVIDEND_YIELD -> "Utdelningsprocent"
-                null -> ""
+	                WatchType.MetricType.PE_RATIO -> "P/E-tal"
+	                WatchType.MetricType.PS_RATIO -> "P/S-tal"
+	                WatchType.MetricType.DIVIDEND_YIELD -> "Utdelningsprocent"
+	                WatchType.MetricType.EARNINGS_PER_SHARE -> "Vinst/aktie"
+	                null -> ""
             },
             false
         )
@@ -522,19 +525,21 @@ class WatchDialogManager(
 
         fun selectedMetricType(): WatchType.MetricType? {
             return when (metricTypeInput.text.toString()) {
-                "P/E-tal" -> WatchType.MetricType.PE_RATIO
-                "P/S-tal" -> WatchType.MetricType.PS_RATIO
-                "Utdelningsprocent" -> WatchType.MetricType.DIVIDEND_YIELD
-                else -> null
+	                "P/E-tal" -> WatchType.MetricType.PE_RATIO
+	                "P/S-tal" -> WatchType.MetricType.PS_RATIO
+	                "Utdelningsprocent" -> WatchType.MetricType.DIVIDEND_YIELD
+	                "Vinst/aktie" -> WatchType.MetricType.EARNINGS_PER_SHARE
+	                else -> null
             }
         }
 
         fun metricCurrentValue(metricType: WatchType.MetricType): Double? {
             return when (metricType) {
-                WatchType.MetricType.PE_RATIO -> stockData?.peRatio
-                WatchType.MetricType.PS_RATIO -> stockData?.psRatio
-                WatchType.MetricType.DIVIDEND_YIELD -> stockData?.dividendYield
-            }
+	                WatchType.MetricType.PE_RATIO -> stockData?.peRatio
+	                WatchType.MetricType.PS_RATIO -> stockData?.psRatio
+	                WatchType.MetricType.DIVIDEND_YIELD -> stockData?.dividendYield
+	                WatchType.MetricType.EARNINGS_PER_SHARE -> stockData?.earningsPerShare
+	            }
         }
 
         fun refreshMetricContext(metricType: WatchType.MetricType?) {
@@ -549,10 +554,10 @@ class WatchDialogManager(
 
             val currentValue = metricCurrentValue(metricType)
             val summary = currentMetricHistory(metricType)
-            targetValueLayout.hint = when (metricType) {
-                WatchType.MetricType.DIVIDEND_YIELD -> "Målvärde (%)"
-                else -> "Målvärde"
-            }
+	            targetValueLayout.hint = when (metricType) {
+	                WatchType.MetricType.DIVIDEND_YIELD -> "Målvärde (%)"
+	                else -> "Målvärde"
+	            }
             contextText.text = buildString {
                 append("${metricLabel(metricType)} är ")
                 append(currentValue?.let { formatMetricValue(metricType, it) } ?: "okänt")
@@ -604,18 +609,20 @@ class WatchDialogManager(
                 val targetValueStr = targetValueInput.text.toString()
                 if (metricTypeStr.isNotEmpty() && targetValueStr.isNotEmpty()) {
                     val metricType = when (metricTypeStr) {
-                        "P/E-tal" -> WatchType.MetricType.PE_RATIO
-                        "P/S-tal" -> WatchType.MetricType.PS_RATIO
-                        "Utdelningsprocent" -> WatchType.MetricType.DIVIDEND_YIELD
-                        else -> null
+	                        "P/E-tal" -> WatchType.MetricType.PE_RATIO
+	                        "P/S-tal" -> WatchType.MetricType.PS_RATIO
+	                        "Utdelningsprocent" -> WatchType.MetricType.DIVIDEND_YIELD
+	                        "Vinst/aktie" -> WatchType.MetricType.EARNINGS_PER_SHARE
+	                        else -> null
                     }
                     val targetValue = targetValueStr.parseDecimal()
                     if (metricType != null && targetValue != null && targetValue > 0) {
                         val currentValue = when (metricType) {
-                            WatchType.MetricType.PE_RATIO -> (viewModel.stockDataState.value as? UiState.Success<StockDetailData>)?.data?.peRatio
-                            WatchType.MetricType.PS_RATIO -> (viewModel.stockDataState.value as? UiState.Success<StockDetailData>)?.data?.psRatio
-                            WatchType.MetricType.DIVIDEND_YIELD -> (viewModel.stockDataState.value as? UiState.Success<StockDetailData>)?.data?.dividendYield
-                        } ?: 0.0
+	                            WatchType.MetricType.PE_RATIO -> (viewModel.stockDataState.value as? UiState.Success<StockDetailData>)?.data?.peRatio
+	                            WatchType.MetricType.PS_RATIO -> (viewModel.stockDataState.value as? UiState.Success<StockDetailData>)?.data?.psRatio
+	                            WatchType.MetricType.DIVIDEND_YIELD -> (viewModel.stockDataState.value as? UiState.Success<StockDetailData>)?.data?.dividendYield
+	                            WatchType.MetricType.EARNINGS_PER_SHARE -> (viewModel.stockDataState.value as? UiState.Success<StockDetailData>)?.data?.earningsPerShare
+	                        } ?: 0.0
                         val direction = if (currentValue > 0.0 && currentValue >= targetValue) {
                             WatchType.PriceDirection.BELOW
                         } else {

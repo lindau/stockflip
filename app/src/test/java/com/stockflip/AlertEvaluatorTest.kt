@@ -345,4 +345,42 @@ class AlertEvaluatorTest {
         // Then
         assertFalse("Should not trigger when previousClose is null", result)
     }
+
+    @Test
+    fun `evaluate SingleKeyMetric earnings per share ABOVE should return true when value is above target`() {
+        val rule = AlertRule.SingleKeyMetric(
+            symbol = "AAPL",
+            metricType = AlertRule.KeyMetricType.EARNINGS_PER_SHARE,
+            targetValue = 8.5,
+            direction = AlertRule.PriceComparisonType.ABOVE
+        )
+        val snapshot = MarketSnapshot.forSingleStock(
+            lastPrice = 100.0,
+            previousClose = null,
+            keyMetrics = mapOf(AlertRule.KeyMetricType.EARNINGS_PER_SHARE to 9.0)
+        )
+
+        val result = AlertEvaluator.evaluate(rule, snapshot)
+
+        assertTrue("Should trigger when EPS is above target", result)
+    }
+
+    @Test
+    fun `evaluate SingleKeyMetric earnings per share BELOW should return false when value is above target`() {
+        val rule = AlertRule.SingleKeyMetric(
+            symbol = "AAPL",
+            metricType = AlertRule.KeyMetricType.EARNINGS_PER_SHARE,
+            targetValue = 8.5,
+            direction = AlertRule.PriceComparisonType.BELOW
+        )
+        val snapshot = MarketSnapshot.forSingleStock(
+            lastPrice = 100.0,
+            previousClose = null,
+            keyMetrics = mapOf(AlertRule.KeyMetricType.EARNINGS_PER_SHARE to 9.0)
+        )
+
+        val result = AlertEvaluator.evaluate(rule, snapshot)
+
+        assertFalse("Should not trigger when EPS is above a below-target alert", result)
+    }
 }

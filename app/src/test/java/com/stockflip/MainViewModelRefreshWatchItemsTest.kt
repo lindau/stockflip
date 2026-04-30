@@ -7,6 +7,8 @@ import com.stockflip.testutil.MainDispatcherRule
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 
@@ -66,5 +68,58 @@ class MainViewModelRefreshWatchItemsTest {
         assertEquals(280.0, updatedPair.live.currentPrice2, 0.0001)
         assertEquals(300.0, updatedCombined.live.currentPrice, 0.0001)
     }
-}
 
+    @Test
+    fun `toggleWatchItemActive only changes active flag`() = runBlocking {
+        val triggeredItem = WatchItem(
+            id = 1,
+            watchType = WatchType.PriceTarget(targetPrice = 250.0, direction = WatchType.PriceDirection.ABOVE),
+            ticker = "VOLV-B.ST",
+            companyName = "Volvo B",
+            isActive = true,
+            isTriggered = true,
+            lastTriggeredDate = "2026-04-30"
+        )
+        val watchItemDao = InMemoryWatchItemDao(listOf(triggeredItem))
+        val viewModel = MainViewModel(
+            stockPairDao = InMemoryStockPairDao(emptyList()),
+            watchItemDao = watchItemDao,
+            yahooFinanceService = FakeMarketDataService()
+        )
+
+        viewModel.toggleWatchItemActive(triggeredItem, false)
+
+        val updated = watchItemDao.getWatchItemById(1)!!
+        assertFalse(updated.isActive)
+        assertTrue(updated.isTriggered)
+        assertEquals("2026-04-30", updated.lastTriggeredDate)
+    }
+
+    @Test
+    fun `reactivateWatchItem recalculates price target direction from current price`() = runBlocking {
+        val triggeredItem = WatchItem(
+            id = 1,
+            watchType = WatchType.PriceTarget(targetPrice = 100.0, direction = WatchType.PriceDirection.ABOVE),
+            ticker = "VOLV-B.ST",
+            companyName = "Volvo B",
+            isActive = false,
+            isTriggered = true,
+            lastTriggeredDate = "2026-04-30"
+        )
+        val watchItemDao = InMemoryWatchItemDao(listOf(triggeredItem))
+        val viewModel = MainViewModel(
+            stockPairDao = InMemoryStockPairDao(emptyList()),
+            watchItemDao = watchItemDao,
+            yahooFinanceService = FakeMarketDataService(pricesBySymbol = mapOf("VOLV-B.ST" to 105.0))
+        )
+
+        viewModel.reactivateWatchItem(triggeredItem)
+
+        val updated = watchItemDao.getWatchItemById(1)!!
+        val updatedType = updated.watchType as WatchType.PriceTarget
+        assertTrue(updated.isActive)
+        assertFalse(updated.isTriggered)
+        assertEquals(null, updated.lastTriggeredDate)
+        assertEquals(WatchType.PriceDirection.BELOW, updatedType.direction)
+    }
+}

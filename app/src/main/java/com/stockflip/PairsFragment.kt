@@ -104,6 +104,7 @@ class PairsFragment : Fragment() {
             },
             pairCardPresentation = PairCardPresentation.Clarity,
             showPricePairHeader = false,
+            showActiveToggleControls = false,
         )
 
         binding.pairsRecyclerView.apply {

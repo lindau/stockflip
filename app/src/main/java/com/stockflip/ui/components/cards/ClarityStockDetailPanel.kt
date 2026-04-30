@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -274,31 +275,50 @@ private fun ClarityPeriodSelector(
 
 @Composable
 private fun ClarityStockStatsGrid(data: StockDetailData) {
-    val hasMetrics = data.peRatio != null || data.psRatio != null || data.dividendYield != null
+    val hasMetrics = data.peRatio != null ||
+        data.psRatio != null ||
+        data.dividendYield != null ||
+        data.earningsPerShare != null ||
+        data.marketCap != null ||
+        data.returnOnEquity != null
     val stats = if (hasMetrics) {
         listOf(
             "P/E" to (data.peRatio?.let { CurrencyHelper.formatDecimal(it) } ?: "-"),
             "P/S" to (data.psRatio?.let { CurrencyHelper.formatDecimal(it) } ?: "-"),
-            "Direktavk." to (data.dividendYield?.let { "${CurrencyHelper.formatDecimal(it)} %" } ?: "-"),
+            "Direktavkastning" to (data.dividendYield?.let { "${CurrencyHelper.formatDecimal(it)}%" } ?: "-"),
+            "Vinst/aktie" to (data.earningsPerShare?.let { CurrencyHelper.formatPrice(it, data.currency) } ?: "-"),
+            "Börsvärde" to (data.marketCap?.let { formatCompactMarketCap(it, data.currency) } ?: "-"),
+            "ROE" to (data.returnOnEquity?.let { "${CurrencyHelper.formatDecimal(it)}%" } ?: "-"),
         )
     } else {
         listOf(
             "52v högsta" to (data.week52High?.let { CurrencyHelper.formatDecimal(it) } ?: "-"),
             "52v lägsta" to (data.week52Low?.let { CurrencyHelper.formatDecimal(it) } ?: "-"),
-            "Drawdown" to (data.drawdownPercent?.let { "${CurrencyHelper.formatDecimal(it)} %" } ?: "-"),
+            "Drawdown" to (data.drawdownPercent?.let { "${CurrencyHelper.formatDecimal(it)}%" } ?: "-"),
         )
     }
 
-    Row(
+    val columns = 3
+    Column(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        stats.forEach { (label, value) ->
-            ClarityStatCell(
-                label = label,
-                value = value,
-                modifier = Modifier.weight(1f),
-            )
+        stats.chunked(columns).forEach { rowStats ->
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                rowStats.forEach { (label, value) ->
+                    ClarityStatCell(
+                        label = label,
+                        value = value,
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+                repeat(columns - rowStats.size) {
+                    Spacer(modifier = Modifier.weight(1f))
+                }
+            }
         }
     }
 }
@@ -316,25 +336,27 @@ private fun ClarityStatCell(
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         border = BorderStroke(1.dp, LocalCardBorder.current),
     ) {
-        Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 14.dp)) {
+        Column(modifier = Modifier.padding(horizontal = 10.dp, vertical = 10.dp)) {
             Text(
                 text = label.uppercase(Locale("sv", "SE")),
+                modifier = Modifier.height(14.dp),
                 style = MaterialTheme.typography.labelSmall.copy(
-                    fontSize = 11.sp,
-                    lineHeight = 14.sp,
+                    fontSize = 10.sp,
+                    lineHeight = 13.sp,
                     fontWeight = FontWeight.Medium,
-                    letterSpacing = 0.3.sp,
+                    letterSpacing = 0.sp,
                 ),
                 color = LocalTextTertiary.current,
                 maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
+                overflow = TextOverflow.Clip,
             )
             Text(
                 text = value,
-                modifier = Modifier.padding(top = 6.dp),
-                style = NordikNumericStyle.copy(fontSize = 20.sp, lineHeight = 24.sp, fontWeight = FontWeight.Bold),
+                modifier = Modifier.padding(top = 4.dp),
+                style = NordikNumericStyle.copy(fontSize = 16.sp, lineHeight = 20.sp, fontWeight = FontWeight.Bold),
                 color = MaterialTheme.colorScheme.onSurface,
                 maxLines = 1,
+                softWrap = false,
                 overflow = TextOverflow.Ellipsis,
             )
         }
@@ -436,6 +458,26 @@ private fun stockMeta(data: StockDetailData): String {
         data.exchange?.takeIf { it.isNotBlank() },
         data.currency.takeIf { it.isNotBlank() },
     ).joinToString(" · ").uppercase(Locale("sv", "SE"))
+}
+
+private fun formatCompactMarketCap(value: Double, currency: String): String {
+    val absoluteValue = abs(value)
+    val (scaledValue, unit) = when {
+        absoluteValue >= 1_000_000_000_000.0 -> value / 1_000_000_000_000.0 to "bilj"
+        absoluteValue >= 1_000_000_000.0 -> value / 1_000_000_000.0 to "mdr"
+        absoluteValue >= 1_000_000.0 -> value / 1_000_000.0 to "mn"
+        else -> return CurrencyHelper.formatPrice(value, currency)
+    }
+    val formatter = java.text.DecimalFormat(
+        if (abs(scaledValue) >= 100.0) "#,##0" else "#,##0.#",
+        java.text.DecimalFormatSymbols(Locale("sv", "SE")),
+    )
+    val number = formatter.format(scaledValue)
+    val currencySymbol = CurrencyHelper.getCurrencySymbol(currency)
+    return when (currency.uppercase(Locale.ROOT)) {
+        "USD", "EUR", "GBP", "JPY", "CNY", "CHF", "CAD", "AUD" -> "$currencySymbol$number $unit"
+        else -> "$number $unit $currencySymbol"
+    }
 }
 
 private fun dailyChangePercent(data: StockDetailData): Double? {

@@ -71,9 +71,6 @@ class PairDetailFragment : Fragment() {
         viewModel = ViewModelProvider(this, factory)[PairDetailViewModel::class.java]
 
         binding.editPairButton.setOnClickListener { editPair() }
-        binding.toggleActiveButton.setOnClickListener {
-            togglePairActive()
-        }
         binding.triggerReactivateButton.setOnClickListener {
             viewModel.reactivate()
             triggerBannerDismissed = true
@@ -167,11 +164,6 @@ class PairDetailFragment : Fragment() {
         (requireActivity() as? MainActivity)?.showEditDialogFromPairs(data.watchItem)
     }
 
-    private fun togglePairActive() {
-        viewModel.toggleActive()
-        syncOverviewInBackground()
-    }
-
     private fun renderClarityPairPanel() {
         val data = latestPairData ?: return
         binding.pairClarityPanel.setContent {
@@ -183,7 +175,6 @@ class PairDetailFragment : Fragment() {
                     history = latestHistory,
                     onPeriodSelected = { viewModel.selectPeriod(it) },
                     onEdit = { editPair() },
-                    onToggleActive = { togglePairActive() },
                 )
             }
         }
@@ -206,7 +197,6 @@ class PairDetailFragment : Fragment() {
         binding.spreadTarget.text = "Mål: ${CurrencyHelper.formatDecimal(pair.priceDifference)}"
         binding.notifyEqualValue.text = if (pair.notifyWhenEqual) "Ja" else "Nej"
 
-        binding.toggleActiveButton.text = if (data.watchItem.isActive) "Inaktivera" else "Aktivera"
         binding.statusValue.text = if (data.watchItem.isActive) "Aktiv" else "Inaktiv"
     }
 

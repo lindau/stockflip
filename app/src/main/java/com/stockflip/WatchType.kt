@@ -149,7 +149,8 @@ sealed class WatchType {
     enum class MetricType {
         PE_RATIO,           // Price-to-Earnings ratio
         PS_RATIO,           // Price-to-Sales ratio
-        DIVIDEND_YIELD      // Dividend yield percentage
+        DIVIDEND_YIELD,     // Dividend yield percentage
+        EARNINGS_PER_SHARE  // Earnings per share
     }
 
     enum class DropType {

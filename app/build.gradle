@@ -4,7 +4,7 @@ plugins {
     id 'org.jetbrains.kotlin.plugin.compose'
 }
 
-// Auto-version: versionName visas som "1.1.<löpnummer>" och räknas upp vid varje app-build.
+// Auto-version: versionName visas som "1.2" eller "1.2.<löpnummer>" och räknas upp vid varje app-build.
 def gitValue = { List<String> args, String fallback ->
     try {
         def proc = args.execute(null, rootDir)
@@ -68,7 +68,7 @@ gradle.buildFinished {
     }
 }
 
-def appVersionName = "1.1.${patchVersion}"
+def appVersionName = patchVersion == 0 ? "1.2" : "1.2.${patchVersion}"
 
 android {
     namespace = 'com.stockflip'
@@ -91,6 +91,14 @@ android {
         }
     }
 
+    signingConfigs {
+        debug {
+            enableV1Signing true
+            enableV2Signing true
+            enableV3Signing true
+        }
+    }
+
     buildTypes {
         debug {
             minifyEnabled false
@@ -98,6 +106,7 @@ android {
         release {
             minifyEnabled true
             shrinkResources true
+            signingConfig signingConfigs.debug
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }

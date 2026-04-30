@@ -33,7 +33,7 @@ object CurrencyHelper {
         // För SEK, NOK, DKK och krypto: placera symbol efter
         return when (currencyCode.uppercase()) {
             "USD", "EUR", "GBP", "JPY", "CNY", "CHF", "CAD", "AUD" -> "$currencySymbol$formattedPrice"
-            else -> "$formattedPrice $currencySymbol"
+            else -> "$formattedPrice\u00A0$currencySymbol"
         }
     }
 

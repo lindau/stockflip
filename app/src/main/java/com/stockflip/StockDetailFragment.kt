@@ -465,11 +465,15 @@ class StockDetailFragment : Fragment() {
         binding.drawdownPercent.setTextColor(dropColor)
 
         // Nyckeltal-rad (dold för krypto och om inga värden finns)
-        val hasAnyMetric = data.peRatio != null || data.psRatio != null || data.dividendYield != null
-        binding.keyMetricsRow.visibility = if (hasAnyMetric) android.view.View.VISIBLE else android.view.View.GONE
-        binding.peRatioValue.text = data.peRatio?.let { CurrencyHelper.formatDecimal(it) } ?: "-"
-        binding.psRatioValue.text = data.psRatio?.let { CurrencyHelper.formatDecimal(it) } ?: "-"
-        binding.dividendYieldValue.text = data.dividendYield?.let { "${CurrencyHelper.formatDecimal(it)}%" } ?: "-"
+	        val hasAnyMetric = data.peRatio != null ||
+	            data.psRatio != null ||
+	            data.dividendYield != null ||
+	            data.earningsPerShare != null
+	        binding.keyMetricsRow.visibility = if (hasAnyMetric) android.view.View.VISIBLE else android.view.View.GONE
+	        binding.peRatioValue.text = data.peRatio?.let { CurrencyHelper.formatDecimal(it) } ?: "-"
+	        binding.psRatioValue.text = data.psRatio?.let { CurrencyHelper.formatDecimal(it) } ?: "-"
+	        binding.dividendYieldValue.text = data.dividendYield?.let { "${CurrencyHelper.formatDecimal(it)}%" } ?: "-"
+	        binding.earningsPerShareValue.text = data.earningsPerShare?.let { CurrencyHelper.formatDecimal(it) } ?: "-"
         binding.notesCard.isVisible = true
 
         if (data.lastUpdatedAt > 0) {
@@ -684,18 +688,20 @@ class StockDetailFragment : Fragment() {
 
     private fun currentMetricValueFor(metricType: WatchType.MetricType, data: StockDetailData): Double? {
         return when (metricType) {
-            WatchType.MetricType.PE_RATIO -> data.peRatio
-            WatchType.MetricType.PS_RATIO -> data.psRatio
-            WatchType.MetricType.DIVIDEND_YIELD -> data.dividendYield
-        }
+	            WatchType.MetricType.PE_RATIO -> data.peRatio
+	            WatchType.MetricType.PS_RATIO -> data.psRatio
+	            WatchType.MetricType.DIVIDEND_YIELD -> data.dividendYield
+	            WatchType.MetricType.EARNINGS_PER_SHARE -> data.earningsPerShare
+	        }
     }
 
     private fun metricLabel(metricType: WatchType.MetricType): String {
         return when (metricType) {
-            WatchType.MetricType.PE_RATIO -> "P/E"
-            WatchType.MetricType.PS_RATIO -> "P/S"
-            WatchType.MetricType.DIVIDEND_YIELD -> "utdelning"
-        }
+	            WatchType.MetricType.PE_RATIO -> "P/E"
+	            WatchType.MetricType.PS_RATIO -> "P/S"
+	            WatchType.MetricType.DIVIDEND_YIELD -> "utdelning"
+	            WatchType.MetricType.EARNINGS_PER_SHARE -> "vinst/aktie"
+	        }
     }
 
     private fun formatMetricValue(metricType: WatchType.MetricType, value: Double): String {

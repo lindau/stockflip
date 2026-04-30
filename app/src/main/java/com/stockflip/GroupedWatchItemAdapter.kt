@@ -28,6 +28,7 @@ import kotlin.math.abs
 
 sealed class GroupedListItem {
     data class AlertsSummary(
+        val triggeredCount: Int,
         val triggeredTodayCount: Int,
         val activeCount: Int,
         val totalCount: Int,
@@ -66,6 +67,31 @@ sealed class GroupedListItem {
     data class GroupSeparator(val id: Int) : GroupedListItem()
 }
 
+internal fun buildOverviewSummaryItem(
+    allItems: List<WatchItemUiState>,
+    stockItems: List<WatchItemUiState>,
+    nearTriggerCount: Int,
+    today: String = WatchItem.getTodayDateString()
+): GroupedListItem.OverviewSummary {
+    return GroupedListItem.OverviewSummary(
+        nearTriggerCount = nearTriggerCount,
+        triggeredTodayCount = allItems.count { it.isTriggeredTodayForDisplay(today) },
+        activeCount = allItems.count { it.item.isActive },
+    )
+}
+
+internal fun buildAlertsSummaryItem(
+    summarySource: List<WatchItemUiState>,
+    today: String = WatchItem.getTodayDateString()
+): GroupedListItem.AlertsSummary {
+    return GroupedListItem.AlertsSummary(
+        triggeredCount = summarySource.count { it.isTriggeredForDisplay() },
+        triggeredTodayCount = summarySource.count { it.isTriggeredTodayForDisplay(today) },
+        activeCount = summarySource.count { it.item.isActive },
+        totalCount = summarySource.size,
+    )
+}
+
 class GroupedWatchItemAdapter(
     private val onToggleActive: (WatchItem) -> Unit,
     private val onReactivate: (WatchItem) -> Unit,
@@ -73,8 +99,10 @@ class GroupedWatchItemAdapter(
     private val onEditClick: (WatchItem) -> Unit,
     private val onItemClick: (WatchItem) -> Unit,
     private val onItemLongClick: ((WatchItem) -> Unit)? = null,
+    private val onAlertsSummaryClick: () -> Unit = {},
     private val pairCardPresentation: PairCardPresentation = PairCardPresentation.Default,
     private val showPricePairHeader: Boolean = true,
+    private val showActiveToggleControls: Boolean = true,
 ) : ListAdapter<GroupedListItem, RecyclerView.ViewHolder>(GroupedListItemDiffCallback()) {
 
     private val collapsedSections = mutableSetOf<String>()
@@ -336,11 +364,7 @@ class GroupedWatchItemAdapter(
 
         if (items.isNotEmpty()) {
             groupedList.add(
-                GroupedListItem.AlertsSummary(
-                    triggeredTodayCount = summarySource.count { it.item.isTriggered && it.item.lastTriggeredDate == today },
-                    activeCount = summarySource.count { it.item.isActive },
-                    totalCount = summarySource.size,
-                )
+                buildAlertsSummaryItem(summarySource, today)
             )
         }
 
@@ -453,10 +477,11 @@ class GroupedWatchItemAdapter(
         val inactiveItems = sortInactiveItemsAlphabetically(stockItems.filter { !it.item.isActive })
 
         groupedList.add(
-            GroupedListItem.OverviewSummary(
+            buildOverviewSummaryItem(
+                allItems = items,
+                stockItems = stockItems,
                 nearTriggerCount = nearTriggerItems.size,
-                triggeredTodayCount = triggeredItems.count { it.item.lastTriggeredDate == today },
-                activeCount = stockItems.count { it.item.isActive },
+                today = today,
             )
         )
 
@@ -725,9 +750,8 @@ class GroupedWatchItemAdapter(
             composeView.setContent {
                 StockFlipTheme {
                     ClarityAlertsSummaryCard(
-                        triggeredTodayCount = summary.triggeredTodayCount,
-                        activeCount = summary.activeCount,
-                        totalCount = summary.totalCount,
+                        triggeredCount = summary.triggeredCount,
+                        onTriggeredClick = onAlertsSummaryClick,
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 8.dp, vertical = 6.dp)
@@ -828,6 +852,18 @@ class GroupedWatchItemAdapter(
                         },
                         isNew = TriggerSeenTracker.isNew(item),
                         nearTriggerLabel = nearTriggerLabel,
+                        onToggleActive = if (showActiveToggleControls &&
+                            (displayMode == DisplayMode.ALERTS || displayMode == DisplayMode.GROUPED)
+                        ) {
+                            { onToggleActive(item) }
+                        } else {
+                            null
+                        },
+                        onReactivate = if (displayMode == DisplayMode.ALERTS || displayMode == DisplayMode.GROUPED) {
+                            { onReactivate(item) }
+                        } else {
+                            null
+                        },
                         onLongClick = if (onItemLongClick != null) ({ onItemLongClick.invoke(item) }) else null,
                         containerColor = effectiveContainerColor,
                         pairCardPresentation = pairCardPresentation,

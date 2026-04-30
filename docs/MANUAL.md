@@ -34,10 +34,11 @@ StockFlip låter dig bevaka aktier och kryptovalutor och få notiser när dina e
 | **Dagsrörelse** | Hur mycket aktiens pris förändrats i procent sedan föregående stängningskurs. |
 | **Drawdown** | Hur mycket aktiens pris har fallit från sin 52-veckorshögsta kurs, antingen i procent eller i kronor. |
 | **52-veckorshögsta** | Det högsta priset aktien handlades på under de senaste 52 veckorna. |
-| **Nyckeltal** | Finansiella mått som P/E-tal, P/S-tal och utdelning. |
+| **Nyckeltal** | Finansiella mått som P/E-tal, P/S-tal, direktavkastning och vinst/aktie. |
 | **P/E-tal** | Aktiekursen delat med vinst per aktie. Högt P/E = dyr värdering; lågt P/E = billig värdering. |
 | **P/S-tal** | Aktiekursen delat med omsättning per aktie. |
 | **Direktavkastning** | Utdelningen per aktie delat med aktiekursen, i procent. |
+| **Vinst/aktie** | Bolagets vinst per aktie, ofta kallat EPS. |
 | **Aktiepar** | En bevakning som jämför prisskillnaden mellan två aktier. |
 | **Kombinerat larm** | En bevakning som kombinerar flera villkor med logiska operatorer (OCH/ELLER/INTE). |
 
@@ -157,7 +158,7 @@ I nuvarande appversion fungerar flikarna så här:
 
 ### 4. Nyckeltal
 
-**Vad det gör:** Skickar en notis när ett finansiellt nyckeltal (P/E, P/S eller utdelning) når ett målvärde.
+**Vad det gör:** Skickar en notis när ett finansiellt nyckeltal (P/E, P/S, direktavkastning eller vinst/aktie) når ett målvärde.
 
 **Typ:** Återkommande — kan utlösas igen nästa handelsdag.
 
@@ -165,13 +166,14 @@ I nuvarande appversion fungerar flikarna så här:
 - **P/E-tal** — värderingsmått baserat på vinst
 - **P/S-tal** — värderingsmått baserat på omsättning
 - **Direktavkastning** — utdelning i procent av kursen
+- **Vinst/aktie** — vinst per aktie (EPS)
 
 **Riktning:** Bestäms automatiskt när du sparar bevakningen (samma logik som Prismål).
 
 **Skapa en nyckeltalbevakning:**
 1. Öppna aktiedetaljvyn.
 2. Tryck på **Nyckeltal**.
-3. Välj vilket nyckeltal (P/E, P/S, Direktavkastning).
+3. Välj vilket nyckeltal (P/E, P/S, Direktavkastning, Vinst/aktie).
 4. Ange målvärdet.
 5. Tryck **Spara**.
 
@@ -321,10 +323,9 @@ I fliken **Mina case** kan du långtrycka på en regel för att gå in i markeri
 Engångslarm (Målpris och Drawdown) inaktiveras automatiskt efter utlösning.
 
 - Hitta bevakningen i listan — den visar "Triggad [datum]".
-- Tryck på kortet för att öppna redigeringsdialogen.
-- Tryck **Återaktivera**.
+- Tryck **Återaktivera** direkt på kortet.
 
-Bevakningen är nu aktiv igen med samma inställningar.
+Bevakningen är nu aktiv igen. För målpris räknar appen om riktningen från aktuell kurs: om kursen ligger över målpriset bevakas nästa passage ned under nivån, och om kursen ligger under målpriset bevakas nästa passage upp över nivån.
 
 ### Redigera en bevakning
 

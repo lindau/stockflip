@@ -83,6 +83,7 @@ object AlertRuleConverter {
                     WatchType.MetricType.PE_RATIO -> AlertRule.KeyMetricType.PE_RATIO
                     WatchType.MetricType.PS_RATIO -> AlertRule.KeyMetricType.PS_RATIO
                     WatchType.MetricType.DIVIDEND_YIELD -> AlertRule.KeyMetricType.DIVIDEND_YIELD
+                    WatchType.MetricType.EARNINGS_PER_SHARE -> AlertRule.KeyMetricType.EARNINGS_PER_SHARE
                 }
                 val direction = when (watchType.direction) {
                     WatchType.PriceDirection.ABOVE -> AlertRule.PriceComparisonType.ABOVE

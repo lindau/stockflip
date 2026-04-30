@@ -95,12 +95,29 @@ class AlertsFragment : Fragment() {
         }
     }
 
+    private fun selectFilter(filter: AlertsFilter) {
+        val chipId = when (filter) {
+            AlertsFilter.ALL -> R.id.filterAllChip
+            AlertsFilter.ACTIVE -> R.id.filterActiveChip
+            AlertsFilter.TRIGGERED -> R.id.filterTriggeredChip
+            AlertsFilter.PRICE -> R.id.filterPriceChip
+            AlertsFilter.METRICS -> R.id.filterMetricsChip
+            AlertsFilter.PAIRS -> R.id.filterPairsChip
+        }
+        if (binding.filterChipGroup.checkedChipId == chipId) {
+            currentFilter = filter
+            renderFilteredList()
+        } else {
+            binding.filterChipGroup.check(chipId)
+        }
+    }
+
     private fun setupBatchActions() {
         binding.batchActivateButton.setOnClickListener {
-            applyBatchUpdate { it.setActive(true) }
+            applyBatchActiveState(true)
         }
         binding.batchPauseButton.setOnClickListener {
-            applyBatchUpdate { it.setActive(false) }
+            applyBatchActiveState(false)
         }
         binding.batchDeleteButton.setOnClickListener {
             applyBatchDelete()
@@ -153,6 +170,9 @@ class AlertsFragment : Fragment() {
                 } else {
                     toggleSelection(watchItem)
                 }
+            },
+            onAlertsSummaryClick = {
+                selectFilter(AlertsFilter.TRIGGERED)
             }
         )
 
@@ -261,7 +281,7 @@ class AlertsFragment : Fragment() {
             when (currentFilter) {
                 AlertsFilter.ALL -> true
                 AlertsFilter.ACTIVE -> uiState.item.isActive
-                AlertsFilter.TRIGGERED -> uiState.item.isTriggered
+                AlertsFilter.TRIGGERED -> uiState.isTriggeredForDisplay()
                 AlertsFilter.PRICE -> when (uiState.item.watchType) {
                     is WatchType.PriceTarget,
                     is WatchType.ATHBased,
@@ -310,7 +330,7 @@ class AlertsFragment : Fragment() {
     private fun updateHeaderState() {
         val today = WatchItem.getTodayDateString()
         val triggeredTodayCount = latestItems.count {
-            it.item.isTriggered && it.item.lastTriggeredDate == today
+            it.isTriggeredTodayForDisplay(today)
         }
         val activeCount = latestItems.count { it.item.isActive }
         binding.rulesTitle.text = "Bevakningar"
@@ -359,13 +379,13 @@ class AlertsFragment : Fragment() {
             .map { it.item }
     }
 
-    private fun applyBatchUpdate(transform: (WatchItem) -> WatchItem) {
+    private fun applyBatchActiveState(isActive: Boolean) {
         val items = selectedItems()
         if (items.isEmpty()) return
         viewLifecycleOwner.lifecycleScope.launch {
             try {
                 items.forEach { watchItem ->
-                    viewModel.updateWatchItem(transform(watchItem))
+                    viewModel.toggleWatchItemActive(watchItem, isActive)
                 }
                 exitSelectionMode()
             } catch (e: Exception) {

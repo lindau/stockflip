@@ -40,7 +40,9 @@ import androidx.compose.ui.unit.sp
 import com.stockflip.CurrencyHelper
 import com.stockflip.LiveWatchData
 import com.stockflip.WatchItem
+import com.stockflip.WatchItemUiState
 import com.stockflip.WatchType
+import com.stockflip.isTriggeredForDisplay
 import com.stockflip.ui.components.StatusStripe
 import com.stockflip.ui.theme.GroupPosition
 import com.stockflip.ui.theme.JetBrainsMono
@@ -75,11 +77,7 @@ fun PairCard(
     val currency1 = CurrencyHelper.getCurrencyFromSymbol(item.ticker1)
     val currency2 = CurrencyHelper.getCurrencyFromSymbol(item.ticker2)
 
-    val isTriggered = live.currentPrice1 > 0.0 && live.currentPrice2 > 0.0 && run {
-        val diff = abs(live.currentPrice1 - live.currentPrice2)
-        (pricePair.notifyWhenEqual && diff < 0.01) ||
-            (pricePair.priceDifference > 0 && diff <= pricePair.priceDifference)
-    }
+    val isTriggered = WatchItemUiState(item, live).isTriggeredForDisplay()
 
     val conditionText = buildString {
         val hasEqual = pricePair.notifyWhenEqual
@@ -170,6 +168,7 @@ fun PairCard(
                         conditionText = conditionText,
                         currentSpread = currentSpread,
                         isTriggered = isTriggered,
+                        onToggleActive = onToggleActive,
                     )
                 } else {
                     // Listvy: full hierarki med priser och spread
@@ -254,6 +253,7 @@ private fun PairClarityListContent(
     conditionText: String,
     currentSpread: Double?,
     isTriggered: Boolean,
+    onToggleActive: (() -> Unit)?,
 ) {
     val signalColor = pairSignalColor(
         isTriggered = isTriggered,
@@ -278,10 +278,24 @@ private fun PairClarityListContent(
                 color = MaterialTheme.colorScheme.onSurface,
             )
         }
-        PairClarityBadge(
-            text = if (isTriggered) "Utlöst" else conditionText,
-            color = signalColor,
-        )
+        Column(
+            horizontalAlignment = Alignment.End,
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            PairClarityBadge(
+                text = if (isTriggered) "Utlöst" else conditionText,
+                color = signalColor,
+            )
+            if (onToggleActive != null) {
+                Switch(
+                    checked = item.isActive,
+                    onCheckedChange = { onToggleActive() },
+                    colors = watchItemSwitchColors(),
+                    thumbContent = { watchItemSwitchThumb() },
+                    modifier = Modifier.scale(0.72f),
+                )
+            }
+        }
     }
 
     Row(
