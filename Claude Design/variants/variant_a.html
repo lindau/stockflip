@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="sv"><head>
+<meta charset="UTF-8">
+<title>Variant A · Clarity — StockFlip</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<link rel="stylesheet" href="variants.css">
+<style>
+  html, body { margin: 0; background: #ECEEF2; font-family: var(--va-sf); color: #0E1113; min-height: 100vh; }
+  .canvas { padding: 56px 40px 80px; }
+  header { max-width: 1900px; margin: 0 auto 32px; }
+  .eyebrow { font-size: 11px; letter-spacing: 1px; text-transform: uppercase; color: #6A6F78; margin: 0 0 10px; font-weight: 600; }
+  h1 { font-size: 48px; font-weight: 700; letter-spacing: -1.2px; margin: 0 0 10px; line-height: 1.05; }
+  .lede { font-size: 16px; line-height: 1.5; color: #4A4F58; max-width: 720px; margin: 0; }
+  .meta { display: flex; gap: 18px; margin-top: 18px; flex-wrap: wrap; }
+  .meta .pill { font-size: 11px; padding: 6px 12px; border-radius: 999px; background: #FFFFFF; border: 1px solid #E1E4E9; color: #4A4F58; font-weight: 500; letter-spacing: 0.2px; }
+  .meta .pill .k { color: #9CA0A6; margin-right: 6px; }
+  .strip { max-width: 1900px; margin: 0 auto; display: flex; gap: 36px; justify-content: center; flex-wrap: wrap; }
+  .cell { display: flex; flex-direction: column; align-items: center; gap: 16px; }
+  .cap .t { font-size: 14px; font-weight: 600; letter-spacing: -0.2px; }
+  .cap .s { font-size: 11px; color: #6A6F78; letter-spacing: 0.6px; text-transform: uppercase; margin-top: 4px; font-weight: 500; }
+  .cap { text-align: center; }
+  .crumb { display: inline-flex; gap: 8px; align-items: center; font-size: 12px; color: #6A6F78; margin-bottom: 14px; }
+  .crumb a { color: #6A6F78; text-decoration: none; }
+  .crumb a:hover { color: #0E1113; }
+</style>
+</head>
+<body>
+  <header class="canvas" style="padding-bottom:0">
+    <div class="crumb"><a href="index.html">← Alla varianter</a> <span style="opacity:0.4">/</span> <span>Variant A</span></div>
+    <p class="eyebrow">Variant A · Apple Health-inspirerad</p>
+    <h1>Clarity</h1>
+    <p class="lede">Mjuka pasteller på en grupperad iOS-bakgrund. Hierarki byggs av storlek och vitt utrymme, inte av kantlinjer. Stora avrundade siffror, andande rubriker, sparklines som flyter ovanpå korten. Triggade larm bär en diskret amber utan att skrika.</p>
+    <div class="meta">
+      <span class="pill"><span class="k">Densitet</span>Luftig</span>
+      <span class="pill"><span class="k">Hierarki</span>Typografisk</span>
+      <span class="pill"><span class="k">Yta</span>#FFFFFF på #F2F2F7</span>
+      <span class="pill"><span class="k">Accent</span>Pine 30B39E</span>
+      <span class="pill"><span class="k">Triggered</span>Soft amber F4B740</span>
+      <span class="pill"><span class="k">Radie</span>22 / 16 / 12</span>
+    </div>
+  </header>
+
+  <div id="root"></div>
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+  <script type="text/babel" src="device.jsx"></script>
+  <script type="text/babel" src="variant_a_clarity.jsx"></script>
+  <script type="text/babel">
+    const D = window.VariantDevice;
+    const A = window.VariantA;
+    // Common nav theming for variant A
+    const navProps = {
+      variantClass: "va-clarity",
+      frameTone: "light",
+      statusTint: "#0E1113",
+      navBg: "rgba(255,255,255,0.92)",
+      navIconOn: "#30B39E",
+      navIconOff: "#9CA0A6",
+      navDivider: "#EAEAEE",
+    };
+    const App = () => (
+      <div className="canvas" style={{paddingTop: 0}}>
+        <div className="strip">
+          <div className="cell" data-screen-label="A.1 Aktier">
+            <D {...navProps} activeTab={0} showFab fabColor="#30B39E"><A.Stocks/></D>
+            <div className="cap"><div className="t">Aktier</div><div className="s">Sparklines i kort</div></div>
+          </div>
+          <div className="cell" data-screen-label="A.2 Par">
+            <D {...navProps} activeTab={1} showFab fabColor="#30B39E"><A.Pairs/></D>
+            <div className="cap"><div className="t">Par</div><div className="s">Kvot · differens · trend</div></div>
+          </div>
+          <div className="cell" data-screen-label="A.3 Bevakningar">
+            <D {...navProps} activeTab={2} showFab fabColor="#30B39E"><A.Alerts/></D>
+            <div className="cap"><div className="t">Bevakningar</div><div className="s">Triggad i amber</div></div>
+          </div>
+          <div className="cell" data-screen-label="A.4 Detalj">
+            <D {...navProps} activeTab={0}><A.Detail/></D>
+            <div className="cap"><div className="t">Detalj — Ericsson B</div><div className="s">Hero · range · stats · larm</div></div>
+          </div>
+        </div>
+      </div>
+    );
+    ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+  </script>
+</body></html>

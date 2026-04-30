@@ -34,6 +34,26 @@
         android:text="Aktuell drawdown 0,0 %"
         tools:text="Aktuell drawdown 8,4 % från 52v högsta 280 kr." />
 
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/highReferenceLayout"
+        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="12dp"
+        android:hint="Referenspunkt">
+
+        <com.google.android.material.textfield.MaterialAutoCompleteTextView
+            android:id="@+id/highReferenceInput"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:clickable="true"
+            android:focusable="true"
+            android:focusableInTouchMode="true"
+            android:inputType="none"
+            android:maxLines="1" />
+
+    </com.google.android.material.textfield.TextInputLayout>
+
     <com.google.android.material.chip.ChipGroup
         android:id="@+id/presetChipGroup"
         android:layout_width="match_parent"

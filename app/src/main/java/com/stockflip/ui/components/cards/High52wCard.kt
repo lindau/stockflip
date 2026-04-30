@@ -53,6 +53,10 @@ fun High52wCard(
     val athBased = item.watchType as? WatchType.ATHBased ?: return
 
     val currency = CurrencyHelper.getCurrencyFromSymbol(item.ticker)
+    val referenceText = when (athBased.reference) {
+        WatchType.HighReference.FIFTY_TWO_WEEK_HIGH -> "52v-topp"
+        WatchType.HighReference.ALL_TIME_HIGH -> "högsta pris"
+    }
 
     val targetDropText = when (athBased.dropType) {
         WatchType.DropType.PERCENTAGE -> "${priceFormat(athBased.dropValue)}%"
@@ -152,7 +156,7 @@ fun High52wCard(
                 }
 
                 ConditionStatusRow(
-                    text = "Drawdown: ≥ $targetDropText från 52v-topp",
+                    text = "Drawdown: ≥ $targetDropText från $referenceText",
                     textColor = if (isTriggered) MaterialTheme.colorScheme.tertiary
                         else MaterialTheme.colorScheme.onSurfaceVariant,
                     trailingBadge = listBadge,

@@ -1,0 +1,91 @@
+/* Three alternative variants for StockFlip — sit alongside colors_and_type.css.
+ * Each variant is scoped under its own class (.va-*) so they can coexist on one canvas.
+ * Apple-inspired: restraint, spacing, quiet hierarchy, strong numeric treatment.
+ */
+
+/* Shared fonts — SF-like system stack, + DM Serif for variant C */
+:root {
+  --va-sf: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+  --va-mono: "JetBrains Mono", "SF Mono", ui-monospace, Menlo, Consolas, monospace;
+  --va-serif: "DM Serif Display", "New York", ui-serif, Georgia, serif;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   VARIANT A — Clarity
+   Apple Health / Fitness: soft pastel surfaces, rounded numerics, airy.
+   ══════════════════════════════════════════════════════════════════════════ */
+.va-clarity {
+  --a-bg: #F2F2F7;              /* iOS systemGroupedBackground */
+  --a-surface: #FFFFFF;
+  --a-surface-2: #F9F9FB;
+  --a-tint: #30B39E;            /* softened pine */
+  --a-tint-ink: #0E3D36;
+  --a-accent: #F4B740;          /* soft amber (triggered) */
+  --a-accent-bg: #FFF5DD;
+  --a-up: #30B39E;
+  --a-dn: #F07B7B;
+  --a-ink: #0E1113;
+  --a-ink-2: #6A6F78;
+  --a-ink-3: #9CA0A6;
+  --a-line: #EAEAEE;            /* iOS separator */
+  --a-chip: #EEF1F3;
+  --a-chip-on: #E3F4EF;
+  --a-r-lg: 22px;
+  --a-r-md: 16px;
+  --a-r-sm: 12px;
+  color: var(--a-ink);
+  font-family: var(--va-sf);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   VARIANT B — Ledger
+   Graphite terminal with Apple's discipline. Dark, dense, all-mono.
+   ══════════════════════════════════════════════════════════════════════════ */
+.va-ledger {
+  --l-bg: #0B0D10;
+  --l-surface: #121519;
+  --l-surface-2: #181C22;
+  --l-tint: #6FE3C7;            /* phosphor teal */
+  --l-accent: #F4C25F;           /* amber */
+  --l-up: #6FE3C7;
+  --l-dn: #F07B7B;
+  --l-ink: #E9ECF1;
+  --l-ink-2: #8A94A3;
+  --l-ink-3: #55606E;
+  --l-line: #222831;
+  --l-chip: #181C22;
+  --l-chip-on: #1F3A35;
+  --l-grid: rgba(255,255,255,0.035);
+  --l-r-sm: 4px;
+  --l-r-md: 8px;
+  --l-r-lg: 12px;
+  color: var(--l-ink);
+  font-family: var(--va-mono);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   VARIANT C — Exchange
+   Editorial: newspaper serif, chart-forward, quiet warm surfaces.
+   ══════════════════════════════════════════════════════════════════════════ */
+.va-exchange {
+  --e-bg: #F6F1E7;              /* warm newsprint */
+  --e-surface: #FBF8F1;
+  --e-surface-2: #EFE8D8;
+  --e-ink: #15181A;
+  --e-ink-2: #5C5A52;
+  --e-ink-3: #8E8A80;
+  --e-line: #D9D1BD;
+  --e-hairline: #15181A;
+  --e-tint: #1F5F52;
+  --e-accent: #A4601B;
+  --e-up: #1F5F52;
+  --e-dn: #9B2F31;
+  --e-chip: #EFE8D8;
+  --e-chip-on: #15181A;
+  --e-r-md: 0px;                /* hard corners */
+  color: var(--e-ink);
+  font-family: var(--va-sf);
+  -webkit-font-smoothing: antialiased;
+}

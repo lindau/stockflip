@@ -556,12 +556,24 @@ class StockDetailFragment : Fragment() {
             is WatchType.PriceTarget -> "${CurrencyHelper.formatDecimal(percentGapToPriceTarget(uiState))}% kvar till ${CurrencyHelper.formatPrice(watchType.targetPrice, data.currency)}"
             is WatchType.ATHBased -> when (watchType.dropType) {
                 WatchType.DropType.PERCENTAGE -> {
-                    val currentDrop = uiState.live.currentDropPercentage.takeIf { it > 0.0 } ?: data.drawdownPercent ?: 0.0
+                    val currentDrop = uiState.live.currentDropPercentage.takeIf { it > 0.0 }
+                        ?: when (watchType.reference) {
+                            WatchType.HighReference.FIFTY_TWO_WEEK_HIGH -> data.drawdownPercent
+                            WatchType.HighReference.ALL_TIME_HIGH -> data.allTimeDrawdownPercent
+                        }
+                        ?: 0.0
                     "${CurrencyHelper.formatDecimal((watchType.dropValue - currentDrop).coerceAtLeast(0.0))} procentenheter kvar till drawdown-nivån"
                 }
 
                 WatchType.DropType.ABSOLUTE -> {
-                    val currentDrop = uiState.live.currentDropAbsolute.takeIf { it > 0.0 } ?: 0.0
+                    val currentDrop = uiState.live.currentDropAbsolute.takeIf { it > 0.0 }
+                        ?: when (watchType.reference) {
+                            WatchType.HighReference.FIFTY_TWO_WEEK_HIGH ->
+                                if (data.week52High != null && data.lastPrice != null) data.week52High - data.lastPrice else null
+                            WatchType.HighReference.ALL_TIME_HIGH ->
+                                if (data.allTimeHigh != null && data.lastPrice != null) data.allTimeHigh - data.lastPrice else null
+                        }
+                        ?: 0.0
                     "${CurrencyHelper.formatPrice((watchType.dropValue - currentDrop).coerceAtLeast(0.0), data.currency)} kvar till drawdown-nivån"
                 }
             }
@@ -683,12 +695,19 @@ class StockDetailFragment : Fragment() {
         }
     }
 
+    private fun highReferenceLabel(reference: WatchType.HighReference): String {
+        return when (reference) {
+            WatchType.HighReference.FIFTY_TWO_WEEK_HIGH -> "52v högsta"
+            WatchType.HighReference.ALL_TIME_HIGH -> "högsta pris"
+        }
+    }
+
     private fun describeWatch(item: WatchItem, data: StockDetailData): String {
         return when (val watchType = item.watchType) {
             is WatchType.PriceTarget -> "pris ${directionLabel(watchType.direction)} ${CurrencyHelper.formatPrice(watchType.targetPrice, data.currency)}"
             is WatchType.ATHBased -> when (watchType.dropType) {
-                WatchType.DropType.PERCENTAGE -> "drawdown ${CurrencyHelper.formatDecimal(watchType.dropValue)}%"
-                WatchType.DropType.ABSOLUTE -> "drawdown ${CurrencyHelper.formatPrice(watchType.dropValue, data.currency)}"
+                WatchType.DropType.PERCENTAGE -> "drawdown från ${highReferenceLabel(watchType.reference)} ${CurrencyHelper.formatDecimal(watchType.dropValue)}%"
+                WatchType.DropType.ABSOLUTE -> "drawdown från ${highReferenceLabel(watchType.reference)} ${CurrencyHelper.formatPrice(watchType.dropValue, data.currency)}"
             }
 
             is WatchType.KeyMetrics -> "${metricLabel(watchType.metricType)} ${directionLabel(watchType.direction)} ${formatMetricValue(watchType.metricType, watchType.targetValue)}"

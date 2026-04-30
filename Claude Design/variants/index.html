@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="sv"><head>
+<meta charset="UTF-8">
+<title>StockFlip — tre varianter</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../colors_and_type.css">
+<link rel="stylesheet" href="variants.css">
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: #F4F4F0; min-height: 100vh; font-family: var(--va-sf); color: #0E1113; }
+  .page { max-width: 1480px; margin: 0 auto; padding: 72px 48px 96px; }
+  .hero { display: grid; grid-template-columns: 1.2fr 1fr; gap: 72px; align-items: end; padding-bottom: 56px; border-bottom: 1px solid #0E1113; }
+  .eyebrow { font-size: 11px; letter-spacing: 1.6px; text-transform: uppercase; color: #6A6F78; font-weight: 600; margin: 0 0 16px; }
+  h1 { font-size: 88px; font-weight: 700; letter-spacing: -3px; line-height: 0.95; margin: 0 0 16px; }
+  h1 em { font-family: 'DM Serif Display', serif; font-style: italic; font-weight: 400; letter-spacing: -3.6px; }
+  .sub { font-size: 17px; line-height: 1.5; color: #4A4F58; max-width: 560px; margin: 0; }
+  .ctx { font-size: 13px; line-height: 1.65; color: #4A4F58; }
+  .ctx p { margin: 0 0 14px; }
+  .ctx strong { color: #0E1113; }
+  .ctx ul { padding: 0; margin: 12px 0 0; list-style: none; }
+  .ctx li { padding: 8px 0; border-top: 1px solid #DDD7C8; display: flex; gap: 14px; font-size: 12.5px; }
+  .ctx li .k { width: 100px; flex-shrink: 0; font-weight: 600; color: #0E1113; letter-spacing: 0.2px; }
+
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 32px; margin-top: 56px; }
+  .card { background: #FFF; border: 1px solid #E1E0DA; overflow: hidden; display: flex; flex-direction: column; transition: transform 0.2s ease, box-shadow 0.2s ease; text-decoration: none; color: inherit; }
+  .card:hover { transform: translateY(-3px); box-shadow: 0 24px 48px rgba(14,17,19,0.12), 0 4px 8px rgba(14,17,19,0.06); }
+  .swatch { aspect-ratio: 4/3; position: relative; overflow: hidden; display: grid; place-items: center; }
+
+  /* Variant A swatch — Clarity */
+  .sw-a { background: #F2F2F7; }
+  .sw-a .device { width: 130px; height: 270px; background: #FFF; border-radius: 22px; box-shadow: 0 12px 24px rgba(14,17,19,0.10); padding: 14px 12px; display: flex; flex-direction: column; gap: 10px; }
+  .sw-a .h { height: 14px; width: 60%; background: #0E1113; border-radius: 3px; }
+  .sw-a .row { display: flex; gap: 8px; align-items: center; padding: 8px; background: #F9F9FB; border-radius: 12px; }
+  .sw-a .dot { width: 22px; height: 22px; border-radius: 8px; background: #E3F4EF; }
+  .sw-a .lines { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+  .sw-a .l { height: 5px; background: #EEF1F3; border-radius: 2px; }
+  .sw-a .l.short { width: 40%; }
+  .sw-a .num { font-family: var(--va-sf); font-size: 11px; font-weight: 700; color: #30B39E; }
+
+  /* Variant B swatch — Ledger */
+  .sw-b { background: #07090C; }
+  .sw-b .device { width: 130px; height: 270px; background: #0B0D10; border-radius: 14px; padding: 14px 12px; display: flex; flex-direction: column; gap: 0; border: 1px solid #222831; }
+  .sw-b .row { display: flex; gap: 6px; align-items: center; padding: 8px 0; border-bottom: 1px solid #181C22; font-family: var(--va-mono); font-size: 8px; }
+  .sw-b .sym { color: #6FE3C7; font-weight: 600; flex: 1; }
+  .sw-b .px { color: #E9ECF1; font-weight: 600; }
+  .sw-b .up { color: #6FE3C7; font-size: 7px; }
+  .sw-b .dn { color: #F07B7B; font-size: 7px; }
+
+  /* Variant C swatch — Exchange */
+  .sw-c { background: #EFE8D8; }
+  .sw-c .device { width: 130px; height: 270px; background: #FBF8F1; border-radius: 0; padding: 14px 12px; display: flex; flex-direction: column; gap: 8px; border: 1px solid #15181A; }
+  .sw-c .mast { font-family: 'DM Serif Display', serif; font-size: 18px; line-height: 1; letter-spacing: -0.4px; color: #15181A; padding-bottom: 8px; border-bottom: 1px solid #15181A; }
+  .sw-c .stub { font-size: 7px; letter-spacing: 1px; text-transform: uppercase; color: #5C5A52; font-weight: 600; margin-bottom: 4px; }
+  .sw-c .row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #D9D1BD; align-items: baseline; }
+  .sw-c .name { font-family: 'DM Serif Display', serif; font-size: 11px; }
+  .sw-c .price { font-family: 'DM Serif Display', serif; font-size: 11px; }
+
+  .meta { padding: 22px; }
+  .meta .tag { font-size: 10.5px; letter-spacing: 1.6px; text-transform: uppercase; color: #6A6F78; font-weight: 600; }
+  .meta h2 { font-size: 28px; letter-spacing: -0.6px; margin: 6px 0 8px; line-height: 1.05; }
+  .meta h2.serif { font-family: 'DM Serif Display', serif; font-weight: 400; }
+  .meta h2.mono { font-family: var(--va-mono); font-weight: 700; letter-spacing: -1px; }
+  .meta p { font-size: 13px; line-height: 1.5; color: #4A4F58; margin: 0 0 16px; }
+  .props { display: flex; flex-wrap: wrap; gap: 6px; margin: 14px 0 18px; }
+  .props span { font-size: 10.5px; padding: 4px 9px; background: #F4F4F0; border: 1px solid #E1E0DA; border-radius: 999px; color: #4A4F58; letter-spacing: 0.2px; }
+  .cta { display: inline-flex; align-items: center; gap: 8px; font-size: 12.5px; font-weight: 600; color: #0E1113; padding: 10px 14px; background: #F4F4F0; border-radius: 8px; letter-spacing: 0.2px; }
+  .card:hover .cta { background: #0E1113; color: #FFF; }
+
+  .footer { margin-top: 56px; padding-top: 28px; border-top: 1px solid #0E1113; display: flex; justify-content: space-between; gap: 16px; font-size: 11.5px; color: #6A6F78; letter-spacing: 0.2px; }
+</style></head>
+<body>
+  <div class="page">
+    <header class="hero">
+      <div>
+        <p class="eyebrow">StockFlip · Designutforskning · Nov 2025</p>
+        <h1>Tre <em>vägar</em><br>framåt.</h1>
+        <p class="sub">Tre fullt utbyggda Apple-influerade varianter av Aktier, Par, Bevakningar och en Detaljvy. Samma data, tre olika röster — så ni kan känna på vilken som passar produkten innan vi låser komponentbiblioteket.</p>
+      </div>
+      <div class="ctx">
+        <p>Varianterna delar samma kärninformation från det befintliga varumärket men skiljer sig i <strong>typografi, densitet, ytfärg och temperament</strong>. Triggade larm är en återkommande accentpunkt i alla tre.</p>
+        <ul>
+          <li><span class="k">Skärmar</span><span>Aktier · Par · Bevakningar · Detaljvy</span></li>
+          <li><span class="k">Format</span><span>iPhone 14, 390 × 844, full chrome</span></li>
+          <li><span class="k">Innehåll</span><span>Identiska data — endast presentationen varierar</span></li>
+          <li><span class="k">Status</span><span>Hi-fi statisk, redo för stilval</span></li>
+        </ul>
+      </div>
+    </header>
+
+    <div class="grid">
+
+      <a class="card" href="variant_a.html">
+        <div class="swatch sw-a">
+          <div class="device">
+            <div class="h"></div>
+            <div class="row"><div class="dot"></div><div class="lines"><div class="l"></div><div class="l short"></div></div><span class="num">+1,58 %</span></div>
+            <div class="row"><div class="dot" style="background:#FCE6E6"></div><div class="lines"><div class="l"></div><div class="l short"></div></div><span class="num" style="color:#F07B7B">−0,28 %</span></div>
+            <div class="row"><div class="dot"></div><div class="lines"><div class="l"></div><div class="l short"></div></div><span class="num">+2,01 %</span></div>
+            <div class="row"><div class="dot" style="background:#FFF5DD"></div><div class="lines"><div class="l"></div><div class="l short"></div></div><span class="num" style="color:#A4601B">UTLÖST</span></div>
+          </div>
+        </div>
+        <div class="meta">
+          <div class="tag">Variant A</div>
+          <h2>Clarity</h2>
+          <p>Apple Health-aktig: mjuka pasteller, andande korthuvuden, runda siffror. Diskret men varm.</p>
+          <div class="props">
+            <span>Luftig</span><span>Pasteller</span><span>SF Pro</span><span>22px radie</span><span>Pine + Amber</span>
+          </div>
+          <span class="cta">Öppna variant A →</span>
+        </div>
+      </a>
+
+      <a class="card" href="variant_b.html">
+        <div class="swatch sw-b">
+          <div class="device">
+            <div style="font-family:var(--va-mono);font-size:8px;color:#6FE3C7;letter-spacing:1px;padding-bottom:8px;border-bottom:1px solid #181C22">WATCHLIST · 14:32</div>
+            <div class="row"><span class="sym">ERIC-B</span><span class="px">138.44</span><span class="up">+1.58</span></div>
+            <div class="row"><span class="sym">VOLV-B</span><span class="px">287.30</span><span class="dn">−0.28</span></div>
+            <div class="row"><span class="sym">AAPL</span><span class="px">187.23</span><span class="dn">−0.48</span></div>
+            <div class="row"><span class="sym">MSFT</span><span class="px">412.05</span><span class="up">+0.80</span></div>
+            <div class="row"><span class="sym">NVDA</span><span class="px">932.14</span><span class="up">+2.01</span></div>
+            <div class="row" style="border-bottom:none;background:rgba(244,194,95,0.06);margin:0 -12px;padding:6px 12px;border-left:2px solid #F4C25F"><span class="sym" style="color:#F4C25F;font-size:7px">FIRED</span><span style="color:#E9ECF1;font-size:8px">ERIC > 145</span></div>
+          </div>
+        </div>
+        <div class="meta">
+          <div class="tag">Variant B</div>
+          <h2 class="mono">LEDGER</h2>
+          <p>Bloomberg möter Apples disciplin. Mörk grafit, monotypografi, hög densitet. Siffrorna är scenen.</p>
+          <div class="props">
+            <span>Tät</span><span>Mörk</span><span>JetBrains Mono</span><span>Zebra-rader</span><span>Phosphor + Amber</span>
+          </div>
+          <span class="cta">Öppna variant B →</span>
+        </div>
+      </a>
+
+      <a class="card" href="variant_c.html">
+        <div class="swatch sw-c">
+          <div class="device">
+            <div class="stub">Bevakning · Tor 14 nov</div>
+            <div class="mast">Marknader</div>
+            <div>
+              <div class="row"><span><span class="name">ERIC B</span><div style="font-size:8px;color:#5C5A52;font-style:italic;font-family:'DM Serif Display'">Ericsson B</div></span><span class="price">138,44</span></div>
+              <div class="row"><span><span class="name">AAPL</span><div style="font-size:8px;color:#5C5A52;font-style:italic;font-family:'DM Serif Display'">Apple Inc.</div></span><span class="price">187,23</span></div>
+              <div class="row"><span><span class="name">NVDA</span><div style="font-size:8px;color:#5C5A52;font-style:italic;font-family:'DM Serif Display'">Nvidia</div></span><span class="price">932,14</span></div>
+              <div class="row" style="border-left:3px solid #A4601B;padding-left:6px;margin:0 -6px;background:rgba(164,96,27,0.06);border-bottom:none">
+                <span><span class="name" style="font-size:9px;letter-spacing:1px;color:#A4601B">UTLÖST · ERIC B</span><div style="font-family:'DM Serif Display';font-size:10px;font-style:italic;color:#15181A">Pris över 145</div></span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="meta">
+          <div class="tag">Variant C</div>
+          <h2 class="serif">Exchange</h2>
+          <p>Tidning på telefonen. Varma tidningstoner, DM Serif rubriker, hårda hörn. Lugn auktoritet.</p>
+          <div class="props">
+            <span>Editorial</span><span>Newsprint</span><span>DM Serif Display</span><span>Hårda hörn</span><span>Pine + Koppar</span>
+          </div>
+          <span class="cta">Öppna variant C →</span>
+        </div>
+      </a>
+
+    </div>
+
+    <div class="footer">
+      <span>Tre röster, ett system. Alla skärmar laddar samma datamodell.</span>
+      <span>StockFlip · Designspår</span>
+    </div>
+  </div>
+</body></html>

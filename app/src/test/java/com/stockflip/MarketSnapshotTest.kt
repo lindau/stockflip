@@ -14,13 +14,15 @@ class MarketSnapshotTest {
         val snapshot = MarketSnapshot.forSingleStock(
             lastPrice = 100.0,
             previousClose = 95.0,
-            week52High = 120.0
+            week52High = 120.0,
+            allTimeHigh = 150.0
         )
 
         // Then
         assertEquals(100.0, snapshot.lastPrice!!, 0.01)
         assertEquals(95.0, snapshot.previousCloseOrPriceB!!, 0.01)
         assertEquals(120.0, snapshot.week52High!!, 0.01)
+        assertEquals(150.0, snapshot.allTimeHigh!!, 0.01)
     }
 
     @Test
@@ -32,6 +34,7 @@ class MarketSnapshotTest {
         assertEquals(100.0, snapshot.lastPrice!!, 0.01)
         assertEquals(90.0, snapshot.previousCloseOrPriceB!!, 0.01)
         assertNull("week52High should be null for pairs", snapshot.week52High)
+        assertNull("allTimeHigh should be null for pairs", snapshot.allTimeHigh)
     }
 
     @Test
@@ -133,4 +136,3 @@ class MarketSnapshotTest {
         assertEquals(0.0, changePercent!!, 0.01)
     }
 }
-

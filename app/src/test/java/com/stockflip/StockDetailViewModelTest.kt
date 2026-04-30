@@ -73,6 +73,38 @@ class StockDetailViewModelTest {
     }
 
     @Test
+    fun `alerts are sorted by ascending price target on stock detail page`() = runTest {
+        val symbol = "VOLV-B.ST"
+        val watchItems = listOf(
+            WatchItem(id = 4, watchType = WatchType.PriceTarget(4.0, WatchType.PriceDirection.ABOVE), ticker = symbol),
+            WatchItem(id = 3, watchType = WatchType.PriceTarget(3.0, WatchType.PriceDirection.ABOVE), ticker = symbol),
+            WatchItem(id = 2, watchType = WatchType.PriceTarget(2.0, WatchType.PriceDirection.BELOW), ticker = symbol),
+            WatchItem(id = 5, watchType = WatchType.PriceTarget(5.0, WatchType.PriceDirection.ABOVE), ticker = symbol),
+            WatchItem(id = 1, watchType = WatchType.PriceTarget(1.0, WatchType.PriceDirection.BELOW), ticker = symbol)
+        )
+        val watchItemDao: WatchItemDao = InMemoryWatchItemDao(watchItems)
+        val marketDataService: MarketDataService = FakeMarketDataService(
+            pricesBySymbol = mapOf(symbol to 3.0),
+            previousCloseBySymbol = mapOf(symbol to 3.0),
+            chartDataByPeriod = mapOf(ChartPeriod.DAY to IntradayChartData(emptyList(), emptyList(), null))
+        )
+
+        val viewModel = StockDetailViewModel(
+            watchItemDao,
+            marketDataService,
+            symbol,
+            TriggerHistoryRepository(InMemoryTriggerHistoryDao()),
+            InMemoryStockNoteDao(),
+            com.stockflip.repository.MetricHistoryRepository(InMemoryMetricHistoryDao())
+        )
+        advanceUntilIdle()
+
+        val state = viewModel.alertsState.value as UiState.Success<List<WatchItemUiState>>
+        val priceTargets = state.data.map { (it.item.watchType as WatchType.PriceTarget).targetPrice }
+        assertEquals(listOf(1.0, 2.0, 3.0, 4.0, 5.0), priceTargets)
+    }
+
+    @Test
     fun `switching period cancels stale chart load and shows new period result`() = runTest {
         val monthData = IntradayChartData(
             timestamps = listOf(1000L, 2000L),

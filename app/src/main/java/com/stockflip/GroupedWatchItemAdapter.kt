@@ -16,6 +16,7 @@ import com.stockflip.databinding.ItemSectionHeaderBinding
 import com.stockflip.ui.ComposeWatchItemCard
 import com.stockflip.ui.components.cards.MultipleWatchesCard
 import com.stockflip.ui.components.cards.OverviewSummaryCard
+import com.stockflip.ui.components.cards.PairCardPresentation
 import com.stockflip.ui.theme.GroupPosition
 import com.stockflip.ui.theme.NP
 import com.stockflip.ui.theme.StockFlipTheme
@@ -57,6 +58,8 @@ class GroupedWatchItemAdapter(
     private val onEditClick: (WatchItem) -> Unit,
     private val onItemClick: (WatchItem) -> Unit,
     private val onItemLongClick: ((WatchItem) -> Unit)? = null,
+    private val pairCardPresentation: PairCardPresentation = PairCardPresentation.Default,
+    private val showPricePairHeader: Boolean = true,
 ) : ListAdapter<GroupedListItem, RecyclerView.ViewHolder>(GroupedListItemDiffCallback()) {
 
     private val collapsedSections = mutableSetOf<String>()
@@ -241,8 +244,10 @@ class GroupedWatchItemAdapter(
         ).mapValues { (_, watchItems) -> watchItems.mapNotNull { uiStateMap[it.id] } }
 
         if (sortedPricePairs.isNotEmpty()) {
-            groupedList.add(GroupedListItem.Header("Aktiepar"))
-            if ("Aktiepar" !in collapsedSections) {
+            if (showPricePairHeader) {
+                groupedList.add(GroupedListItem.Header("Aktiepar"))
+            }
+            if (!showPricePairHeader || "Aktiepar" !in collapsedSections) {
                 sortedPricePairs.forEach { uiState ->
                     groupedList.add(GroupedListItem.WatchItemWrapper(uiState.item, uiState.live))
                 }
@@ -393,7 +398,7 @@ class GroupedWatchItemAdapter(
         val typeKey = when (val watchType = item.watchType) {
             is WatchType.KeyMetrics -> "${watchType.kind.name}:${watchType.metricType.name}"
             is WatchType.DailyMove -> "${watchType.kind.name}:${watchType.direction.name}"
-            is WatchType.ATHBased -> "${watchType.kind.name}:${watchType.dropType.name}"
+            is WatchType.ATHBased -> "${watchType.kind.name}:${watchType.reference.name}:${watchType.dropType.name}"
             else -> watchType.kind.name
         }
 
@@ -637,6 +642,7 @@ class GroupedWatchItemAdapter(
                         nearTriggerLabel = nearTriggerLabel,
                         onLongClick = if (onItemLongClick != null) ({ onItemLongClick.invoke(item) }) else null,
                         containerColor = effectiveContainerColor,
+                        pairCardPresentation = pairCardPresentation,
                     )
                 }
             }

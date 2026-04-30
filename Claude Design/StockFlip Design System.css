@@ -1,0 +1,186 @@
+/* StockFlip — Nordisk Precision (NP) design tokens
+ * Source: app/src/main/res/values/colors.xml, ui/theme/Color.kt, Type.kt, Shape.kt, Spacing.kt
+ * Android Material 3 — Pine & Sand palette
+ */
+
+/* ─── Fonts ──────────────────────────────────────────────────────────────── */
+@font-face {
+  font-family: "DM Serif Display";
+  src: url("fonts/dm_serif_display_regular.ttf") format("truetype");
+  font-weight: 400; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: "JetBrains Mono";
+  src: url("fonts/jetbrains_mono_regular.ttf") format("truetype");
+  font-weight: 400; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: "JetBrains Mono";
+  src: url("fonts/jetbrains_mono_semibold.ttf") format("truetype");
+  font-weight: 600; font-style: normal; font-display: swap;
+}
+
+:root {
+  /* ─── Color — Light (default) ────────────────────────────────────────── */
+  /* Pine (primary) */
+  --np-primary: #1F8A7A;
+  --np-on-primary: #FFFFFF;
+  --np-primary-container: #D8ECE8;
+  --np-on-primary-container: #10202E;
+  --np-primary-muted: #2F6E67;
+
+  /* Sand (secondary) — muted nordic blue-grey */
+  --np-secondary: #5E7FA3;
+  --np-on-secondary: #FFFFFF;
+  --np-secondary-container: #EAF1F6;
+  --np-on-secondary-container: #10202E;
+
+  /* Tertiary — amber / warning (triggered badge) */
+  --np-tertiary: #B8842F;
+  --np-on-tertiary: #FFFFFF;
+  --np-tertiary-container: #FFF3DD;
+  --np-on-tertiary-container: #10202E;
+
+  /* Surfaces */
+  --np-background: #F5F8FB;
+  --np-on-background: #10202E;
+  --np-surface: #FFFFFF;
+  --np-on-surface: #10202E;
+  --np-surface-alt: #F0F4F8;          /* surfaceVariant */
+  --np-surface-high: #E7EEF5;
+  --np-surface-container-low: #F4F7FA;
+  --np-surface-container: #F0F4F8;
+
+  /* Text hierarchy */
+  --np-text-primary: #10202E;
+  --np-text-secondary: #516273;       /* onSurfaceVariant */
+  --np-text-tertiary: #7A8897;
+  --np-on-surface-variant: #516273;
+
+  /* Lines */
+  --np-outline: #D5DEE7;
+  --np-outline-variant: #E6EDF3;
+  --np-card-border: #D6E0E8;
+
+  /* Chips */
+  --np-chip: #EAF1F6;
+  --np-chip-selected: #D8ECE8;
+
+  /* Error / semantic */
+  --np-error: #B94A5A;
+  --np-on-error: #FFFFFF;
+  --np-error-container: #F9E0E3;
+  --np-on-error-container: #10202E;
+
+  /* Price semantics */
+  --np-price-up: #238B57;
+  --np-price-down: #B94A5A;
+
+  /* Pair chart series — hard-coded in PairPerformanceChart.kt */
+  --np-pair-series-a: #0057D9;   /* Stock A — solid line + circle marker */
+  --np-pair-series-b: #D97706;   /* Stock B — dashed line + square marker */
+
+  /* ─── Type ──────────────────────────────────────────────────────────── */
+  --np-font-display: "DM Serif Display", "Playfair Display", Georgia, serif;
+  --np-font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --np-font-mono: "JetBrains Mono", "SF Mono", Menlo, Consolas, monospace;
+
+  /* ─── Radii ────────────────────────────────────────────────────────── */
+  --np-radius-xs: 8px;     /* icons, indicators */
+  --np-radius-sm: 10px;    /* list cards (tighter row feel) */
+  --np-radius-md: 14px;    /* chips, buttons */
+  --np-radius-lg: 20px;    /* panels, detail views */
+  --np-radius-xl: 22px;    /* bottom sheets */
+  --np-radius-2xl: 28px;   /* full-screen, hero */
+
+  /* ─── Spacing — NP scale: 3 / 6 / 12 / 24 ──────────────────────────── */
+  --np-space-1: 3px;   /* vertical gap between cards (tight row feel) */
+  --np-space-2: 6px;   /* intra-card element gap */
+  --np-space-3: 12px;  /* card padding, screen horizontal margin */
+  --np-space-4: 24px;
+  --np-space-5: 32px;
+
+  /* Status stripe */
+  --np-stripe-width: 5px;
+}
+
+/* ─── Color — Dark ──────────────────────────────────────────────────────── */
+[data-theme="dark"], .np-dark {
+  --np-primary: #3AB7A4;
+  --np-on-primary: #09111D;
+  --np-primary-container: #1B3C44;
+  --np-on-primary-container: #3AB7A4;
+  --np-primary-muted: #2B8C80;
+
+  --np-secondary: #7FA8C9;
+  --np-on-secondary: #09111D;
+  --np-secondary-container: #132131;
+  --np-on-secondary-container: #B5C0CB;
+
+  --np-tertiary: #E7B65C;
+  --np-on-tertiary: #09111D;
+  --np-tertiary-container: #231A08;
+  --np-on-tertiary-container: #E7B65C;
+
+  --np-background: #09111D;
+  --np-on-background: #F2F5F7;
+  --np-surface: #101A27;
+  --np-on-surface: #F2F5F7;
+  --np-surface-alt: #152233;
+  --np-surface-high: #1A2A3D;
+  --np-surface-container-low: #122030;
+  --np-surface-container: #152233;
+
+  --np-text-primary: #F2F5F7;
+  --np-text-secondary: #B5C0CB;
+  --np-text-tertiary: #7F8C99;
+  --np-on-surface-variant: #B5C0CB;
+
+  --np-outline: #263648;
+  --np-outline-variant: #1D2A38;
+  --np-card-border: #213345;
+
+  --np-chip: #132131;
+  --np-chip-selected: #1B3C44;
+
+  --np-error: #E06C75;
+  --np-on-error: #09111D;
+  --np-error-container: #3D1A1D;
+  --np-on-error-container: #E06C75;
+
+  --np-price-up: #3CCB7F;
+  --np-price-down: #E06C75;
+}
+
+/* ─── Semantic type roles (Material 3 → CSS) ───────────────────────────── */
+.np-display-large  { font-family: var(--np-font-display); font-weight: 400; font-size: 57px; line-height: 64px; letter-spacing: -0.25px; }
+.np-display-medium { font-family: var(--np-font-display); font-weight: 400; font-size: 45px; line-height: 52px; }
+.np-display-small  { font-family: var(--np-font-display); font-weight: 400; font-size: 36px; line-height: 44px; }
+
+.np-headline-large  { font-family: var(--np-font-display); font-weight: 400; font-size: 32px; line-height: 40px; }
+.np-headline-medium { font-family: var(--np-font-display); font-weight: 400; font-size: 28px; line-height: 36px; }
+.np-headline-small  { font-family: var(--np-font-display); font-weight: 400; font-size: 24px; line-height: 32px; }
+
+.np-title-large  { font-family: var(--np-font-sans); font-weight: 600; font-size: 20px; line-height: 26px; letter-spacing: -0.15px; }
+.np-title-medium { font-family: var(--np-font-sans); font-weight: 600; font-size: 15px; line-height: 22px; }
+.np-title-small  { font-family: var(--np-font-sans); font-weight: 500; font-size: 13px; line-height: 18px; }
+
+.np-body-large  { font-family: var(--np-font-sans); font-weight: 400; font-size: 15px; line-height: 22px; letter-spacing: 0.15px; }
+.np-body-medium { font-family: var(--np-font-sans); font-weight: 400; font-size: 13px; line-height: 18px; letter-spacing: 0.1px; }
+.np-body-small  { font-family: var(--np-font-sans); font-weight: 400; font-size: 11px; line-height: 16px; letter-spacing: 0.2px; }
+
+.np-label-large  { font-family: var(--np-font-sans); font-weight: 500; font-size: 14px; line-height: 20px; letter-spacing: 0.1px; }
+.np-label-medium { font-family: var(--np-font-sans); font-weight: 500; font-size: 11px; line-height: 16px; letter-spacing: 0.6px; }
+.np-label-small  { font-family: var(--np-font-sans); font-weight: 500; font-size: 10px; line-height: 14px; letter-spacing: 0.5px; }
+
+/* Numeric — JetBrains Mono with tabular figures baked in */
+.np-numeric         { font-family: var(--np-font-mono); font-weight: 600; font-size: 15px; line-height: 20px; letter-spacing: -0.15px; font-variant-numeric: tabular-nums; }
+.np-numeric-secondary { font-family: var(--np-font-mono); font-weight: 400; font-size: 12px; line-height: 16px; letter-spacing: -0.1px; font-variant-numeric: tabular-nums; }
+
+/* Reset-friendly base */
+.np-root {
+  background: var(--np-background);
+  color: var(--np-text-primary);
+  font-family: var(--np-font-sans);
+  -webkit-font-smoothing: antialiased;
+}

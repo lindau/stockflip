@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="sv"><head>
+<meta charset="UTF-8">
+<title>Variant C · Exchange — StockFlip</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../colors_and_type.css">
+<link rel="stylesheet" href="variants.css">
+<style>
+  html, body { margin: 0; background: #EFE8D8; font-family: var(--va-sf); color: #15181A; min-height: 100vh; }
+  .canvas { padding: 56px 40px 80px; }
+  header { max-width: 1900px; margin: 0 auto 32px; }
+  .eyebrow { font-size: 11px; letter-spacing: 1.6px; text-transform: uppercase; color: #5C5A52; margin: 0 0 12px; font-weight: 600; }
+  h1 { font-family: 'DM Serif Display', serif; font-size: 64px; font-weight: 400; letter-spacing: -1.6px; margin: 0 0 12px; line-height: 0.95; color: #15181A; }
+  .lede { font-family: 'DM Serif Display', serif; font-style: italic; font-size: 18px; line-height: 1.45; color: #5C5A52; max-width: 760px; margin: 0; }
+  .meta { display: flex; gap: 14px; margin-top: 22px; flex-wrap: wrap; padding-top: 18px; border-top: 1px solid #15181A; }
+  .meta .pill { font-size: 11px; padding: 4px 10px; color: #5C5A52; font-weight: 500; letter-spacing: 0.4px; }
+  .meta .pill .k { color: #8E8A80; margin-right: 6px; text-transform: uppercase; letter-spacing: 1.2px; font-size: 9.5px; font-weight: 600; }
+  .strip { max-width: 1900px; margin: 0 auto; display: flex; gap: 36px; justify-content: center; flex-wrap: wrap; }
+  .cell { display: flex; flex-direction: column; align-items: center; gap: 16px; }
+  .cap { text-align: center; }
+  .cap .t { font-family: 'DM Serif Display', serif; font-size: 18px; color: #15181A; letter-spacing: -0.2px; }
+  .cap .s { font-size: 10px; color: #8E8A80; letter-spacing: 1.4px; text-transform: uppercase; margin-top: 4px; font-weight: 600; }
+  .crumb { display: inline-flex; gap: 8px; align-items: center; font-size: 11px; color: #8E8A80; margin-bottom: 14px; letter-spacing: 1px; text-transform: uppercase; font-weight: 600; }
+  .crumb a { color: #8E8A80; text-decoration: none; }
+  .crumb a:hover { color: #15181A; }
+</style></head>
+<body>
+  <header class="canvas" style="padding-bottom:0">
+    <div class="crumb"><a href="index.html">← Alla varianter</a> <span style="opacity:0.4">/</span> <span>Variant C</span></div>
+    <p class="eyebrow">Variant C · Editorial · The Economist möter NYT</p>
+    <h1>Exchange</h1>
+    <p class="lede">Tidning på din telefon. Varma tidningstoner, DM Serif Display i rubriker, kursiv brödtext, hårda hörn och hårfina linjer. Diagrammet får tala. Triggade larm bär en koppartoner i vänsterkanten — som en utlyst nyhet i en bulletin.</p>
+    <div class="meta">
+      <span class="pill"><span class="k">Stämning</span>Lugn / kontemplativ</span>
+      <span class="pill"><span class="k">Yta</span>#FBF8F1 på #F6F1E7</span>
+      <span class="pill"><span class="k">Accent</span>Pine 1F5F52 / Copper A4601B</span>
+      <span class="pill"><span class="k">Rubrik</span>DM Serif Display</span>
+      <span class="pill"><span class="k">Hörn</span>Hårda · 0px</span>
+      <span class="pill"><span class="k">Triggad</span>Koppar 3px streck</span>
+    </div>
+  </header>
+
+  <div id="root"></div>
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+  <script type="text/babel" src="device.jsx"></script>
+  <script type="text/babel" src="variant_c_exchange.jsx"></script>
+  <script type="text/babel">
+    const D = window.VariantDevice; const C = window.VariantC;
+    const navProps = {
+      variantClass: "va-exchange", frameTone: "warm", statusTint: "#15181A",
+      navBg: "#FBF8F1", navIconOn: "#1F5F52", navIconOff: "#8E8A80", navDivider: "#15181A",
+    };
+    const App = () => (
+      <div className="canvas" style={{paddingTop:0}}>
+        <div className="strip">
+          <div className="cell" data-screen-label="C.1 Marknader"><D {...navProps} activeTab={0}><C.Stocks/></D><div className="cap"><div className="t">Marknader</div><div className="s">Editorial roster</div></div></div>
+          <div className="cell" data-screen-label="C.2 Relationer"><D {...navProps} activeTab={1}><C.Pairs/></D><div className="cap"><div className="t">Relationer</div><div className="s">Numrerade par</div></div></div>
+          <div className="cell" data-screen-label="C.3 Bulletinen"><D {...navProps} activeTab={2}><C.Alerts/></D><div className="cap"><div className="t">Bulletinen</div><div className="s">Kursiv ledare · koppar</div></div></div>
+          <div className="cell" data-screen-label="C.4 Detalj"><D {...navProps} activeTab={0}><C.Detail/></D><div className="cap"><div className="t">Ericsson B</div><div className="s">Långform · nyckeltal · larm</div></div></div>
+        </div>
+      </div>
+    );
+    ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+  </script>
+</body></html>

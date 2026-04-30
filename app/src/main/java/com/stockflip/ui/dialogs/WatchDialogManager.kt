@@ -232,12 +232,14 @@ class WatchDialogManager(
 
     fun showCreateDrawdownDialog(
         suggestedDropType: WatchType.DropType = WatchType.DropType.PERCENTAGE,
-        suggestedDropValue: Double? = null
+        suggestedDropValue: Double? = null,
+        suggestedReference: WatchType.HighReference = WatchType.HighReference.FIFTY_TWO_WEEK_HIGH
     ) {
         val currencySymbol = currentCurrencySymbol()
         val stockData = currentStockData()
         val dialogView = LayoutInflater.from(context).inflate(R.layout.dialog_add_ath_based, null)
         val tickerInput = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.tickerInput)
+        val highReferenceInput = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.highReferenceInput)
         val dropTypeInput = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.dropTypeInput)
         val dropValueInput = dialogView.findViewById<TextInputEditText>(R.id.dropValueInput)
         val dropValueLayout = dialogView.findViewById<TextInputLayout>(R.id.dropValueLayout)
@@ -256,6 +258,40 @@ class WatchDialogManager(
             }
         }
 
+        fun referenceLabel(reference: WatchType.HighReference): String = when (reference) {
+            WatchType.HighReference.FIFTY_TWO_WEEK_HIGH -> "52v högsta"
+            WatchType.HighReference.ALL_TIME_HIGH -> "Historiskt högsta"
+        }
+
+        fun selectedReference(): WatchType.HighReference {
+            return when (highReferenceInput.text.toString()) {
+                "Historiskt högsta" -> WatchType.HighReference.ALL_TIME_HIGH
+                else -> WatchType.HighReference.FIFTY_TWO_WEEK_HIGH
+            }
+        }
+
+        fun selectedDropType(): WatchType.DropType {
+            return if (dropTypeInput.text.toString() == "Procent") {
+                WatchType.DropType.PERCENTAGE
+            } else {
+                WatchType.DropType.ABSOLUTE
+            }
+        }
+
+        fun referenceHigh(reference: WatchType.HighReference): Double? = when (reference) {
+            WatchType.HighReference.FIFTY_TWO_WEEK_HIGH -> stockData?.week52High
+            WatchType.HighReference.ALL_TIME_HIGH -> stockData?.allTimeHigh
+        }
+
+        fun referenceDrawdown(reference: WatchType.HighReference): Double? = when (reference) {
+            WatchType.HighReference.FIFTY_TWO_WEEK_HIGH -> stockData?.drawdownPercent
+            WatchType.HighReference.ALL_TIME_HIGH -> stockData?.allTimeDrawdownPercent
+        }
+
+        val references = arrayOf(referenceLabel(WatchType.HighReference.FIFTY_TWO_WEEK_HIGH), referenceLabel(WatchType.HighReference.ALL_TIME_HIGH))
+        highReferenceInput.setAdapter(ArrayAdapter(context, android.R.layout.simple_dropdown_item_1line, references))
+        highReferenceInput.setText(referenceLabel(suggestedReference), false)
+
         val dropTypes = arrayOf("Procent", "Absolut ($currencySymbol)")
         val dropTypeAdapter = ArrayAdapter(context, android.R.layout.simple_dropdown_item_1line, dropTypes)
         dropTypeInput.setAdapter(dropTypeAdapter)
@@ -264,17 +300,17 @@ class WatchDialogManager(
             false
         )
         suggestedDropValue?.let { dropValueInput.setText(CurrencyHelper.formatDecimal(it)) }
-        contextText.text = buildString {
-            append("Aktuell drawdown ")
-            append(stockData?.drawdownPercent?.let { "${CurrencyHelper.formatDecimal(it)}%" } ?: "saknas")
-            stockData?.week52High?.let {
-                append(" från 52v högsta ${CurrencyHelper.formatPrice(it, currentCurrency())}")
-            }
-            append(".")
-        }
         triggerInfoText.text = "När nedgångsnivån nås markeras larmet som utlöst och kan återaktiveras senare."
 
-        fun applyDrawdownPresets(dropType: WatchType.DropType) {
+        fun applyDrawdownContext(reference: WatchType.HighReference, dropType: WatchType.DropType) {
+            contextText.text = buildString {
+                append("Aktuell drawdown ")
+                append(referenceDrawdown(reference)?.let { "${CurrencyHelper.formatDecimal(it)}%" } ?: "saknas")
+                referenceHigh(reference)?.let {
+                    append(" från ${referenceLabel(reference).lowercase()} ${CurrencyHelper.formatPrice(it, currentCurrency())}")
+                }
+                append(".")
+            }
             if (dropType == WatchType.DropType.PERCENTAGE) {
                 dropValueLayout.hint = "Nedgångsvärde (%)"
                 setPresetChip(presetChipOne, "5 %", 5.0) {
@@ -291,7 +327,7 @@ class WatchDialogManager(
                 }
             } else {
                 dropValueLayout.hint = "Nedgångsvärde ($currencySymbol)"
-                val high = stockData?.week52High
+                val high = referenceHigh(reference)
                 if (high != null && high > 0.0) {
                     val values = listOf(high * 0.05, high * 0.10, high * 0.15, high * 0.20)
                     setPresetChip(presetChipOne, CurrencyHelper.formatPrice(values[0], currentCurrency()), values[0]) {
@@ -306,13 +342,20 @@ class WatchDialogManager(
                     setPresetChip(presetChipFour, CurrencyHelper.formatPrice(values[3], currentCurrency()), values[3]) {
                         dropValueInput.setText(CurrencyHelper.formatDecimal(it))
                     }
+                } else {
+                    listOf(presetChipOne, presetChipTwo, presetChipThree, presetChipFour).forEach { chip ->
+                        chip.text = "Värde saknas"
+                        chip.setOnClickListener(null)
+                    }
                 }
             }
         }
-        applyDrawdownPresets(suggestedDropType)
+        applyDrawdownContext(suggestedReference, suggestedDropType)
+        highReferenceInput.doAfterTextChanged {
+            applyDrawdownContext(selectedReference(), selectedDropType())
+        }
         dropTypeInput.doAfterTextChanged {
-            val selectedType = if (it.toString() == "Procent") WatchType.DropType.PERCENTAGE else WatchType.DropType.ABSOLUTE
-            applyDrawdownPresets(selectedType)
+            applyDrawdownContext(selectedReference(), selectedDropType())
         }
 
         MaterialAlertDialogBuilder(context)
@@ -326,9 +369,10 @@ class WatchDialogManager(
                         "Procent" -> WatchType.DropType.PERCENTAGE
                         else -> WatchType.DropType.ABSOLUTE
                     }
+                    val reference = selectedReference()
                     val dropValue = dropValueStr.parseDecimal()
                     if (dropValue != null && dropValue > 0) {
-                        val watchType = WatchType.ATHBased(dropType, dropValue)
+                        val watchType = WatchType.ATHBased(dropType, dropValue, reference)
                         lifecycleScope.launch {
                             if (viewModel.isDuplicateWatch(watchType)) {
                                 Toast.makeText(context, "En bevakning med dessa inställningar finns redan", Toast.LENGTH_SHORT).show()

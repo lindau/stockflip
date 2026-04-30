@@ -9,7 +9,7 @@
     <string name="alerts_empty_subtitle">Lägg till en aktie och börja bygga upp dina case</string>
 
     <string name="stocks_empty_title">Ingen översikt ännu</string>
-    <string name="stocks_empty_subtitle">Tryck + för att lägga till ditt första case</string>
+    <string name="stocks_empty_subtitle">Gå till fliken Mina case och tryck + för att lägga till din första bevakning</string>
     <string name="pairs_empty_title">Inga aktiepar ännu</string>
     <string name="pairs_empty_subtitle">Tryck + för att lägga till ett aktiepar</string>
 

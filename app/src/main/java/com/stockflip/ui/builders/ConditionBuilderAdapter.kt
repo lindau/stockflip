@@ -8,14 +8,15 @@ import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.textfield.MaterialAutoCompleteTextView
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
+import com.stockflip.AlertRule
 import com.stockflip.R
-import com.stockflip.WatchType
 
 /**
  * Adapter för att visa och redigera villkor i kombinerade alerts.
  */
 class ConditionBuilderAdapter(
     private val onConditionTypeChanged: (Int, String) -> Unit,
+    private val onReferenceChanged: (Int, AlertRule.HighReference) -> Unit,
     private val onValueChanged: (Int, String) -> Unit,
     private val onOperatorChanged: (Int, String) -> Unit,
     private val onRemove: (Int) -> Unit
@@ -23,6 +24,7 @@ class ConditionBuilderAdapter(
 
     data class ConditionData(
         var conditionType: String = "Pris",
+        var highReference: AlertRule.HighReference = AlertRule.HighReference.FIFTY_TWO_WEEK_HIGH,
         var direction: String = "Över",
         var value: String = "",
         var operator: String? = null  // AND/OR, null för första villkoret
@@ -74,6 +76,8 @@ class ConditionBuilderAdapter(
         private val operatorLayout = itemView.findViewById<TextInputLayout>(R.id.operatorLayout)
         private val operatorInput = itemView.findViewById<MaterialAutoCompleteTextView>(R.id.conditionOperatorInput)
         private val conditionTypeInput = itemView.findViewById<MaterialAutoCompleteTextView>(R.id.conditionTypeInput)
+        private val highReferenceLayout = itemView.findViewById<TextInputLayout>(R.id.highReferenceLayout)
+        private val highReferenceInput = itemView.findViewById<MaterialAutoCompleteTextView>(R.id.conditionHighReferenceInput)
         private val directionLayout = itemView.findViewById<TextInputLayout>(R.id.directionLayout)
         private val directionInput = itemView.findViewById<MaterialAutoCompleteTextView>(R.id.conditionDirectionInput)
         private val valueInput = itemView.findViewById<TextInputEditText>(R.id.conditionValueInput)
@@ -97,14 +101,27 @@ class ConditionBuilderAdapter(
             }
 
             // Setup condition type
-            val conditionTypes = arrayOf("Pris", "P/E-tal", "P/S-tal", "Utdelningsprocent", "52w High Drop", "Dagsrörelse")
+            val conditionTypes = arrayOf("Pris", "P/E-tal", "P/S-tal", "Utdelningsprocent", "Drawdown", "Dagsrörelse")
             val conditionTypeAdapter = ArrayAdapter(itemView.context, android.R.layout.simple_dropdown_item_1line, conditionTypes)
             conditionTypeInput.setAdapter(conditionTypeAdapter)
             conditionTypeInput.setText(condition.conditionType, false)
             conditionTypeInput.setOnItemClickListener { _, _, _, _ ->
                 condition.conditionType = conditionTypeInput.text.toString()
                 onConditionTypeChanged(position, condition.conditionType)
+                updateReferenceVisibility(condition.conditionType)
                 updateDirectionVisibility(condition.conditionType)
+            }
+
+            // Setup high reference (visas bara för drawdown)
+            val references = arrayOf(
+                highReferenceLabel(AlertRule.HighReference.FIFTY_TWO_WEEK_HIGH),
+                highReferenceLabel(AlertRule.HighReference.ALL_TIME_HIGH)
+            )
+            highReferenceInput.setAdapter(ArrayAdapter(itemView.context, android.R.layout.simple_dropdown_item_1line, references))
+            highReferenceInput.setText(highReferenceLabel(condition.highReference), false)
+            highReferenceInput.setOnItemClickListener { _, _, _, _ ->
+                condition.highReference = parseHighReference(highReferenceInput.text.toString())
+                onReferenceChanged(position, condition.highReference)
             }
 
             // Setup direction
@@ -139,14 +156,33 @@ class ConditionBuilderAdapter(
             }
 
             // Initial visibility
+            updateReferenceVisibility(condition.conditionType)
             updateDirectionVisibility(condition.conditionType)
         }
 
+        private fun highReferenceLabel(reference: AlertRule.HighReference): String {
+            return when (reference) {
+                AlertRule.HighReference.FIFTY_TWO_WEEK_HIGH -> "52v högsta"
+                AlertRule.HighReference.ALL_TIME_HIGH -> "Historiskt högsta"
+            }
+        }
+
+        private fun parseHighReference(label: String): AlertRule.HighReference {
+            return when (label) {
+                "Historiskt högsta" -> AlertRule.HighReference.ALL_TIME_HIGH
+                else -> AlertRule.HighReference.FIFTY_TWO_WEEK_HIGH
+            }
+        }
+
+        private fun updateReferenceVisibility(conditionType: String) {
+            highReferenceLayout.visibility = if (conditionType == "Drawdown") View.VISIBLE else View.GONE
+        }
+
         private fun updateDirectionVisibility(conditionType: String) {
-            // Dagsrörelse behöver inte riktning (den har UP/DOWN/BOTH istället)
-            val needsDirection = conditionType != "Dagsrörelse"
+            // Dagsrörelse och drawdown-villkor har implicit "över tröskel".
+            val needsDirection = conditionType != "Dagsrörelse" &&
+                conditionType != "Drawdown"
             directionLayout.visibility = if (needsDirection) View.VISIBLE else View.GONE
         }
     }
 }
-

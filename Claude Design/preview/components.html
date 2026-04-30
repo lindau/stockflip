@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><title>Components — Nordisk Precision</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  html, body { margin:0; background: var(--np-background); color: var(--np-text-primary); font-family: var(--np-font-sans); }
+  .wrap { padding: 40px 48px; max-width: 1120px; margin: 0 auto; }
+  .eyebrow { font: 500 11px/1 var(--np-font-sans); letter-spacing: 0.6px; text-transform: uppercase; color: var(--np-text-tertiary); margin: 0 0 10px; }
+  .h1 { font-family: var(--np-font-display); font-weight: 400; font-size: 44px; line-height: 1.08; margin: 0 0 8px; }
+  .sub { font: 400 15px/1.5 var(--np-font-sans); color: var(--np-text-secondary); max-width: 680px; margin: 0 0 40px; }
+  h2 { font-family: var(--np-font-display); font-weight:400; font-size: 22px; margin: 32px 0 6px; }
+  .desc { font: 400 13px/1.5 var(--np-font-sans); color: var(--np-text-secondary); margin: 0 0 18px; max-width: 680px; }
+
+  /* Buttons */
+  .row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+  .btn { font: 500 14px/1 var(--np-font-sans); letter-spacing: 0.1px; padding: 12px 20px; border-radius: 14px; border: 0; cursor: pointer; }
+  .btn-filled { background: var(--np-primary); color: var(--np-on-primary); }
+  .btn-tonal { background: var(--np-secondary-container); color: var(--np-on-secondary-container); }
+  .btn-outlined { background: transparent; color: var(--np-primary); border: 1px solid var(--np-outline); }
+  .btn-text { background: transparent; color: var(--np-primary); padding: 10px 12px; }
+  .btn-destr { background: transparent; color: var(--np-error); border: 1px solid var(--np-error); }
+
+  /* Chips */
+  .chip { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 999px; font: 500 13px/1 var(--np-font-sans); background: var(--np-chip); color: var(--np-text-secondary); border: 1px solid transparent; }
+  .chip.on { background: var(--np-primary-container); color: var(--np-on-primary-container); }
+
+  /* Cards */
+  .panel { background: var(--np-surface); border: 1px solid var(--np-card-border); border-radius: var(--np-radius-md); padding: 14px; }
+  .stock-card { display: flex; gap: 12px; align-items: center; }
+  .stock-card .body { flex: 1; min-width: 0; }
+  .stock-card .tk { font: 500 11px/1 var(--np-font-sans); letter-spacing: 0.6px; color: var(--np-text-tertiary); text-transform: uppercase; }
+  .stock-card .nm { font: 600 15px/1.2 var(--np-font-sans); margin-top: 3px; }
+  .stock-card .rt { text-align: right; }
+  .stock-card .px { font-family: var(--np-font-mono); font-variant-numeric: tabular-nums; font-weight: 600; font-size: 15px; letter-spacing: -0.15px; }
+  .stock-card .dl { font-family: var(--np-font-mono); font-variant-numeric: tabular-nums; font-size: 12px; margin-top: 2px; }
+  .up { color: var(--np-price-up); } .dn { color: var(--np-price-down); }
+
+  /* Watch row / triggered */
+  .watch { position: relative; overflow: hidden; padding-left: 18px; }
+  .watch .stripe { position:absolute; left:0; top:0; bottom:0; width:5px; background: transparent; }
+  .watch.triggered { background: var(--np-tertiary-container); border-color: var(--np-tertiary); }
+  .watch.triggered .stripe { background: var(--np-tertiary); }
+  .watch .hd { display:flex; align-items:center; justify-content: space-between; gap: 10px; }
+  .watch .title { font: 600 15px/1.2 var(--np-font-sans); }
+  .watch .sub { font: 400 12px/1.4 var(--np-font-mono); color: var(--np-text-secondary); margin-top: 4px; font-variant-numeric: tabular-nums; }
+  .pill { font: 600 10px/1 var(--np-font-sans); letter-spacing: 0.5px; text-transform: uppercase; padding: 5px 9px; border-radius: 999px; background: var(--np-chip); color: var(--np-text-secondary); }
+  .pill.ok { background: var(--np-primary-container); color: var(--np-on-primary-container); }
+  .pill.tr { background: var(--np-tertiary); color: var(--np-on-tertiary); }
+  .pill.off { background: var(--np-surface-alt); color: var(--np-text-tertiary); }
+
+  /* Stat cells */
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; border: 1px solid var(--np-card-border); border-radius: var(--np-radius-md); overflow: hidden; background: var(--np-surface); }
+  .stat { padding: 14px 14px; border-right: 1px solid var(--np-outline-variant); }
+  .stat:last-child { border-right: 0; }
+  .stat .lbl { font: 500 11px/1 var(--np-font-sans); letter-spacing: 0.5px; text-transform: uppercase; color: var(--np-text-tertiary); }
+  .stat .val { font-family: var(--np-font-mono); font-weight: 600; font-size: 17px; letter-spacing: -0.02em; margin-top: 6px; font-variant-numeric: tabular-nums; }
+
+  /* Input */
+  .input { background: var(--np-surface); border: 1px solid var(--np-outline); border-radius: 14px; padding: 14px 16px; display:flex; align-items:center; gap: 10px; }
+  .input .ph { font: 400 14px/1 var(--np-font-sans); color: var(--np-text-tertiary); flex: 1; }
+  .input svg { color: var(--np-text-tertiary); }
+
+  /* Bottom nav */
+  .bn { display:flex; background: var(--np-surface); border: 1px solid var(--np-card-border); border-top: 1px solid var(--np-outline); border-radius: 16px; overflow: hidden; }
+  .bn .it { flex: 1; padding: 12px 10px; text-align: center; font: 500 11px/1 var(--np-font-sans); color: var(--np-text-tertiary); }
+  .bn .it.on { color: var(--np-primary); background: var(--np-primary-container); }
+  .bn .it svg { display: block; margin: 0 auto 4px; }
+
+  /* FAB */
+  .fab { width: 56px; height: 56px; border-radius: 16px; background: var(--np-primary); color: #fff; display: grid; place-items: center; box-shadow: 0 3px 6px rgba(16,32,46,0.12); }
+
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .three { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+
+  /* MultipleWatchesCard */
+  .mw-card { display: flex; flex-direction: column; gap: 6px; }
+  .mw-card .footer { display: flex; justify-content: flex-end; gap: 0; font: 400 11px/1 var(--np-font-sans); color: var(--np-text-secondary); }
+  .mw-card.triggered { background: var(--np-tertiary-container); border-color: var(--np-tertiary); }
+  .mw-card.triggered .watch-count-tr { color: var(--np-tertiary); }
+
+  /* OverviewSummaryCard */
+  .overview-card {
+    background: linear-gradient(135deg, var(--np-primary-container), #EAF1F692, #FFF3DD3D);
+    border: 1px solid var(--np-card-border);
+    border-radius: var(--np-radius-sm);
+    padding: 16px;
+  }
+  .overview-card .title { font: 600 15px/1.2 var(--np-font-sans); color: var(--np-on-primary-container); margin-bottom: 10px; }
+  .metrics-strip {
+    background: rgba(255,255,255,0.42);
+    border: 1px solid rgba(214,224,232,0.46);
+    border-radius: 14px;
+    padding: 9px 12px;
+    display: flex; gap: 10px; align-items: center;
+  }
+  .metric-item { flex: 1; display: flex; gap: 6px; align-items: baseline; }
+  .metric-item .mv { font-family: var(--np-font-mono); font-weight: 600; font-size: 15px; letter-spacing: -0.15px; font-variant-numeric: tabular-nums; color: var(--np-text-primary); }
+  .metric-item .ml { font: 500 11px/1 var(--np-font-sans); letter-spacing: 0.6px; color: var(--np-text-secondary); }
+  .metric-div { width: 1px; height: 18px; background: rgba(214,224,232,0.72); }
+
+  /* High52wCard / PriceRangeCard — reuse .watch styles, just add condition row */
+  .cond-row { font: 400 13px/1.4 var(--np-font-sans); color: var(--np-text-secondary); margin-top: 4px; }
+  .cond-row.triggered { color: var(--np-tertiary); }
+
+  /* IntradayChart preview */
+  .chart-card { background: var(--np-surface); border: 1px solid var(--np-card-border); border-radius: var(--np-radius-md); padding: 14px; }
+  .seg-btns { display: flex; gap: 0; border: 1px solid var(--np-outline); border-radius: 10px; overflow: hidden; margin-bottom: 12px; }
+  .seg-btn { flex: 1; padding: 7px 0; font: 600 11px/1 var(--np-font-sans); text-align: center; background: var(--np-surface); color: var(--np-text-tertiary); border-right: 1px solid var(--np-outline); letter-spacing: 0.3px; }
+  .seg-btn:last-child { border-right: 0; }
+  .seg-btn.on { background: var(--np-primary-container); color: var(--np-on-primary-container); }
+
+  /* Pair chart series legend */
+  .legend { display: flex; gap: 16px; align-items: center; margin-bottom: 10px; }
+  .legend-dot { width: 10px; height: 10px; border-radius: 50%; }
+  .legend-sq { width: 10px; height: 10px; border-radius: 2px; }
+  .legend span { font: 500 11px/1 var(--np-font-sans); color: var(--np-text-secondary); margin-left: 6px; vertical-align: middle; }
+</style></head>
+<body>
+<div class="wrap">
+  <p class="eyebrow">Design system · Components</p>
+  <h1 class="h1">Calm primitives</h1>
+  <p class="sub">Hairline borders instead of elevation. Tabular mono on every number. Amber reserved for triggered states.</p>
+
+  <h2>Buttons</h2>
+  <div class="row">
+    <button class="btn btn-filled">Spara bevakning</button>
+    <button class="btn btn-tonal">Återställ</button>
+    <button class="btn btn-outlined">Avbryt</button>
+    <button class="btn btn-text">Visa mer</button>
+    <button class="btn btn-destr">Ta bort</button>
+  </div>
+
+  <h2>Chips &amp; pills</h2>
+  <div class="row">
+    <span class="chip on">Sortering: Bokstavsordning</span>
+    <span class="chip">Status: Alla</span>
+    <span class="chip">Status: Aktiv</span>
+    <span class="chip">Typ: Prismål</span>
+    <span class="pill ok">Aktiv</span>
+    <span class="pill tr">Utlöst idag</span>
+    <span class="pill off">Inaktiverad</span>
+  </div>
+
+  <h2>Stock list card</h2>
+  <div class="two">
+    <div class="panel stock-card">
+      <div class="body"><div class="tk">ERIC-B.ST · 🇸🇪</div><div class="nm">Ericsson B</div></div>
+      <div class="rt"><div class="px">138,44</div><div class="dl up">+2,15 (+1,58 %)</div></div>
+    </div>
+    <div class="panel stock-card">
+      <div class="body"><div class="tk">AAPL · 🇺🇸</div><div class="nm">Apple Inc.</div></div>
+      <div class="rt"><div class="px">187,23</div><div class="dl dn">−0,91 (−0,48 %)</div></div>
+    </div>
+  </div>
+
+  <h2>Watch rows — active &amp; triggered</h2>
+  <div class="two">
+    <div class="panel watch"><span class="stripe"></span>
+      <div class="hd"><div class="title">Prismål 145,00 SEK</div><span class="pill ok">Aktiv</span></div>
+      <div class="sub">ERIC-B.ST · Engångslarm · Uppdaterad 14:32</div>
+    </div>
+    <div class="panel watch triggered"><span class="stripe"></span>
+      <div class="hd"><div class="title">Dagsrörelse ±3 %</div><span class="pill tr">Utlöst 14:32</span></div>
+      <div class="sub">ERIC-B.ST · Återkommande · +3,18 % idag</div>
+    </div>
+  </div>
+
+  <h2>Stat triplet — detail screen</h2>
+  <div class="stats">
+    <div class="stat"><div class="lbl">P/E</div><div class="val">14,22</div></div>
+    <div class="stat"><div class="lbl">P/S</div><div class="val">1,83</div></div>
+    <div class="stat"><div class="lbl">Direktavk.</div><div class="val">2,64 %</div></div>
+  </div>
+
+  <h2>Search input</h2>
+  <div class="input">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M15.5,14h-0.79l-0.28,-0.27C15.41,12.59 16,11.11 16,9.5 16,5.91 13.09,3 9.5,3 5.91,3 3,5.91 3,9.5 3,13.09 5.91,16 9.5,16c1.61,0 3.09,-0.59 4.23,-1.57l0.27,0.28v0.79L20,21.49 21.49,20 15.5,14zM9.5,14C7.01,14 5,11.99 5,9.5 5,7.01 7.01,5 9.5,5 11.99,5 14,7.01 14,9.5 14,11.99 11.99,14 9.5,14z"/></svg>
+    <span class="ph">Sök aktier eller tickers</span>
+  </div>
+
+  <!-- ── NEW COMPONENTS (added in latest code revision) ─────────────────── -->
+
+  <h2>MultipleWatchesCard — Aktier-fliken</h2>
+  <p class="desc">Visar en aktie med N bevakningar. Om någon är utlöst används tertiär amber på container + badge. Nytt i koden.</p>
+  <div class="two">
+    <div class="panel mw-card">
+      <div class="stock-card">
+        <div class="body"><div class="tk">ERIC-B.ST · 🇸🇪</div><div class="nm">Ericsson B</div></div>
+        <div class="rt"><div class="px">138,44</div><div class="dl up">+2,15 (+1,58 %)</div></div>
+      </div>
+      <div class="footer"><span>3 bevakningar</span></div>
+    </div>
+    <div class="panel mw-card triggered">
+      <div class="stock-card">
+        <div class="body"><div class="tk">AAPL · 🇺🇸</div><div class="nm">Apple Inc.</div></div>
+        <div class="rt"><div class="px">187,23</div><div class="dl dn">−0,91 (−0,48 %)</div></div>
+      </div>
+      <div class="footer"><span>2 bevakningar</span>&nbsp;<span class="watch-count-tr">· 1 nådd</span></div>
+    </div>
+  </div>
+
+  <h2>OverviewSummaryCard — Aktier-fliken topp</h2>
+  <p class="desc">Gradient primaryContainer → secondaryContainer → tertiaryContainer. Glasyta inuti med tre mätvärden: Nära / Utlösta / Aktiva. Nytt i koden.</p>
+  <div class="overview-card">
+    <div class="title">Marknadsläge</div>
+    <div class="metrics-strip">
+      <div class="metric-item"><span class="mv">3</span><span class="ml">Nära</span></div>
+      <div class="metric-div"></div>
+      <div class="metric-item"><span class="mv">2</span><span class="ml">Utlösta</span></div>
+      <div class="metric-div"></div>
+      <div class="metric-item"><span class="mv">11</span><span class="ml">Aktiva</span></div>
+    </div>
+  </div>
+
+  <h2>High52wCard &amp; PriceRangeCard — Bevakningskort</h2>
+  <p class="desc">Två nya WatchType-kort. Samma struktur som befintliga kort: StatusStripe, groupShape, animerad tertiärcontainer vid trigger. Nytt i koden.</p>
+  <div class="two">
+    <div class="panel watch" style="padding-left:18px">
+      <span class="stripe" style="background:var(--np-primary)"></span>
+      <div class="hd"><div class="tk" style="font:500 10px/1 var(--np-font-sans);letter-spacing:.6px;text-transform:uppercase;color:var(--np-text-tertiary)">ERIC-B.ST · 52v-drawdown</div><span class="pill ok">Aktiv</span></div>
+      <div class="cond-row">Drawdown: ≥ 20% från 52v-topp</div>
+    </div>
+    <div class="panel watch triggered" style="padding-left:18px">
+      <span class="stripe"></span>
+      <div class="hd"><div class="tk" style="font:500 10px/1 var(--np-font-sans);letter-spacing:.6px;text-transform:uppercase;color:var(--np-text-tertiary)">AAPL · Prisintervall</div><span class="pill tr">Utlöst 14:48</span></div>
+      <div class="cond-row triggered">Mål: Pris mellan $180,00 – $195,00</div>
+    </div>
+  </div>
+
+  <h2>IntradayChart — kursdiagram</h2>
+  <p class="desc">Canvas-baserat diagram med period-selector (SegmentedButton). Färg via LocalPriceUp/Down. Y-axel t.v., tid-etiketter t.h. Fyllning 12 % alpha. Nytt i koden.</p>
+  <div class="chart-card">
+    <div class="seg-btns"><div class="seg-btn">1D</div><div class="seg-btn">1V</div><div class="seg-btn on">1M</div><div class="seg-btn">3M</div><div class="seg-btn">6M</div><div class="seg-btn">1Å</div><div class="seg-btn">5Å</div></div>
+    <svg width="100%" height="140" viewBox="0 0 640 140" style="display:block">
+      <defs>
+        <linearGradient id="cg" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#238B57" stop-opacity="0.12"/>
+          <stop offset="100%" stop-color="#238B57" stop-opacity="0"/>
+        </linearGradient>
+      </defs>
+      <!-- Y-axis area -->
+      <text x="2" y="14" font-size="9" fill="#7A8897" font-family="JetBrains Mono, monospace">152,60</text>
+      <text x="2" y="74" font-size="9" fill="#7A8897" font-family="JetBrains Mono, monospace">138,44</text>
+      <text x="2" y="132" font-size="9" fill="#7A8897" font-family="JetBrains Mono, monospace">98,22</text>
+      <!-- Grid -->
+      <line x1="56" y1="12" x2="640" y2="12" stroke="#E6EDF3" stroke-width="0.7"/>
+      <line x1="56" y1="72" x2="640" y2="72" stroke="#E6EDF3" stroke-width="0.7"/>
+      <line x1="56" y1="128" x2="640" y2="128" stroke="#E6EDF3" stroke-width="0.7"/>
+      <!-- Chart -->
+      <path d="M56 108 L96 100 L136 112 L176 90 L216 96 L256 80 L296 88 L336 68 L376 72 L416 52 L456 58 L496 42 L536 46 L576 30 L620 35 L620 128 L56 128 Z" fill="url(#cg)"/>
+      <path d="M56 108 L96 100 L136 112 L176 90 L216 96 L256 80 L296 88 L336 68 L376 72 L416 52 L456 58 L496 42 L536 46 L576 30 L620 35" fill="none" stroke="#238B57" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="620" cy="35" r="4" fill="#238B57"/>
+      <!-- X labels -->
+      <text x="56" y="140" font-size="9" fill="#7A8897" font-family="JetBrains Mono, monospace">1 mar</text>
+      <text x="230" y="140" font-size="9" fill="#7A8897" font-family="JetBrains Mono, monospace">11 mar</text>
+      <text x="416" y="140" font-size="9" fill="#7A8897" font-family="JetBrains Mono, monospace">21 mar</text>
+      <text x="590" y="140" font-size="9" fill="#7A8897" font-family="JetBrains Mono, monospace">31 mar</text>
+    </svg>
+  </div>
+
+  <h2>PairPerformanceChart — normaliserad + spreaddiagram</h2>
+  <p class="desc">Dubbel normaliserad serie (A solid blå #0057D9, B streckad orange #D97706). Spreadminiatur nedanför med signalfärg: Far / Nära (amber) / Triggered (error). Nytt i koden.</p>
+  <div class="chart-card">
+    <div class="seg-btns"><div class="seg-btn">1D</div><div class="seg-btn">1V</div><div class="seg-btn on">1M</div><div class="seg-btn">3M</div><div class="seg-btn">6M</div><div class="seg-btn">1Å</div><div class="seg-btn">5Å</div></div>
+    <div class="legend">
+      <div class="legend-dot" style="background:#0057D9"></div><span>ERIC-B.ST</span>
+      <div class="legend-sq" style="background:#D97706"></div><span>NOKIA.HE</span>
+    </div>
+    <svg width="100%" height="120" viewBox="0 0 640 120" style="display:block">
+      <text x="2" y="12" font-size="9" fill="#7A8897" font-family="JetBrains Mono, monospace">112</text>
+      <text x="2" y="62" font-size="9" fill="#7A8897" font-family="JetBrains Mono, monospace">100</text>
+      <text x="2" y="112" font-size="9" fill="#7A8897" font-family="JetBrains Mono, monospace">88</text>
+      <line x1="56" y1="60" x2="640" y2="60" stroke="#516273" stroke-width="1.2"/>
+      <line x1="56" y1="10" x2="640" y2="10" stroke="#E6EDF3" stroke-width="0.7"/>
+      <line x1="56" y1="110" x2="640" y2="110" stroke="#E6EDF3" stroke-width="0.7"/>
+      <!-- Series A solid -->
+      <path d="M56 80 L120 74 L200 68 L280 58 L360 50 L440 42 L560 36 L620 28" fill="none" stroke="#0057D9" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="620" cy="28" r="3.5" fill="#0057D9"/>
+      <!-- Series B dashed -->
+      <path d="M56 76 L120 78 L200 72 L280 68 L360 64 L440 62 L560 58 L620 56" fill="none" stroke="#D97706" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="14,9"/>
+      <rect x="616.5" y="52.5" width="7" height="7" fill="#D97706"/>
+      <!-- X labels -->
+      <text x="56" y="120" font-size="9" fill="#7A8897" font-family="JetBrains Mono, monospace">1 mar</text>
+      <text x="300" y="120" font-size="9" fill="#7A8897" font-family="JetBrains Mono, monospace">16 mar</text>
+      <text x="590" y="120" font-size="9" fill="#7A8897" font-family="JetBrains Mono, monospace">31 mar</text>
+    </svg>
+    <!-- Spread mini -->
+    <div style="font:600 13px/1.2 var(--np-font-sans);color:var(--np-text-primary);margin:14px 0 6px">Spread och signal</div>
+    <svg width="100%" height="80" viewBox="0 0 640 80" style="display:block">
+      <rect x="56" y="4" width="584" height="72" fill="var(--np-surface-container-low)"/>
+      <rect x="56" y="4" width="584" height="6" fill="rgba(184,130,47,0.22)"/>
+      <!-- Target lines -->
+      <line x1="56" y1="22" x2="640" y2="22" stroke="#B8842F" stroke-width="1.8"/>
+      <line x1="56" y1="58" x2="640" y2="58" stroke="#B8842F" stroke-width="1.8"/>
+      <line x1="56" y1="40" x2="640" y2="40" stroke="#51627380" stroke-width="1.2"/>
+      <!-- Spread line -->
+      <path d="M56 52 L120 48 L200 42 L280 38 L360 30 L440 24 L530 20 L600 16" fill="none" stroke="#238B57" stroke-width="2" stroke-linecap="round"/>
+      <circle cx="600" cy="16" r="4" fill="var(--np-surface)" stroke="#238B57" stroke-width="2"/>
+      <!-- "Nu" badge -->
+      <rect x="605" y="10" width="24" height="12" rx="3" fill="#238B57"/>
+      <text x="608" y="19" font-size="8" fill="white" font-family="JetBrains Mono, monospace">Nu</text>
+      <text x="2" y="24" font-size="9" fill="#7A8897" font-family="JetBrains Mono, monospace">+0,20</text>
+      <text x="2" y="60" font-size="9" fill="#7A8897" font-family="JetBrains Mono, monospace">−0,20</text>
+    </svg>
+  </div>
+
+  <h2>Bottom navigation &amp; FAB</h2>
+  <div class="two">
+    <div class="bn">
+      <div class="it on"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M4,18h16v-2H6.41L11,11.41l3,3L20.59,8 19.17,6.59 14,11.76l-3,-3L4,15.76V18z"/></svg>Aktier</div>
+      <div class="it"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="10" cy="7" r="3"/><circle cx="14" cy="17" r="3"/><line x1="11.3" y1="9.6" x2="12.7" y2="14.4"/></svg>Par</div>
+      <div class="it"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M12,22a2,2 0 0,0 2,-2h-4a2,2 0 0,0 2,2zM18,16v-4.5c0,-2.76 -1.57,-5.26 -4.07,-6.32C13.61,4.49 12.84,4 12,4s-1.61,0.49 -1.93,1.18C7.57,6.24 6,8.74 6,11.5L6,16l-2,2v1h16v-1l-2,-2z"/></svg>Bevakningar</div>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:flex-end;padding-right:16px">
+      <div class="fab"><svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><path d="M19,14H14V19H10V14H5V10H10V5H14V10H19Z"/></svg></div>
+    </div>
+  </div>
+</div>
+</body></html>

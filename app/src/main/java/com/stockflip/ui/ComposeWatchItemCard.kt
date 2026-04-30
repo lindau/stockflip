@@ -23,6 +23,7 @@ import com.stockflip.ui.components.cards.DailyMoveCard
 import com.stockflip.ui.components.cards.High52wCard
 import com.stockflip.ui.components.cards.MetricAlertCard
 import com.stockflip.ui.components.cards.PairCard
+import com.stockflip.ui.components.cards.PairCardPresentation
 import com.stockflip.ui.components.cards.PriceRangeCard
 import com.stockflip.CurrencyHelper
 import com.stockflip.ui.components.cards.PriceTargetCard
@@ -43,12 +44,29 @@ fun ComposeWatchItemCard(
     isNew: Boolean = false,
     nearTriggerLabel: String? = null,
     onLongClick: (() -> Unit)? = null,
+    pairCardPresentation: PairCardPresentation = PairCardPresentation.Default,
     modifier: Modifier = Modifier,
 ) {
+    val usesClarityPairCard = item.watchType is com.stockflip.WatchType.PricePair &&
+        pairCardPresentation == PairCardPresentation.Clarity &&
+        !showControls
     // Vertical outer padding: group items connect tightly — only ONLY/FIRST get top spacing,
     // only ONLY/LAST get bottom spacing.
-    val paddingTop = if (groupPosition == GroupPosition.ONLY || groupPosition == GroupPosition.FIRST) NP.cardOuterV else 0.dp
-    val paddingBottom = if (groupPosition == GroupPosition.ONLY || groupPosition == GroupPosition.LAST) NP.cardOuterV else 0.dp
+    val paddingTop = if (usesClarityPairCard) {
+        6.dp
+    } else if (groupPosition == GroupPosition.ONLY || groupPosition == GroupPosition.FIRST) {
+        NP.cardOuterV
+    } else {
+        0.dp
+    }
+    val paddingBottom = if (usesClarityPairCard) {
+        6.dp
+    } else if (groupPosition == GroupPosition.ONLY || groupPosition == GroupPosition.LAST) {
+        NP.cardOuterV
+    } else {
+        0.dp
+    }
+    val horizontalPadding = if (usesClarityPairCard) 8.dp else NP.cardOuterH
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -63,7 +81,7 @@ fun ComposeWatchItemCard(
                 onClick = onItemClick,
                 onLongClick = onLongClick
             )
-            .padding(start = NP.cardOuterH, end = NP.cardOuterH, top = paddingTop, bottom = paddingBottom),
+            .padding(start = horizontalPadding, end = horizontalPadding, top = paddingTop, bottom = paddingBottom),
     ) {
         CompositionLocalProvider(
             LocalIsNewTrigger provides isNew,
@@ -81,6 +99,7 @@ fun ComposeWatchItemCard(
                     onClick = if (showControls) onItemClick else null,
                     containerColor = containerColor,
                     triggerHistory = triggerHistory,
+                    presentation = pairCardPresentation,
                     modifier = Modifier.fillMaxWidth(),
                 )
             }

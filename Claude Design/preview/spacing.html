@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><title>Spacing, radii &amp; shape — Nordisk Precision</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  html, body { margin:0; background: var(--np-background); color: var(--np-text-primary); font-family: var(--np-font-sans); }
+  .wrap { padding: 40px 48px; max-width: 1120px; margin: 0 auto; }
+  .eyebrow { font: 500 11px/1 var(--np-font-sans); letter-spacing: 0.6px; text-transform: uppercase; color: var(--np-text-tertiary); margin: 0 0 10px; }
+  .h1 { font-family: var(--np-font-display); font-weight: 400; font-size: 44px; line-height: 1.08; margin: 0 0 8px; }
+  .sub { font: 400 15px/1.5 var(--np-font-sans); color: var(--np-text-secondary); max-width: 680px; margin: 0 0 36px; }
+  h2 { font-family: var(--np-font-display); font-weight:400; font-size: 24px; margin: 36px 0 6px; }
+  .desc { font: 400 13px/1.5 var(--np-font-sans); color: var(--np-text-secondary); margin: 0 0 18px; max-width: 680px; }
+  .space-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+  .sp { background: var(--np-surface); border: 1px solid var(--np-card-border); border-radius: var(--np-radius-md); padding: 18px 18px 14px; }
+  .sp .bar { height: 10px; background: var(--np-primary); border-radius: 2px; }
+  .sp .bar-track { background: var(--np-surface-alt); border-radius: 2px; height: 10px; margin-bottom: 12px; }
+  .sp .name { font: 600 12px/1 var(--np-font-sans); letter-spacing: 0.4px; text-transform: uppercase; color: var(--np-text-secondary); }
+  .sp .val { font: 600 20px/1 var(--np-font-mono); font-variant-numeric: tabular-nums; letter-spacing: -0.02em; margin: 6px 0 2px; }
+  .sp .tok { font: 400 11px/1 var(--np-font-mono); color: var(--np-text-tertiary); }
+
+  .radii { display: grid; grid-template-columns: repeat(6, 1fr); gap: 14px; }
+  .rd { background: var(--np-surface); border: 1px solid var(--np-card-border); border-radius: var(--np-radius-md); padding: 14px; text-align: center; }
+  .rd .demo { height: 92px; background: var(--np-primary-container); border: 1px solid var(--np-primary); margin-bottom: 10px; }
+  .rd .name { font: 600 12px/1 var(--np-font-sans); color: var(--np-text-primary); }
+  .rd .val { font: 400 11px/1 var(--np-font-mono); color: var(--np-text-tertiary); margin-top: 4px; }
+
+  .group-demo { background: var(--np-surface-alt); border-radius: var(--np-radius-lg); padding: 16px; display: flex; gap: 40px; align-items: flex-start; }
+  .group-col { flex: 1; }
+  .group-col .hd { font: 500 11px/1 var(--np-font-sans); letter-spacing: 0.6px; text-transform: uppercase; color: var(--np-text-tertiary); margin-bottom: 10px; }
+  .grp-card { background: var(--np-surface); border: 1px solid var(--np-card-border); padding: 12px 14px; margin-bottom: 3px; font: 500 13px/1 var(--np-font-sans); }
+  .grp-card:last-child { margin-bottom: 0; }
+  .grp-card.first { border-top-left-radius: 10px; border-top-right-radius: 10px; border-bottom-left-radius: 2px; border-bottom-right-radius: 2px; }
+  .grp-card.middle { border-radius: 2px; }
+  .grp-card.last { border-top-left-radius: 2px; border-top-right-radius: 2px; border-bottom-left-radius: 10px; border-bottom-right-radius: 10px; }
+  .grp-card.solo { border-radius: 10px; }
+
+  .stripe-demo { display: flex; gap: 14px; }
+  .stripe-card { flex: 1; background: var(--np-surface); border: 1px solid var(--np-card-border); border-radius: var(--np-radius-md); padding: 14px 14px 14px 18px; position: relative; overflow: hidden; }
+  .stripe-card.triggered { background: var(--np-tertiary-container); border-color: var(--np-tertiary); }
+  .stripe-card .stripe { position: absolute; left: 0; top: 0; bottom: 0; width: 5px; background: transparent; }
+  .stripe-card.triggered .stripe { background: var(--np-tertiary); }
+  .stripe-card .tk { font: 500 11px/1 var(--np-font-sans); letter-spacing: 0.6px; text-transform: uppercase; color: var(--np-text-tertiary); }
+  .stripe-card .tl { font: 600 15px/1.2 var(--np-font-sans); margin-top: 4px; }
+  .stripe-card .pill { display: inline-block; margin-top: 10px; font: 600 10px/1 var(--np-font-sans); letter-spacing: 0.5px; text-transform: uppercase; padding: 5px 9px; border-radius: 999px; background: var(--np-chip); color: var(--np-text-secondary); }
+  .stripe-card.triggered .pill { background: var(--np-tertiary); color: var(--np-on-tertiary); }
+</style></head>
+<body>
+<div class="wrap">
+  <p class="eyebrow">Design system · Spacing &amp; shape</p>
+  <h1 class="h1">3 · 6 · 12 · 24</h1>
+  <p class="sub">A deliberately short spacing scale produces the tight grouped-list density that defines the product. Radii step up from 8 to 28, with a 10dp list-card shape and a custom grouped-list corner rule.</p>
+
+  <h2>Spacing scale</h2>
+  <p class="desc">Four tokens cover the entire app. The 3dp row gap is the signature detail that makes list rows read as a single unit.</p>
+  <div class="space-grid">
+    <div class="sp"><div class="bar-track"><div class="bar" style="width:12px"></div></div><div class="name">Space 1</div><div class="val">3 dp</div><div class="tok">--np-space-1 · row gap</div></div>
+    <div class="sp"><div class="bar-track"><div class="bar" style="width:24px"></div></div><div class="name">Space 2</div><div class="val">6 dp</div><div class="tok">--np-space-2 · intra-card</div></div>
+    <div class="sp"><div class="bar-track"><div class="bar" style="width:48px"></div></div><div class="name">Space 3</div><div class="val">12 dp</div><div class="tok">--np-space-3 · card padding</div></div>
+    <div class="sp"><div class="bar-track"><div class="bar" style="width:96px"></div></div><div class="name">Space 4</div><div class="val">24 dp</div><div class="tok">--np-space-4 · section</div></div>
+  </div>
+
+  <h2>Radii</h2>
+  <p class="desc">Material 3 Shape tokens plus a custom 10dp list-card shape.</p>
+  <div class="radii">
+    <div class="rd"><div class="demo" style="border-radius:8px"></div><div class="name">XS · 8</div><div class="val">--np-radius-xs</div></div>
+    <div class="rd"><div class="demo" style="border-radius:10px"></div><div class="name">List · 10</div><div class="val">--np-radius-sm</div></div>
+    <div class="rd"><div class="demo" style="border-radius:14px"></div><div class="name">MD · 14</div><div class="val">--np-radius-md</div></div>
+    <div class="rd"><div class="demo" style="border-radius:20px"></div><div class="name">LG · 20</div><div class="val">--np-radius-lg</div></div>
+    <div class="rd"><div class="demo" style="border-radius:22px"></div><div class="name">XL · 22</div><div class="val">--np-radius-xl</div></div>
+    <div class="rd"><div class="demo" style="border-radius:28px"></div><div class="name">2XL · 28</div><div class="val">--np-radius-2xl</div></div>
+  </div>
+
+  <h2>Grouped-list shape</h2>
+  <p class="desc">Sibling cards share a ticker group. Inner corners collapse to 2dp; outer corners stay at 10dp. Siblings are separated by a 3dp gap.</p>
+  <div class="group-demo">
+    <div class="group-col">
+      <div class="hd">Solo</div>
+      <div class="grp-card solo">ERIC-B.ST — Ericsson B</div>
+    </div>
+    <div class="group-col">
+      <div class="hd">Group of 3 — same ticker</div>
+      <div class="grp-card first">ERIC-B · Prismål 145,00 SEK</div>
+      <div class="grp-card middle">ERIC-B · Dagsrörelse ±3 %</div>
+      <div class="grp-card last">ERIC-B · 52v-nedgång 20 %</div>
+    </div>
+  </div>
+
+  <h2>Status stripe — 5dp</h2>
+  <p class="desc">The triggered-state stripe animates from transparent to amber on the <code>tween(400ms, FastOutSlowInEasing)</code> curve. Accompanied by container fill, border, and the &ldquo;Utlöst idag&rdquo; pill.</p>
+  <div class="stripe-demo">
+    <div class="stripe-card"><span class="stripe"></span>
+      <div class="tk">AKTIV</div><div class="tl">Prismål 145,00 SEK</div><span class="pill">Aktiv</span>
+    </div>
+    <div class="stripe-card triggered"><span class="stripe"></span>
+      <div class="tk">TRIGGAD</div><div class="tl">Prismål 145,00 SEK</div><span class="pill">Utlöst idag 14:32</span>
+    </div>
+  </div>
+</div>
+</body></html>

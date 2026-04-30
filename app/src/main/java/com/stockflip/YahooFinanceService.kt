@@ -76,6 +76,7 @@ data class Indicators(
 )
 
 data class Quote(
+    val high: List<Double?>? = null,
     val close: List<Double?>? = null
 )
 
@@ -122,6 +123,9 @@ object YahooFinanceService : MarketDataService {
     private const val MAX_CONSECUTIVE_FAILURES = 3
     private var lastFailureTime = 0L
     private const val FAILURE_COOLDOWN_MS = 60000L // 1 minute cooldown after failures
+    private const val ALL_TIME_HIGH_CACHE_TTL_MS = 24L * 60L * 60L * 1000L
+    private data class CachedAllTimeHigh(val value: Double, val timestamp: Long)
+    private val allTimeHighCache = mutableMapOf<String, CachedAllTimeHigh>()
 
     private suspend fun ensureCrumb() {
         if (crumb != null) return
@@ -333,6 +337,20 @@ object YahooFinanceService : MarketDataService {
 
     override suspend fun getATH(symbol: String): Double? {
         return chartMarketDataService.getATH(symbol)
+    }
+
+    override suspend fun getAllTimeHigh(symbol: String): Double? {
+        val now = System.currentTimeMillis()
+        val cachedValue = synchronized(allTimeHighCache) {
+            allTimeHighCache[symbol]?.takeIf { now - it.timestamp < ALL_TIME_HIGH_CACHE_TTL_MS }?.value
+        }
+        if (cachedValue != null) return cachedValue
+
+        val allTimeHigh = chartMarketDataService.getAllTimeHigh(symbol) ?: return null
+        synchronized(allTimeHighCache) {
+            allTimeHighCache[symbol] = CachedAllTimeHigh(allTimeHigh, now)
+        }
+        return allTimeHigh
     }
 
     /**

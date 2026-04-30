@@ -49,15 +49,19 @@ object AlertRuleConverter {
             }
             is WatchType.ATHBased -> {
                 val ticker = watchItem.ticker ?: return null
-                // ATHBased använder 52w high enligt PRD
                 val dropType = when (watchType.dropType) {
                     WatchType.DropType.PERCENTAGE -> AlertRule.DrawdownDropType.PERCENTAGE
                     WatchType.DropType.ABSOLUTE -> AlertRule.DrawdownDropType.ABSOLUTE
                 }
+                val reference = when (watchType.reference) {
+                    WatchType.HighReference.FIFTY_TWO_WEEK_HIGH -> AlertRule.HighReference.FIFTY_TWO_WEEK_HIGH
+                    WatchType.HighReference.ALL_TIME_HIGH -> AlertRule.HighReference.ALL_TIME_HIGH
+                }
                 AlertRule.SingleDrawdownFromHigh(
                     symbol = ticker,
                     dropType = dropType,
-                    dropValue = watchType.dropValue
+                    dropValue = watchType.dropValue,
+                    reference = reference
                 )
             }
             is WatchType.DailyMove -> {
@@ -124,4 +128,3 @@ object AlertRuleConverter {
         )
     }
 }
-

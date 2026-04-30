@@ -172,6 +172,35 @@ class YahooMarketDataServiceImpl(
         }
     }
 
+    suspend fun getAllTimeHigh(symbol: String): Double? = withContext(Dispatchers.IO) {
+        try {
+            Log.d(TAG, "Fetching all-time high")
+            val response: YahooFinanceResponse = api.getIntradayChart(symbol, range = "max", interval = "1mo")
+            if (response.chart?.error != null) {
+                Log.e(TAG, "Yahoo API error while fetching all-time high: ${response.chart.error.description}")
+                return@withContext getATH(symbol)
+            }
+            val result: Result = response.chart?.result?.firstOrNull() ?: return@withContext getATH(symbol)
+            val meta = result.meta
+            val quote = result.indicators?.quote?.firstOrNull()
+            val historicalHigh = (quote?.high.orEmpty() + quote?.close.orEmpty())
+                .mapNotNull { value -> value?.takeIf { !it.isNaN() && it > 0.0 } }
+                .maxOrNull()
+
+            val candidates = listOfNotNull(
+                historicalHigh,
+                meta?.regularMarketPrice?.takeIf { !it.isNaN() && it > 0.0 },
+                meta?.fiftyTwoWeekHigh?.takeIf { !it.isNaN() && it > 0.0 },
+                meta?.regularMarketDayHigh?.takeIf { !it.isNaN() && it > 0.0 }
+            )
+
+            candidates.maxOrNull() ?: getATH(symbol)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error fetching all-time high: ${e.message}", e)
+            getATH(symbol)
+        }
+    }
+
     suspend fun get52WeekLow(symbol: String): Double? = withContext(Dispatchers.IO) {
         try {
             Log.d(TAG, "Fetching 52-week low")

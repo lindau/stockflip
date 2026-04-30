@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><title>Typography — Nordisk Precision</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  html, body { margin: 0; background: var(--np-background); color: var(--np-text-primary); font-family: var(--np-font-sans); }
+  .wrap { padding: 40px 48px; max-width: 1120px; margin: 0 auto; }
+  .eyebrow { font: 500 11px/1 var(--np-font-sans); letter-spacing: 0.6px; text-transform: uppercase; color: var(--np-text-tertiary); margin: 0 0 10px; }
+  .h1 { font-family: var(--np-font-display); font-weight: 400; font-size: 44px; line-height: 1.08; margin: 0 0 8px; }
+  .sub { font: 400 15px/1.5 var(--np-font-sans); color: var(--np-text-secondary); max-width: 680px; margin: 0 0 40px; }
+  .families { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 40px; }
+  .fam { background: var(--np-surface); border: 1px solid var(--np-card-border); border-radius: var(--np-radius-lg); padding: 22px 22px 20px; }
+  .fam .name { font: 600 12px/1 var(--np-font-sans); letter-spacing: 0.6px; text-transform: uppercase; color: var(--np-text-tertiary); margin-bottom: 14px; }
+  .fam .ag { font-size: 78px; line-height: 1; letter-spacing: -0.02em; color: var(--np-text-primary); margin-bottom: 10px; }
+  .fam .note { font: 400 12px/1.5 var(--np-font-sans); color: var(--np-text-secondary); }
+  .fam.serif .ag { font-family: var(--np-font-display); font-weight: 400; }
+  .fam.sans .ag { font-family: var(--np-font-sans); font-weight: 600; }
+  .fam.mono .ag { font-family: var(--np-font-mono); font-weight: 600; font-variant-numeric: tabular-nums; font-size: 56px; letter-spacing: -0.03em; }
+  .role { display: grid; grid-template-columns: 180px 110px 1fr; gap: 18px; align-items: baseline; padding: 14px 0; border-top: 1px solid var(--np-outline-variant); }
+  .role:first-of-type { border-top: 0; }
+  .role .tag { font: 500 12px/1 var(--np-font-sans); color: var(--np-text-tertiary); letter-spacing: 0.4px; text-transform: uppercase; }
+  .role .spec { font: 400 11px/1 var(--np-font-mono); color: var(--np-text-tertiary); }
+  .block h2 { font-family: var(--np-font-display); font-weight: 400; font-size: 24px; margin: 32px 0 16px; }
+  .numrow { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 10px; }
+  .numcard { background: var(--np-surface); border: 1px solid var(--np-card-border); border-radius: var(--np-radius-md); padding: 18px 20px; }
+  .numcard .lbl { font: 500 11px/1 var(--np-font-sans); letter-spacing: 0.6px; text-transform: uppercase; color: var(--np-text-tertiary); margin-bottom: 10px; }
+  .numcard .v { font-family: var(--np-font-mono); font-variant-numeric: tabular-nums; font-weight: 600; font-size: 28px; letter-spacing: -0.03em; color: var(--np-text-primary); }
+  .numcard .delta { margin-top: 4px; font-family: var(--np-font-mono); font-variant-numeric: tabular-nums; font-weight: 400; font-size: 13px; }
+  .up { color: var(--np-price-up); } .dn { color: var(--np-price-down); }
+</style></head>
+<body>
+  <div class="wrap">
+    <p class="eyebrow">Design system · Type</p>
+    <h1 class="h1">Three families, one role each</h1>
+    <p class="sub">A reserved serif for editorial display, a neutral sans for interface body, and a tabular monospace that shows up the moment a number appears.</p>
+
+    <div class="families">
+      <div class="fam serif"><div class="name">Display · DM Serif Display</div><div class="ag">Ag</div><div class="note">Used for Material 3 display and headline roles. Appears sparingly in the live app — think section headers, splash, marketing.</div></div>
+      <div class="fam sans"><div class="name">Interface · System Sans</div><div class="ag">Ag</div><div class="note">Body, labels, titles. <code>titleMedium</code> SemiBold 15sp is the workhorse for card headlines across every screen.</div></div>
+      <div class="fam mono"><div class="name">Numeric · JetBrains Mono</div><div class="ag">12,345</div><div class="note">Reserved for numbers. Tabular figures baked in so price rows align vertically without manual tracking.</div></div>
+    </div>
+
+    <div class="block">
+      <h2>Role scale — Material 3</h2>
+      <div>
+        <div class="role"><span class="tag">Display L</span><span class="spec">Serif · 57/64</span><span class="np-display-large">Nordisk Precision</span></div>
+        <div class="role"><span class="tag">Display M</span><span class="spec">Serif · 45/52</span><span class="np-display-medium">Nordisk Precision</span></div>
+        <div class="role"><span class="tag">Headline L</span><span class="spec">Serif · 32/40</span><span class="np-headline-large">Bevakningar och larm</span></div>
+        <div class="role"><span class="tag">Headline S</span><span class="spec">Serif · 24/32</span><span class="np-headline-small">Bevakningar och larm</span></div>
+        <div class="role"><span class="tag">Title L</span><span class="spec">Sans · 20/26 · 600</span><span class="np-title-large">Ericsson B</span></div>
+        <div class="role"><span class="tag">Title M</span><span class="spec">Sans · 15/22 · 600</span><span class="np-title-medium">Ericsson B</span></div>
+        <div class="role"><span class="tag">Body L</span><span class="spec">Sans · 15/22</span><span class="np-body-large">Tryck + för att bevaka en aktie eller ett par.</span></div>
+        <div class="role"><span class="tag">Body M</span><span class="spec">Sans · 13/18</span><span class="np-body-medium">Uppdaterad 14:32 · Stockholm (.ST)</span></div>
+        <div class="role"><span class="tag">Label M</span><span class="spec">Sans · 11/16 · 500 · 0.6sp</span><span class="np-label-medium">ERIC-B.ST · SEK</span></div>
+      </div>
+    </div>
+
+    <div class="block">
+      <h2>Numeric treatment</h2>
+      <div class="numrow">
+        <div class="numcard"><div class="lbl">Price</div><div class="v">138,44</div><div class="delta up">+2,15 (+1,58 %)</div></div>
+        <div class="numcard"><div class="lbl">Range</div><div class="v">137,90 – 140,05</div><div class="delta">52v: 98,22 – 152,60</div></div>
+        <div class="numcard"><div class="lbl">Spread</div><div class="v">0,847</div><div class="delta dn">−0,012 (−1,40 %)</div></div>
+      </div>
+    </div>
+  </div>
+</body></html>

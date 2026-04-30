@@ -13,6 +13,7 @@ class FakeMarketDataService(
     private val currencyBySymbol: Map<String, String> = emptyMap(),
     private val exchangeBySymbol: Map<String, String> = emptyMap(),
     private val companyNameBySymbol: Map<String, String> = emptyMap(),
+    private val allTimeHighBySymbol: Map<String, Double> = emptyMap(),
     private val chartDataByPeriod: Map<ChartPeriod, IntradayChartData?> = emptyMap()
 ) : MarketDataService {
     override suspend fun getStockPrice(symbol: String): Double? = pricesBySymbol[symbol]
@@ -27,6 +28,8 @@ class FakeMarketDataService(
     }
 
     override suspend fun getATH(symbol: String): Double? = null
+
+    override suspend fun getAllTimeHigh(symbol: String): Double? = allTimeHighBySymbol[symbol]
 
     override suspend fun get52WeekLow(symbol: String): Double? = null
 
@@ -56,4 +59,3 @@ class FakeMarketDataService(
         )
     }
 }
-

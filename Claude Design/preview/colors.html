@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><title>Colors — Nordisk Precision</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  html, body { margin: 0; padding: 0; background: var(--np-background); color: var(--np-text-primary); font-family: var(--np-font-sans); }
+  .wrap { padding: 40px 48px; max-width: 1120px; margin: 0 auto; }
+  .eyebrow { font: 500 11px/1 var(--np-font-sans); letter-spacing: 0.6px; text-transform: uppercase; color: var(--np-text-tertiary); margin: 0 0 10px; }
+  .h1 { font-family: var(--np-font-display); font-weight: 400; font-size: 44px; line-height: 1.08; margin: 0 0 8px; color: var(--np-text-primary); }
+  .sub { font: 400 15px/1.5 var(--np-font-sans); color: var(--np-text-secondary); max-width: 640px; margin: 0 0 36px; }
+  .grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; }
+  .grid-5 { grid-template-columns: repeat(5, 1fr); }
+  .sw { background: var(--np-surface); border: 1px solid var(--np-card-border); border-radius: var(--np-radius-md); overflow: hidden; }
+  .chip { height: 92px; position: relative; }
+  .chip .hex { position: absolute; bottom: 8px; left: 10px; font: 600 11px/1 var(--np-font-mono); letter-spacing: -0.2px; }
+  .chip[data-onwhite] .hex { color: var(--np-text-primary); background: rgba(255,255,255,0.92); padding: 3px 6px; border-radius: 4px; }
+  .chip[data-onblack] .hex { color: #fff; background: rgba(0,0,0,0.45); padding: 3px 6px; border-radius: 4px; }
+  .meta { padding: 10px 12px 12px; }
+  .role { font: 600 13px/1.2 var(--np-font-sans); color: var(--np-text-primary); }
+  .tok { font: 400 11px/1.4 var(--np-font-mono); color: var(--np-text-tertiary); margin-top: 3px; letter-spacing: -0.1px; }
+  .section { margin-top: 44px; }
+  .section h2 { font-family: var(--np-font-display); font-weight: 400; font-size: 24px; line-height: 1.2; margin: 0 0 4px; }
+  .section .desc { font: 400 13px/1.5 var(--np-font-sans); color: var(--np-text-secondary); margin: 0 0 18px; }
+  .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  .theme-card { border-radius: var(--np-radius-lg); overflow: hidden; border: 1px solid var(--np-card-border); }
+  .theme-card .label { padding: 10px 14px; font: 600 12px/1 var(--np-font-sans); letter-spacing: 0.4px; text-transform: uppercase; color: var(--np-text-secondary); background: var(--np-surface-alt); border-bottom: 1px solid var(--np-card-border); }
+  .theme-card .body { padding: 18px; }
+  .stripe-row { display: flex; height: 44px; border-radius: 8px; overflow: hidden; }
+  .stripe-row > div { flex: 1; }
+</style></head>
+<body>
+  <div class="wrap">
+    <p class="eyebrow">Design system · Colors</p>
+    <h1 class="h1">Pine &amp; Sand on cool paper</h1>
+    <p class="sub">A restrained nordic palette: pine-teal primary for actions, sand-blue secondary for neutral affordances, and a warm amber reserved exclusively for triggered alert states. Error red is kept for destructive action and real failure only.</p>
+
+    <div class="section">
+      <h2>Key roles — Light</h2>
+      <p class="desc">Used throughout the app in its default light theme.</p>
+      <div class="grid">
+        <div class="sw"><div class="chip" style="background:#1F8A7A" data-onblack><span class="hex">#1F8A7A</span></div><div class="meta"><div class="role">Primary</div><div class="tok">--np-primary</div></div></div>
+        <div class="sw"><div class="chip" style="background:#D8ECE8" data-onwhite><span class="hex">#D8ECE8</span></div><div class="meta"><div class="role">Primary container</div><div class="tok">--np-primary-container</div></div></div>
+        <div class="sw"><div class="chip" style="background:#5E7FA3" data-onblack><span class="hex">#5E7FA3</span></div><div class="meta"><div class="role">Secondary</div><div class="tok">--np-secondary</div></div></div>
+        <div class="sw"><div class="chip" style="background:#EAF1F6" data-onwhite><span class="hex">#EAF1F6</span></div><div class="meta"><div class="role">Secondary container</div><div class="tok">--np-secondary-container</div></div></div>
+        <div class="sw"><div class="chip" style="background:#B8842F" data-onblack><span class="hex">#B8842F</span></div><div class="meta"><div class="role">Tertiary — triggered</div><div class="tok">--np-tertiary</div></div></div>
+        <div class="sw"><div class="chip" style="background:#FFF3DD" data-onwhite><span class="hex">#FFF3DD</span></div><div class="meta"><div class="role">Tertiary container</div><div class="tok">--np-tertiary-container</div></div></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>Surfaces &amp; lines — Light</h2>
+      <p class="desc">Depth is built from a ladder of near-white tones and hairline borders, not shadows.</p>
+      <div class="grid">
+        <div class="sw"><div class="chip" style="background:#F5F8FB" data-onwhite><span class="hex">#F5F8FB</span></div><div class="meta"><div class="role">Background</div><div class="tok">--np-background</div></div></div>
+        <div class="sw"><div class="chip" style="background:#FFFFFF;border-bottom:1px solid var(--np-card-border)" data-onwhite><span class="hex">#FFFFFF</span></div><div class="meta"><div class="role">Surface</div><div class="tok">--np-surface</div></div></div>
+        <div class="sw"><div class="chip" style="background:#F0F4F8" data-onwhite><span class="hex">#F0F4F8</span></div><div class="meta"><div class="role">Surface alt</div><div class="tok">--np-surface-alt</div></div></div>
+        <div class="sw"><div class="chip" style="background:#E7EEF5" data-onwhite><span class="hex">#E7EEF5</span></div><div class="meta"><div class="role">Surface high</div><div class="tok">--np-surface-high</div></div></div>
+        <div class="sw"><div class="chip" style="background:#D5DEE7" data-onwhite><span class="hex">#D5DEE7</span></div><div class="meta"><div class="role">Outline</div><div class="tok">--np-outline</div></div></div>
+        <div class="sw"><div class="chip" style="background:#E6EDF3" data-onwhite><span class="hex">#E6EDF3</span></div><div class="meta"><div class="role">Outline variant</div><div class="tok">--np-outline-variant</div></div></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>Semantic — Price &amp; error</h2>
+      <p class="desc">Price up / down are separate tokens from success / error so dark-mode rendering can be tuned independently. Never repurpose error red for a "met condition".</p>
+      <div class="grid grid-5" style="grid-template-columns: repeat(4, 1fr);">
+        <div class="sw"><div class="chip" style="background:#238B57" data-onblack><span class="hex">#238B57</span></div><div class="meta"><div class="role">Price up</div><div class="tok">--np-price-up</div></div></div>
+        <div class="sw"><div class="chip" style="background:#B94A5A" data-onblack><span class="hex">#B94A5A</span></div><div class="meta"><div class="role">Price down / error</div><div class="tok">--np-price-down · --np-error</div></div></div>
+        <div class="sw"><div class="chip" style="background:#F9E0E3" data-onwhite><span class="hex">#F9E0E3</span></div><div class="meta"><div class="role">Error container</div><div class="tok">--np-error-container</div></div></div>
+        <div class="sw"><div class="chip" style="background:#B8842F" data-onblack><span class="hex">#B8842F</span></div><div class="meta"><div class="role">Triggered (amber)</div><div class="tok">--np-tertiary</div></div></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>Dark theme — mirror</h2>
+      <p class="desc">Every token has a night counterpart. Pine brightens to <code>#3AB7A4</code>; the background drops to a blue-black near-black.</p>
+      <div class="pair">
+        <div class="theme-card"><div class="label">Light</div><div class="body" style="background:#F5F8FB">
+          <div class="stripe-row"><div style="background:#1F8A7A"></div><div style="background:#5E7FA3"></div><div style="background:#B8842F"></div><div style="background:#B94A5A"></div><div style="background:#238B57"></div><div style="background:#FFFFFF;border:1px solid #D5DEE7"></div></div>
+        </div></div>
+        <div class="theme-card np-dark" data-theme="dark"><div class="label" style="background:#152233;color:#B5C0CB;border-color:#213345">Dark</div><div class="body" style="background:#09111D">
+          <div class="stripe-row"><div style="background:#3AB7A4"></div><div style="background:#7FA8C9"></div><div style="background:#E7B65C"></div><div style="background:#E06C75"></div><div style="background:#3CCB7F"></div><div style="background:#101A27;border:1px solid #213345"></div></div>
+        </div></div>
+      </div>
+    </div>
+  </div>
+</body></html>

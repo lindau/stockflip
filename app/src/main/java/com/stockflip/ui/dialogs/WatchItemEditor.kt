@@ -248,6 +248,7 @@ class WatchItemEditor(
         val dialogView = LayoutInflater.from(context).inflate(R.layout.dialog_add_ath_based, null)
         val tickerInput = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.tickerInput).apply { setText(item.ticker) }
         val tickerInputLayout = tickerInput.parent as? TextInputLayout
+        val highReferenceInput = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.highReferenceInput)
         val dropTypeInput = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.dropTypeInput).apply {
             setText(
                 when (athBased.dropType) {
@@ -259,6 +260,19 @@ class WatchItemEditor(
         }
         val dropValueInput = dialogView.findViewById<TextInputEditText>(R.id.dropValueInput).apply {
             setText(CurrencyHelper.formatDecimal(athBased.dropValue))
+        }
+        dialogView.findViewById<View>(R.id.presetChipGroup)?.visibility = View.GONE
+        dialogView.findViewById<TextView>(R.id.contextText)?.text =
+            "Välj om drawdown ska räknas från 52v högsta eller historiskt högsta pris."
+
+        fun referenceLabel(reference: WatchType.HighReference): String = when (reference) {
+            WatchType.HighReference.FIFTY_TWO_WEEK_HIGH -> "52v högsta"
+            WatchType.HighReference.ALL_TIME_HIGH -> "Historiskt högsta"
+        }
+
+        fun selectedReference(): WatchType.HighReference = when (highReferenceInput.text.toString()) {
+            "Historiskt högsta" -> WatchType.HighReference.ALL_TIME_HIGH
+            else -> WatchType.HighReference.FIFTY_TWO_WEEK_HIGH
         }
 
         var selectedStock: StockSearchResult? = null
@@ -274,6 +288,9 @@ class WatchItemEditor(
 
         val dropTypes = arrayOf("Procent", absoluteLabel)
         dropTypeInput.setAdapter(ArrayAdapter(context, android.R.layout.simple_dropdown_item_1line, dropTypes))
+        val references = arrayOf(referenceLabel(WatchType.HighReference.FIFTY_TWO_WEEK_HIGH), referenceLabel(WatchType.HighReference.ALL_TIME_HIGH))
+        highReferenceInput.setAdapter(ArrayAdapter(context, android.R.layout.simple_dropdown_item_1line, references))
+        highReferenceInput.setText(referenceLabel(athBased.reference), false)
 
         MaterialAlertDialogBuilder(context)
             .setTitle("Redigera drawdown-bevakning")
@@ -288,7 +305,7 @@ class WatchItemEditor(
                 val dropValue = dropValueInput.text.toString().parseDecimal()
                 if (finalTicker.isNotEmpty() && dropValue != null && dropValue > 0) {
                     val updatedItem = item.copy(
-                        watchType = WatchType.ATHBased(dropType, dropValue),
+                        watchType = WatchType.ATHBased(dropType, dropValue, selectedReference()),
                         ticker = finalTicker,
                         companyName = selectedStock?.name ?: item.companyName
                     )
@@ -390,6 +407,7 @@ class WatchItemEditor(
         lateinit var conditionAdapter: ConditionBuilderAdapter
         conditionAdapter = ConditionBuilderAdapter(
             onConditionTypeChanged = { _, _ -> updatePreview(conditionAdapter, symbolInput.text.toString(), previewText) },
+            onReferenceChanged = { _, _ -> updatePreview(conditionAdapter, symbolInput.text.toString(), previewText) },
             onValueChanged = { _, _ -> updatePreview(conditionAdapter, symbolInput.text.toString(), previewText) },
             onOperatorChanged = { _, _ -> updatePreview(conditionAdapter, symbolInput.text.toString(), previewText) },
             onRemove = { position ->
@@ -499,7 +517,8 @@ class WatchItemEditor(
                             operator = operator
                         )
                         is AlertRule.SingleDrawdownFromHigh -> ConditionBuilderAdapter.ConditionData(
-                            conditionType = "52w High Drop",
+                            conditionType = "Drawdown",
+                            highReference = rule.reference,
                             direction = "Över",
                             value = rule.dropValue.toString(),
                             operator = operator
@@ -635,7 +654,12 @@ class WatchItemEditor(
                 }
                 AlertRule.SingleKeyMetric(currentSymbol, AlertRule.KeyMetricType.DIVIDEND_YIELD, value, direction)
             }
-            "52w High Drop" -> AlertRule.SingleDrawdownFromHigh(currentSymbol, AlertRule.DrawdownDropType.PERCENTAGE, value)
+            "Drawdown" -> AlertRule.SingleDrawdownFromHigh(
+                currentSymbol,
+                AlertRule.DrawdownDropType.PERCENTAGE,
+                value,
+                condition.highReference
+            )
             "Dagsrörelse" -> AlertRule.SingleDailyMove(currentSymbol, value, AlertRule.DailyMoveDirection.BOTH)
             else -> null
         }
