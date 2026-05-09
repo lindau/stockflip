@@ -50,6 +50,9 @@ data class WatchItem(
             is WatchType.DailyMove -> {
                 "${companyName ?: ticker} (${ticker ?: ""})"
             }
+            is WatchType.InsiderBuy -> {
+                "${companyName ?: ticker} (${ticker ?: ""})"
+            }
             is WatchType.Combined -> {
                 val symbols = watchType.expression.getSymbols()
                 if (symbols.isNotEmpty()) {

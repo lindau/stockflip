@@ -55,6 +55,7 @@ class WatchItemEditor(
             WatchType.Kind.ATH_BASED -> showEditDrawdownDialog(item)
             WatchType.Kind.PRICE_RANGE -> showEditPriceRangeDialog(item)
             WatchType.Kind.DAILY_MOVE -> showEditDailyMoveDialog(item)
+            WatchType.Kind.INSIDER_BUY -> showEditInsiderBuyDialog(item)
             WatchType.Kind.COMBINED -> showEditCombinedAlertDialog(item)
         }
     }
@@ -386,6 +387,17 @@ class WatchItemEditor(
                 dialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE)
                 focusInput(thresholdInput)
             }
+    }
+
+    private fun showEditInsiderBuyDialog(item: WatchItem) {
+        if (item.watchType !is WatchType.InsiderBuy) return
+        MaterialAlertDialogBuilder(context)
+            .setTitle("Insiderköp-bevakning")
+            .setMessage("StockFlip kontrollerar nya insiderköp en gång per dag.")
+            .setOnDismissListener { onDialogDismissed?.invoke() }
+            .setPositiveButton("Stäng", null)
+            .setNeutralButton("Ta bort") { _, _ -> onDeleteRequested(item) }
+            .show()
     }
 
     private fun showEditCombinedAlertDialog(watchItem: WatchItem) {

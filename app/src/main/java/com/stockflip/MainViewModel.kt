@@ -321,6 +321,9 @@ class MainViewModel(
                                 WatchItemUiState(item)
                             }
                         }
+                        is WatchType.InsiderBuy -> {
+                            WatchItemUiState(item, LiveWatchData(lastUpdatedAt = now))
+                        }
                         is WatchType.Combined -> {
                             if (item.ticker != null) {
                                 Log.d(TAG, "Fetching price and daily change for combined alert")
@@ -474,6 +477,8 @@ class MainViewModel(
     suspend fun importData(json: String): ImportResult {
         return try {
             val data = BackupManager.importFromJson(json)
+            watchItemDao.deleteAllWatchItems()
+            stockPairDao.deleteAllStockPairs()
             data.watchItems.forEach { watchItemDao.insertWatchItem(it) }
             data.stockPairs.forEach { stockPairDao.insertStockPair(it) }
             ImportResult.Success(data.watchItems.size, data.stockPairs.size)

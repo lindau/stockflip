@@ -11,8 +11,11 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
 
 @OptIn(ExperimentalCoroutinesApi::class)
+@RunWith(RobolectricTestRunner::class)
 class MainViewModelRefreshWatchItemsTest {
     @get:Rule
     val mainDispatcherRule: MainDispatcherRule = MainDispatcherRule()
@@ -121,5 +124,71 @@ class MainViewModelRefreshWatchItemsTest {
         assertFalse(updated.isTriggered)
         assertEquals(null, updated.lastTriggeredDate)
         assertEquals(WatchType.PriceDirection.BELOW, updatedType.direction)
+    }
+
+    @Test
+    fun `importData replaces existing watch items and stock pairs`() = runBlocking {
+        val existingWatchItem = WatchItem(
+            id = 1,
+            watchType = WatchType.PriceTarget(targetPrice = 50.0, direction = WatchType.PriceDirection.ABOVE),
+            ticker = "OLD.ST",
+            companyName = "Old"
+        )
+        val existingStockPair = StockPair(
+            id = 1,
+            ticker1 = "OLD-A.ST",
+            ticker2 = "OLD-B.ST",
+            companyName1 = "Old A",
+            companyName2 = "Old B"
+        )
+        val watchItemDao = InMemoryWatchItemDao(listOf(existingWatchItem))
+        val stockPairDao = InMemoryStockPairDao(listOf(existingStockPair))
+        val viewModel = MainViewModel(
+            stockPairDao = stockPairDao,
+            watchItemDao = watchItemDao,
+            yahooFinanceService = FakeMarketDataService()
+        )
+
+        val result = viewModel.importData(importBackupJson())
+
+        assertTrue(result.toString(), result is MainViewModel.ImportResult.Success)
+        val success = result as MainViewModel.ImportResult.Success
+        assertEquals(1, success.watchCount)
+        assertEquals(1, success.pairCount)
+        assertEquals(listOf("NEW.ST"), watchItemDao.getAllWatchItems().map { it.ticker })
+        assertEquals(listOf("NEW-A.ST"), stockPairDao.getAllStockPairs().map { it.ticker1 })
+    }
+
+    private fun importBackupJson(): String {
+        return """
+            {
+              "version": 1,
+              "exportedAt": "2026-04-30T12:00:00",
+              "watchItems": [
+                {
+                  "watchType": "PRICE_TARGET|100.0|BELOW",
+                  "ticker": "NEW.ST",
+                  "companyName": "New",
+                  "ticker1": null,
+                  "ticker2": null,
+                  "companyName1": null,
+                  "companyName2": null,
+                  "lastTriggeredDate": null,
+                  "isTriggered": false,
+                  "isActive": true
+                }
+              ],
+              "stockPairs": [
+                {
+                  "ticker1": "NEW-A.ST",
+                  "ticker2": "NEW-B.ST",
+                  "companyName1": "New A",
+                  "companyName2": "New B",
+                  "priceDifference": 5.0,
+                  "notifyWhenEqual": true
+                }
+              ]
+            }
+        """.trimIndent()
     }
 }

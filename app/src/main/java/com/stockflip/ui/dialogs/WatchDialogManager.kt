@@ -523,6 +523,16 @@ class WatchDialogManager(
         suggestedTargetValue?.let { targetValueInput.setText(CurrencyHelper.formatDecimal(it)) }
         triggerInfoText.text = "När nyckeltalet passerar din nivå markeras larmet som utlöst och kan återaktiveras senare."
 
+        val presetChips = listOf(presetChipOne, presetChipTwo, presetChipThree, presetChipFour)
+
+        fun setMetricValueControlsEnabled(enabled: Boolean) {
+            targetValueLayout.isEnabled = enabled
+            targetValueInput.isEnabled = enabled
+            presetChips.forEach { chip ->
+                chip.isEnabled = enabled
+            }
+        }
+
         fun selectedMetricType(): WatchType.MetricType? {
             return when (metricTypeInput.text.toString()) {
 	                "P/E-tal" -> WatchType.MetricType.PE_RATIO
@@ -544,14 +554,22 @@ class WatchDialogManager(
 
         fun refreshMetricContext(metricType: WatchType.MetricType?) {
             if (metricType == null) {
+                setMetricValueControlsEnabled(false)
+                targetValueLayout.hint = "Välj nyckeltal först"
+                targetValueInput.text?.clear()
                 contextText.text = "Välj nyckeltal för att se kontext"
                 currentValueText.text = "Aktuellt värde saknas"
                 historyOneYear.text = ""
                 historyThreeYear.text = ""
                 historyFiveYear.text = ""
+                presetChips.forEach { chip ->
+                    chip.text = "Välj nyckeltal"
+                    chip.setOnClickListener(null)
+                }
                 return
             }
 
+            setMetricValueControlsEnabled(true)
             val currentValue = metricCurrentValue(metricType)
             val summary = currentMetricHistory(metricType)
 	            targetValueLayout.hint = when (metricType) {
@@ -578,7 +596,7 @@ class WatchDialogManager(
             } ?: "5 år: ingen historik"
 
             val fallbackCurrent = currentValue ?: run {
-                listOf(presetChipOne, presetChipTwo, presetChipThree, presetChipFour).forEach { chip ->
+                presetChips.forEach { chip ->
                     chip.text = "Värde saknas"
                     chip.setOnClickListener(null)
                 }
@@ -586,8 +604,7 @@ class WatchDialogManager(
             }
             val multipliers = listOf(0.95, 0.90, 1.05, 1.10)
             val labels = listOf("-5 %", "-10 %", "+5 %", "+10 %")
-            val chips = listOf(presetChipOne, presetChipTwo, presetChipThree, presetChipFour)
-            chips.forEachIndexed { index, chip ->
+            presetChips.forEachIndexed { index, chip ->
                 val value = fallbackCurrent * multipliers[index]
                 setPresetChip(
                     chip,
@@ -648,8 +665,33 @@ class WatchDialogManager(
             .setNegativeButton("Avbryt", null)
             .show().also { dialog ->
                 dialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE)
-                focusInput(targetValueInput, selectAll = false)
+                if (selectedMetricType() == null) {
+                    focusInput(metricTypeInput, selectAll = false)
+                    metricTypeInput.post { metricTypeInput.showDropDown() }
+                } else {
+                    focusInput(targetValueInput, selectAll = false)
+                }
             }
+    }
+
+    fun showCreateInsiderBuyDialog() {
+        val watchType = WatchType.InsiderBuy()
+        MaterialAlertDialogBuilder(context)
+            .setTitle("Skapa insiderköp-bevakning")
+            .setMessage("StockFlip kontrollerar nya insiderköp en gång per dag.")
+            .setPositiveButton("Skapa") { _, _ ->
+                lifecycleScope.launch {
+                    if (viewModel.isDuplicateWatch(watchType)) {
+                        Toast.makeText(context, "En insiderköp-bevakning finns redan", Toast.LENGTH_SHORT).show()
+                    } else {
+                        viewModel.createAlert(watchType, currentCompanyName())
+                        onWatchChanged()
+                        Toast.makeText(context, "Insiderköp-bevakning skapad", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+            .setNegativeButton("Avbryt", null)
+            .show()
     }
 
     // -------------------------------------------------------------------------

@@ -703,6 +703,7 @@ class GroupedWatchItemAdapter(
             }
 
             is WatchType.PricePair -> null
+            is WatchType.InsiderBuy -> null
             is WatchType.Combined -> null
         }
     }

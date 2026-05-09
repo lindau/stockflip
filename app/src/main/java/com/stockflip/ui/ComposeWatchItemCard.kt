@@ -203,6 +203,17 @@ fun ComposeWatchItemCard(
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
+            is com.stockflip.WatchType.InsiderBuy -> {
+                ClarityCaseCard(
+                    item = item,
+                    live = live,
+                    priceFormat = priceFormat,
+                    containerColor = containerColor,
+                    onToggleActive = onToggleActive,
+                    onReactivate = onReactivate,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
             is com.stockflip.WatchType.Combined -> {
                 CombinedAlertCard(
                     item = item,

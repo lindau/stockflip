@@ -37,6 +37,10 @@ sealed class WatchType {
             displayName = "Dagsrörelse",
             isLegacyManaged = false
         ),
+        INSIDER_BUY(
+            displayName = "Insiderköp",
+            isLegacyManaged = false
+        ),
         COMBINED(
             displayName = "Kombinerat larm",
             isLegacyManaged = true
@@ -129,6 +133,15 @@ sealed class WatchType {
                 "percentThreshold måste vara större än 0"
             }
         }
+    }
+
+    /**
+     * Watch for newly reported US insider purchases from SEC Form 4.
+     */
+    data class InsiderBuy(
+        val createdAtMillis: Long = System.currentTimeMillis()
+    ) : WatchType() {
+        override val kind: Kind = Kind.INSIDER_BUY
     }
 
     /**

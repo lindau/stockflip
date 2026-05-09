@@ -189,6 +189,7 @@ class StockPriceUpdateWorker(
         val week52HighNeeds = mutableSetOf<String>()
         val allTimeHighNeeds = mutableSetOf<String>()
         for (item in activeItems) {
+            if (item.watchType is WatchType.InsiderBuy) continue
             item.ticker?.let { tickers.add(it) }
             item.ticker1?.let { tickers.add(it) }
             item.ticker2?.let { tickers.add(it) }
@@ -450,6 +451,13 @@ class StockPriceUpdateWorker(
                 TriggerNotificationPayload(
                     title = "${item.companyName ?: ticker} är nu inom ${formatPrice(watchType.minPrice)}-${formatPrice(watchType.maxPrice)}",
                     message = "Aktuellt pris är ${formatPrice(price ?: watchType.minPrice)}."
+                )
+            }
+
+            is WatchType.InsiderBuy -> {
+                TriggerNotificationPayload(
+                    title = "Insiderköp rapporterat",
+                    message = item.getDisplayName()
                 )
             }
 

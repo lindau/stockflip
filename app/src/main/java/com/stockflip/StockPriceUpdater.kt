@@ -21,6 +21,7 @@ object StockPriceUpdater {
     private const val TAG = "StockPriceUpdater"
     const val WORK_NAME_PERIODIC = "StockPriceUpdatePeriodic"
     const val WORK_NAME_IMMEDIATE = "StockPriceUpdateImmediate"
+    const val WORK_NAME_INSIDER_TRANSACTIONS = "InsiderTransactionDaily"
     private const val PRICE_EQUALITY_THRESHOLD = 0.01
     const val CHANNEL_ID = "stock_price_alerts"
 
@@ -40,6 +41,11 @@ object StockPriceUpdater {
         )
             .setConstraints(constraints)
             .build()
+        val insiderTransactionWork = PeriodicWorkRequestBuilder<InsiderTransactionWorker>(
+            1, TimeUnit.DAYS
+        )
+            .setConstraints(constraints)
+            .build()
         workManager.apply {
             enqueueUniqueWork(
                 WORK_NAME_IMMEDIATE,
@@ -50,6 +56,11 @@ object StockPriceUpdater {
                 WORK_NAME_PERIODIC,
                 ExistingPeriodicWorkPolicy.KEEP,
                 periodicWork
+            )
+            enqueueUniquePeriodicWork(
+                WORK_NAME_INSIDER_TRANSACTIONS,
+                ExistingPeriodicWorkPolicy.KEEP,
+                insiderTransactionWork
             )
         }
         monitorWorkStatus(workManager)

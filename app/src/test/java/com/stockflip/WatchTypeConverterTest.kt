@@ -87,4 +87,12 @@ class WatchTypeConverterTest {
         val decoded = converter.toWatchType(encoded)
         assertEquals(watchType, decoded)
     }
+
+    @Test
+    fun `roundtrip InsiderBuy`() {
+        val watchType = WatchType.InsiderBuy(createdAtMillis = 1_725_000_000_000)
+        val encoded = converter.fromWatchType(watchType)
+        val decoded = converter.toWatchType(encoded)
+        assertEquals(watchType, decoded)
+    }
 }

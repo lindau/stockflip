@@ -265,6 +265,10 @@ class StockDetailFragment : Fragment() {
         configureQuickActionButton(binding.createKeyMetricsButton) {
             dialogManager.showCreateKeyMetricsDialog()
         }
+
+        configureQuickActionButton(binding.createInsiderBuyButton) {
+            dialogManager.showCreateInsiderBuyDialog()
+        }
     }
 
     private fun configureQuickActionButton(
@@ -389,6 +393,11 @@ class StockDetailFragment : Fragment() {
         // Dölj nyckeltal-knappen om det är en kryptovaluta
         val isCrypto = StockSearchResult.isCryptoSymbol(data.symbol)
         binding.createKeyMetricsButton.visibility = if (isCrypto) android.view.View.GONE else android.view.View.VISIBLE
+        binding.createInsiderBuyButton.visibility = if (canUseSecInsiderData(data)) {
+            android.view.View.VISIBLE
+        } else {
+            android.view.View.GONE
+        }
         
         binding.lastPrice.text = data.lastPrice?.let { 
             CurrencyHelper.formatPrice(it, data.currency)
@@ -614,6 +623,7 @@ class StockDetailFragment : Fragment() {
             }
 
             is WatchType.PriceRange -> "Pris bevakas inom ditt intervall"
+            is WatchType.InsiderBuy -> "Insiderköp bevakas dagligen"
             is WatchType.PricePair -> "Parbevakning"
             is WatchType.Combined -> "Kombinerat villkor"
         }
@@ -672,6 +682,7 @@ class StockDetailFragment : Fragment() {
             }
 
             is WatchType.PricePair -> null
+            is WatchType.InsiderBuy -> null
             is WatchType.Combined -> null
         }
     }
@@ -736,9 +747,19 @@ class StockDetailFragment : Fragment() {
             is WatchType.KeyMetrics -> "${metricLabel(watchType.metricType)} ${directionLabel(watchType.direction)} ${formatMetricValue(watchType.metricType, watchType.targetValue)}"
             is WatchType.DailyMove -> "dagsrörelse ${CurrencyHelper.formatDecimal(watchType.percentThreshold)}%"
             is WatchType.PriceRange -> "pris inom ${CurrencyHelper.formatPrice(watchType.minPrice, data.currency)} - ${CurrencyHelper.formatPrice(watchType.maxPrice, data.currency)}"
+            is WatchType.InsiderBuy -> "insiderköp"
             is WatchType.PricePair -> "aktiepar"
             is WatchType.Combined -> "kombinerat larm"
         }
+    }
+
+    private fun canUseSecInsiderData(data: StockDetailData): Boolean {
+        return !StockSearchResult.isCryptoSymbol(data.symbol) &&
+            (
+                (data.currency.equals("USD", ignoreCase = true) && !data.symbol.contains(".")) ||
+                    data.symbol.endsWith(".ST", ignoreCase = true) ||
+                    data.symbol.endsWith(".STO", ignoreCase = true)
+                )
     }
 
     private fun percentGapToPriceTarget(uiState: WatchItemUiState): Double {

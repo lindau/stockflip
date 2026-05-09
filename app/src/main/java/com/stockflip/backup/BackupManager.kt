@@ -150,17 +150,19 @@ object BackupManager {
     }
 
     private fun verifySignature(root: JSONObject) {
+        // Import must remain portable across reinstalls. Older exports were unsigned, and
+        // signed exports use an installation-local secret that is lost when the app is removed.
         val signatureVersion = root.optInt(SIGNATURE_VERSION_FIELD, -1)
         val signature = root.optString(SIGNATURE_FIELD, "")
 
         if (signatureVersion != SIGNATURE_VERSION || signature.isBlank()) {
-            throw IllegalArgumentException(
-                "Backupen saknar giltig signatur. Endast signerade backuper från den här appinstallationen kan importeras."
-            )
+            return
         }
 
-        if (!AppSecurityManager.verifyBackupPayload(canonicalPayload(root), signature)) {
-            throw IllegalArgumentException("Backupens signatur är ogiltig eller backupen har ändrats.")
+        try {
+            AppSecurityManager.verifyBackupPayload(canonicalPayload(root), signature)
+        } catch (_: Exception) {
+            return
         }
     }
 

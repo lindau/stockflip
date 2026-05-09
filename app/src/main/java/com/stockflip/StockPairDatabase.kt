@@ -13,8 +13,15 @@ import kotlinx.coroutines.runBlocking
 import java.io.File
 
 @Database(
-    entities = [StockPair::class, WatchItem::class, MetricHistoryEntity::class, TriggerHistoryEntity::class, StockNote::class],
-    version = 11,
+    entities = [
+        StockPair::class,
+        WatchItem::class,
+        MetricHistoryEntity::class,
+        TriggerHistoryEntity::class,
+        StockNote::class,
+        InsiderTransactionEntity::class
+    ],
+    version = 12,
     exportSchema = true
 )
 @TypeConverters(WatchTypeConverter::class)
@@ -24,6 +31,7 @@ abstract class StockPairDatabase : RoomDatabase() {
     abstract fun metricHistoryDao(): MetricHistoryDao
     abstract fun triggerHistoryDao(): TriggerHistoryDao
     abstract fun stockNoteDao(): StockNoteDao
+    abstract fun insiderTransactionDao(): InsiderTransactionDao
 
     companion object {
         private const val LEGACY_DATABASE_NAME = "stock_pair_database"
@@ -149,6 +157,12 @@ abstract class StockPairDatabase : RoomDatabase() {
             }
         }
 
+        private val MIGRATION_11_12 = object : Migration(11, 12) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                createInsiderTransactionSchema(db)
+            }
+        }
+
         private val MIGRATION_8_9 = object : Migration(8, 9) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("""
@@ -219,6 +233,7 @@ abstract class StockPairDatabase : RoomDatabase() {
             val metricHistory = legacy.metricHistoryDao().getAllEntries()
             val triggerHistory = legacy.triggerHistoryDao().getAllEntries()
             val notes = legacy.stockNoteDao().getAllNotes()
+            val insiderTransactions = legacy.insiderTransactionDao().getAllEntries()
 
             encrypted.withTransaction {
                 stockPairs.forEach { encrypted.stockPairDao().insertStockPair(it) }
@@ -226,6 +241,7 @@ abstract class StockPairDatabase : RoomDatabase() {
                 metricHistory.forEach { encrypted.metricHistoryDao().insertMetricHistory(it) }
                 triggerHistory.forEach { encrypted.triggerHistoryDao().insert(it) }
                 notes.forEach { encrypted.stockNoteDao().upsert(it) }
+                encrypted.insiderTransactionDao().insertAll(insiderTransactions)
             }
         }
 
@@ -245,7 +261,8 @@ abstract class StockPairDatabase : RoomDatabase() {
                 MIGRATION_7_8,
                 MIGRATION_8_9,
                 MIGRATION_9_10,
-                MIGRATION_10_11
+                MIGRATION_10_11,
+                MIGRATION_11_12
             ).fallbackToDestructiveMigrationOnDowngrade(false)
 
             if (encrypted) {
@@ -259,6 +276,35 @@ abstract class StockPairDatabase : RoomDatabase() {
             db.execSQL(CREATE_METRIC_HISTORY_TABLE_SQL)
             db.execSQL(CREATE_METRIC_HISTORY_SYMBOL_METRIC_INDEX_SQL)
             db.execSQL(CREATE_METRIC_HISTORY_DATE_INDEX_SQL)
+        }
+
+        private fun createInsiderTransactionSchema(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                """
+                CREATE TABLE IF NOT EXISTS insider_transactions (
+                    id TEXT NOT NULL PRIMARY KEY,
+                    symbol TEXT NOT NULL,
+                    cik TEXT NOT NULL,
+                    accessionNumber TEXT NOT NULL,
+                    reportingOwner TEXT NOT NULL,
+                    relationship TEXT,
+                    transactionDate TEXT NOT NULL,
+                    shares REAL,
+                    pricePerShare REAL,
+                    estimatedValue REAL,
+                    securityTitle TEXT,
+                    filingDate TEXT,
+                    acceptedAtMillis INTEGER,
+                    storedAtMillis INTEGER NOT NULL
+                )
+                """.trimIndent()
+            )
+            db.execSQL(
+                "CREATE INDEX IF NOT EXISTS index_insider_transactions_symbol_acceptedAtMillis ON insider_transactions(symbol, acceptedAtMillis)"
+            )
+            db.execSQL(
+                "CREATE INDEX IF NOT EXISTS index_insider_transactions_accessionNumber ON insider_transactions(accessionNumber)"
+            )
         }
 
         private fun deleteDatabaseSidecars(databaseFile: File) {

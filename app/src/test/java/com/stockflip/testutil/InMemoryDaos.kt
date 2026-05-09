@@ -34,6 +34,10 @@ class InMemoryStockPairDao(
     override suspend fun deleteStockPair(pair: StockPair) {
         state.value = state.value.filterNot { it.id == pair.id }
     }
+
+    override suspend fun deleteAllStockPairs() {
+        state.value = emptyList()
+    }
 }
 
 class InMemoryWatchItemDao(
@@ -65,6 +69,10 @@ class InMemoryWatchItemDao(
 
     override suspend fun deleteWatchItem(item: WatchItem) {
         state.value = state.value.filterNot { it.id == item.id }
+    }
+
+    override suspend fun deleteAllWatchItems() {
+        state.value = emptyList()
     }
 
     override suspend fun deleteBySymbol(symbol: String) {

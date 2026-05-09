@@ -17,6 +17,7 @@ class WatchTypeConverter {
             is WatchType.ATHBased -> "ATH_BASED|${watchType.dropType.name}|${watchType.dropValue}|${watchType.reference.name}"
             is WatchType.PriceRange -> "PRICE_RANGE|${watchType.minPrice}|${watchType.maxPrice}"
             is WatchType.DailyMove -> "DAILY_MOVE|${watchType.percentThreshold}|${watchType.direction.name}"
+            is WatchType.InsiderBuy -> "INSIDER_BUY|${watchType.createdAtMillis}"
             is WatchType.Combined -> {
                 // Använd Base64 för att undvika problem med "|" i JSON
                 val json = AlertExpressionConverter.toJson(watchType.expression)
@@ -61,6 +62,9 @@ class WatchTypeConverter {
             "DAILY_MOVE" -> WatchType.DailyMove(
                 percentThreshold = parts[1].toDouble(),
                 direction = WatchType.DailyMoveDirection.valueOf(parts[2])
+            )
+            "INSIDER_BUY" -> WatchType.InsiderBuy(
+                createdAtMillis = parts.getOrNull(1)?.toLongOrNull() ?: System.currentTimeMillis()
             )
             "COMBINED" -> {
                 // AlertExpression är serialiserad som Base64-kodad JSON

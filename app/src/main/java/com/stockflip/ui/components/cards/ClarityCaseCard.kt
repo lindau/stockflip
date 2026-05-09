@@ -259,6 +259,7 @@ private fun clarityCaseTitle(item: WatchItem, priceFormat: (Double) -> String): 
             "Prisintervall $min-$max"
         }
         is WatchType.DailyMove -> "Dagsrörelse ${formatDailyMoveTarget(watchType, priceFormat)}"
+        is WatchType.InsiderBuy -> "Insiderköp"
         is WatchType.Combined -> "Kombinerat case"
         is WatchType.PricePair -> "Parcase ${priceFormat(watchType.priceDifference)}"
     }
@@ -294,6 +295,7 @@ private fun clarityCaseSubtitle(
                 "Återkommande · väntar på dagsrörelse"
             }
         }
+        is WatchType.InsiderBuy -> "Kontrolleras dagligen"
         is WatchType.Combined -> watchType.expression.getDescription()
         is WatchType.PricePair -> "Parbevakning · aktiespread"
     }

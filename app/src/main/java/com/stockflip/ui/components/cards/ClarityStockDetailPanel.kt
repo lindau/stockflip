@@ -149,18 +149,10 @@ private fun ClarityStockHeroCard(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
-                Text(
-                    text = changeText(data, changePercent),
-                    modifier = Modifier
-                        .background(changeColor.copy(alpha = 0.14f), RoundedCornerShape(8.dp))
-                        .padding(horizontal = 10.dp, vertical = 4.dp),
-                    style = MaterialTheme.typography.labelMedium.copy(
-                        fontSize = 13.sp,
-                        lineHeight = 16.sp,
-                        fontWeight = FontWeight.SemiBold,
-                    ),
-                    color = changeColor,
-                    maxLines = 1,
+                DailyChangePill(
+                    data = data,
+                    changePercent = changePercent,
+                    changeColor = changeColor,
                 )
             }
 
@@ -178,6 +170,36 @@ private fun ClarityStockHeroCard(
                 selectedPeriod = selectedPeriod,
                 onPeriodSelected = onPeriodSelected,
                 modifier = Modifier.padding(top = 10.dp),
+            )
+        }
+    }
+}
+
+@Composable
+private fun DailyChangePill(
+    data: StockDetailData,
+    changePercent: Double?,
+    changeColor: Color,
+) {
+    val lines = changeLines(data, changePercent)
+    Column(
+        modifier = Modifier
+            .background(changeColor.copy(alpha = 0.14f), RoundedCornerShape(8.dp))
+            .padding(horizontal = 10.dp, vertical = 6.dp),
+        horizontalAlignment = Alignment.End,
+        verticalArrangement = Arrangement.spacedBy(1.dp),
+    ) {
+        lines.forEach { line ->
+            Text(
+                text = line,
+                style = MaterialTheme.typography.labelMedium.copy(
+                    fontSize = 13.sp,
+                    lineHeight = 15.sp,
+                    fontWeight = FontWeight.SemiBold,
+                ),
+                color = changeColor,
+                maxLines = 1,
+                softWrap = false,
             )
         }
     }
@@ -491,8 +513,8 @@ private fun dailyChangePercent(data: StockDetailData): Double? {
     }
 }
 
-private fun changeText(data: StockDetailData, changePercent: Double?): String {
-    if (changePercent == null) return "— %"
+private fun changeLines(data: StockDetailData, changePercent: Double?): List<String> {
+    if (changePercent == null) return listOf("— %")
     val delta = if (data.lastPrice != null && data.previousClose != null) {
         data.lastPrice - data.previousClose
     } else {
@@ -507,5 +529,5 @@ private fun changeText(data: StockDetailData, changePercent: Double?): String {
     val deltaText = delta?.let {
         "$sign${CurrencyHelper.formatDecimal(abs(it))}"
     }
-    return listOfNotNull(deltaText, percentText).joinToString("  ")
+    return listOfNotNull(deltaText, percentText)
 }

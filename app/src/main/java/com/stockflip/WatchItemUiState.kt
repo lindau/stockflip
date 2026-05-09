@@ -85,6 +85,7 @@ private fun WatchItemUiState.hasLiveTriggerCondition(): Boolean {
             live.currentPrice > 0.0 && live.currentPrice in watchType.minPrice..watchType.maxPrice
         }
 
+        is WatchType.InsiderBuy -> false
         is WatchType.Combined -> false
     }
 }

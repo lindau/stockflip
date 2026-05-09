@@ -96,6 +96,7 @@ object AlertRuleConverter {
                     direction = direction
                 )
             }
+            is WatchType.InsiderBuy -> null
             is WatchType.Combined -> {
                 // Combined WatchType använder AlertExpression direkt, inte AlertRule
                 // Returnera null eftersom Combined inte kan konverteras till en enskild AlertRule

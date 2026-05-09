@@ -221,8 +221,9 @@ class StockDetailViewModel(
             is WatchType.ATHBased -> 2
             is WatchType.KeyMetrics -> 3
             is WatchType.DailyMove -> 4
-            is WatchType.Combined -> 5
-            is WatchType.PricePair -> 6
+            is WatchType.InsiderBuy -> 5
+            is WatchType.Combined -> 6
+            is WatchType.PricePair -> 7
         }
     }
 
@@ -242,6 +243,7 @@ class StockDetailViewModel(
             is WatchType.ATHBased -> watchType.dropValue
             is WatchType.KeyMetrics -> watchType.targetValue
             is WatchType.DailyMove -> watchType.percentThreshold
+            is WatchType.InsiderBuy -> Double.MAX_VALUE
             is WatchType.PricePair -> watchType.priceDifference
             is WatchType.Combined -> Double.MAX_VALUE
         }
@@ -321,6 +323,7 @@ class StockDetailViewModel(
                         else -> WatchItemUiState(item, LiveWatchData(updateFailed = true))
                     }
                 }
+                is WatchType.InsiderBuy -> WatchItemUiState(item)
                 is WatchType.Combined -> WatchItemUiState(item)
             }
         }
@@ -352,7 +355,12 @@ class StockDetailViewModel(
     suspend fun isDuplicateWatch(watchType: WatchType): Boolean {
         if (watchType is WatchType.Combined) return false
         return watchItemDao.getWatchItemsBySymbol(symbol)
-            .any { it.isActive && it.watchType == watchType }
+            .any {
+                it.isActive && when {
+                    watchType is WatchType.InsiderBuy && it.watchType is WatchType.InsiderBuy -> true
+                    else -> it.watchType == watchType
+                }
+            }
     }
 
     /**
