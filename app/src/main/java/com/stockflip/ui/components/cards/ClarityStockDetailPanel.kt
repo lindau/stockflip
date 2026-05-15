@@ -79,13 +79,18 @@ private fun ClarityStockHeroCard(
     onPeriodSelected: (ChartPeriod) -> Unit,
 ) {
     val colorScheme = MaterialTheme.colorScheme
-    val changePercent = dailyChangePercent(data)
+    val periodChange = calculatePeriodChange(
+        data = data,
+        chartData = chartData,
+        selectedPeriod = selectedPeriod,
+    )
+    val changeIndicator = periodChange.percent ?: periodChange.delta
     val changeColor = when {
-        changePercent == null -> colorScheme.onSurfaceVariant
-        changePercent >= 0.0 -> LocalPriceUp.current
+        changeIndicator == null -> colorScheme.onSurfaceVariant
+        changeIndicator >= 0.0 -> LocalPriceUp.current
         else -> LocalPriceDown.current
     }
-    val isPositive = changePercent == null || changePercent >= 0.0
+    val isPositive = changeIndicator == null || changeIndicator >= 0.0
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -150,8 +155,7 @@ private fun ClarityStockHeroCard(
                     overflow = TextOverflow.Ellipsis,
                 )
                 DailyChangePill(
-                    data = data,
-                    changePercent = changePercent,
+                    periodChange = periodChange,
                     changeColor = changeColor,
                 )
             }
@@ -177,16 +181,15 @@ private fun ClarityStockHeroCard(
 
 @Composable
 private fun DailyChangePill(
-    data: StockDetailData,
-    changePercent: Double?,
+    periodChange: PeriodChange,
     changeColor: Color,
 ) {
-    val lines = changeLines(data, changePercent)
+    val lines = changeLines(periodChange)
     Column(
         modifier = Modifier
             .background(changeColor.copy(alpha = 0.14f), RoundedCornerShape(8.dp))
             .padding(horizontal = 10.dp, vertical = 6.dp),
-        horizontalAlignment = Alignment.End,
+        horizontalAlignment = Alignment.Start,
         verticalArrangement = Arrangement.spacedBy(1.dp),
     ) {
         lines.forEach { line ->
@@ -198,6 +201,7 @@ private fun DailyChangePill(
                     fontWeight = FontWeight.SemiBold,
                 ),
                 color = changeColor,
+                textAlign = TextAlign.Start,
                 maxLines = 1,
                 softWrap = false,
             )
@@ -502,32 +506,73 @@ private fun formatCompactMarketCap(value: Double, currency: String): String {
     }
 }
 
-private fun dailyChangePercent(data: StockDetailData): Double? {
-    data.dailyChangePercent?.let { return it }
-    val lastPrice = data.lastPrice
-    val previousClose = data.previousClose
-    return if (lastPrice != null && previousClose != null && previousClose > 0.0) {
+internal data class PeriodChange(
+    val delta: Double?,
+    val percent: Double?,
+)
+
+internal fun calculatePeriodChange(
+    data: StockDetailData,
+    chartData: IntradayChartData?,
+    selectedPeriod: ChartPeriod,
+): PeriodChange {
+    if (selectedPeriod == ChartPeriod.DAY) {
+        return calculateDailyChange(data, chartData)
+    }
+
+    if (chartData == null || chartData.emptyReason != null) {
+        return PeriodChange(delta = null, percent = null)
+    }
+
+    val firstPrice = chartData.prices.firstOrNull()?.takeIf { it > 0.0 }
+    val lastPrice = chartData.prices.lastOrNull()
+    return calculateChange(firstPrice, lastPrice)
+}
+
+private fun calculateDailyChange(
+    data: StockDetailData,
+    chartData: IntradayChartData?,
+): PeriodChange {
+    val lastPrice = data.lastPrice ?: chartData?.prices?.lastOrNull()
+    val previousClose = data.previousClose ?: chartData?.previousClose
+    val delta = if (lastPrice != null && previousClose != null) {
+        lastPrice - previousClose
+    } else {
+        null
+    }
+    val percent = data.dailyChangePercent ?: if (lastPrice != null && previousClose != null && previousClose > 0.0) {
         ((lastPrice - previousClose) / previousClose) * 100.0
     } else {
         null
     }
+    return PeriodChange(delta = delta, percent = percent)
 }
 
-private fun changeLines(data: StockDetailData, changePercent: Double?): List<String> {
-    if (changePercent == null) return listOf("— %")
-    val delta = if (data.lastPrice != null && data.previousClose != null) {
-        data.lastPrice - data.previousClose
-    } else {
-        null
+private fun calculateChange(
+    firstPrice: Double?,
+    lastPrice: Double?,
+): PeriodChange {
+    if (firstPrice == null || lastPrice == null || firstPrice <= 0.0) {
+        return PeriodChange(delta = null, percent = null)
     }
+    val delta = lastPrice - firstPrice
+    return PeriodChange(
+        delta = delta,
+        percent = (delta / firstPrice) * 100.0,
+    )
+}
+
+private fun changeLines(change: PeriodChange): List<String> {
+    val deltaText = change.delta?.let { formatSignedChange(it) }
+    val percentText = change.percent?.let { "${formatSignedChange(it)} %" } ?: "— %"
+    return listOfNotNull(deltaText, percentText)
+}
+
+private fun formatSignedChange(value: Double): String {
     val sign = when {
-        changePercent > 0.0 -> "+"
-        changePercent < 0.0 -> "−"
+        value > 0.0 -> "+"
+        value < 0.0 -> "−"
         else -> ""
     }
-    val percentText = "$sign${CurrencyHelper.formatDecimal(abs(changePercent))} %"
-    val deltaText = delta?.let {
-        "$sign${CurrencyHelper.formatDecimal(abs(it))}"
-    }
-    return listOfNotNull(deltaText, percentText)
+    return "$sign${CurrencyHelper.formatDecimal(abs(value))}"
 }

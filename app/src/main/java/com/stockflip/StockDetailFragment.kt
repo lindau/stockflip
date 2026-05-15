@@ -337,6 +337,7 @@ class StockDetailFragment : Fragment() {
                     binding.intradayChartView.isVisible = false
                     when (state) {
                         is UiState.Loading -> {
+                            latestChartData = null
                             renderClarityStockPanel()
                         }
                         is UiState.Success -> {

@@ -476,19 +476,23 @@ class StockDetailViewModel(
     }
 
     fun selectPeriod(period: ChartPeriod) {
+        if (_selectedPeriod.value == period) return
+        chartLoadingJob?.cancel()
+        _chartState.value = UiState.Loading
         _selectedPeriod.value = period
         loadChartData()
     }
 
     fun loadChartData() {
         chartLoadingJob?.cancel()
+        _chartState.value = UiState.Loading
+        val period = _selectedPeriod.value
         chartLoadingJob = viewModelScope.launch {
-            _chartState.value = UiState.Loading
             // Försök hämta grafdata — retry efter 2 sekunder vid fel (t.ex. race condition med cookie-session)
-            var data = fetchChartData()
+            var data = fetchChartData(period)
             if (data == null) {
                 delay(2_000L)
-                data = fetchChartData()
+                data = fetchChartData(period)
             }
             _chartState.value = if (data != null) {
                 UiState.Success(data)
@@ -506,8 +510,8 @@ class StockDetailViewModel(
         }
     }
 
-    private suspend fun fetchChartData(): IntradayChartData? = try {
-        yahooFinanceService.getIntradayChart(symbol, _selectedPeriod.value)
+    private suspend fun fetchChartData(period: ChartPeriod): IntradayChartData? = try {
+        yahooFinanceService.getIntradayChart(symbol, period)
     } catch (e: Exception) {
         Log.e(TAG, "Error fetching chart for $symbol: ${e.message}", e)
         null
