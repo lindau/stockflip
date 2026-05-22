@@ -6,7 +6,7 @@ A personal Android app for monitoring stock prices and triggering push notificat
 
 - **3 main app areas** — `Översikt` for read-first prioritization, `Mina case` for setup and administration, and `Par` for pair alerts
 - **In-app changelog** — tap the version row in the app menu to open the latest local changelog
-- **5 primary alert flows in the current UI** — price targets, daily % moves, 52-week drawdowns, key metrics (PE/PS/yield), and spread between two tickers
+- **6 primary alert flows in the current UI** — price targets, daily % moves, 52-week drawdowns, key metrics (PE/PS/yield), insider purchases, and spread between two tickers
 - **Legacy watch type support** — price ranges and composite AND/OR/NOT conditions remain supported in storage/rendering and can still be edited when they already exist
 - **Push notifications** with spam protection — at most one notification per alert per trading day
 - **Market-aware background updates** — 1-minute refresh during open hours, 60-minute outside
@@ -20,7 +20,7 @@ A personal Android app for monitoring stock prices and triggering push notificat
 - **Översikt** — read-only overview of your cases with sections for triggered items, near-trigger items, active cases, and inactive cases
 - **Mina case** — add a stock or crypto with the floating `+` button, open its detail page, and create or manage alerts there; also filter, batch-manage, edit, pause, reactivate, and delete cases
 - **Par** — add a stock pair from the `Par` tab with the floating `+` button
-- **Stock detail** — shows price snapshot, existing alerts for the selected stock, and buttons to add `Målpris`, `Drawdown`, `Dagsrörelse`, or `Nyckeltal`
+- **Stock detail** — shows price snapshot, existing alerts, recent insider purchases, and buttons to add `Målpris`, `Drawdown`, `Dagsrörelse`, `Nyckeltal`, or supported `Insiderköp` watches
 - **Help** — open the in-app help from the top app bar menu; it renders `app/src/main/assets/manual.md`
 - **Changelog** — tap the version row in the top app bar menu; it renders `app/src/main/assets/changelog.md`
 
@@ -44,6 +44,7 @@ A personal Android app for monitoring stock prices and triggering push notificat
 | **DailyMove** | Daily change % exceeds a threshold (up, down, or either) |
 | **ATHBased** | Drawdown from 52-week high exceeds a value (% or absolute) |
 | **KeyMetrics** | PE ratio, PS ratio, or dividend yield crosses a target |
+| **InsiderBuy** | New insider purchases are reported for supported Swedish and US stocks |
 | **PricePair** | Absolute spread between two tickers reaches a threshold in either direction |
 | **PriceRange** | Legacy-compatible: price falls within a min–max band; editable if present, not a primary create flow |
 | **Combined** | Legacy-compatible: logical AND / OR / NOT conditions; editable if present, not a primary create flow |

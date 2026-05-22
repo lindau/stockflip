@@ -5,6 +5,8 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.LinearLayout
+import android.widget.TextView
 import android.widget.Toast
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
@@ -19,6 +21,10 @@ import com.stockflip.repository.TriggerHistoryRepository
 import com.stockflip.viewmodel.StockSearchViewModel
 import com.stockflip.repository.StockRepository
 import com.stockflip.ui.dialogs.WatchDialogManager
+import com.google.android.material.bottomsheet.BottomSheetDialog
+import com.google.android.material.button.MaterialButton
+import com.google.android.material.color.MaterialColors
+import com.google.android.material.divider.MaterialDivider
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.combine
 import java.text.SimpleDateFormat
@@ -55,7 +61,9 @@ class StockDetailFragment : Fragment() {
     private var latestChartPeriod: ChartPeriod = ChartPeriod.DAY
     private var latestAlerts: List<WatchItemUiState> = emptyList()
     private var latestMetricHistory: Map<WatchType.MetricType, MetricHistorySummary> = emptyMap()
+    private var latestInsiderTransactions: List<InsiderTransactionEntity> = emptyList()
     private var triggerBannerDismissed = false
+    private var insiderNotificationHandled = false
 
     private fun syncOverviewInBackground() {
         (activity as? MainActivity)?.syncWatchItemsAfterDetailChange()
@@ -69,6 +77,7 @@ class StockDetailFragment : Fragment() {
         private const val ARG_TRIGGER_TITLE = "trigger_title"
         private const val ARG_TRIGGER_MESSAGE = "trigger_message"
         private const val ARG_OPENED_FROM_NOTIFICATION = "opened_from_notification"
+        private const val ARG_HIGHLIGHT_INSIDER_TRANSACTION_ID = "highlight_insider_transaction_id"
         private const val VERY_CLOSE_THRESHOLD = 0.05
         private const val CLOSE_THRESHOLD = 0.12
 
@@ -81,7 +90,8 @@ class StockDetailFragment : Fragment() {
             highlightWatchItemId: Int? = null,
             triggerTitle: String? = null,
             triggerMessage: String? = null,
-            openedFromNotification: Boolean = false
+            openedFromNotification: Boolean = false,
+            highlightInsiderTransactionId: String? = null
         ): StockDetailFragment {
             return StockDetailFragment().apply {
                 arguments = Bundle().apply {
@@ -91,6 +101,7 @@ class StockDetailFragment : Fragment() {
                     putString(ARG_TRIGGER_TITLE, triggerTitle)
                     putString(ARG_TRIGGER_MESSAGE, triggerMessage)
                     putBoolean(ARG_OPENED_FROM_NOTIFICATION, openedFromNotification)
+                    putString(ARG_HIGHLIGHT_INSIDER_TRANSACTION_ID, highlightInsiderTransactionId)
                 }
             }
         }
@@ -134,7 +145,8 @@ class StockDetailFragment : Fragment() {
                         symbol,
                         TriggerHistoryRepository(database.triggerHistoryDao()),
                         database.stockNoteDao(),
-                        MetricHistoryRepository(database.metricHistoryDao())
+                        MetricHistoryRepository(database.metricHistoryDao()),
+                        database.insiderTransactionDao()
                     ) as T
                 }
                 throw IllegalArgumentException("Unknown ViewModel class")
@@ -328,6 +340,7 @@ class StockDetailFragment : Fragment() {
                         binding.noAlertsText.isVisible = state.data.isEmpty()
                         binding.alertsRecyclerView.isVisible = state.data.isNotEmpty()
                         renderDecisionSupport()
+                        renderInsiderTransactions()
                         renderTriggerBanner()
                     }
                     is UiState.Error -> {
@@ -369,6 +382,13 @@ class StockDetailFragment : Fragment() {
             viewModel.metricHistoryState.collect { metricHistory ->
                 latestMetricHistory = metricHistory
                 renderDecisionSupport()
+            }
+        }
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewModel.insiderTransactionsState.collect { transactions ->
+                latestInsiderTransactions = transactions
+                renderInsiderTransactions()
             }
         }
 
@@ -554,6 +574,158 @@ class StockDetailFragment : Fragment() {
         binding.triggerReactivateButton.isVisible = target?.item?.isTriggered == true
         binding.triggerDeleteButton.isVisible = target != null
         target?.item?.let { TriggerSeenTracker.markSeen(it) }
+    }
+
+    private fun renderInsiderTransactions() {
+        val hasInsiderWatch = latestAlerts.any { it.item.watchType is WatchType.InsiderBuy }
+        val showSection = latestInsiderTransactions.isNotEmpty() || hasInsiderWatch
+        binding.insiderSectionLabel.isVisible = showSection
+        binding.insiderTransactionsCard.isVisible = showSection
+        if (!showSection) return
+
+        binding.insiderTransactionsContainer.removeAllViews()
+        if (latestInsiderTransactions.isEmpty()) {
+            binding.insiderEmptyText.isVisible = true
+            binding.insiderEmptyText.text = "Inga insiderköp har hittats ännu."
+            return
+        }
+
+        binding.insiderEmptyText.isVisible = false
+        latestInsiderTransactions.take(5).forEachIndexed { index, transaction ->
+            if (index > 0) {
+                binding.insiderTransactionsContainer.addView(
+                    MaterialDivider(requireContext()).apply {
+                        layoutParams = LinearLayout.LayoutParams(
+                            LinearLayout.LayoutParams.MATCH_PARENT,
+                            LinearLayout.LayoutParams.WRAP_CONTENT
+                        ).apply {
+                            topMargin = dp(10)
+                            bottomMargin = dp(10)
+                        }
+                    }
+                )
+            }
+            binding.insiderTransactionsContainer.addView(createInsiderTransactionRow(transaction))
+        }
+
+        maybeHandleInsiderNotification()
+    }
+
+    private fun createInsiderTransactionRow(transaction: InsiderTransactionEntity): View {
+        val context = requireContext()
+        val highlightId = arguments?.getString(ARG_HIGHLIGHT_INSIDER_TRANSACTION_ID)
+        val isHighlighted = transaction.id == highlightId
+        return LinearLayout(context).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(10), dp(9), dp(10), dp(9))
+            if (isHighlighted) {
+                setBackgroundColor(
+                    MaterialColors.getColor(
+                        binding.root,
+                        com.google.android.material.R.attr.colorSecondaryContainer
+                    )
+                )
+            }
+            setOnClickListener { showInsiderTransactionSheet(transaction) }
+
+            addView(TextView(context).apply {
+                text = transaction.reportingOwner
+                setTextAppearance(com.google.android.material.R.style.TextAppearance_Material3_TitleSmall)
+                setTextColor(MaterialColors.getColor(binding.root, com.google.android.material.R.attr.colorOnSurface))
+            })
+            addView(TextView(context).apply {
+                text = insiderTransactionSummary(transaction)
+                setTextAppearance(com.google.android.material.R.style.TextAppearance_Material3_BodyMedium)
+                setTextColor(MaterialColors.getColor(binding.root, com.google.android.material.R.attr.colorOnSurfaceVariant))
+            })
+            addView(TextView(context).apply {
+                text = insiderTransactionMeta(transaction)
+                setTextAppearance(com.google.android.material.R.style.TextAppearance_Material3_LabelMedium)
+                setTextColor(MaterialColors.getColor(binding.root, com.google.android.material.R.attr.colorOnSurfaceVariant))
+            })
+        }
+    }
+
+    private fun maybeHandleInsiderNotification() {
+        if (insiderNotificationHandled) return
+        val highlightId = arguments?.getString(ARG_HIGHLIGHT_INSIDER_TRANSACTION_ID) ?: return
+        val highlighted = latestInsiderTransactions.firstOrNull { it.id == highlightId } ?: return
+        insiderNotificationHandled = true
+        binding.stockDetailScrollView.post {
+            binding.stockDetailScrollView.smoothScrollTo(0, binding.insiderSectionLabel.top)
+            showInsiderTransactionSheet(highlighted)
+        }
+    }
+
+    private fun showInsiderTransactionSheet(transaction: InsiderTransactionEntity) {
+        val dialog = BottomSheetDialog(requireContext())
+        val content = LinearLayout(requireContext()).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(24), dp(20), dp(24), dp(16))
+        }
+        content.addView(TextView(requireContext()).apply {
+            text = "Insiderköp"
+            setTextAppearance(com.google.android.material.R.style.TextAppearance_Material3_TitleLarge)
+            setTextColor(MaterialColors.getColor(binding.root, com.google.android.material.R.attr.colorOnSurface))
+        })
+        listOf(
+            "Person" to transaction.reportingOwner,
+            "Roll" to (transaction.relationship ?: "Ej angiven"),
+            "Datum" to transaction.transactionDate.ifBlank { transaction.filingDate ?: "Okänt datum" },
+            "Instrument" to (transaction.securityTitle ?: transaction.symbol),
+            "Antal" to (transaction.shares?.let { CurrencyHelper.formatDecimal(it) } ?: "Ej angivet"),
+            "Pris" to (transaction.pricePerShare?.let { CurrencyHelper.formatPrice(it, insiderCurrency(transaction)) } ?: "Ej angivet"),
+            "Värde" to (transaction.estimatedValue?.let { CurrencyHelper.formatPrice(it, insiderCurrency(transaction)) } ?: "Ej angivet"),
+            "Rapporterad" to formatInsiderReportedDate(transaction)
+        ).forEach { (label, value) ->
+            content.addView(TextView(requireContext()).apply {
+                text = "$label: $value"
+                setTextAppearance(com.google.android.material.R.style.TextAppearance_Material3_BodyMedium)
+                setTextColor(MaterialColors.getColor(binding.root, com.google.android.material.R.attr.colorOnSurfaceVariant))
+                setPadding(0, dp(10), 0, 0)
+            })
+        }
+        content.addView(MaterialButton(requireContext()).apply {
+            text = "Stäng"
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                topMargin = dp(18)
+            }
+            setOnClickListener { dialog.dismiss() }
+        })
+        dialog.setContentView(content)
+        dialog.show()
+    }
+
+    private fun insiderTransactionSummary(transaction: InsiderTransactionEntity): String {
+        val shares = transaction.shares?.let { "${CurrencyHelper.formatDecimal(it)} aktier" } ?: "aktier"
+        val value = transaction.estimatedValue?.let { " · ${CurrencyHelper.formatPrice(it, insiderCurrency(transaction))}" }.orEmpty()
+        return "Köpte $shares$value"
+    }
+
+    private fun insiderTransactionMeta(transaction: InsiderTransactionEntity): String {
+        return listOfNotNull(
+            transaction.relationship,
+            transaction.transactionDate.takeIf { it.isNotBlank() },
+            transaction.securityTitle
+        ).joinToString(" · ").ifBlank { "Detaljer saknas" }
+    }
+
+    private fun insiderCurrency(transaction: InsiderTransactionEntity): String {
+        return if (transaction.cik == "FI" || transaction.symbol.endsWith(".ST", ignoreCase = true)) "SEK" else "USD"
+    }
+
+    private fun formatInsiderReportedDate(transaction: InsiderTransactionEntity): String {
+        transaction.acceptedAtMillis?.let {
+            return SimpleDateFormat("d MMM yyyy HH:mm", Locale("sv", "SE")).format(Date(it))
+        }
+        return transaction.filingDate ?: "Ej angivet"
+    }
+
+    private fun dp(value: Int): Int {
+        return (value * resources.displayMetrics.density).toInt()
     }
 
     private fun renderLevelsSection(

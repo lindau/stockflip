@@ -12,9 +12,10 @@ StockFlip låter dig bevaka aktier och kryptovalutor och få notiser när dina e
   - [2. Dagsrörelse](#2-dagsrorelse)
   - [3. Drawdown](#3-drawdown)
   - [4. Nyckeltal](#4-nyckeltal)
-  - [5. Aktiepar](#5-aktiepar)
-  - [6. Prisintervall (äldre typ)](#6-prisintervall-aldre-typ)
-  - [7. Kombinerat larm (äldre typ)](#7-kombinerat-larm-aldre-typ)
+  - [5. Insiderköp](#5-insiderkop)
+  - [6. Aktiepar](#6-aktiepar)
+  - [7. Prisintervall (äldre typ)](#7-prisintervall-aldre-typ)
+  - [8. Kombinerat larm (äldre typ)](#8-kombinerat-larm-aldre-typ)
 - [Vanliga flöden](#vanliga-floden)
 - [Hantera dina bevakningar](#hantera-dina-bevakningar)
 - [Notiser](#notiser)
@@ -185,7 +186,25 @@ Efter sparning visar appen den aktiva riktningen, till exempel `bevakar kurs öv
 
 ---
 
-### 5. Aktiepar
+### 5. Insiderköp
+
+**Vad det gör:** Skickar en notis när nya insiderköp rapporteras för en aktie där appen har stöd för insiderdata.
+
+**Typ:** Återkommande — kontrolleras dagligen och kan utlösas igen nästa handelsdag.
+
+**Skapa en insiderköpsbevakning:**
+1. Öppna aktiedetaljvyn för en aktie med insiderstöd.
+2. Tryck på **Insiderköp**.
+3. Tryck **Spara**.
+
+**Vad händer när den utlöses:**
+- Du får en notis med sammanfattning.
+- Trycker du på notisen öppnas aktiedetaljvyn vid **Senaste insiderköp**.
+- Den aktuella transaktionen markeras och visas i ett detaljfönster med person, roll, datum, antal, pris och uppskattat värde.
+
+---
+
+### 6. Aktiepar
 
 **Vad det gör:** Bevakar den absoluta prisskillnaden mellan två aktier och skickar en notis när skillnaden är minst ett visst värde, oavsett vilken aktie som ligger högst, eller när priserna är lika.
 
@@ -208,7 +227,7 @@ Efter sparning visar appen den aktiva riktningen, till exempel `bevakar kurs öv
 
 ---
 
-### 6. Prisintervall (äldre typ)
+### 7. Prisintervall (äldre typ)
 
 **Vad det gör:** Bevakar om priset ligger inom ett angivet intervall mellan ett min- och maxpris.
 
@@ -223,7 +242,7 @@ Efter sparning visar appen den aktiva riktningen, till exempel `bevakar kurs öv
 
 ---
 
-### 7. Kombinerat larm (äldre typ)
+### 8. Kombinerat larm (äldre typ)
 
 **Vad det gör:** Låter dig kombinera flera villkor med logiska operatorer för att skapa avancerade bevakningsregler.
 
@@ -367,12 +386,13 @@ Utan notisbehörighet kan appen inte meddela dig när en bevakning utlöses — 
 - Trycker du på notisen öppnas StockFlip direkt på detaljvyn för den berörda aktien, eller pardetaljen för ett aktiepar.
 - Du möts av en tydlig trigger-banner högst upp med varför du hamnade där och kan direkt **återaktivera** eller **ta bort** bevakningen.
 - En trigger markeras som sedd först när du öppnar bevakningen eller detaljvyn, inte bara när listan visas.
+- För **insiderköp** öppnas aktiedetaljvyn vid sektionen **Senaste insiderköp**. Den aktuella transaktionen markeras och visas även i ett detaljfönster som du stänger med **Stäng**.
 
 ### Engångslarm vs återkommande larm
 
 | | Engångslarm | Återkommande larm |
 |---|---|---|
-| **Typ** | Målpris, Drawdown | Dagsrörelse, Nyckeltal, Aktiepar |
+| **Typ** | Målpris, Drawdown | Dagsrörelse, Nyckeltal, Insiderköp, Aktiepar |
 | **Inaktiveras efter utlösning** | Ja | Nej |
 | **Återaktivering** | Manuell | Automatisk (nästa dag) |
 | **Kan utlösas igen samma dag** | Nej | Normalt nej. Aktiepar kan trigga igen om spreaden byter sida. |

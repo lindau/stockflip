@@ -25,7 +25,8 @@ class StockDetailViewModel(
     private val symbol: String,
     private val triggerHistoryRepository: TriggerHistoryRepository,
     private val stockNoteDao: StockNoteDao,
-    private val metricHistoryRepository: MetricHistoryRepository
+    private val metricHistoryRepository: MetricHistoryRepository,
+    private val insiderTransactionDao: InsiderTransactionDao? = null
 ) : ViewModel() {
 
     private val TAG = "StockDetailViewModel"
@@ -49,6 +50,9 @@ class StockDetailViewModel(
     private val _metricHistoryState = MutableStateFlow<Map<WatchType.MetricType, MetricHistorySummary>>(emptyMap())
     val metricHistoryState: StateFlow<Map<WatchType.MetricType, MetricHistorySummary>> = _metricHistoryState.asStateFlow()
 
+    private val _insiderTransactionsState = MutableStateFlow<List<InsiderTransactionEntity>>(emptyList())
+    val insiderTransactionsState: StateFlow<List<InsiderTransactionEntity>> = _insiderTransactionsState.asStateFlow()
+
     val noteState: StateFlow<StockNote?> = stockNoteDao.getByTickerFlow(symbol)
         .stateIn(viewModelScope, SharingStarted.Lazily, null)
 
@@ -62,6 +66,7 @@ class StockDetailViewModel(
     init {
         loadStockData()
         loadChartData()
+        loadInsiderTransactions()
         observeAlerts()
     }
 
@@ -173,6 +178,18 @@ class StockDetailViewModel(
         } catch (e: Exception) {
             Log.e(TAG, "Error loading metric history for $symbol: ${e.message}", e)
             _metricHistoryState.value = emptyMap()
+        }
+    }
+
+    fun loadInsiderTransactions() {
+        val transactionDao = insiderTransactionDao ?: return
+        viewModelScope.launch {
+            try {
+                _insiderTransactionsState.value = transactionDao.getLatestForSymbol(symbol)
+            } catch (e: Exception) {
+                Log.e(TAG, "Error loading insider transactions for $symbol: ${e.message}", e)
+                _insiderTransactionsState.value = emptyList()
+            }
         }
     }
 
@@ -553,6 +570,7 @@ class StockDetailViewModel(
     fun refresh() {
         loadStockData()
         loadChartData()
+        loadInsiderTransactions()
         loadAlerts()
     }
 }

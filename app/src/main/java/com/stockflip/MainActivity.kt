@@ -199,6 +199,8 @@ class MainActivity : AppCompatActivity() {
 
         val triggerTitle = intent.getStringExtra(EXTRA_TRIGGER_TITLE)
         val triggerMessage = intent.getStringExtra(EXTRA_TRIGGER_MESSAGE)
+        val companyName = intent.getStringExtra(EXTRA_OPEN_COMPANY)
+        val insiderTransactionId = intent.getStringExtra(EXTRA_OPEN_INSIDER_TRANSACTION_ID)
         val pairWatchItemId = intent.getIntExtra(EXTRA_OPEN_PAIR_WATCH_ID, -1)
         if (pairWatchItemId != -1) {
             clearProtectedIntentExtras(intent)
@@ -208,8 +210,15 @@ class MainActivity : AppCompatActivity() {
         val ticker = intent.getStringExtra(EXTRA_OPEN_TICKER) ?: return
         val watchItemId = intent.getIntExtra(EXTRA_OPEN_WATCH_ID, -1).takeIf { it > 0 }
         clearProtectedIntentExtras(intent)
-        val companyName = intent.getStringExtra(EXTRA_OPEN_COMPANY)
-        navigateToStockDetail(ticker, companyName, watchItemId, triggerTitle, triggerMessage, openedFromNotification = true)
+        navigateToStockDetail(
+            symbol = ticker,
+            companyName = companyName,
+            highlightWatchItemId = watchItemId,
+            triggerTitle = triggerTitle,
+            triggerMessage = triggerMessage,
+            openedFromNotification = true,
+            highlightInsiderTransactionId = insiderTransactionId
+        )
     }
 
     private fun clearProtectedIntentExtras(intent: Intent) {
@@ -217,6 +226,7 @@ class MainActivity : AppCompatActivity() {
         intent.removeExtra(EXTRA_OPEN_TICKER)
         intent.removeExtra(EXTRA_OPEN_WATCH_ID)
         intent.removeExtra(EXTRA_OPEN_COMPANY)
+        intent.removeExtra(EXTRA_OPEN_INSIDER_TRANSACTION_ID)
         intent.removeExtra(EXTRA_TRIGGER_TITLE)
         intent.removeExtra(EXTRA_TRIGGER_MESSAGE)
         intent.removeExtra(EXTRA_NOTIFICATION_TOKEN)
@@ -885,7 +895,8 @@ class MainActivity : AppCompatActivity() {
         highlightWatchItemId: Int? = null,
         triggerTitle: String? = null,
         triggerMessage: String? = null,
-        openedFromNotification: Boolean = false
+        openedFromNotification: Boolean = false,
+        highlightInsiderTransactionId: String? = null
     ) {
         val fragment = StockDetailFragment.newInstance(
             symbol = symbol,
@@ -893,7 +904,8 @@ class MainActivity : AppCompatActivity() {
             highlightWatchItemId = highlightWatchItemId,
             triggerTitle = triggerTitle,
             triggerMessage = triggerMessage,
-            openedFromNotification = openedFromNotification
+            openedFromNotification = openedFromNotification,
+            highlightInsiderTransactionId = highlightInsiderTransactionId
         )
         
         supportFragmentManager.beginTransaction()
@@ -1255,6 +1267,8 @@ class MainActivity : AppCompatActivity() {
         const val EXTRA_OPEN_WATCH_ID = "extra_open_watch_id"
         /** Intent extra: company name for the ticker (optional, for display) */
         const val EXTRA_OPEN_COMPANY = "extra_open_company"
+        /** Intent extra: insider transaction id to highlight when opening from an insider notification */
+        const val EXTRA_OPEN_INSIDER_TRANSACTION_ID = "extra_open_insider_transaction_id"
         /** Intent extra: human-readable trigger title for notification landing */
         const val EXTRA_TRIGGER_TITLE = "extra_trigger_title"
         /** Intent extra: human-readable trigger message for notification landing */
