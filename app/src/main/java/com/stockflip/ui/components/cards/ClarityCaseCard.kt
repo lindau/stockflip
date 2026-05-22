@@ -39,6 +39,8 @@ import com.stockflip.LiveWatchData
 import com.stockflip.StockSearchResult
 import com.stockflip.WatchItem
 import com.stockflip.WatchType
+import com.stockflip.hasPendingNextTradingDayGuard
+import com.stockflip.triggerConditionText
 import com.stockflip.ui.theme.LocalCardBorder
 import com.stockflip.ui.theme.LocalTextTertiary
 import java.text.SimpleDateFormat
@@ -231,38 +233,7 @@ private fun clarityCaseName(item: WatchItem, symbol: String): String {
 
 private fun clarityCaseTitle(item: WatchItem, priceFormat: (Double) -> String): String {
     val currency = CurrencyHelper.getCurrencyFromSymbol(clarityCaseSymbol(item))
-    return when (val watchType = item.watchType) {
-        is WatchType.PriceTarget -> "Prismål ${CurrencyHelper.formatPrice(watchType.targetPrice, currency)}"
-        is WatchType.KeyMetrics -> {
-	            val metric = when (watchType.metricType) {
-	                WatchType.MetricType.PE_RATIO -> "P/E"
-	                WatchType.MetricType.PS_RATIO -> "P/S"
-	                WatchType.MetricType.DIVIDEND_YIELD -> "Direktavk."
-	                WatchType.MetricType.EARNINGS_PER_SHARE -> "Vinst/aktie"
-	            }
-            val direction = when (watchType.direction) {
-                WatchType.PriceDirection.ABOVE -> "över"
-                WatchType.PriceDirection.BELOW -> "under"
-            }
-            "$metric $direction ${formatMetricTarget(watchType, priceFormat)}"
-        }
-        is WatchType.ATHBased -> {
-            val reference = when (watchType.reference) {
-                WatchType.HighReference.FIFTY_TWO_WEEK_HIGH -> "52v-nedgång"
-                WatchType.HighReference.ALL_TIME_HIGH -> "ATH-nedgång"
-            }
-            "$reference ${formatDropTarget(watchType, currency, priceFormat)}"
-        }
-        is WatchType.PriceRange -> {
-            val min = CurrencyHelper.formatPrice(watchType.minPrice, currency)
-            val max = CurrencyHelper.formatPrice(watchType.maxPrice, currency)
-            "Prisintervall $min-$max"
-        }
-        is WatchType.DailyMove -> "Dagsrörelse ${formatDailyMoveTarget(watchType, priceFormat)}"
-        is WatchType.InsiderBuy -> "Insiderköp"
-        is WatchType.Combined -> "Kombinerat case"
-        is WatchType.PricePair -> "Parcase ${priceFormat(watchType.priceDifference)}"
-    }
+    return item.triggerConditionText(currency = currency, decimalFormat = priceFormat)
 }
 
 private fun clarityCaseSubtitle(
@@ -270,14 +241,11 @@ private fun clarityCaseSubtitle(
     live: LiveWatchData,
     priceFormat: (Double) -> String,
 ): String {
+    if (item.hasPendingNextTradingDayGuard()) {
+        return "Aktiv igen · väntar till nästa handelsdag"
+    }
     return when (val watchType = item.watchType) {
-        is WatchType.PriceTarget -> {
-            val direction = when (watchType.direction) {
-                WatchType.PriceDirection.ABOVE -> "över tröskel"
-                WatchType.PriceDirection.BELOW -> "under tröskel"
-            }
-            "Engångslarm · $direction"
-        }
+        is WatchType.PriceTarget -> "Engångslarm"
         is WatchType.KeyMetrics -> "Nyckeltal · dagligen"
         is WatchType.ATHBased -> {
             val reference = when (watchType.reference) {
@@ -286,7 +254,7 @@ private fun clarityCaseSubtitle(
             }
             "Engångslarm · från $reference"
         }
-        is WatchType.PriceRange -> "Återkommande · pris inom intervall"
+        is WatchType.PriceRange -> "Äldre bevakningstyp · prisintervall"
         is WatchType.DailyMove -> {
             val current = live.currentDailyChangePercent
             if (current != null) {
@@ -296,8 +264,8 @@ private fun clarityCaseSubtitle(
             }
         }
         is WatchType.InsiderBuy -> "Kontrolleras dagligen"
-        is WatchType.Combined -> watchType.expression.getDescription()
-        is WatchType.PricePair -> "Parbevakning · aktiespread"
+        is WatchType.Combined -> "Äldre bevakningstyp · kombinerat villkor"
+        is WatchType.PricePair -> "Trigger när spreaden når nivån oavsett riktning"
     }
 }
 
@@ -308,6 +276,7 @@ private fun clarityCaseStatus(item: WatchItem): String {
         !item.isActive -> "Pausad"
         LocalIsNewTrigger.current -> "Ny"
         item.isTriggered -> triggeredStatusLabel(item.lastTriggeredDate)
+        item.hasPendingNextTradingDayGuard() -> "Nästa handelsdag"
         nearLabel != null -> nearLabel
         else -> "Aktiv"
     }
@@ -340,39 +309,6 @@ private fun clarityCaseFlag(symbol: String): String? {
     return CountryFlagHelper
         .getCountryCodeFromCurrency(currency)
         ?.let { CountryFlagHelper.getFlagEmoji(it) }
-}
-
-private fun formatMetricTarget(
-    watchType: WatchType.KeyMetrics,
-    priceFormat: (Double) -> String,
-): String {
-	    return when (watchType.metricType) {
-	        WatchType.MetricType.DIVIDEND_YIELD -> "${priceFormat(watchType.targetValue)} %"
-	        else -> priceFormat(watchType.targetValue)
-	    }
-}
-
-private fun formatDropTarget(
-    watchType: WatchType.ATHBased,
-    currency: String,
-    priceFormat: (Double) -> String,
-): String {
-    return when (watchType.dropType) {
-        WatchType.DropType.PERCENTAGE -> "${priceFormat(watchType.dropValue)} %"
-        WatchType.DropType.ABSOLUTE -> CurrencyHelper.formatPrice(watchType.dropValue, currency)
-    }
-}
-
-private fun formatDailyMoveTarget(
-    watchType: WatchType.DailyMove,
-    priceFormat: (Double) -> String,
-): String {
-    val threshold = "${priceFormat(watchType.percentThreshold)} %"
-    return when (watchType.direction) {
-        WatchType.DailyMoveDirection.UP -> "+$threshold"
-        WatchType.DailyMoveDirection.DOWN -> "-$threshold"
-        WatchType.DailyMoveDirection.BOTH -> "±$threshold"
-    }
 }
 
 private fun formatSignedPercent(value: Double, priceFormat: (Double) -> String): String {

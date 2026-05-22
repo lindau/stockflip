@@ -28,6 +28,7 @@ import androidx.compose.ui.unit.dp
 import com.stockflip.LiveWatchData
 import com.stockflip.WatchItem
 import com.stockflip.WatchType
+import com.stockflip.triggerConditionText
 import com.stockflip.ui.components.StatusStripe
 import com.stockflip.ui.theme.GroupPosition
 import com.stockflip.ui.theme.LocalCardBorder
@@ -57,6 +58,9 @@ fun CombinedAlertCard(
     val isTriggered = item.isTriggered
 
     val cardBorder = LocalCardBorder.current
+    val listBadge = if (!showControls && (item.isTriggered || LocalNearTriggerLabel.current != null)) {
+        @Composable { InlineAlertBadge(item) }
+    } else null
 
     val animatedContainerColor by animateColorAsState(
         targetValue = if (isTriggered) MaterialTheme.colorScheme.tertiaryContainer else containerColor,
@@ -108,14 +112,6 @@ fun CombinedAlertCard(
                             style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = combined.expression.getDescription(),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis,
-                        )
                     }
                     if (showControls && onToggleActive != null) {
                         Switch(
@@ -130,6 +126,13 @@ fun CombinedAlertCard(
                         )
                     }
                 }
+                Spacer(modifier = Modifier.height(6.dp))
+                ConditionStatusRow(
+                    text = item.triggerConditionText(decimalFormat = priceFormat),
+                    textColor = if (isTriggered) MaterialTheme.colorScheme.tertiary
+                        else MaterialTheme.colorScheme.onSurfaceVariant,
+                    trailingBadge = listBadge,
+                )
 
                 TriggerHistoryRow(triggerHistory)
 

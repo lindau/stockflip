@@ -40,13 +40,13 @@ A personal Android app for monitoring stock prices and triggering push notificat
 
 | Type | Triggers when… |
 |---|---|
-| **PriceTarget** | Stock price crosses a target (direction auto-inferred at save) |
+| **PriceTarget** | Stock price crosses a target (direction auto-inferred at save and shown in the UI) |
 | **DailyMove** | Daily change % exceeds a threshold (up, down, or either) |
 | **ATHBased** | Drawdown from 52-week high exceeds a value (% or absolute) |
 | **KeyMetrics** | PE ratio, PS ratio, or dividend yield crosses a target |
-| **PricePair** | Spread between two tickers reaches a threshold |
-| **PriceRange** | Price falls within a min–max band |
-| **Combined** | Logical AND / OR / NOT of any of the above |
+| **PricePair** | Absolute spread between two tickers reaches a threshold in either direction |
+| **PriceRange** | Legacy-compatible: price falls within a min–max band; editable if present, not a primary create flow |
+| **Combined** | Legacy-compatible: logical AND / OR / NOT conditions; editable if present, not a primary create flow |
 
 ## Architecture
 

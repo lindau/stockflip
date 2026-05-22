@@ -29,6 +29,7 @@ import com.stockflip.CurrencyHelper
 import com.stockflip.LiveWatchData
 import com.stockflip.WatchItem
 import com.stockflip.WatchType
+import com.stockflip.triggerConditionText
 import com.stockflip.ui.components.StatusStripe
 import com.stockflip.ui.components.StockSummaryRow
 import com.stockflip.ui.theme.GroupPosition
@@ -140,7 +141,7 @@ fun PriceRangeCard(
                 }
 
                 ConditionStatusRow(
-                    text = "Mål: Pris mellan ${CurrencyHelper.formatPrice(priceRange.minPrice, currency)} – ${CurrencyHelper.formatPrice(priceRange.maxPrice, currency)}",
+                    text = item.triggerConditionText(currency),
                     textColor = if (isTriggered) MaterialTheme.colorScheme.tertiary
                         else MaterialTheme.colorScheme.onSurfaceVariant,
                     trailingBadge = listBadge,

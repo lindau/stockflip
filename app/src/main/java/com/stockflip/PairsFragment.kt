@@ -80,7 +80,8 @@ class PairsFragment : Fragment() {
             onReactivate = { watchItem ->
                 viewLifecycleOwner.lifecycleScope.launch {
                     try {
-                        viewModel.reactivateWatchItem(watchItem)
+                        val result = viewModel.reactivateWatchItem(watchItem)
+                        Toast.makeText(requireContext(), result.toUserMessage(), Toast.LENGTH_LONG).show()
                     } catch (e: Exception) {
                         Toast.makeText(requireContext(), e.message ?: "Kunde inte återaktivera bevakning", Toast.LENGTH_LONG).show()
                     }
@@ -181,7 +182,6 @@ class PairsFragment : Fragment() {
                             binding.skeletonLoadingView.visibility = View.GONE
                             binding.swipeRefreshLayout.isRefreshing = false
                             val pairs = state.data.filter { it.item.watchType is WatchType.PricePair }
-                            TriggerSeenTracker.markAllSeen(pairs.map { it.item })
                             groupedAdapter.submitGroupedList(pairs)
                             binding.emptyStateContainer.visibility = if (pairs.isEmpty()) View.VISIBLE else View.GONE
                         }

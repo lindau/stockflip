@@ -63,15 +63,23 @@ class PairDetailViewModel(
 
     fun reactivate() {
         viewModelScope.launch {
-            val current = (_pairState.value as? UiState.Success)?.data?.watchItem ?: return@launch
-            watchItemDao.update(
-                current.reactivate(
-                    keepLastTriggeredDate = shouldKeepLastTriggeredDateAfterClose(current)
-                )
-            )
-            loadPair()
-            loadHistory()
+            reactivateAndReturnResult()
         }
+    }
+
+    suspend fun reactivateAndReturnResult(): WatchReactivationResult? {
+        val current = (_pairState.value as? UiState.Success)?.data?.watchItem ?: return null
+        val keepLastTriggeredDate = shouldKeepLastTriggeredDateAfterClose(current)
+        val updated = current.reactivate(
+            keepLastTriggeredDate = keepLastTriggeredDate
+        )
+        watchItemDao.update(updated)
+        loadPair()
+        loadHistory()
+        return WatchReactivationResult(
+            watchItem = updated,
+            sameDayTriggerGuarded = keepLastTriggeredDate
+        )
     }
 
     fun deletePair() {

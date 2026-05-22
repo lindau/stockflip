@@ -1048,7 +1048,7 @@ class MainActivity : AppCompatActivity() {
                             
                             viewModel.addWatchItem(watchItem)
                             binding.progressBar.visibility = View.GONE
-                            Toast.makeText(this@MainActivity, "Aktiepar tillagt", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(this@MainActivity, "Aktiepar tillagt: ${watchItem.armedConditionDescription()}", Toast.LENGTH_LONG).show()
                         } catch (e: Exception) {
                             binding.progressBar.visibility = View.GONE
                             Toast.makeText(this@MainActivity, "Kunde inte lägga till aktiepar: ${e.message}", Toast.LENGTH_LONG).show()

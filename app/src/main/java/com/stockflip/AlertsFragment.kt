@@ -141,7 +141,8 @@ class AlertsFragment : Fragment() {
             onReactivate = { watchItem ->
                 viewLifecycleOwner.lifecycleScope.launch {
                     try {
-                        viewModel.reactivateWatchItem(watchItem)
+                        val result = viewModel.reactivateWatchItem(watchItem)
+                        Toast.makeText(requireContext(), result.toUserMessage(), Toast.LENGTH_LONG).show()
                     } catch (e: Exception) {
                         Toast.makeText(requireContext(), e.message ?: "Kunde inte återaktivera bevakning", Toast.LENGTH_LONG).show()
                     }
@@ -157,6 +158,10 @@ class AlertsFragment : Fragment() {
                 if (selectionMode) {
                     toggleSelection(watchItem)
                 } else {
+                    if (watchItem.watchType is WatchType.PricePair) {
+                        (requireActivity() as? MainActivity)?.navigateToPairDetailFromPairs(watchItem.id)
+                        return@GroupedWatchItemAdapter
+                    }
                     val symbol = watchItem.ticker ?: watchItem.ticker1 ?: return@GroupedWatchItemAdapter
                     (requireActivity() as? MainActivity)?.navigateToStockDetailFromAlerts(
                         symbol = symbol,
@@ -234,6 +239,12 @@ class AlertsFragment : Fragment() {
                 // Snap row back first, then navigate after animation completes
                 groupedAdapter.notifyItemChanged(position)
                 val item = listItem.item
+                if (item.watchType is WatchType.PricePair) {
+                    binding.alertsRecyclerView.postDelayed({
+                        (requireActivity() as? MainActivity)?.navigateToPairDetailFromPairs(item.id)
+                    }, 120)
+                    return@SwipeToDeleteCallback
+                }
                 val symbol = item.ticker ?: item.ticker1 ?: return@SwipeToDeleteCallback
                 val companyName = item.companyName
                 binding.alertsRecyclerView.postDelayed({
@@ -261,7 +272,6 @@ class AlertsFragment : Fragment() {
                             binding.skeletonLoadingView.visibility = View.GONE
                             binding.swipeRefreshLayout.isRefreshing = false
                             latestItems = state.data
-                            TriggerSeenTracker.markAllSeen(latestItems.map { it.item })
                             renderFilteredList()
                         }
                         is UiState.Error -> {
@@ -322,7 +332,7 @@ class AlertsFragment : Fragment() {
                 AlertsFilter.TRIGGERED -> "Här visas case som nyligen har utlöst."
                 AlertsFilter.PRICE -> "Skapa prismål, drawdown eller dagsrörelse för att få en prislista här."
                 AlertsFilter.METRICS -> "Skapa ett P/E-, P/S- eller yield-larm för att fylla den här vyn."
-                AlertsFilter.PAIRS -> "Skapa ett aktiepar för att hantera parkonvergens här."
+                AlertsFilter.PAIRS -> "Skapa ett aktiepar för att bevaka när spreaden når din nivå, oavsett riktning."
             }
         }
     }

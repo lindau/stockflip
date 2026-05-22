@@ -461,9 +461,19 @@ class StockPriceUpdateWorker(
                 } else {
                     watchType.priceDifference
                 }
+                val direction = pairSpreadDirectionLabel(
+                    priceA = snapshotA?.lastPrice,
+                    priceB = snapshotB?.lastPrice,
+                    labelA = item.ticker1,
+                    labelB = item.ticker2
+                )
                 TriggerNotificationPayload(
                     title = "${item.companyName1 ?: item.ticker1}/${item.companyName2 ?: item.ticker2} spread ${formatPrice(spread)}",
-                    message = "Ditt parlarm har triggat${if (triggerResult?.side == PairTriggerSide.EQUAL) " vid lika priser" else ""}."
+                    message = if (triggerResult?.side == PairTriggerSide.EQUAL) {
+                        "Ditt parlarm har triggat vid lika priser."
+                    } else {
+                        "Ditt parlarm har triggat: $direction."
+                    }
                 )
             }
 

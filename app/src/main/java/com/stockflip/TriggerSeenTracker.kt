@@ -31,16 +31,6 @@ object TriggerSeenTracker {
         AppSecurityManager.putStringSet(KEY_SEEN_SET, updated)
     }
 
-    /** Markerar alla utlösta bevakningar i listan som sedda. */
-    fun markAllSeen(items: List<WatchItem>) {
-        val newKeys = items
-            .filter { it.isTriggered && it.lastTriggeredDate != null }
-            .map { seenKey(it) }
-        if (newKeys.isEmpty()) return
-        val updated = seenKeys().toMutableSet().also { it.addAll(newKeys) }
-        AppSecurityManager.putStringSet(KEY_SEEN_SET, updated)
-    }
-
     private fun seenKey(item: WatchItem) = "${item.id}:${item.lastTriggeredDate}:${item.lastPairTriggerSide ?: ""}"
 
     private fun seenKeys(): Set<String> =

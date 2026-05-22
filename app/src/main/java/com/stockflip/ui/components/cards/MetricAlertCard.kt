@@ -29,6 +29,7 @@ import com.stockflip.CurrencyHelper
 import com.stockflip.LiveWatchData
 import com.stockflip.WatchItem
 import com.stockflip.WatchType
+import com.stockflip.triggerConditionText
 import com.stockflip.ui.components.StatusStripe
 import com.stockflip.ui.components.StockSummaryRow
 import com.stockflip.ui.theme.GroupPosition
@@ -51,23 +52,6 @@ fun MetricAlertCard(
     modifier: Modifier = Modifier,
 ) {
     val keyMetrics = item.watchType as? WatchType.KeyMetrics ?: return
-
-	    val metricTypeName = when (keyMetrics.metricType) {
-	        WatchType.MetricType.PE_RATIO       -> "P/E"
-	        WatchType.MetricType.PS_RATIO       -> "P/S"
-	        WatchType.MetricType.DIVIDEND_YIELD -> "Direktavkastning"
-	        WatchType.MetricType.EARNINGS_PER_SHARE -> "Vinst/aktie"
-	    }
-
-    val directionText = when (keyMetrics.direction) {
-        WatchType.PriceDirection.ABOVE -> "Över"
-        WatchType.PriceDirection.BELOW -> "Under"
-    }
-
-	    val targetValueText = when (keyMetrics.metricType) {
-	        WatchType.MetricType.DIVIDEND_YIELD -> "${priceFormat(keyMetrics.targetValue)}%"
-	        else                                -> priceFormat(keyMetrics.targetValue)
-	    }
 
     val isTriggered = live.currentMetricValue != 0.0 && when (keyMetrics.direction) {
         WatchType.PriceDirection.ABOVE -> live.currentMetricValue >= keyMetrics.targetValue
@@ -163,7 +147,7 @@ fun MetricAlertCard(
                 }
 
                 ConditionStatusRow(
-                    text = "$metricTypeName — Mål: $directionText $targetValueText",
+                    text = item.triggerConditionText(decimalFormat = priceFormat),
                     textColor = if (isTriggered) MaterialTheme.colorScheme.tertiary
                         else MaterialTheme.colorScheme.onSurfaceVariant,
                     trailingBadge = listBadge,

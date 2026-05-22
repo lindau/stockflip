@@ -36,6 +36,8 @@ import com.stockflip.PairChartData
 import com.stockflip.PairDetailData
 import com.stockflip.StockSummary
 import com.stockflip.WatchType
+import com.stockflip.hasPendingNextTradingDayGuard
+import com.stockflip.pairSpreadDirectionLabel
 import com.stockflip.ui.components.PairPerformanceChart
 import com.stockflip.ui.theme.LocalCardBorder
 import com.stockflip.ui.theme.LocalPriceDown
@@ -83,10 +85,19 @@ private fun ClarityPairHeroCard(data: PairDetailData) {
     val colorScheme = MaterialTheme.colorScheme
     val pairType = data.watchItem.watchType as? WatchType.PricePair ?: return
     val currentSpread = data.spread?.let { abs(it) }
+    val spreadDirection = pairSpreadDirectionLabel(
+        priceA = data.stockA.lastPrice,
+        priceB = data.stockB.lastPrice,
+        labelA = data.stockA.symbol,
+        labelB = data.stockB.symbol,
+    )
     val targetSpread = pairType.priceDifference.takeIf { it > 0.0 }
-    val isTriggered = data.watchItem.isTriggered ||
-        (currentSpread != null && targetSpread != null && currentSpread >= targetSpread) ||
-        (pairType.notifyWhenEqual && currentSpread != null && currentSpread < 0.01)
+    val isWaitingForNextTradingDay = data.watchItem.hasPendingNextTradingDayGuard()
+    val isTriggered = !isWaitingForNextTradingDay && (
+        data.watchItem.isTriggered ||
+            (currentSpread != null && targetSpread != null && currentSpread >= targetSpread) ||
+            (pairType.notifyWhenEqual && currentSpread != null && currentSpread < 0.01)
+        )
     val signalColor = when {
         isTriggered -> LocalPriceUp.current
         currentSpread == null -> colorScheme.onSurfaceVariant
@@ -134,6 +145,7 @@ private fun ClarityPairHeroCard(data: PairDetailData) {
                 ClarityPairBadge(
                     text = when {
                         data.watchItem.isTriggered -> "Utlöst"
+                        isWaitingForNextTradingDay -> "Nästa handelsdag"
                         data.watchItem.isActive -> "Aktiv"
                         else -> "Inaktiv"
                     },
@@ -177,7 +189,7 @@ private fun ClarityPairHeroCard(data: PairDetailData) {
                         overflow = TextOverflow.Ellipsis,
                     )
                     Text(
-                        text = "Skillnad nu",
+                        text = spreadDirection,
                         modifier = Modifier.padding(top = 2.dp),
                         style = MaterialTheme.typography.labelMedium,
                         color = LocalTextTertiary.current,
@@ -201,8 +213,8 @@ private fun ClarityPairHeroCard(data: PairDetailData) {
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 ClarityPairMetricCell(
-                    label = "MÅL",
-                    value = targetSpread?.let { CurrencyHelper.formatDecimal(it) } ?: "—",
+                    label = "TRIGGER",
+                    value = targetSpread?.let { ">= ${CurrencyHelper.formatDecimal(it)}" } ?: "—",
                     modifier = Modifier.weight(1f),
                 )
                 ClarityPairMetricCell(

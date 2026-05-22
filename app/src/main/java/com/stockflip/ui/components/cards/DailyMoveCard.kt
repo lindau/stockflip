@@ -29,6 +29,7 @@ import com.stockflip.CurrencyHelper
 import com.stockflip.LiveWatchData
 import com.stockflip.WatchItem
 import com.stockflip.WatchType
+import com.stockflip.triggerConditionText
 import com.stockflip.ui.components.StatusStripe
 import com.stockflip.ui.components.StockSummaryRow
 import com.stockflip.ui.theme.GroupPosition
@@ -51,12 +52,6 @@ fun DailyMoveCard(
     modifier: Modifier = Modifier,
 ) {
     val dailyMove = item.watchType as? WatchType.DailyMove ?: return
-
-    val directionText = when (dailyMove.direction) {
-        WatchType.DailyMoveDirection.UP   -> "upp"
-        WatchType.DailyMoveDirection.DOWN -> "ned"
-        WatchType.DailyMoveDirection.BOTH -> "båda håll"
-    }
 
     val isTriggered = item.isTriggered
     val cardBorder = LocalCardBorder.current
@@ -149,7 +144,7 @@ fun DailyMoveCard(
                 }
 
                 ConditionStatusRow(
-                    text = "Dagsrörelse: ≥ ${priceFormat(dailyMove.percentThreshold)}% ($directionText)",
+                    text = item.triggerConditionText(decimalFormat = priceFormat),
                     textColor = if (isTriggered) MaterialTheme.colorScheme.tertiary
                         else MaterialTheme.colorScheme.onSurfaceVariant,
                     trailingBadge = listBadge,

@@ -31,6 +31,7 @@ import com.stockflip.StockSearchResult
 import com.stockflip.UiState
 import com.stockflip.WatchItem
 import com.stockflip.WatchType
+import com.stockflip.armedConditionDescription
 import com.stockflip.parseDecimal
 import com.stockflip.repository.SearchState
 import com.stockflip.ui.builders.ConditionBuilderAdapter
@@ -172,7 +173,7 @@ class WatchDialogManager(
         contextText.text = currentPrice?.let {
             "Nuvarande pris ${CurrencyHelper.formatPrice(it, currentCurrency())}. Välj en nivå under eller över dagens kurs."
         } ?: "Nuvarande pris saknas just nu. Ange den nivå du vill bevaka."
-        triggerInfoText.text = "När målpriset nås markeras larmet som utlöst och kan återaktiveras senare."
+        triggerInfoText.text = "Appen väljer själv om kursen ska bevakas över eller under målpriset utifrån aktuell kurs."
 
         currentPrice?.let { price ->
             setPresetChip(
@@ -215,7 +216,12 @@ class WatchDialogManager(
                             } else {
                                 viewModel.createAlert(watchType, currentCompanyName())
                                 onWatchChanged()
-                                Toast.makeText(context, "Målpris-bevakning skapad", Toast.LENGTH_SHORT).show()
+                                val preview = WatchItem(
+                                    watchType = watchType,
+                                    ticker = symbol,
+                                    companyName = currentCompanyName()
+                                )
+                                Toast.makeText(context, "Skapad: ${preview.armedConditionDescription(currentCurrency())}", Toast.LENGTH_LONG).show()
                             }
                         }
                     } else {

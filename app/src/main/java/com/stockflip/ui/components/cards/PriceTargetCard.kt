@@ -29,6 +29,8 @@ import com.stockflip.CurrencyHelper
 import com.stockflip.LiveWatchData
 import com.stockflip.WatchItem
 import com.stockflip.WatchType
+import com.stockflip.hasPendingNextTradingDayGuard
+import com.stockflip.triggerConditionText
 import com.stockflip.ui.components.StatusStripe
 import com.stockflip.ui.components.StockSummaryRow
 import com.stockflip.ui.theme.GroupPosition
@@ -51,11 +53,6 @@ fun PriceTargetCard(
     modifier: Modifier = Modifier,
 ) {
     val priceTarget = item.watchType as? WatchType.PriceTarget ?: return
-
-    val directionText = when (priceTarget.direction) {
-        WatchType.PriceDirection.ABOVE -> "Över"
-        WatchType.PriceDirection.BELOW -> "Under"
-    }
 
     val isTriggered = live.currentPrice != 0.0 && when (priceTarget.direction) {
         WatchType.PriceDirection.ABOVE -> live.currentPrice >= priceTarget.targetPrice
@@ -154,7 +151,7 @@ fun PriceTargetCard(
                 }
                 // Condition row — always shown
                 ConditionStatusRow(
-                    text = "Målpris: $directionText ${CurrencyHelper.formatPrice(priceTarget.targetPrice, currency)}",
+                    text = item.triggerConditionText(currency),
                     textColor = if (isTriggered) MaterialTheme.colorScheme.tertiary
                         else MaterialTheme.colorScheme.onSurfaceVariant,
                     trailingBadge = listBadge,
@@ -165,6 +162,15 @@ fun PriceTargetCard(
                 }
 
                 TriggerHistoryRow(triggerHistory)
+
+                if (item.hasPendingNextTradingDayGuard()) {
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text(
+                        text = "Aktiv igen · kan trigga först nästa handelsdag",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
 
                 if (item.isTriggered && showControls) {
                     Spacer(modifier = Modifier.height(6.dp))

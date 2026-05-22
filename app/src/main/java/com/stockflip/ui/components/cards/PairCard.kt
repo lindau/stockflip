@@ -42,7 +42,10 @@ import com.stockflip.LiveWatchData
 import com.stockflip.WatchItem
 import com.stockflip.WatchItemUiState
 import com.stockflip.WatchType
+import com.stockflip.hasPendingNextTradingDayGuard
 import com.stockflip.isTriggeredForDisplay
+import com.stockflip.pairSpreadDirectionLabel
+import com.stockflip.triggerConditionText
 import com.stockflip.ui.components.StatusStripe
 import com.stockflip.ui.theme.GroupPosition
 import com.stockflip.ui.theme.JetBrainsMono
@@ -77,19 +80,19 @@ fun PairCard(
     val currency1 = CurrencyHelper.getCurrencyFromSymbol(item.ticker1)
     val currency2 = CurrencyHelper.getCurrencyFromSymbol(item.ticker2)
 
+    val isWaitingForNextTradingDay = item.hasPendingNextTradingDayGuard()
     val isTriggered = WatchItemUiState(item, live).isTriggeredForDisplay()
 
-    val conditionText = buildString {
-        val hasEqual = pricePair.notifyWhenEqual
-        val hasDiff  = pricePair.priceDifference > 0
-        if (hasEqual) append("=")
-        if (hasEqual && hasDiff) append(" & ")
-        if (hasDiff) append("≥ ${priceFormat(pricePair.priceDifference)}")
-        if (!hasEqual && !hasDiff) append("=")
-    }
+    val conditionText = item.triggerConditionText(decimalFormat = priceFormat)
 
     val currentSpread: Double? = if (live.currentPrice1 > 0.0 && live.currentPrice2 > 0.0)
         abs(live.currentPrice1 - live.currentPrice2) else null
+    val spreadDirection = pairSpreadDirectionLabel(
+        priceA = live.currentPrice1.takeIf { it > 0.0 },
+        priceB = live.currentPrice2.takeIf { it > 0.0 },
+        labelA = item.ticker1,
+        labelB = item.ticker2,
+    )
 
     val cardBorder = LocalCardBorder.current
 
@@ -167,6 +170,8 @@ fun PairCard(
                         priceFormat = priceFormat,
                         conditionText = conditionText,
                         currentSpread = currentSpread,
+                        spreadDirection = spreadDirection,
+                        isWaitingForNextTradingDay = isWaitingForNextTradingDay,
                         isTriggered = isTriggered,
                         onToggleActive = onToggleActive,
                     )
@@ -206,7 +211,7 @@ fun PairCard(
                     ) {
                         Column {
                             Text(
-                                text = "Skillnad nu",
+                                text = spreadDirection,
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
@@ -252,14 +257,20 @@ private fun PairClarityListContent(
     priceFormat: (Double) -> String,
     conditionText: String,
     currentSpread: Double?,
+    spreadDirection: String,
+    isWaitingForNextTradingDay: Boolean,
     isTriggered: Boolean,
     onToggleActive: (() -> Unit)?,
 ) {
-    val signalColor = pairSignalColor(
-        isTriggered = isTriggered,
-        currentSpread = currentSpread,
-        targetSpread = pricePair.priceDifference,
-    )
+    val signalColor = if (isWaitingForNextTradingDay) {
+        MaterialTheme.colorScheme.primary
+    } else {
+        pairSignalColor(
+            isTriggered = isTriggered,
+            currentSpread = currentSpread,
+            targetSpread = pricePair.priceDifference,
+        )
+    }
     val pairName = "${item.companyName1 ?: item.ticker1 ?: "—"} ÷ ${item.companyName2 ?: item.ticker2 ?: "—"}"
 
     Row(
@@ -283,7 +294,11 @@ private fun PairClarityListContent(
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             PairClarityBadge(
-                text = if (isTriggered) "Utlöst" else conditionText,
+                text = when {
+                    isWaitingForNextTradingDay -> "Nästa handelsdag"
+                    isTriggered -> "Utlöst"
+                    else -> conditionText
+                },
                 color = signalColor,
             )
             if (onToggleActive != null) {
@@ -317,7 +332,7 @@ private fun PairClarityListContent(
                 color = MaterialTheme.colorScheme.onSurface,
             )
             Text(
-                text = "Skillnad nu",
+                text = spreadDirection,
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.72f),
             )

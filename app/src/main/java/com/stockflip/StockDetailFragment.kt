@@ -183,11 +183,17 @@ class StockDetailFragment : Fragment() {
         binding.notesCard.setOnClickListener { dialogManager.showEditNoteDialog() }
         binding.triggerReactivateButton.setOnClickListener {
             val target = highlightedWatchItem() ?: return@setOnClickListener
-            viewModel.reactivateAlert(target.item)
-            triggerBannerDismissed = true
-            binding.triggerBannerCard.isVisible = false
-            syncOverviewInBackground()
-            Toast.makeText(requireContext(), "Bevakning återaktiverad", Toast.LENGTH_SHORT).show()
+            viewLifecycleOwner.lifecycleScope.launch {
+                try {
+                    val result = viewModel.reactivateAlertAndReturnResult(target.item)
+                    triggerBannerDismissed = true
+                    binding.triggerBannerCard.isVisible = false
+                    syncOverviewInBackground()
+                    showReactivationToast(result)
+                } catch (e: Exception) {
+                    Toast.makeText(requireContext(), e.message ?: "Kunde inte återaktivera bevakning", Toast.LENGTH_LONG).show()
+                }
+            }
         }
         binding.triggerDeleteButton.setOnClickListener {
             val target = highlightedWatchItem() ?: return@setOnClickListener
@@ -209,8 +215,15 @@ class StockDetailFragment : Fragment() {
                 syncOverviewInBackground()
             },
             onReactivate = { watchItem ->
-                viewModel.reactivateAlert(watchItem)
-                syncOverviewInBackground()
+                viewLifecycleOwner.lifecycleScope.launch {
+                    try {
+                        val result = viewModel.reactivateAlertAndReturnResult(watchItem)
+                        syncOverviewInBackground()
+                        showReactivationToast(result)
+                    } catch (e: Exception) {
+                        Toast.makeText(requireContext(), e.message ?: "Kunde inte återaktivera bevakning", Toast.LENGTH_LONG).show()
+                    }
+                }
             },
             onDelete = { watchItem ->
                 dialogManager.showDeleteConfirmation(watchItem)
@@ -540,6 +553,7 @@ class StockDetailFragment : Fragment() {
             ?: "Öppnad från notis. Bevakningen är nu markerad som utlöst."
         binding.triggerReactivateButton.isVisible = target?.item?.isTriggered == true
         binding.triggerDeleteButton.isVisible = target != null
+        target?.item?.let { TriggerSeenTracker.markSeen(it) }
     }
 
     private fun renderLevelsSection(
@@ -570,11 +584,20 @@ class StockDetailFragment : Fragment() {
         ) { state ->
             val watchType = state.item.watchType as WatchType.PriceTarget
             val priceText = CurrencyHelper.formatPrice(watchType.targetPrice, data.currency)
+            val directionText = watchType.direction.swedishDirectionLabel()
             val progress = state.live.currentPrice.takeIf { it > 0.0 }?.let {
                 " · ${CurrencyHelper.formatDecimal(percentGapToPriceTarget(state))}% kvar"
             }.orEmpty()
-            "$priceText$progress"
+            "$directionText $priceText$progress"
         }
+    }
+
+    private fun showReactivationToast(result: WatchReactivationResult) {
+        Toast.makeText(
+            requireContext(),
+            result.toUserMessage(latestStockData?.currency),
+            Toast.LENGTH_LONG
+        ).show()
     }
 
     private fun buildNearestSummary(

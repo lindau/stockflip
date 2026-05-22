@@ -603,8 +603,8 @@ class GroupedWatchItemAdapter(
             ?: item.watchType.kind.displayName
     }
 
-    private fun markOverviewItemSeen(item: WatchItem) {
-        if (displayMode != DisplayMode.OVERVIEW || !TriggerSeenTracker.isNew(item)) return
+    private fun markItemSeenOnOpen(item: WatchItem) {
+        if (!TriggerSeenTracker.isNew(item)) return
         TriggerSeenTracker.markSeen(item)
         rebuildAndSubmitList()
     }
@@ -847,7 +847,7 @@ class GroupedWatchItemAdapter(
                             if (selectionMode) {
                                 onItemLongClick?.invoke(item)
                             } else {
-                                markOverviewItemSeen(item)
+                                markItemSeenOnOpen(item)
                                 onItemClick(item)
                             }
                         },

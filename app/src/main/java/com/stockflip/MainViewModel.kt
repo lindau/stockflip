@@ -418,18 +418,24 @@ class MainViewModel(
         }
     }
 
-    suspend fun reactivateWatchItem(watchItem: WatchItem) {
+    suspend fun reactivateWatchItem(watchItem: WatchItem): WatchReactivationResult {
         try {
             Log.d(TAG, "Reactivating watch item")
+            val keepLastTriggeredDate = shouldKeepLastTriggeredDateAfterClose(watchItem)
             val updatedWatchItem: WatchItem = watchItem.reactivate(
                 currentPrice = currentPriceForReactivation(watchItem),
-                keepLastTriggeredDate = shouldKeepLastTriggeredDateAfterClose(watchItem)
+                keepLastTriggeredDate = keepLastTriggeredDate
             )
             watchItemDao.update(updatedWatchItem)
             syncWatchItemsAfterMutation()
+            return WatchReactivationResult(
+                watchItem = updatedWatchItem,
+                sameDayTriggerGuarded = keepLastTriggeredDate
+            )
         } catch (e: Exception) {
             Log.e(TAG, "Error reactivating watch item: ${e.message}")
             _watchItemUiState.value = UiState.Error("Failed to update watch item: ${e.message}")
+            throw e
         }
     }
 

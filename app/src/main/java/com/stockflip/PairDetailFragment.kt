@@ -72,11 +72,21 @@ class PairDetailFragment : Fragment() {
 
         binding.editPairButton.setOnClickListener { editPair() }
         binding.triggerReactivateButton.setOnClickListener {
-            viewModel.reactivate()
-            triggerBannerDismissed = true
-            binding.triggerBannerCard.isVisible = false
-            syncOverviewInBackground()
-            Toast.makeText(requireContext(), "Bevakning återaktiverad", Toast.LENGTH_SHORT).show()
+            viewLifecycleOwner.lifecycleScope.launch {
+                try {
+                    val result = viewModel.reactivateAndReturnResult()
+                    triggerBannerDismissed = true
+                    binding.triggerBannerCard.isVisible = false
+                    syncOverviewInBackground()
+                    Toast.makeText(
+                        requireContext(),
+                        result?.toUserMessage() ?: "Bevakning återaktiverad",
+                        Toast.LENGTH_LONG
+                    ).show()
+                } catch (e: Exception) {
+                    Toast.makeText(requireContext(), e.message ?: "Kunde inte återaktivera bevakning", Toast.LENGTH_LONG).show()
+                }
+            }
         }
         binding.triggerDeleteButton.setOnClickListener {
             viewModel.deletePair()
@@ -193,11 +203,16 @@ class PairDetailFragment : Fragment() {
         bindChange(binding.stockAChange, a.dailyChangePercent)
         bindChange(binding.stockBChange, b.dailyChangePercent)
 
-        binding.spreadValue.text = data.spread?.let { CurrencyHelper.formatDecimal(it) } ?: "—"
-        binding.spreadTarget.text = "Mål: ${CurrencyHelper.formatDecimal(pair.priceDifference)}"
+        binding.spreadValue.text = data.spread?.let { CurrencyHelper.formatDecimal(kotlin.math.abs(it)) } ?: "—"
+        binding.spreadTarget.text = "Trigger: >= ${CurrencyHelper.formatDecimal(pair.priceDifference)}"
         binding.notifyEqualValue.text = if (pair.notifyWhenEqual) "Ja" else "Nej"
 
-        binding.statusValue.text = if (data.watchItem.isActive) "Aktiv" else "Inaktiv"
+        binding.statusValue.text = when {
+            data.watchItem.hasPendingNextTradingDayGuard() -> "Nästa handelsdag"
+            data.watchItem.isTriggered -> "Utlöst"
+            data.watchItem.isActive -> "Aktiv"
+            else -> "Inaktiv"
+        }
     }
 
     private fun renderTriggerBanner(data: PairDetailData) {
@@ -216,6 +231,7 @@ class PairDetailFragment : Fragment() {
         binding.triggerBannerMessage.text = triggerMessage
             ?: "Öppnad från notis. Bevakningen är nu markerad som utlöst."
         binding.triggerReactivateButton.isVisible = data.watchItem.isTriggered
+        TriggerSeenTracker.markSeen(data.watchItem)
     }
 
     private fun renderHistory(history: List<Long>) {

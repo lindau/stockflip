@@ -406,16 +406,25 @@ class StockDetailViewModel(
     fun reactivateAlert(watchItem: WatchItem) {
         viewModelScope.launch {
             try {
-                val updated = watchItem.reactivate(
-                    currentPrice = currentPriceForReactivation(watchItem),
-                    keepLastTriggeredDate = shouldKeepLastTriggeredDateAfterClose(watchItem)
-                )
-                watchItemDao.update(updated)
-                Log.d(TAG, "Reactivated alert ${watchItem.id}")
+                reactivateAlertAndReturnResult(watchItem)
             } catch (e: Exception) {
                 Log.e(TAG, "Error reactivating alert: ${e.message}", e)
             }
         }
+    }
+
+    suspend fun reactivateAlertAndReturnResult(watchItem: WatchItem): WatchReactivationResult {
+        val keepLastTriggeredDate = shouldKeepLastTriggeredDateAfterClose(watchItem)
+        val updated = watchItem.reactivate(
+            currentPrice = currentPriceForReactivation(watchItem),
+            keepLastTriggeredDate = keepLastTriggeredDate
+        )
+        watchItemDao.update(updated)
+        Log.d(TAG, "Reactivated alert ${watchItem.id}")
+        return WatchReactivationResult(
+            watchItem = updated,
+            sameDayTriggerGuarded = keepLastTriggeredDate
+        )
     }
 
     /**
