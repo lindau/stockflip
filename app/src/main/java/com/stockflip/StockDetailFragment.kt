@@ -64,6 +64,7 @@ class StockDetailFragment : Fragment() {
     private var latestInsiderTransactions: List<InsiderTransactionEntity> = emptyList()
     private var triggerBannerDismissed = false
     private var insiderNotificationHandled = false
+    private var insiderTransactionsExpanded = false
 
     private fun syncOverviewInBackground() {
         (activity as? MainActivity)?.syncWatchItemsAfterDetailChange()
@@ -80,6 +81,7 @@ class StockDetailFragment : Fragment() {
         private const val ARG_HIGHLIGHT_INSIDER_TRANSACTION_ID = "highlight_insider_transaction_id"
         private const val VERY_CLOSE_THRESHOLD = 0.05
         private const val CLOSE_THRESHOLD = 0.12
+        private const val COLLAPSED_INSIDER_TRANSACTION_COUNT = 3
 
         /**
          * Skapar en ny instans av StockDetailFragment.
@@ -587,11 +589,13 @@ class StockDetailFragment : Fragment() {
         if (latestInsiderTransactions.isEmpty()) {
             binding.insiderEmptyText.isVisible = true
             binding.insiderEmptyText.text = "Inga insiderköp har hittats ännu."
+            binding.insiderToggleText.isVisible = false
             return
         }
 
         binding.insiderEmptyText.isVisible = false
-        latestInsiderTransactions.take(5).forEachIndexed { index, transaction ->
+        val visibleTransactions = visibleInsiderTransactions()
+        visibleTransactions.forEachIndexed { index, transaction ->
             if (index > 0) {
                 binding.insiderTransactionsContainer.addView(
                     MaterialDivider(requireContext()).apply {
@@ -607,8 +611,53 @@ class StockDetailFragment : Fragment() {
             }
             binding.insiderTransactionsContainer.addView(createInsiderTransactionRow(transaction))
         }
+        renderInsiderToggle(visibleTransactions.size)
 
         maybeHandleInsiderNotification()
+    }
+
+    private fun visibleInsiderTransactions(): List<InsiderTransactionEntity> {
+        if (insiderTransactionsExpanded || latestInsiderTransactions.size <= COLLAPSED_INSIDER_TRANSACTION_COUNT) {
+            return latestInsiderTransactions
+        }
+
+        val collapsed = latestInsiderTransactions.take(COLLAPSED_INSIDER_TRANSACTION_COUNT).toMutableList()
+        val highlightId = arguments?.getString(ARG_HIGHLIGHT_INSIDER_TRANSACTION_ID)
+        val highlighted = highlightId?.let { id -> latestInsiderTransactions.firstOrNull { it.id == id } }
+        if (highlighted != null && collapsed.none { it.id == highlighted.id }) {
+            collapsed[collapsed.lastIndex] = highlighted
+        }
+        return collapsed
+    }
+
+    private fun renderInsiderToggle(visibleCount: Int) {
+        val totalCount = latestInsiderTransactions.size
+        val canToggle = totalCount > COLLAPSED_INSIDER_TRANSACTION_COUNT
+        binding.insiderToggleText.isVisible = canToggle
+        if (!canToggle) {
+            binding.insiderToggleText.setOnClickListener(null)
+            binding.insiderSectionLabel.setOnClickListener(null)
+            binding.insiderTransactionsCard.setOnClickListener(null)
+            return
+        }
+
+        binding.insiderToggleText.text = if (insiderTransactionsExpanded) {
+            "Visa färre insiderköp"
+        } else {
+            "Visar $visibleCount av $totalCount insiderköp · tryck för att visa alla"
+        }
+        val toggle = View.OnClickListener {
+            insiderTransactionsExpanded = !insiderTransactionsExpanded
+            renderInsiderTransactions()
+            if (!insiderTransactionsExpanded) {
+                binding.stockDetailScrollView.post {
+                    binding.stockDetailScrollView.smoothScrollTo(0, binding.insiderSectionLabel.top)
+                }
+            }
+        }
+        binding.insiderToggleText.setOnClickListener(toggle)
+        binding.insiderSectionLabel.setOnClickListener(toggle)
+        binding.insiderTransactionsCard.setOnClickListener(toggle)
     }
 
     private fun createInsiderTransactionRow(transaction: InsiderTransactionEntity): View {
