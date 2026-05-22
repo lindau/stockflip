@@ -406,7 +406,10 @@ class StockDetailViewModel(
     fun reactivateAlert(watchItem: WatchItem) {
         viewModelScope.launch {
             try {
-                val updated = watchItem.reactivate(currentPriceForReactivation(watchItem))
+                val updated = watchItem.reactivate(
+                    currentPrice = currentPriceForReactivation(watchItem),
+                    keepLastTriggeredDate = shouldKeepLastTriggeredDateAfterClose(watchItem)
+                )
                 watchItemDao.update(updated)
                 Log.d(TAG, "Reactivated alert ${watchItem.id}")
             } catch (e: Exception) {
@@ -428,6 +431,24 @@ class StockDetailViewModel(
                 Log.e(TAG, "Error toggling alert: ${e.message}", e)
             }
         }
+    }
+
+    private suspend fun shouldKeepLastTriggeredDateAfterClose(watchItem: WatchItem): Boolean {
+        if (watchItem.lastTriggeredDate != WatchItem.getTodayDateString()) return false
+        val ticker = watchItem.ticker ?: watchItem.ticker1 ?: symbol
+        if (StockSearchResult.isCryptoSymbol(ticker)) return false
+
+        val currentStockData = (_stockDataState.value as? UiState.Success<StockDetailData>)?.data
+        val cachedExchange = currentStockData?.takeIf { it.symbol == ticker }?.exchange
+        val cachedCurrency = currentStockData?.takeIf { it.symbol == ticker }?.currency
+        val exchange = cachedExchange ?: try {
+            yahooFinanceService.getExchange(ticker)
+        } catch (e: Exception) {
+            Log.w(TAG, "Could not fetch exchange for reactivation guard: ${e.message}")
+            null
+        }
+
+        return !StockMarketScheduler.isMarketOpenForSymbol(ticker, exchange, cachedCurrency)
     }
 
     private suspend fun currentPriceForReactivation(watchItem: WatchItem): Double? {

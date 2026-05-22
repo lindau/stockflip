@@ -123,6 +123,77 @@ class WatchItemTest {
     }
 
     @Test
+    fun `reactivate can keep last triggered date while recalculating price target direction`() {
+        val item = WatchItem(
+            watchType = WatchType.PriceTarget(100.0, WatchType.PriceDirection.ABOVE),
+            ticker = "AAPL",
+            isTriggered = true,
+            isActive = false,
+            lastTriggeredDate = "2024-01-01"
+        )
+
+        val updated = item.reactivate(currentPrice = 105.0, keepLastTriggeredDate = true)
+        val updatedType = updated.watchType as WatchType.PriceTarget
+
+        assertEquals(WatchType.PriceDirection.BELOW, updatedType.direction)
+        assertTrue(updated.isActive)
+        assertFalse(updated.isTriggered)
+        assertEquals("2024-01-01", updated.lastTriggeredDate)
+        assertFalse(updated.canTrigger("2024-01-01"))
+    }
+
+    @Test
+    fun `price pair can trigger same day when spread side changes`() {
+        val item = WatchItem(
+            watchType = WatchType.PricePair(5.0, false),
+            ticker1 = "AAPL",
+            ticker2 = "MSFT",
+            lastTriggeredDate = "2024-01-01",
+            lastPairTriggerSide = PairTriggerSide.TICKER2_OVER.name,
+            activePairTriggerSide = PairTriggerSide.TICKER2_OVER.name,
+            isTriggered = true
+        )
+
+        assertFalse(item.canTrigger("2024-01-01", PairTriggerSide.TICKER2_OVER))
+        assertTrue(item.canTrigger("2024-01-01", PairTriggerSide.TICKER1_OVER))
+    }
+
+    @Test
+    fun `markAsTriggered stores price pair trigger side`() {
+        val item = WatchItem(
+            watchType = WatchType.PricePair(5.0, false),
+            ticker1 = "AAPL",
+            ticker2 = "MSFT"
+        )
+
+        val updated = item.markAsTriggered("2024-01-01", PairTriggerSide.TICKER1_OVER)
+
+        assertEquals(PairTriggerSide.TICKER1_OVER.name, updated.lastPairTriggerSide)
+        assertEquals(PairTriggerSide.TICKER1_OVER.name, updated.activePairTriggerSide)
+        assertEquals("2024-01-01", updated.lastTriggeredDate)
+        assertTrue(updated.isTriggered)
+    }
+
+    @Test
+    fun `clearActivePairTriggerSide rearms same side without changing last trigger marker`() {
+        val item = WatchItem(
+            watchType = WatchType.PricePair(5.0, false),
+            ticker1 = "AAPL",
+            ticker2 = "MSFT",
+            lastTriggeredDate = "2024-01-01",
+            lastPairTriggerSide = PairTriggerSide.TICKER2_OVER.name,
+            activePairTriggerSide = PairTriggerSide.TICKER2_OVER.name,
+            isTriggered = true
+        )
+
+        val updated = item.clearActivePairTriggerSide()
+
+        assertEquals(PairTriggerSide.TICKER2_OVER.name, updated.lastPairTriggerSide)
+        assertEquals(null, updated.activePairTriggerSide)
+        assertTrue(updated.canTrigger("2024-01-01", PairTriggerSide.TICKER2_OVER))
+    }
+
+    @Test
     fun `setActive updates active flag`() {
         val item = WatchItem(
             watchType = WatchType.PriceTarget(100.0, WatchType.PriceDirection.BELOW),

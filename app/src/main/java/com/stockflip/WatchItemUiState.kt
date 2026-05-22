@@ -41,9 +41,12 @@ private fun WatchItemUiState.hasLiveTriggerCondition(): Boolean {
     return when (val watchType = item.watchType) {
         is WatchType.PricePair -> {
             if (live.currentPrice1 <= 0.0 || live.currentPrice2 <= 0.0) return false
-            val diff = abs(live.currentPrice1 - live.currentPrice2)
-            (watchType.notifyWhenEqual && diff < PRICE_EQUALITY_THRESHOLD) ||
-                (watchType.priceDifference > 0.0 && diff <= watchType.priceDifference)
+            PairTriggerEvaluator.evaluate(
+                priceA = live.currentPrice1,
+                priceB = live.currentPrice2,
+                spreadTarget = watchType.priceDifference,
+                notifyWhenEqual = watchType.notifyWhenEqual
+            ) != null
         }
 
         is WatchType.PriceTarget -> {
@@ -89,5 +92,3 @@ private fun WatchItemUiState.hasLiveTriggerCondition(): Boolean {
         is WatchType.Combined -> false
     }
 }
-
-private const val PRICE_EQUALITY_THRESHOLD = 0.01

@@ -1,6 +1,7 @@
 package com.stockflip
 
 import android.util.Log
+import java.time.Instant
 import java.time.LocalTime
 import java.time.LocalDateTime
 import java.time.ZoneId
@@ -58,7 +59,31 @@ object StockMarketScheduler {
      * @param exchange Börs-kod (t.ex. "STO", "NASDAQ", "NYSE", "NMS", "NYQ")
      * @return true om börsen är öppen, false annars
      */
-    fun isMarketOpenForExchange(exchange: String?): Boolean {
+    fun inferExchangeFromSymbol(symbol: String?, currency: String? = null): String? {
+        val upperSymbol = symbol?.uppercase() ?: return null
+        return when {
+            StockSearchResult.isCryptoSymbol(upperSymbol) -> "CRYPTO"
+            upperSymbol.endsWith(".ST") || upperSymbol.endsWith(".STO") -> "STO"
+            upperSymbol.endsWith(".OL") || upperSymbol.endsWith(".OSE") -> "OSE"
+            upperSymbol.endsWith(".L") -> "LSE"
+            upperSymbol.endsWith(".DE") || upperSymbol.endsWith(".XETR") -> "XETR"
+            upperSymbol.endsWith(".T") -> "TSE"
+            !upperSymbol.contains(".") && currency?.uppercase() == "USD" -> "NASDAQ"
+            else -> null
+        }
+    }
+
+    fun isMarketOpenForSymbol(
+        symbol: String?,
+        exchange: String? = null,
+        currency: String? = null,
+        instant: Instant = Instant.now()
+    ): Boolean {
+        if (symbol != null && StockSearchResult.isCryptoSymbol(symbol)) return true
+        return isMarketOpenForExchange(exchange ?: inferExchangeFromSymbol(symbol, currency), instant)
+    }
+
+    fun isMarketOpenForExchange(exchange: String?, instant: Instant = Instant.now()): Boolean {
         if (exchange == null) {
             return false
         }
@@ -69,67 +94,60 @@ object StockMarketScheduler {
         if (exchangeUpper.contains("CRYPTO", ignoreCase = true)) {
             return true
         }
-        
-        val now = LocalDateTime.now()
-        val currentDay = now.dayOfWeek
-        
-        // Stängd på helger
-        if (currentDay == DayOfWeek.SATURDAY || currentDay == DayOfWeek.SUNDAY) {
-            return false
-        }
-        
+
         return when {
             // Svenska börsen (Stockholm)
             exchangeUpper == "STO" || exchangeUpper.contains("STOCKHOLM", ignoreCase = true) -> {
-                val stockholmTime = now.atZone(ZoneId.of("Europe/Stockholm"))
-                val localTime = stockholmTime.toLocalTime()
-                localTime.isAfter(LocalTime.of(9, 0)) && localTime.isBefore(LocalTime.of(17, 30))
+                isOpenInZone(instant, ZoneId.of("Europe/Stockholm"), LocalTime.of(9, 0), LocalTime.of(17, 30))
             }
             // Amerikanska börser (NASDAQ, NYSE, etc.)
-            exchangeUpper.contains("NASDAQ", ignoreCase = true) || 
-            exchangeUpper == "NMS" || 
-            exchangeUpper == "NCM" || 
+            exchangeUpper.contains("NASDAQ", ignoreCase = true) ||
+            exchangeUpper == "NMS" ||
+            exchangeUpper == "NCM" ||
             exchangeUpper == "NGM" ||
-            exchangeUpper.contains("NYSE", ignoreCase = true) || 
-            exchangeUpper == "NYQ" || 
+            exchangeUpper.contains("NYSE", ignoreCase = true) ||
+            exchangeUpper == "NYQ" ||
             exchangeUpper == "NYM" ||
-            exchangeUpper == "AMEX" || 
+            exchangeUpper == "AMEX" ||
             exchangeUpper.contains("AMERICAN", ignoreCase = true) -> {
-                val usTime = now.atZone(ZoneId.of("America/New_York"))
-                val localTime = usTime.toLocalTime()
                 // USA börser: 09:30 - 16:00 ET
-                localTime.isAfter(LocalTime.of(9, 30)) && localTime.isBefore(LocalTime.of(16, 0))
+                isOpenInZone(instant, ZoneId.of("America/New_York"), LocalTime.of(9, 30), LocalTime.of(16, 0))
             }
             // Storbritannien (LSE)
             exchangeUpper == "LSE" || exchangeUpper.contains("LONDON", ignoreCase = true) -> {
-                val londonTime = now.atZone(ZoneId.of("Europe/London"))
-                val localTime = londonTime.toLocalTime()
-                localTime.isAfter(LocalTime.of(8, 0)) && localTime.isBefore(LocalTime.of(16, 30))
+                isOpenInZone(instant, ZoneId.of("Europe/London"), LocalTime.of(8, 0), LocalTime.of(16, 30))
             }
             // Tyskland (XETR, XFRA)
             exchangeUpper == "XETR" || exchangeUpper == "XFRA" || exchangeUpper.contains("XETRA", ignoreCase = true) -> {
-                val germanyTime = now.atZone(ZoneId.of("Europe/Berlin"))
-                val localTime = germanyTime.toLocalTime()
-                localTime.isAfter(LocalTime.of(9, 0)) && localTime.isBefore(LocalTime.of(17, 30))
+                isOpenInZone(instant, ZoneId.of("Europe/Berlin"), LocalTime.of(9, 0), LocalTime.of(17, 30))
             }
             // Japan (TSE)
             exchangeUpper == "TSE" || exchangeUpper.contains("TOKYO", ignoreCase = true) -> {
-                val tokyoTime = now.atZone(ZoneId.of("Asia/Tokyo"))
-                val localTime = tokyoTime.toLocalTime()
-                localTime.isAfter(LocalTime.of(9, 0)) && localTime.isBefore(LocalTime.of(15, 0))
+                isOpenInZone(instant, ZoneId.of("Asia/Tokyo"), LocalTime.of(9, 0), LocalTime.of(15, 0))
             }
             // Norge (OSE - Oslo Stock Exchange)
             exchangeUpper == "OSE" || exchangeUpper.contains("OSLO", ignoreCase = true) -> {
-                val osloTime = now.atZone(ZoneId.of("Europe/Oslo"))
-                val localTime = osloTime.toLocalTime()
-                localTime.isAfter(LocalTime.of(9, 0)) && localTime.isBefore(LocalTime.of(16, 25))
+                isOpenInZone(instant, ZoneId.of("Europe/Oslo"), LocalTime.of(9, 0), LocalTime.of(16, 25))
             }
             // Default: använd svensk börstid
             else -> {
-                val stockholmTime = now.atZone(ZoneId.of("Europe/Stockholm"))
-                val localTime = stockholmTime.toLocalTime()
-                localTime.isAfter(LocalTime.of(9, 0)) && localTime.isBefore(LocalTime.of(17, 30))
+                isOpenInZone(instant, ZoneId.of("Europe/Stockholm"), LocalTime.of(9, 0), LocalTime.of(17, 30))
             }
         }
+    }
+
+    private fun isOpenInZone(
+        instant: Instant,
+        zoneId: ZoneId,
+        opensAt: LocalTime,
+        closesAt: LocalTime
+    ): Boolean {
+        val localDateTime = LocalDateTime.ofInstant(instant, zoneId)
+        val currentDay = localDateTime.dayOfWeek
+        if (currentDay == DayOfWeek.SATURDAY || currentDay == DayOfWeek.SUNDAY) {
+            return false
+        }
+        val localTime = localDateTime.toLocalTime()
+        return localTime.isAfter(opensAt) && localTime.isBefore(closesAt)
     }
 } 

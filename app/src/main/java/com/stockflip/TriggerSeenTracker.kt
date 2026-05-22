@@ -6,7 +6,7 @@ import android.content.Context
  * Spårar vilka utlösta bevakningar användaren har sett i appen.
  *
  * En bevakning anses "ny" (osedd) om [WatchItem.isTriggered] är true och dess
- * (id, lastTriggeredDate)-nyckel inte finns i den sparade mängden sedda triggers.
+ * (id, lastTriggeredDate, lastPairTriggerSide)-nyckel inte finns i den sparade mängden sedda triggers.
  *
  * Datat lagras krypterat i appens säkra lokala lagring och överlever app-omstarter.
  */
@@ -41,7 +41,7 @@ object TriggerSeenTracker {
         AppSecurityManager.putStringSet(KEY_SEEN_SET, updated)
     }
 
-    private fun seenKey(item: WatchItem) = "${item.id}:${item.lastTriggeredDate}"
+    private fun seenKey(item: WatchItem) = "${item.id}:${item.lastTriggeredDate}:${item.lastPairTriggerSide ?: ""}"
 
     private fun seenKeys(): Set<String> =
         AppSecurityManager.getStringSet(KEY_SEEN_SET)

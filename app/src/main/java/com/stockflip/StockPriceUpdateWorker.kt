@@ -1,20 +1,14 @@
 package com.stockflip
 
-import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
-import android.os.Build
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
-import kotlin.math.abs
 import kotlinx.coroutines.delay
-import androidx.work.WorkManager
 import com.stockflip.repository.TriggerHistoryRepository
 import com.stockflip.usecase.UpdateStockPairsPricesUseCase
 import java.text.SimpleDateFormat
@@ -43,15 +37,6 @@ class StockPriceUpdateWorker(
                 val useCase = UpdateStockPairsPricesUseCase(stockPairDao, yahooFinanceService)
                 val updatedPairs: List<StockPair> = useCase.executeUpdateStockPairsPrices()
                 val updatedCount: Int = updatedPairs.size
-                updatedPairs.forEach { pair: StockPair ->
-                    val price1: Double = pair.currentPrice1
-                    val price2: Double = pair.currentPrice2
-                    if (shouldNotify(pair, price1, price2)) {
-                        val title = "Stock Price Alert"
-                        val message = buildNotificationMessage(pair, price1, price2)
-                        showNotification(title, message)
-                    }
-                }
 
                 if (updatedCount > 0) {
                     Log.d(TAG, "Broadcasting price update completion for $updatedCount pairs")
@@ -78,37 +63,6 @@ class StockPriceUpdateWorker(
                 
                 return Result.failure()
             }
-        }
-    }
-
-    private fun shouldNotify(pair: StockPair, price1: Double, price2: Double): Boolean {
-        // Don't notify if either price is 0 (not yet fetched)
-        if (price1 == 0.0 || price2 == 0.0) {
-            Log.d(TAG, "Skipping notification check for ${pair.ticker1}-${pair.ticker2} because prices are not yet fetched")
-            return false
-        }
-        
-        val shouldNotify = (pair.notifyWhenEqual && abs(price1 - price2) < PRICE_EQUALITY_THRESHOLD) ||
-               (pair.priceDifference > 0 && abs(price1 - price2) >= pair.priceDifference)
-        
-        Log.d(TAG, """
-            Notification check for stock pair:
-            Price difference: ${abs(price1 - price2)}
-            Notify when equal: ${pair.notifyWhenEqual}
-            Price difference threshold: ${pair.priceDifference}
-            Should notify: $shouldNotify
-        """.trimIndent())
-        
-        return shouldNotify
-    }
-
-    private fun buildNotificationMessage(pair: StockPair, price1: Double, price2: Double): String {
-        return when {
-            pair.notifyWhenEqual && abs(price1 - price2) < PRICE_EQUALITY_THRESHOLD -> 
-                "${pair.companyName1} and ${pair.companyName2} prices are now equal at ${String.format("%.2f", price1)} SEK"
-            abs(price1 - price2) >= pair.priceDifference -> 
-                "Price difference between ${pair.companyName1} and ${pair.companyName2} has reached ${String.format("%.2f", abs(price1 - price2))} SEK"
-            else -> ""
         }
     }
 
@@ -246,8 +200,23 @@ class StockPriceUpdateWorker(
         // Evaluate each active watch item
         for (item in activeItems) {
             try {
-                if (!item.canTrigger(today)) continue
-                val triggered = evaluateWatchItem(item, snapshots) ?: continue
+                val pairTriggerSide = if (item.watchType is WatchType.PricePair) {
+                    evaluatePairTriggerSide(item, snapshots)
+                } else {
+                    null
+                }
+                if (item.watchType is WatchType.PricePair && pairTriggerSide == null) {
+                    val resetItem = item.clearActivePairTriggerSide()
+                    if (resetItem !== item) {
+                        watchItemDao.update(resetItem)
+                    }
+                    continue
+                }
+                val triggered = if (item.watchType is WatchType.PricePair) {
+                    item.canTrigger(today, pairTriggerSide)
+                } else {
+                    item.canTrigger(today) && (evaluateWatchItem(item, snapshots) ?: false)
+                }
                 if (triggered) {
                     val payload = buildTriggerNotificationPayload(item, snapshots)
                     when (item.watchType) {
@@ -273,7 +242,7 @@ class StockPriceUpdateWorker(
                             )
                         }
                     }
-                    val triggeredItem = item.markAsTriggered(today)
+                    val triggeredItem = item.markAsTriggered(today, pairTriggerSide)
                     val updatedItem = when (item.watchType) {
                         is WatchType.PriceTarget, is WatchType.ATHBased ->
                             triggeredItem.copy(isActive = false)
@@ -287,6 +256,23 @@ class StockPriceUpdateWorker(
                 Log.w(TAG, "Failed to evaluate watch item: ${e.message}")
             }
         }
+    }
+
+    private fun evaluatePairTriggerSide(
+        item: WatchItem,
+        snapshots: Map<String, MarketSnapshot>
+    ): PairTriggerSide? {
+        val watchType = item.watchType as? WatchType.PricePair ?: return null
+        val tickerA = item.ticker1 ?: return null
+        val tickerB = item.ticker2 ?: return null
+        val priceA = snapshots[tickerA]?.lastPrice
+        val priceB = snapshots[tickerB]?.lastPrice
+        return PairTriggerEvaluator.evaluate(
+            priceA = priceA,
+            priceB = priceB,
+            spreadTarget = watchType.priceDifference,
+            notifyWhenEqual = watchType.notifyWhenEqual
+        )?.side
     }
 
     private fun evaluateWatchItem(
@@ -464,14 +450,20 @@ class StockPriceUpdateWorker(
             is WatchType.PricePair -> {
                 val snapshotA = item.ticker1?.let { snapshots[it] }
                 val snapshotB = item.ticker2?.let { snapshots[it] }
-                val spread = if (snapshotA?.lastPrice != null && snapshotB?.lastPrice != null) {
-                    abs(snapshotA.lastPrice - snapshotB.lastPrice)
+                val triggerResult = PairTriggerEvaluator.evaluate(
+                    priceA = snapshotA?.lastPrice,
+                    priceB = snapshotB?.lastPrice,
+                    spreadTarget = watchType.priceDifference,
+                    notifyWhenEqual = watchType.notifyWhenEqual
+                )
+                val spread = if (triggerResult != null) {
+                    triggerResult.absoluteSpread
                 } else {
                     watchType.priceDifference
                 }
                 TriggerNotificationPayload(
                     title = "${item.companyName1 ?: item.ticker1}/${item.companyName2 ?: item.ticker2} spread ${formatPrice(spread)}",
-                    message = "Ditt parlarm har triggat${if (watchType.notifyWhenEqual && spread < PRICE_EQUALITY_THRESHOLD) " vid lika priser" else ""}."
+                    message = "Ditt parlarm har triggat${if (triggerResult?.side == PairTriggerSide.EQUAL) " vid lika priser" else ""}."
                 )
             }
 
@@ -500,7 +492,6 @@ class StockPriceUpdateWorker(
 
     companion object {
         private const val TAG = "StockPriceUpdateWorker"
-        private const val PRICE_EQUALITY_THRESHOLD = 0.01
         const val ACTION_PRICES_UPDATED = "com.stockflip.ACTION_PRICES_UPDATED"
     }
 } 

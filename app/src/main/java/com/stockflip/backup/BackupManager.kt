@@ -37,6 +37,8 @@ object BackupManager {
             obj.put("companyName1", item.companyName1 ?: JSONObject.NULL)
             obj.put("companyName2", item.companyName2 ?: JSONObject.NULL)
             obj.put("lastTriggeredDate", item.lastTriggeredDate ?: JSONObject.NULL)
+            obj.put("lastPairTriggerSide", item.lastPairTriggerSide ?: JSONObject.NULL)
+            obj.put("activePairTriggerSide", item.activePairTriggerSide ?: JSONObject.NULL)
             obj.put("isTriggered", item.isTriggered)
             obj.put("isActive", item.isActive)
             watchArray.put(obj)
@@ -90,6 +92,8 @@ object BackupManager {
                     companyName1 = obj.optString("companyName1").takeIf { it.isNotEmpty() && it != "null" },
                     companyName2 = obj.optString("companyName2").takeIf { it.isNotEmpty() && it != "null" },
                     lastTriggeredDate = obj.optString("lastTriggeredDate").takeIf { it.isNotEmpty() && it != "null" },
+                    lastPairTriggerSide = obj.optString("lastPairTriggerSide").takeIf { it.isNotEmpty() && it != "null" },
+                    activePairTriggerSide = obj.optString("activePairTriggerSide").takeIf { it.isNotEmpty() && it != "null" },
                     isTriggered = obj.optBoolean("isTriggered", false),
                     isActive = obj.optBoolean("isActive", true)
                 )
@@ -187,6 +191,8 @@ object BackupManager {
             appendField(builder, obj, "companyName1")
             appendField(builder, obj, "companyName2")
             appendField(builder, obj, "lastTriggeredDate")
+            appendField(builder, obj, "lastPairTriggerSide")
+            appendField(builder, obj, "activePairTriggerSide")
             appendField(builder, obj, "isTriggered")
             appendField(builder, obj, "isActive")
             builder.append('\n')

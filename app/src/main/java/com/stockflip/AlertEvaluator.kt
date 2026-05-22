@@ -11,7 +11,6 @@ import kotlin.math.abs
  */
 object AlertEvaluator {
     private const val TAG = "AlertEvaluator"
-    private const val PRICE_EQUALITY_THRESHOLD = 0.01
 
     /**
      * Utvärderar om en alert-regel ska trigga baserat på marknadsdata.
@@ -52,19 +51,12 @@ object AlertEvaluator {
         val priceA = snapshotA.lastPrice ?: return false
         val priceB = snapshotB?.lastPrice ?: snapshotA.previousCloseOrPriceB ?: return false
         
-        val priceDifference = abs(priceA - priceB)
-        
-        // Larm när spread når tröskelvärdet (bara om ett mål är satt)
-        if (rule.spreadTarget > 0.0 && priceDifference >= rule.spreadTarget) {
-            return true
-        }
-        
-        // Larm när priserna är lika (om notifyWhenEqual är true)
-        if (rule.notifyWhenEqual && priceDifference < PRICE_EQUALITY_THRESHOLD) {
-            return true
-        }
-        
-        return false
+        return PairTriggerEvaluator.evaluate(
+            priceA = priceA,
+            priceB = priceB,
+            spreadTarget = rule.spreadTarget,
+            notifyWhenEqual = rule.notifyWhenEqual
+        ) != null
     }
 
     /**

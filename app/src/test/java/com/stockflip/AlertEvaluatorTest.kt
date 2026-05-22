@@ -27,6 +27,21 @@ class AlertEvaluatorTest {
     }
 
     @Test
+    fun `evaluate PairSpread should return true when spread is reached in either direction`() {
+        val rule = AlertRule.PairSpread(
+            symbolA = "AAPL",
+            symbolB = "MSFT",
+            spreadTarget = 5.0,
+            notifyWhenEqual = false
+        )
+        val snapshot = MarketSnapshot.forPair(100.0, 105.0)
+
+        val result = AlertEvaluator.evaluate(rule, snapshot)
+
+        assertTrue("Should trigger when either stock is above the other by the target spread", result)
+    }
+
+    @Test
     fun `evaluate PairSpread should return false when spread is not reached`() {
         // Given
         val rule = AlertRule.PairSpread(

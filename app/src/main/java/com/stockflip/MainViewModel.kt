@@ -421,7 +421,10 @@ class MainViewModel(
     suspend fun reactivateWatchItem(watchItem: WatchItem) {
         try {
             Log.d(TAG, "Reactivating watch item")
-            val updatedWatchItem: WatchItem = watchItem.reactivate(currentPriceForReactivation(watchItem))
+            val updatedWatchItem: WatchItem = watchItem.reactivate(
+                currentPrice = currentPriceForReactivation(watchItem),
+                keepLastTriggeredDate = shouldKeepLastTriggeredDateAfterClose(watchItem)
+            )
             watchItemDao.update(updatedWatchItem)
             syncWatchItemsAfterMutation()
         } catch (e: Exception) {
@@ -447,6 +450,21 @@ class MainViewModel(
         viewModelScope.launch {
             refreshWatchItems(showLoading = false)
         }
+    }
+
+    private suspend fun shouldKeepLastTriggeredDateAfterClose(watchItem: WatchItem): Boolean {
+        if (watchItem.lastTriggeredDate != WatchItem.getTodayDateString()) return false
+        val ticker = watchItem.ticker ?: watchItem.ticker1 ?: return false
+        if (StockSearchResult.isCryptoSymbol(ticker)) return false
+
+        val exchange = try {
+            yahooFinanceService.getExchange(ticker)
+        } catch (e: Exception) {
+            Log.w(TAG, "Could not fetch exchange for reactivation guard: ${e.message}")
+            null
+        }
+
+        return !StockMarketScheduler.isMarketOpenForSymbol(ticker, exchange)
     }
 
     private suspend fun currentPriceForReactivation(watchItem: WatchItem): Double? {

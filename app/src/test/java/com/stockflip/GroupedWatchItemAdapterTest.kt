@@ -87,7 +87,7 @@ class GroupedWatchItemAdapterTest {
             ),
             live = LiveWatchData(
                 currentPrice1 = 100.0,
-                currentPrice2 = 95.0
+                currentPrice2 = 90.0
             )
         )
 

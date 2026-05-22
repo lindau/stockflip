@@ -85,7 +85,7 @@ private fun ClarityPairHeroCard(data: PairDetailData) {
     val currentSpread = data.spread?.let { abs(it) }
     val targetSpread = pairType.priceDifference.takeIf { it > 0.0 }
     val isTriggered = data.watchItem.isTriggered ||
-        (currentSpread != null && targetSpread != null && currentSpread <= targetSpread) ||
+        (currentSpread != null && targetSpread != null && currentSpread >= targetSpread) ||
         (pairType.notifyWhenEqual && currentSpread != null && currentSpread < 0.01)
     val signalColor = when {
         isTriggered -> LocalPriceUp.current
@@ -475,7 +475,7 @@ private fun pairTitle(data: PairDetailData): String {
 
 private fun distanceText(currentSpread: Double?, targetSpread: Double?): String {
     if (currentSpread == null || targetSpread == null) return "—"
-    return CurrencyHelper.formatDecimal((currentSpread - targetSpread).coerceAtLeast(0.0))
+    return CurrencyHelper.formatDecimal((targetSpread - currentSpread).coerceAtLeast(0.0))
 }
 
 private fun signedPercent(value: Double): String {

@@ -21,7 +21,7 @@ import java.io.File
         StockNote::class,
         InsiderTransactionEntity::class
     ],
-    version = 12,
+    version = 13,
     exportSchema = true
 )
 @TypeConverters(WatchTypeConverter::class)
@@ -163,6 +163,13 @@ abstract class StockPairDatabase : RoomDatabase() {
             }
         }
 
+        private val MIGRATION_12_13 = object : Migration(12, 13) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE watch_items ADD COLUMN lastPairTriggerSide TEXT")
+                db.execSQL("ALTER TABLE watch_items ADD COLUMN activePairTriggerSide TEXT")
+            }
+        }
+
         private val MIGRATION_8_9 = object : Migration(8, 9) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("""
@@ -262,7 +269,8 @@ abstract class StockPairDatabase : RoomDatabase() {
                 MIGRATION_8_9,
                 MIGRATION_9_10,
                 MIGRATION_10_11,
-                MIGRATION_11_12
+                MIGRATION_11_12,
+                MIGRATION_12_13
             ).fallbackToDestructiveMigrationOnDowngrade(false)
 
             if (encrypted) {

@@ -27,6 +27,8 @@ data class WatchItem(
     val companyName: String? = null,
     // Spam protection fields (enligt PRD: max en gång per handelsdag eller markeras triggad)
     val lastTriggeredDate: String? = null, // Format: "YYYY-MM-DD"
+    val lastPairTriggerSide: String? = null,
+    val activePairTriggerSide: String? = null,
     val isTriggered: Boolean = false, // Markerad som triggad, kräver manuell återaktivering
     val isActive: Boolean = true // Om alerten är aktiv (kan inaktiveras manuellt)
 ) {
@@ -75,8 +77,14 @@ data class WatchItem(
      * @param today Datum i format "YYYY-MM-DD"
      * @return true om alerten kan trigga, false annars
      */
-    fun canTrigger(today: String): Boolean {
+    fun canTrigger(today: String, pairTriggerSide: PairTriggerSide? = null): Boolean {
         if (!isActive) return false
+        if (watchType is WatchType.PricePair && pairTriggerSide != null) {
+            if (lastTriggeredDate != today) return true
+            val activeSide = activePairTriggerSide
+            if (activeSide == null) return lastPairTriggerSide != null
+            return activeSide != pairTriggerSide.name
+        }
         // Engångslarm (PriceTarget, ATHBased) blockeras permanent av isTriggered — kräver
         // manuell återaktivering. Övriga larmtyper är återkommande och blockeras bara av
         // datumet (ett larm per dag), inte av isTriggered-flaggan.
@@ -92,19 +100,34 @@ data class WatchItem(
      * @param today Datum i format "YYYY-MM-DD"
      * @return Ny WatchItem med uppdaterade spam-skyddsfält
      */
-    fun markAsTriggered(today: String): WatchItem {
+    fun markAsTriggered(today: String, pairTriggerSide: PairTriggerSide? = null): WatchItem {
         return copy(
             lastTriggeredDate = today,
+            lastPairTriggerSide = if (watchType is WatchType.PricePair) pairTriggerSide?.name else null,
+            activePairTriggerSide = if (watchType is WatchType.PricePair) pairTriggerSide?.name else null,
             isTriggered = true
         )
+    }
+
+    fun clearActivePairTriggerSide(): WatchItem {
+        return if (watchType is WatchType.PricePair && activePairTriggerSide != null) {
+            copy(activePairTriggerSide = null)
+        } else {
+            this
+        }
     }
 
     /**
      * Återaktiverar alerten (tar bort triggad-status).
      *
-     * @return Ny WatchItem med isTriggered = false, lastTriggeredDate = null och isActive = true
+     * @param keepLastTriggeredDate Behåller datumspärren för dagens trigger, exempelvis
+     * efter börsstängning så samma handelsdag inte kan trigga igen.
+     * @return Ny WatchItem med isTriggered = false och isActive = true
      */
-    fun reactivate(currentPrice: Double? = null): WatchItem {
+    fun reactivate(
+        currentPrice: Double? = null,
+        keepLastTriggeredDate: Boolean = false
+    ): WatchItem {
         val updatedWatchType = when (val type = watchType) {
             is WatchType.PriceTarget -> {
                 currentPrice
@@ -125,7 +148,9 @@ data class WatchItem(
         return copy(
             watchType = updatedWatchType,
             isTriggered = false,
-            lastTriggeredDate = null,
+            lastTriggeredDate = if (keepLastTriggeredDate) lastTriggeredDate else null,
+            lastPairTriggerSide = if (keepLastTriggeredDate) lastPairTriggerSide else null,
+            activePairTriggerSide = if (keepLastTriggeredDate) activePairTriggerSide else null,
             isActive = true
         )
     }

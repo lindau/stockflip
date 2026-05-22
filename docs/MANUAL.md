@@ -185,12 +185,12 @@ I nuvarande appversion fungerar flikarna så här:
 
 ### 5. Aktiepar
 
-**Vad det gör:** Bevakar prisskillnaden mellan två aktier och skickar en notis när skillnaden når ett visst värde, eller när priserna är lika.
+**Vad det gör:** Bevakar den absoluta prisskillnaden mellan två aktier och skickar en notis när skillnaden är minst ett visst värde, oavsett vilken aktie som ligger högst, eller när priserna är lika.
 
-**Typ:** Återkommande — kan utlösas igen nästa handelsdag.
+**Typ:** Återkommande — kan utlösas igen nästa handelsdag. Om spreaden byter sida samma dag, till exempel först B över A och senare A över B, kan den utlösas igen för den nya sidan.
 
 **Inställningar:**
-- **Prisskillnad (valfritt)** — utlöses när |pris1 − pris2| når gränsen
+- **Prisskillnad (valfritt)** — utlöses när |pris1 − pris2| är större än eller lika med gränsen
 - **Notis när lika** — utlöses när priserna är praktiskt taget identiska (skiljer sig med mindre än 0,01)
 
 **Skapa en aktiepar-bevakning:**
@@ -327,6 +327,8 @@ Engångslarm (Målpris och Drawdown) inaktiveras automatiskt efter utlösning.
 
 Bevakningen är nu aktiv igen. För målpris räknar appen om riktningen från aktuell kurs: om kursen ligger över målpriset bevakas nästa passage ned under nivån, och om kursen ligger under målpriset bevakas nästa passage upp över nivån.
 
+Om du återaktiverar efter att den berörda börsen har stängt behåller appen dagens trigger-spärr. Bevakningen visas som aktiv igen, men kan inte skicka en ny notis för samma utlösning förrän nästa handelsdag.
+
 ### Redigera en bevakning
 
 1. Tryck på bevakningskortet.
@@ -369,7 +371,7 @@ Utan notisbehörighet kan appen inte meddela dig när en bevakning utlöses — 
 | **Typ** | Målpris, Drawdown | Dagsrörelse, Nyckeltal, Aktiepar, Prisintervall, Kombinerat |
 | **Inaktiveras efter utlösning** | Ja | Nej |
 | **Återaktivering** | Manuell | Automatisk (nästa dag) |
-| **Kan utlösas igen samma dag** | Nej | Nej (max en gång per handelsdag) |
+| **Kan utlösas igen samma dag** | Nej | Normalt nej. Aktiepar kan trigga igen om spreaden byter sida. |
 
 ---
 

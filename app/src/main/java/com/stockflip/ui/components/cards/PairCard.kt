@@ -84,7 +84,7 @@ fun PairCard(
         val hasDiff  = pricePair.priceDifference > 0
         if (hasEqual) append("=")
         if (hasEqual && hasDiff) append(" & ")
-        if (hasDiff) append("≤ ${priceFormat(pricePair.priceDifference)}")
+        if (hasDiff) append("≥ ${priceFormat(pricePair.priceDifference)}")
         if (!hasEqual && !hasDiff) append("=")
     }
 
@@ -416,7 +416,7 @@ private fun PairClaritySignalLine(
     val values = when {
         currentSpread == null -> listOf(0.52f, 0.52f, 0.52f, 0.52f, 0.52f, 0.52f, 0.52f)
         isTriggered -> listOf(0.66f, 0.60f, 0.62f, 0.54f, 0.46f, 0.42f, 0.34f)
-        targetSpread > 0.0 && currentSpread <= targetSpread -> listOf(0.64f, 0.58f, 0.60f, 0.50f, 0.45f, 0.38f, 0.32f)
+        targetSpread > 0.0 && currentSpread >= targetSpread -> listOf(0.64f, 0.58f, 0.60f, 0.50f, 0.45f, 0.38f, 0.32f)
         else -> listOf(0.36f, 0.42f, 0.40f, 0.48f, 0.54f, 0.58f, 0.66f)
     }
 
@@ -448,7 +448,7 @@ private fun pairSignalColor(
     return when {
         isTriggered -> MaterialTheme.colorScheme.tertiary
         currentSpread == null -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.45f)
-        targetSpread > 0.0 && currentSpread <= targetSpread -> LocalPriceUp.current
+        targetSpread > 0.0 && currentSpread >= targetSpread -> LocalPriceUp.current
         targetSpread > 0.0 -> LocalPriceDown.current
         else -> MaterialTheme.colorScheme.primary
     }

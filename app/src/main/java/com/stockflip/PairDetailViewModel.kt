@@ -64,7 +64,11 @@ class PairDetailViewModel(
     fun reactivate() {
         viewModelScope.launch {
             val current = (_pairState.value as? UiState.Success)?.data?.watchItem ?: return@launch
-            watchItemDao.update(current.reactivate())
+            watchItemDao.update(
+                current.reactivate(
+                    keepLastTriggeredDate = shouldKeepLastTriggeredDateAfterClose(current)
+                )
+            )
             loadPair()
             loadHistory()
         }
@@ -83,6 +87,26 @@ class PairDetailViewModel(
                 _historyState.value = triggerHistoryRepository.getLatest(watchItemId)
             } catch (e: Exception) {
                 Log.e(TAG, "Error loading trigger history: ${e.message}", e)
+            }
+        }
+    }
+
+    private suspend fun shouldKeepLastTriggeredDateAfterClose(watchItem: WatchItem): Boolean {
+        if (watchItem.lastTriggeredDate != WatchItem.getTodayDateString()) return false
+        val tickers = listOfNotNull(watchItem.ticker1, watchItem.ticker2)
+        if (tickers.isEmpty()) return false
+
+        return tickers.all { ticker ->
+            if (StockSearchResult.isCryptoSymbol(ticker)) {
+                false
+            } else {
+                val exchange = try {
+                    marketDataService.getExchange(ticker)
+                } catch (e: Exception) {
+                    Log.w(TAG, "Could not fetch exchange for reactivation guard: ${e.message}")
+                    null
+                }
+                !StockMarketScheduler.isMarketOpenForSymbol(ticker, exchange)
             }
         }
     }
