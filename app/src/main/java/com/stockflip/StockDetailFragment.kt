@@ -1,6 +1,7 @@
 package com.stockflip
 
 import android.os.Bundle
+import android.text.TextUtils
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -81,7 +82,7 @@ class StockDetailFragment : Fragment() {
         private const val ARG_HIGHLIGHT_INSIDER_TRANSACTION_ID = "highlight_insider_transaction_id"
         private const val VERY_CLOSE_THRESHOLD = 0.05
         private const val CLOSE_THRESHOLD = 0.12
-        private const val COLLAPSED_INSIDER_TRANSACTION_COUNT = 3
+        private const val COLLAPSED_INSIDER_TRANSACTION_COUNT = 1
 
         /**
          * Skapar en ny instans av StockDetailFragment.
@@ -589,7 +590,7 @@ class StockDetailFragment : Fragment() {
         if (latestInsiderTransactions.isEmpty()) {
             binding.insiderEmptyText.isVisible = true
             binding.insiderEmptyText.text = "Inga insiderköp har hittats ännu."
-            binding.insiderToggleText.isVisible = false
+            clearInsiderToggle()
             return
         }
 
@@ -609,7 +610,12 @@ class StockDetailFragment : Fragment() {
                     }
                 )
             }
-            binding.insiderTransactionsContainer.addView(createInsiderTransactionRow(transaction))
+            binding.insiderTransactionsContainer.addView(
+                createInsiderTransactionRow(
+                    transaction = transaction,
+                    compact = !insiderTransactionsExpanded
+                )
+            )
         }
         renderInsiderToggle(visibleTransactions.size)
 
@@ -617,56 +623,80 @@ class StockDetailFragment : Fragment() {
     }
 
     private fun visibleInsiderTransactions(): List<InsiderTransactionEntity> {
-        if (insiderTransactionsExpanded || latestInsiderTransactions.size <= COLLAPSED_INSIDER_TRANSACTION_COUNT) {
+        if (insiderTransactionsExpanded || !hasHiddenInsiderTransactions()) {
             return latestInsiderTransactions
         }
 
-        val collapsed = latestInsiderTransactions.take(COLLAPSED_INSIDER_TRANSACTION_COUNT).toMutableList()
         val highlightId = arguments?.getString(ARG_HIGHLIGHT_INSIDER_TRANSACTION_ID)
         val highlighted = highlightId?.let { id -> latestInsiderTransactions.firstOrNull { it.id == id } }
-        if (highlighted != null && collapsed.none { it.id == highlighted.id }) {
-            collapsed[collapsed.lastIndex] = highlighted
-        }
-        return collapsed
+        return listOf(highlighted ?: latestInsiderTransactions.first())
     }
 
     private fun renderInsiderToggle(visibleCount: Int) {
         val totalCount = latestInsiderTransactions.size
-        val canToggle = totalCount > COLLAPSED_INSIDER_TRANSACTION_COUNT
+        val canToggle = hasHiddenInsiderTransactions()
         binding.insiderToggleText.isVisible = canToggle
         if (!canToggle) {
-            binding.insiderToggleText.setOnClickListener(null)
-            binding.insiderSectionLabel.setOnClickListener(null)
-            binding.insiderTransactionsCard.setOnClickListener(null)
+            clearInsiderToggle()
             return
         }
 
         binding.insiderToggleText.text = if (insiderTransactionsExpanded) {
-            "Visa färre insiderköp"
+            "Visa endast senaste insiderköpet"
         } else {
-            "Visar $visibleCount av $totalCount insiderköp · tryck för att visa alla"
+            val hiddenCount = totalCount - visibleCount
+            "Visar $visibleCount av $totalCount insiderköp · tryck för att visa $hiddenCount till"
         }
-        val toggle = View.OnClickListener {
-            insiderTransactionsExpanded = !insiderTransactionsExpanded
-            renderInsiderTransactions()
-            if (!insiderTransactionsExpanded) {
-                binding.stockDetailScrollView.post {
-                    binding.stockDetailScrollView.smoothScrollTo(0, binding.insiderSectionLabel.top)
-                }
-            }
-        }
+        val toggle = View.OnClickListener { toggleInsiderTransactionsExpanded() }
         binding.insiderToggleText.setOnClickListener(toggle)
+        binding.insiderToggleText.isClickable = true
+        binding.insiderToggleText.isFocusable = true
         binding.insiderSectionLabel.setOnClickListener(toggle)
+        binding.insiderSectionLabel.isClickable = true
+        binding.insiderSectionLabel.isFocusable = true
         binding.insiderTransactionsCard.setOnClickListener(toggle)
+        binding.insiderTransactionsCard.isClickable = true
+        binding.insiderTransactionsCard.isFocusable = true
     }
 
-    private fun createInsiderTransactionRow(transaction: InsiderTransactionEntity): View {
+    private fun clearInsiderToggle() {
+        binding.insiderToggleText.isVisible = false
+        binding.insiderToggleText.setOnClickListener(null)
+        binding.insiderToggleText.isClickable = false
+        binding.insiderToggleText.isFocusable = false
+        binding.insiderSectionLabel.setOnClickListener(null)
+        binding.insiderSectionLabel.isClickable = false
+        binding.insiderSectionLabel.isFocusable = false
+        binding.insiderTransactionsCard.setOnClickListener(null)
+        binding.insiderTransactionsCard.isClickable = false
+        binding.insiderTransactionsCard.isFocusable = false
+    }
+
+    private fun hasHiddenInsiderTransactions(): Boolean {
+        return latestInsiderTransactions.size > COLLAPSED_INSIDER_TRANSACTION_COUNT
+    }
+
+    private fun toggleInsiderTransactionsExpanded() {
+        if (!hasHiddenInsiderTransactions()) return
+        insiderTransactionsExpanded = !insiderTransactionsExpanded
+        renderInsiderTransactions()
+        if (!insiderTransactionsExpanded) {
+            binding.stockDetailScrollView.post {
+                binding.stockDetailScrollView.smoothScrollTo(0, binding.insiderSectionLabel.top)
+            }
+        }
+    }
+
+    private fun createInsiderTransactionRow(
+        transaction: InsiderTransactionEntity,
+        compact: Boolean
+    ): View {
         val context = requireContext()
         val highlightId = arguments?.getString(ARG_HIGHLIGHT_INSIDER_TRANSACTION_ID)
         val isHighlighted = transaction.id == highlightId
         return LinearLayout(context).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(dp(10), dp(9), dp(10), dp(9))
+            setPadding(dp(10), dp(8), dp(10), dp(8))
             if (isHighlighted) {
                 setBackgroundColor(
                     MaterialColors.getColor(
@@ -675,23 +705,41 @@ class StockDetailFragment : Fragment() {
                     )
                 )
             }
-            setOnClickListener { showInsiderTransactionSheet(transaction) }
+            setOnClickListener {
+                if (compact && latestInsiderTransactions.size > COLLAPSED_INSIDER_TRANSACTION_COUNT) {
+                    toggleInsiderTransactionsExpanded()
+                } else {
+                    showInsiderTransactionSheet(transaction)
+                }
+            }
 
             addView(TextView(context).apply {
                 text = transaction.reportingOwner
                 setTextAppearance(com.google.android.material.R.style.TextAppearance_Material3_TitleSmall)
                 setTextColor(MaterialColors.getColor(binding.root, com.google.android.material.R.attr.colorOnSurface))
+                maxLines = 1
+                ellipsize = TextUtils.TruncateAt.END
             })
             addView(TextView(context).apply {
-                text = insiderTransactionSummary(transaction)
+                text = if (compact) {
+                    "${insiderTransactionSummary(transaction)} · ${transaction.transactionDate.ifBlank { transaction.filingDate ?: "okänt datum" }}"
+                } else {
+                    insiderTransactionSummary(transaction)
+                }
                 setTextAppearance(com.google.android.material.R.style.TextAppearance_Material3_BodyMedium)
                 setTextColor(MaterialColors.getColor(binding.root, com.google.android.material.R.attr.colorOnSurfaceVariant))
+                maxLines = if (compact) 1 else Int.MAX_VALUE
+                if (compact) {
+                    ellipsize = TextUtils.TruncateAt.END
+                }
             })
-            addView(TextView(context).apply {
-                text = insiderTransactionMeta(transaction)
-                setTextAppearance(com.google.android.material.R.style.TextAppearance_Material3_LabelMedium)
-                setTextColor(MaterialColors.getColor(binding.root, com.google.android.material.R.attr.colorOnSurfaceVariant))
-            })
+            if (!compact) {
+                addView(TextView(context).apply {
+                    text = insiderTransactionMeta(transaction)
+                    setTextAppearance(com.google.android.material.R.style.TextAppearance_Material3_LabelMedium)
+                    setTextColor(MaterialColors.getColor(binding.root, com.google.android.material.R.attr.colorOnSurfaceVariant))
+                })
+            }
         }
     }
 
@@ -712,12 +760,21 @@ class StockDetailFragment : Fragment() {
             orientation = LinearLayout.VERTICAL
             setPadding(dp(24), dp(20), dp(24), dp(16))
         }
+        fun addDetailRow(container: LinearLayout, label: String, value: String) {
+            container.addView(TextView(requireContext()).apply {
+                text = "$label: $value"
+                setTextAppearance(com.google.android.material.R.style.TextAppearance_Material3_BodyMedium)
+                setTextColor(MaterialColors.getColor(binding.root, com.google.android.material.R.attr.colorOnSurfaceVariant))
+                setPadding(0, dp(10), 0, 0)
+            })
+        }
+
         content.addView(TextView(requireContext()).apply {
             text = "Insiderköp"
             setTextAppearance(com.google.android.material.R.style.TextAppearance_Material3_TitleLarge)
             setTextColor(MaterialColors.getColor(binding.root, com.google.android.material.R.attr.colorOnSurface))
         })
-        listOf(
+        val details = listOf(
             "Person" to transaction.reportingOwner,
             "Roll" to (transaction.relationship ?: "Ej angiven"),
             "Datum" to transaction.transactionDate.ifBlank { transaction.filingDate ?: "Okänt datum" },
@@ -726,13 +783,45 @@ class StockDetailFragment : Fragment() {
             "Pris" to (transaction.pricePerShare?.let { CurrencyHelper.formatPrice(it, insiderCurrency(transaction)) } ?: "Ej angivet"),
             "Värde" to (transaction.estimatedValue?.let { CurrencyHelper.formatPrice(it, insiderCurrency(transaction)) } ?: "Ej angivet"),
             "Rapporterad" to formatInsiderReportedDate(transaction)
-        ).forEach { (label, value) ->
-            content.addView(TextView(requireContext()).apply {
-                text = "$label: $value"
-                setTextAppearance(com.google.android.material.R.style.TextAppearance_Material3_BodyMedium)
-                setTextColor(MaterialColors.getColor(binding.root, com.google.android.material.R.attr.colorOnSurfaceVariant))
-                setPadding(0, dp(10), 0, 0)
-            })
+        )
+        val collapsedDetailCount = 3
+        details.take(collapsedDetailCount).forEach { (label, value) ->
+            addDetailRow(content, label, value)
+        }
+
+        val expandedDetailsContainer = LinearLayout(requireContext()).apply {
+            orientation = LinearLayout.VERTICAL
+            isVisible = false
+        }
+        details.drop(collapsedDetailCount).forEach { (label, value) ->
+            addDetailRow(expandedDetailsContainer, label, value)
+        }
+        content.addView(expandedDetailsContainer)
+
+        if (details.size > collapsedDetailCount) {
+            var detailsExpanded = false
+            val hiddenDetailCount = details.size - collapsedDetailCount
+            val detailToggle = TextView(requireContext()).apply {
+                setTextAppearance(com.google.android.material.R.style.TextAppearance_Material3_LabelLarge)
+                setTextColor(MaterialColors.getColor(binding.root, com.google.android.material.R.attr.colorPrimary))
+                setPadding(0, dp(14), 0, 0)
+                isClickable = true
+                isFocusable = true
+            }
+            fun renderDetailToggle() {
+                expandedDetailsContainer.isVisible = detailsExpanded
+                detailToggle.text = if (detailsExpanded) {
+                    "Visa färre detaljer"
+                } else {
+                    "Visa $hiddenDetailCount fler detaljer"
+                }
+            }
+            detailToggle.setOnClickListener {
+                detailsExpanded = !detailsExpanded
+                renderDetailToggle()
+            }
+            content.addView(detailToggle)
+            renderDetailToggle()
         }
         content.addView(MaterialButton(requireContext()).apply {
             text = "Stäng"
