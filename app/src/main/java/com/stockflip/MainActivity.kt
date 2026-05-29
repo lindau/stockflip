@@ -480,8 +480,8 @@ class MainActivity : AppCompatActivity() {
                                 getString(R.string.import_success, result.watchCount, result.pairCount),
                                 Toast.LENGTH_LONG
                             ).show()
-                            viewModel.loadWatchItems()
-                            viewModel.loadStockPairs()
+                            viewModel.syncAfterImport()
+                            updateLastUpdateTime()
                         }
                         is MainViewModel.ImportResult.Error -> {
                             Toast.makeText(

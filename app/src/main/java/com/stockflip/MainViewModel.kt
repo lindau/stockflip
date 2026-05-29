@@ -511,6 +511,14 @@ class MainViewModel(
         }
     }
 
+    suspend fun syncAfterImport() {
+        // Importen ska uppföra sig som en kallstart: visa den importerade databasen direkt,
+        // och hämta livevärden utan att lämna UI:t i ett laddningsläge.
+        loadWatchItems(forceShowStaleData = true)
+        refreshWatchItems(showLoading = false)
+        loadStockPairs()
+    }
+
     sealed class ImportResult {
         data class Success(val watchCount: Int, val pairCount: Int) : ImportResult()
         data class Error(val message: String) : ImportResult()

@@ -187,6 +187,37 @@ class MainViewModelRefreshWatchItemsTest {
         assertEquals(listOf("NEW-A.ST"), stockPairDao.getAllStockPairs().map { it.ticker1 })
     }
 
+    @Test
+    fun `syncAfterImport shows imported key metrics items immediately`() = runBlocking {
+        val watchItems: List<WatchItem> = listOf(
+            WatchItem(
+                id = 1,
+                watchType = WatchType.KeyMetrics(
+                    metricType = WatchType.MetricType.PE_RATIO,
+                    targetValue = 15.0,
+                    direction = WatchType.PriceDirection.BELOW
+                ),
+                ticker = "VOLV-B.ST",
+                companyName = "Volvo B"
+            )
+        )
+
+        val watchItemDao: WatchItemDao = InMemoryWatchItemDao(watchItems)
+        val stockPairDao: StockPairDao = InMemoryStockPairDao(emptyList())
+        val marketDataService: MarketDataService = FakeMarketDataService(
+            pricesBySymbol = mapOf("VOLV-B.ST" to 300.0)
+        )
+
+        val viewModel = MainViewModel(stockPairDao, watchItemDao, marketDataService)
+
+        viewModel.syncAfterImport()
+
+        val state: UiState<List<WatchItemUiState>> = viewModel.watchItemUiState.value
+        val success: UiState.Success<List<WatchItemUiState>> = state as UiState.Success<List<WatchItemUiState>>
+        assertEquals(1, success.data.size)
+        assertEquals(300.0, success.data.first().live.currentPrice, 0.0001)
+    }
+
     private fun importBackupJson(): String {
         return """
             {
