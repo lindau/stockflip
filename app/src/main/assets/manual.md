@@ -12,9 +12,10 @@ StockFlip låter dig bevaka aktier och kryptovalutor och få notiser när dina e
   - [2. Dagsrörelse](#2-dagsrorelse)
   - [3. Drawdown](#3-drawdown)
   - [4. Nyckeltal](#4-nyckeltal)
-  - [5. Aktiepar](#5-aktiepar)
-  - [6. Prisintervall](#6-prisintervall)
-  - [7. Kombinerat larm](#7-kombinerat-larm)
+  - [5. Insiderköp](#5-insiderkop)
+  - [6. Aktiepar](#6-aktiepar)
+  - [7. Prisintervall](#7-prisintervall)
+  - [8. Kombinerat larm](#8-kombinerat-larm)
 - [Vanliga flöden](#vanliga-floden)
 - [Hantera dina bevakningar](#hantera-dina-bevakningar)
 - [Notiser](#notiser)
@@ -183,7 +184,25 @@ I nuvarande appversion fungerar flikarna så här:
 
 ---
 
-### 5. Aktiepar
+### 5. Insiderköp
+
+**Vad det gör:** Skickar en notis när nya insiderköp rapporteras för en aktie där appen har stöd för insiderdata.
+
+**Typ:** Återkommande — kontrolleras dagligen och kan utlösas igen nästa handelsdag.
+
+**Skapa en insiderköpsbevakning:**
+1. Öppna aktiedetaljvyn för en aktie med insiderstöd.
+2. Tryck på **Insiderköp**.
+3. Tryck **Spara**.
+
+**Vad händer när den utlöses:**
+- Du får en notis med sammanfattning.
+- Trycker du på notisen öppnas aktiedetaljvyn vid **Senaste insiderköp**.
+- Den aktuella transaktionen markeras och visas i ett detaljfönster med person, roll, datum, antal, pris och uppskattat värde.
+
+---
+
+### 6. Aktiepar
 
 **Vad det gör:** Bevakar den absoluta prisskillnaden mellan två aktier och skickar en notis när skillnaden är minst ett visst värde, oavsett vilken aktie som ligger högst, eller när priserna är lika.
 
@@ -206,7 +225,7 @@ I nuvarande appversion fungerar flikarna så här:
 
 ---
 
-### 6. Prisintervall
+### 7. Prisintervall
 
 **Vad det gör:** Bevakar om priset ligger inom ett angivet intervall mellan ett min- och maxpris.
 
@@ -221,7 +240,7 @@ I nuvarande appversion fungerar flikarna så här:
 
 ---
 
-### 7. Kombinerat larm
+### 8. Kombinerat larm
 
 **Vad det gör:** Låter dig kombinera flera villkor med logiska operatorer för att skapa avancerade bevakningsregler.
 
@@ -283,7 +302,7 @@ Situation: Du vill veta om Investor AB:s P/E-tal stiger över 25 (tecken på hö
 
 ### Jämföra två aktiers priser
 
-Situation: Du äger Handelsbanken och SEB och vill veta om priskurvan jämnas ut (skillnad under 5 kr).
+Situation: Du äger Handelsbanken och SEB och vill veta när prisskillnaden blir minst 5 kr, oavsett vilken aktie som ligger högst.
 
 1. Tryck **+** i Par-fliken.
 2. Välj **SHB-A** som aktie 1.
@@ -328,6 +347,7 @@ Engångslarm (Målpris och Drawdown) inaktiveras automatiskt efter utlösning.
 Bevakningen är nu aktiv igen. För målpris räknar appen om riktningen från aktuell kurs: om kursen ligger över målpriset bevakas nästa passage ned under nivån, och om kursen ligger under målpriset bevakas nästa passage upp över nivån.
 
 Om du återaktiverar efter att den berörda börsen har stängt behåller appen dagens trigger-spärr. Bevakningen visas som aktiv igen, men kan inte skicka en ny notis för samma utlösning förrän nästa handelsdag.
+I listor visas detta som **Nästa handelsdag**, och återaktiveringsmeddelandet säger att bevakningen kan trigga först nästa handelsdag.
 
 ### Redigera en bevakning
 
@@ -363,12 +383,14 @@ Utan notisbehörighet kan appen inte meddela dig när en bevakning utlöses — 
 - Notisen visar vad som faktiskt triggade, till exempel att ett målpris nåtts, att drawdown-nivån nåtts eller att ett nyckeltal passerat din nivå.
 - Trycker du på notisen öppnas StockFlip direkt på detaljvyn för den berörda aktien, eller pardetaljen för ett aktiepar.
 - Du möts av en tydlig trigger-banner högst upp med varför du hamnade där och kan direkt **återaktivera** eller **ta bort** bevakningen.
+- En trigger markeras som sedd först när du öppnar bevakningen eller detaljvyn, inte bara när listan visas.
+- För **insiderköp** öppnas aktiedetaljvyn vid sektionen **Senaste insiderköp**. Den aktuella transaktionen markeras och visas även i ett detaljfönster som du stänger med **Stäng**.
 
 ### Engångslarm vs återkommande larm
 
 | | Engångslarm | Återkommande larm |
 |---|---|---|
-| **Typ** | Målpris, Drawdown | Dagsrörelse, Nyckeltal, Aktiepar, Prisintervall, Kombinerat |
+| **Typ** | Målpris, Drawdown | Dagsrörelse, Nyckeltal, Insiderköp, Aktiepar, Prisintervall, Kombinerat |
 | **Inaktiveras efter utlösning** | Ja | Nej |
 | **Återaktivering** | Manuell | Automatisk (nästa dag) |
 | **Kan utlösas igen samma dag** | Nej | Normalt nej. Aktiepar kan trigga igen om spreaden byter sida. |

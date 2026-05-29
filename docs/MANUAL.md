@@ -14,8 +14,8 @@ StockFlip låter dig bevaka aktier och kryptovalutor och få notiser när dina e
   - [4. Nyckeltal](#4-nyckeltal)
   - [5. Insiderköp](#5-insiderkop)
   - [6. Aktiepar](#6-aktiepar)
-  - [7. Prisintervall (äldre typ)](#7-prisintervall-aldre-typ)
-  - [8. Kombinerat larm (äldre typ)](#8-kombinerat-larm-aldre-typ)
+  - [7. Prisintervall](#7-prisintervall)
+  - [8. Kombinerat larm](#8-kombinerat-larm)
 - [Vanliga flöden](#vanliga-floden)
 - [Hantera dina bevakningar](#hantera-dina-bevakningar)
 - [Notiser](#notiser)
@@ -95,8 +95,6 @@ I nuvarande appversion fungerar flikarna så här:
 **Riktning:** Bestäms automatiskt när du sparar bevakningen.
 - Om nuvarande pris är *högre* än målpriset → väntar på att priset ska falla **under** målet.
 - Om nuvarande pris är *lägre* än målpriset → väntar på att priset ska stiga **över** målet.
-
-Efter sparning visar appen den aktiva riktningen, till exempel `bevakar kurs över 120 kr` eller `bevakar kurs under 95 kr`.
 
 **Skapa en prismålsbevakning:**
 1. Sök upp aktien eller tryck på en befintlig bevakningskort för att öppna aktiedetaljvyn.
@@ -211,14 +209,14 @@ Efter sparning visar appen den aktiva riktningen, till exempel `bevakar kurs öv
 **Typ:** Återkommande — kan utlösas igen nästa handelsdag. Om spreaden byter sida samma dag, till exempel först B över A och senare A över B, kan den utlösas igen för den nya sidan.
 
 **Inställningar:**
-- **Spreadgräns (valfritt)** — utlöses när |pris1 − pris2| är större än eller lika med gränsen
+- **Prisskillnad (valfritt)** — utlöses när |pris1 − pris2| är större än eller lika med gränsen
 - **Notis när lika** — utlöses när priserna är praktiskt taget identiska (skiljer sig med mindre än 0,01)
 
 **Skapa en aktiepar-bevakning:**
 1. Tryck på **+**-knappen i **Par**-fliken.
 2. Sök upp och välj den första aktien.
 3. Sök upp och välj den andra aktien.
-4. Ange spreadgräns om önskat, och/eller aktivera "Notis när lika".
+4. Ange prisskillnad om önskat, och/eller aktivera "Notis när lika".
 5. Tryck **Spara**.
 
 **Vad händer när den utlöses:**
@@ -227,13 +225,13 @@ Efter sparning visar appen den aktiva riktningen, till exempel `bevakar kurs öv
 
 ---
 
-### 7. Prisintervall (äldre typ)
+### 7. Prisintervall
 
 **Vad det gör:** Bevakar om priset ligger inom ett angivet intervall mellan ett min- och maxpris.
 
 **Typ:** Återkommande.
 
-**Viktigt i nuvarande version:** Prisintervall är en äldre/kompatibel bevakningstyp. Den kan visas och redigeras om den redan finns i databasen, men den är inte ett primärt skapaflöde och har ingen tydlig skapa-knapp i dagens UI.
+**Viktigt i nuvarande version:** Prisintervall finns fortfarande som bevakningstyp och kan redigeras om du redan har en sådan bevakning, men det finns ingen tydlig skapa-knapp för den i dagens huvudflöde.
 
 **Redigera en befintlig prisintervall-bevakning:**
 1. Öppna bevakningen från listan.
@@ -242,7 +240,7 @@ Efter sparning visar appen den aktiva riktningen, till exempel `bevakar kurs öv
 
 ---
 
-### 8. Kombinerat larm (äldre typ)
+### 8. Kombinerat larm
 
 **Vad det gör:** Låter dig kombinera flera villkor med logiska operatorer för att skapa avancerade bevakningsregler.
 
@@ -257,7 +255,7 @@ Efter sparning visar appen den aktiva riktningen, till exempel `bevakar kurs öv
 - "Pris under 100 kr OCH P/E under 15" — köpsignal baserad på både pris och värdering
 - "Dagsrörelse ≥ 5 % ELLER Drawdown ≥ 10 %" — varning vid antingen stor rörelse eller stort fall
 
-**Viktigt i nuvarande version:** Kombinerade larm är en äldre/kompatibel bevakningstyp. De stöds fortfarande och kan redigeras om de redan finns, men de är inte ett primärt skapaflöde och har ingen synlig skapa-väg i dagens UI.
+**Viktigt i nuvarande version:** Kombinerade larm stöds fortfarande av appen och kan redigeras om de redan finns, men det finns ingen synlig skapa-väg för dem i dagens huvudflöde.
 
 ---
 
@@ -304,12 +302,12 @@ Situation: Du vill veta om Investor AB:s P/E-tal stiger över 25 (tecken på hö
 
 ### Jämföra två aktiers priser
 
-Situation: Du äger Handelsbanken och SEB och vill veta när parspreaden blir minst 5 kr, oavsett vilken aktie som ligger högst.
+Situation: Du äger Handelsbanken och SEB och vill veta när prisskillnaden blir minst 5 kr, oavsett vilken aktie som ligger högst.
 
 1. Tryck **+** i Par-fliken.
 2. Välj **SHB-A** som aktie 1.
 3. Välj **SEB-A** som aktie 2.
-4. Ange `5` som spreadgräns.
+4. Ange `5` som prisskillnadsgräns.
 5. Tryck **Spara**.
 
 ---
@@ -392,7 +390,7 @@ Utan notisbehörighet kan appen inte meddela dig när en bevakning utlöses — 
 
 | | Engångslarm | Återkommande larm |
 |---|---|---|
-| **Typ** | Målpris, Drawdown | Dagsrörelse, Nyckeltal, Insiderköp, Aktiepar |
+| **Typ** | Målpris, Drawdown | Dagsrörelse, Nyckeltal, Insiderköp, Aktiepar, Prisintervall, Kombinerat |
 | **Inaktiveras efter utlösning** | Ja | Nej |
 | **Återaktivering** | Manuell | Automatisk (nästa dag) |
 | **Kan utlösas igen samma dag** | Nej | Normalt nej. Aktiepar kan trigga igen om spreaden byter sida. |

@@ -22,7 +22,7 @@ The visual language is named **Nordisk Precision (NP)** in the codebase. It comb
     - `PairPerformanceChart` — dual normalized series + spread chart with signal state *(new)*
   - XML layouts: `app/src/main/res/layout/*.xml`
   - User manual (Swedish): `docs/MANUAL.md`
-  - PRD + design notes: `.planning/PROJECT.md`, `StockFlip/PRD`
+  - Planning notes: `.planning/PROJECT.md`, `.planning/REQUIREMENTS.md`
 
 ## Product context
 
