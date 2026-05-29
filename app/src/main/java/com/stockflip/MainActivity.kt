@@ -29,6 +29,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.lifecycle.Lifecycle
+import androidx.fragment.app.FragmentManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.checkbox.MaterialCheckBox
@@ -204,19 +205,22 @@ class MainActivity : AppCompatActivity() {
         val pairWatchItemId = intent.getIntExtra(EXTRA_OPEN_PAIR_WATCH_ID, -1)
         if (pairWatchItemId != -1) {
             clearProtectedIntentExtras(intent)
-            navigateToPairDetail(pairWatchItemId, triggerTitle, triggerMessage, openedFromNotification = true)
+            openPairDetailFromNotification(
+                watchItemId = pairWatchItemId,
+                triggerTitle = triggerTitle,
+                triggerMessage = triggerMessage
+            )
             return
         }
         val ticker = intent.getStringExtra(EXTRA_OPEN_TICKER) ?: return
         val watchItemId = intent.getIntExtra(EXTRA_OPEN_WATCH_ID, -1).takeIf { it > 0 }
         clearProtectedIntentExtras(intent)
-        navigateToStockDetail(
+        openStockDetailFromNotification(
             symbol = ticker,
             companyName = companyName,
             highlightWatchItemId = watchItemId,
             triggerTitle = triggerTitle,
             triggerMessage = triggerMessage,
-            openedFromNotification = true,
             highlightInsiderTransactionId = insiderTransactionId
         )
     }
@@ -584,6 +588,120 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun openStockDetailFromNotification(
+        symbol: String,
+        companyName: String?,
+        highlightWatchItemId: Int?,
+        triggerTitle: String?,
+        triggerMessage: String?,
+        highlightInsiderTransactionId: String?
+    ) {
+        prepareRootStateForNotification(MainTab.STOCKS)
+        navigateToStockDetail(
+            symbol = symbol,
+            companyName = companyName,
+            highlightWatchItemId = highlightWatchItemId,
+            triggerTitle = triggerTitle,
+            triggerMessage = triggerMessage,
+            openedFromNotification = true,
+            highlightInsiderTransactionId = highlightInsiderTransactionId
+        )
+    }
+
+    private fun openPairDetailFromNotification(
+        watchItemId: Int,
+        triggerTitle: String?,
+        triggerMessage: String?
+    ) {
+        prepareRootStateForNotification(MainTab.PAIRS)
+        navigateToPairDetail(
+            watchItemId = watchItemId,
+            triggerTitle = triggerTitle,
+            triggerMessage = triggerMessage,
+            openedFromNotification = true
+        )
+    }
+
+    private fun prepareRootStateForNotification(targetTab: MainTab) {
+        supportFragmentManager.popBackStackImmediate(null, FragmentManager.POP_BACK_STACK_INCLUSIVE)
+        val targetMenuItemId = when (targetTab) {
+            MainTab.STOCKS -> R.id.menu_stocks
+            MainTab.PAIRS -> R.id.menu_pairs
+            MainTab.ALERTS -> R.id.menu_alerts
+        }
+        applyNotificationRootUiState(notificationRootUiState(targetMenuItemId))
+    }
+
+    internal fun notificationRootUiState(menuItemId: Int): NotificationRootUiState {
+        return when (menuItemId) {
+            R.id.menu_stocks -> NotificationRootUiState(
+                menuItemId = R.id.menu_stocks,
+                rootBackStackTag = null,
+                showSwipeRefreshLayout = true,
+                showOverviewModeScroll = true,
+                showAddPairButton = false
+            )
+            R.id.menu_pairs -> NotificationRootUiState(
+                menuItemId = R.id.menu_pairs,
+                rootBackStackTag = "pairs",
+                showSwipeRefreshLayout = false,
+                showOverviewModeScroll = false,
+                showAddPairButton = true
+            )
+            R.id.menu_alerts -> NotificationRootUiState(
+                menuItemId = R.id.menu_alerts,
+                rootBackStackTag = "alerts",
+                showSwipeRefreshLayout = false,
+                showOverviewModeScroll = false,
+                showAddPairButton = true
+            )
+            else -> throw IllegalArgumentException("Unsupported menu item id: $menuItemId")
+        }
+    }
+
+    private fun applyNotificationRootUiState(state: NotificationRootUiState) {
+        currentMainTab = when (state.menuItemId) {
+            R.id.menu_stocks -> MainTab.STOCKS
+            R.id.menu_pairs -> MainTab.PAIRS
+            else -> MainTab.ALERTS
+        }
+        binding.bottomNavigation.menu.findItem(state.menuItemId)?.isChecked = true
+
+        when (state.menuItemId) {
+            R.id.menu_stocks -> {
+                binding.swipeRefreshLayout.visibility = if (state.showSwipeRefreshLayout) View.VISIBLE else View.GONE
+                binding.swipeRefreshLayout.translationX = 0f
+                binding.overviewModeScroll.visibility = if (state.showOverviewModeScroll) View.VISIBLE else View.GONE
+                binding.addPairButton.visibility = if (state.showAddPairButton) View.VISIBLE else View.GONE
+                showStocksToolbar()
+            }
+            R.id.menu_pairs -> {
+                binding.swipeRefreshLayout.visibility = if (state.showSwipeRefreshLayout) View.VISIBLE else View.GONE
+                binding.swipeRefreshLayout.translationX = 0f
+                binding.overviewModeScroll.visibility = if (state.showOverviewModeScroll) View.VISIBLE else View.GONE
+                binding.addPairButton.visibility = if (state.showAddPairButton) View.VISIBLE else View.GONE
+                showPairsToolbar()
+                supportFragmentManager.beginTransaction()
+                    .replace(R.id.fragmentContainer, PairsFragment())
+                    .addToBackStack(state.rootBackStackTag)
+                    .commit()
+                supportFragmentManager.executePendingTransactions()
+            }
+            R.id.menu_alerts -> {
+                binding.swipeRefreshLayout.visibility = if (state.showSwipeRefreshLayout) View.VISIBLE else View.GONE
+                binding.swipeRefreshLayout.translationX = 0f
+                binding.overviewModeScroll.visibility = if (state.showOverviewModeScroll) View.VISIBLE else View.GONE
+                binding.addPairButton.visibility = if (state.showAddPairButton) View.VISIBLE else View.GONE
+                showAlertsToolbar()
+                supportFragmentManager.beginTransaction()
+                    .replace(R.id.fragmentContainer, AlertsFragment())
+                    .addToBackStack(state.rootBackStackTag)
+                    .commit()
+                supportFragmentManager.executePendingTransactions()
+            }
+        }
+    }
+
     private fun showStocksToolbar() {
         binding.topAppBar.title = getString(R.string.tab_stocks)
         binding.topAppBar.navigationIcon = null
@@ -619,8 +737,9 @@ class MainActivity : AppCompatActivity() {
     private fun loadInitialData() {
         lifecycleScope.launch {
             // Load from database first to show existing data quickly
-            // This is safe for non-KeyMetrics items
-            viewModel.loadWatchItems()
+            // Show stale data immediately, then refresh live values in the background.
+            // This avoids a blank overview on cold start, especially when KeyMetrics items are present.
+            viewModel.loadWatchItems(forceShowStaleData = true)
             // Then immediately refresh to get latest prices and key metrics
             // This ensures KeyMetrics values are loaded correctly
             viewModel.refreshWatchItems()
@@ -1277,4 +1396,12 @@ class MainActivity : AppCompatActivity() {
         const val EXTRA_NOTIFICATION_TOKEN = "extra_notification_token"
         private const val MAX_IMPORT_BYTES = 1_048_576
     }
-} 
+}
+
+internal data class NotificationRootUiState(
+    val menuItemId: Int,
+    val rootBackStackTag: String?,
+    val showSwipeRefreshLayout: Boolean,
+    val showOverviewModeScroll: Boolean,
+    val showAddPairButton: Boolean
+)

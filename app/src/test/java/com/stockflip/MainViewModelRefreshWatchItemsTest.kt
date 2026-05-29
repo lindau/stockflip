@@ -73,6 +73,34 @@ class MainViewModelRefreshWatchItemsTest {
     }
 
     @Test
+    fun `loadWatchItems force show stale data emits success for key metrics`() = runBlocking {
+        val watchItems: List<WatchItem> = listOf(
+            WatchItem(
+                id = 1,
+                watchType = WatchType.KeyMetrics(
+                    metricType = WatchType.MetricType.PE_RATIO,
+                    targetValue = 15.0,
+                    direction = WatchType.PriceDirection.BELOW
+                ),
+                ticker = "VOLV-B.ST",
+                companyName = "Volvo B"
+            )
+        )
+
+        val watchItemDao: WatchItemDao = InMemoryWatchItemDao(watchItems)
+        val stockPairDao: StockPairDao = InMemoryStockPairDao(emptyList())
+        val marketDataService: MarketDataService = FakeMarketDataService()
+
+        val viewModel = MainViewModel(stockPairDao, watchItemDao, marketDataService)
+        viewModel.loadWatchItems(forceShowStaleData = true)
+
+        val state: UiState<List<WatchItemUiState>> = viewModel.watchItemUiState.value
+        val success: UiState.Success<List<WatchItemUiState>> = state as UiState.Success<List<WatchItemUiState>>
+        assertEquals(1, success.data.size)
+        assertEquals(1, success.data.first().item.id)
+    }
+
+    @Test
     fun `toggleWatchItemActive only changes active flag`() = runBlocking {
         val triggeredItem = WatchItem(
             id = 1,
