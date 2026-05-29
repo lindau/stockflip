@@ -101,6 +101,7 @@ The app uses a **hybrid View/Compose** approach:
 Användarhandboken har **två kopior som alltid ska vara identiska**:
 - `docs/MANUAL.md` — läsbar direkt i repot
 - `app/src/main/assets/manual.md` — används av appen (läses av `HelpFragment`)
+- `docs/DOCUMENTATION_MAP.md` — översikt över aktiv dokumentation, referenser och genererat material
 
 När du uppdaterar manualen måste du uppdatera **båda filerna**. När en ny bevakningsttyp, UI-funktion eller ett användarflöde läggs till eller ändras, uppdatera båda kopiorna. Detta gäller speciellt:
 - Nya bevakningsttyper eller ändringar i befintliga (trigger-villkor, engångs/återkommande)

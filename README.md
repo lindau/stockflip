@@ -115,6 +115,10 @@ Unit tests are fully offline and include MockWebServer fixtures for Yahoo Financ
 
 - Update both `docs/CHANGELOG.md` and `app/src/main/assets/changelog.md` whenever user-facing changes are shipped so the in-app version view stays current.
 
+## Documentation
+
+- See `docs/DOCUMENTATION_MAP.md` for a quick split between active docs, reference material, and generated artifacts.
+
 ## Requirements
 
 - **Min SDK:** Android 7.0 (API 24)
