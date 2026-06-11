@@ -36,6 +36,12 @@ class PairDetailFragment : Fragment() {
         (activity as? MainActivity)?.syncWatchItemsAfterDetailChange()
     }
 
+    fun refreshDetail() {
+        if (::viewModel.isInitialized) {
+            viewModel.refresh()
+        }
+    }
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -103,9 +109,7 @@ class PairDetailFragment : Fragment() {
 
     override fun onResume() {
         super.onResume()
-        if (::viewModel.isInitialized) {
-            viewModel.refresh()
-        }
+        refreshDetail()
     }
 
     private fun observeState() {

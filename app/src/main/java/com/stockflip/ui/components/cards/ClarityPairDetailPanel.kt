@@ -64,6 +64,10 @@ fun ClarityPairDetailPanel(
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         ClarityPairHeroCard(data = data)
+        ClarityPairActionCard(
+            history = history,
+            onEdit = onEdit,
+        )
         if (chartData != null) {
             ClarityPairChartCard(
                 data = chartData,
@@ -73,10 +77,6 @@ fun ClarityPairDetailPanel(
         } else {
             ClarityPairChartLoadingCard()
         }
-        ClarityPairActionCard(
-            history = history,
-            onEdit = onEdit,
-        )
     }
 }
 
@@ -368,7 +368,7 @@ private fun ClarityPairActionCard(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
             ) {
-                Text("Redigera")
+                Text("Redigera spread")
             }
 
             Text(

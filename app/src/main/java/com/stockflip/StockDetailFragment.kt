@@ -71,6 +71,12 @@ class StockDetailFragment : Fragment() {
         (activity as? MainActivity)?.syncWatchItemsAfterDetailChange()
     }
 
+    fun refreshDetail() {
+        if (::viewModel.isInitialized) {
+            viewModel.refresh()
+        }
+    }
+
     companion object {
         private const val TAG = "StockDetailFragment"
         private const val ARG_SYMBOL = "symbol"
@@ -121,9 +127,7 @@ class StockDetailFragment : Fragment() {
 
     override fun onResume() {
         super.onResume()
-        if (::viewModel.isInitialized) {
-            viewModel.refresh()
-        }
+        refreshDetail()
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {

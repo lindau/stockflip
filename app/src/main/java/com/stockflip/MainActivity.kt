@@ -146,6 +146,7 @@ class MainActivity : AppCompatActivity() {
                 binding.progressBar.visibility = View.VISIBLE
                 try {
                     viewModel.updateWatchItem(updatedItem)
+                    refreshVisibleDetailFragmentAfterWatchItemChange()
                     updateLastUpdateTime()
                 } finally {
                     binding.progressBar.visibility = View.GONE
@@ -1091,6 +1092,7 @@ class MainActivity : AppCompatActivity() {
             .replace(R.id.fragmentContainer, fragment)
             .addToBackStack("pair_detail")
             .commit()
+        supportFragmentManager.executePendingTransactions()
 
         binding.addPairButton.visibility = View.GONE
         binding.overviewModeScroll.visibility = View.GONE
@@ -1335,10 +1337,18 @@ class MainActivity : AppCompatActivity() {
                 // Apply the DB change immediately, then enrich with fresh prices quietly.
                 viewModel.loadWatchItems(forceShowStaleData = true)
                 viewModel.refreshWatchItems(showLoading = false)
+                refreshVisibleDetailFragmentAfterWatchItemChange()
                 updateLastUpdateTime()
             } catch (e: Exception) {
                 Log.w(TAG, "Background sync after detail change failed: ${e.message}", e)
             }
+        }
+    }
+
+    private fun refreshVisibleDetailFragmentAfterWatchItemChange() {
+        when (val fragment = supportFragmentManager.findFragmentById(R.id.fragmentContainer)) {
+            is StockDetailFragment -> fragment.refreshDetail()
+            is PairDetailFragment -> fragment.refreshDetail()
         }
     }
 
