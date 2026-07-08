@@ -22,3 +22,6 @@ local.properties
 # Google Services
 google-services.json
 app/StockFlip Google Services.json
+
+# ShipStudio metadata
+.shipstudio/
