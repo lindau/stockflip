@@ -141,7 +141,9 @@ class InsiderTransactionWorker(
             .build()
 
         val notificationManager = applicationContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        notificationManager.notify(System.currentTimeMillis().toInt(), notification)
+        // Deterministiskt notis-ID per bevakning så att dubblettanrop ersätter varandra
+        // istället för att staplas som separata notiser.
+        notificationManager.notify(item.id, notification)
         Log.d(TAG, "Sent insider purchase notification")
     }
 

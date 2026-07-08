@@ -121,7 +121,9 @@ class StockPriceUpdateWorker(
             .build()
 
         val notificationManager = applicationContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        val notificationId = System.currentTimeMillis().toInt()
+        // Deterministiskt notis-ID per bevakning så att två tätt inpå-anrop (t.ex. immediate-
+        // och periodic-workern vid start) kollapsar till en notis istället för att staplas.
+        val notificationId = watchItemId ?: pairWatchItemId ?: System.currentTimeMillis().toInt()
         notificationManager.notify(notificationId, notification)
         Log.d(TAG, "Sent trigger notification")
     }
