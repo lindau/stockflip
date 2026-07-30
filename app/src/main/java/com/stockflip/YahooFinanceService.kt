@@ -484,6 +484,68 @@ object YahooFinanceService : MarketDataService {
         null
     }
 
+    override suspend fun getNextEarningsReport(symbol: String): NextEarningsInfo? = withContext(Dispatchers.IO) {
+        try {
+            if (consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {
+                val timeSinceLastFailure = System.currentTimeMillis() - lastFailureTime
+                if (timeSinceLastFailure < FAILURE_COOLDOWN_MS) {
+                    throw Exception("Circuit breaker open")
+                } else {
+                    consecutiveFailures = 0
+                }
+            }
+
+            ensureCrumb()
+            var url = "https://query2.finance.yahoo.com/v10/finance/quoteSummary/$symbol?modules=earnings"
+            if (crumb != null) url += "&crumb=$crumb"
+
+            val request = Request.Builder()
+                .url(url)
+                .addHeader("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+                .build()
+
+            val response = client.newCall(request).execute()
+            if (response.isSuccessful) {
+                val body = response.body?.string()
+                if (body != null) {
+                    val earnings = JSONObject(body)
+                        .optJSONObject("quoteSummary")
+                        ?.optJSONArray("result")
+                        ?.optJSONObject(0)
+                        ?.optJSONObject("earnings")
+
+                    if (earnings != null) {
+                        val earningsChart = earnings.optJSONObject("earningsChart")
+                        val earningsDate = earningsChart?.optJSONArray("earningsDate")?.optJSONObject(0)?.optLong("raw")
+
+                        if (earningsDate != null && earningsDate > 0L) {
+                            val currentQuarter = earningsChart?.optString("currentQuarterEstimate", null)
+                            val isAnnualReport = currentQuarter?.equals("4q", ignoreCase = true) ?: false
+
+                            response.close()
+                            return@withContext NextEarningsInfo(
+                                reportDateMillis = earningsDate * 1000L,
+                                isAnnualReport = isAnnualReport
+                            )
+                        }
+                    }
+                }
+            } else if (response.code == 401) {
+                crumb = null
+            }
+            response.close()
+        } catch (e: Exception) {
+            if (e.message != "Circuit breaker open") {
+                consecutiveFailures++
+                lastFailureTime = System.currentTimeMillis()
+            }
+            Log.w(TAG, "Yahoo getNextEarningsReport failed: ${e.message}")
+            null
+        }
+
+        null
+    }
+
     @JvmStatic
     suspend fun searchCrypto(query: String): List<StockSearchResult> = withContext(Dispatchers.IO) {
         try {

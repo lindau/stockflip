@@ -243,7 +243,7 @@ private fun ClarityPairStockCell(
         change >= 0.0 -> LocalPriceUp.current
         else -> LocalPriceDown.current
     }
-    val flag = flagForCurrency(stock.currency)
+    val flag = flagForSymbol(stock.symbol)
 
     Column(
         modifier = modifier
@@ -499,8 +499,8 @@ private fun signedPercent(value: Double): String {
     return "$sign${CurrencyHelper.formatDecimal(abs(value))} %"
 }
 
-private fun flagForCurrency(currency: String?): String? {
-    val countryCode = CountryFlagHelper.getCountryCodeFromCurrency(currency) ?: return null
+private fun flagForSymbol(symbol: String?): String? {
+    val countryCode = CountryFlagHelper.getCountryCodeFromSymbol(symbol) ?: return null
     return CountryFlagHelper.getFlagEmoji(countryCode)
 }
 

@@ -162,6 +162,21 @@ class StockDetailViewModel(
                         }
                     }
                 }
+
+                // Hämta nästa rapportdatum asynkront
+                if (!StockSearchResult.isCryptoSymbol(symbol)) {
+                    launch {
+                        try {
+                            val earnings = yahooFinanceService.getNextEarningsReport(symbol)
+                            if (earnings != null) {
+                                val currentData = (_stockDataState.value as? UiState.Success<StockDetailData>)?.data ?: stockData
+                                _stockDataState.value = UiState.Success(currentData.copy(nextEarnings = earnings))
+                            }
+                        } catch (e: Exception) {
+                            Log.e(TAG, "Error loading next earnings report for $symbol: ${e.message}", e)
+                        }
+                    }
+                }
             } catch (e: Exception) {
                 Log.e(TAG, "Error loading stock data: ${e.message}", e)
                 _stockDataState.value = UiState.Error("Kunde inte ladda aktiedata: ${e.message}")
@@ -597,5 +612,6 @@ data class StockDetailData(
     val earningsPerShare: Double? = null,
     val marketCap: Double? = null,
     val returnOnEquity: Double? = null,
+    val nextEarnings: NextEarningsInfo? = null,
     val lastUpdatedAt: Long = 0L
 )

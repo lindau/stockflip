@@ -144,7 +144,7 @@ private fun MultipleWatchesClarityContent(
         else -> LocalPriceDown.current
     }
     val flag = CountryFlagHelper
-        .getCountryCodeFromCurrency(currency)
+        .getCountryCodeFromSymbol(symbol)
         ?.let { CountryFlagHelper.getFlagEmoji(it) }
 
     Column(

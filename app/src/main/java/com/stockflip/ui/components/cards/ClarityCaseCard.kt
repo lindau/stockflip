@@ -275,6 +275,7 @@ private fun clarityCaseStatus(item: WatchItem): String {
     return when {
         !item.isActive -> "Pausad"
         LocalIsNewTrigger.current -> "Ny"
+        item.watchType is WatchType.InsiderBuy -> "Kontrolleras dagligen"
         item.isTriggered -> triggeredStatusLabel(item.lastTriggeredDate)
         item.hasPendingNextTradingDayGuard() -> "Nästa handelsdag"
         nearLabel != null -> nearLabel
@@ -305,9 +306,8 @@ private fun clarityCaseSymbol(item: WatchItem): String {
 
 private fun clarityCaseFlag(symbol: String): String? {
     if (StockSearchResult.isCryptoSymbol(symbol)) return "■"
-    val currency = CurrencyHelper.getCurrencyFromSymbol(symbol)
     return CountryFlagHelper
-        .getCountryCodeFromCurrency(currency)
+        .getCountryCodeFromSymbol(symbol)
         ?.let { CountryFlagHelper.getFlagEmoji(it) }
 }
 

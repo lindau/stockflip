@@ -337,6 +337,16 @@ class YahooMarketDataServiceImpl(
         }
     }
 
+    suspend fun getNextEarningsReport(symbol: String): NextEarningsInfo? = withContext(Dispatchers.IO) {
+        try {
+            Log.d(TAG, "Fetching next earnings report")
+            YahooFinanceService.getNextEarningsReport(symbol)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error fetching next earnings report: ${e.message}", e)
+            null
+        }
+    }
+
     private companion object {
         private const val TAG: String = "YahooMarketDataService"
     }

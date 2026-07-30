@@ -4,6 +4,7 @@ import com.stockflip.ChartPeriod
 import com.stockflip.IntradayChartData
 import com.stockflip.KeyMetrics
 import com.stockflip.MarketDataService
+import com.stockflip.NextEarningsInfo
 import com.stockflip.StockDetailSnapshot
 import com.stockflip.WatchType
 
@@ -44,6 +45,8 @@ class FakeMarketDataService(
     override suspend fun getAllKeyMetrics(symbol: String): KeyMetrics? = null
 
     override suspend fun getIntradayChart(symbol: String, period: ChartPeriod): IntradayChartData? = chartDataByPeriod[period]
+
+    override suspend fun getNextEarningsReport(symbol: String): NextEarningsInfo? = null
 
     override suspend fun getStockDetailSnapshot(symbol: String): StockDetailSnapshot? {
         val lastPrice: Double? = pricesBySymbol[symbol] ?: return null

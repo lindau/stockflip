@@ -28,6 +28,17 @@ data class KeyMetrics(
 )
 
 /**
+ * Information om nästa rapportdatum för en aktie.
+ *
+ * @param reportDateMillis Datum för nästa rapport i millisekunder sedan epoch
+ * @param isAnnualReport true = bokslutskommuniké/årsrapport, false = kvartalsrapport
+ */
+data class NextEarningsInfo(
+    val reportDateMillis: Long,
+    val isAnnualReport: Boolean
+)
+
+/**
  * Abstraction for market data retrieval.
  *
  * This enables deterministic tests by injecting a fake implementation.
@@ -46,4 +57,5 @@ interface MarketDataService {
     suspend fun getAllKeyMetrics(symbol: String): KeyMetrics?
     suspend fun getStockDetailSnapshot(symbol: String): StockDetailSnapshot?
     suspend fun getIntradayChart(symbol: String, period: ChartPeriod = ChartPeriod.DAY): IntradayChartData?
+    suspend fun getNextEarningsReport(symbol: String): NextEarningsInfo?
 }

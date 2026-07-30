@@ -65,8 +65,60 @@ object CountryFlagHelper {
     }
 
     /**
+     * Hämtar landskod från ticker-suffix.
+     *
+     * @param symbol Aktie- eller krypto-symbol (t.ex. "VOLV-B.ST", "SAP.DE", "AAPL")
+     * @return ISO 3166-1 alpha-2 landskod, eller null om det inte kan bestämmas
+     */
+    fun getCountryCodeFromSymbol(symbol: String?): String? {
+        if (symbol == null) return null
+
+        val upperSymbol = symbol.uppercase()
+
+        // Om symbolen innehåller flera tickers (t.ex. "VOLV-B.ST ÷ SAP.DE"), ta första delen
+        val mainSymbol = if (upperSymbol.contains("÷")) {
+            upperSymbol.split("÷").firstOrNull()?.trim() ?: return null
+        } else {
+            upperSymbol
+        }
+
+        return when {
+            // Sverige
+            mainSymbol.endsWith(".ST") || mainSymbol.endsWith(".STO") -> "SE"
+            // Norge
+            mainSymbol.endsWith(".OL") || mainSymbol.endsWith(".OSE") -> "NO"
+            // Storbritannien
+            mainSymbol.endsWith(".L") -> "GB"
+            // Tyskland
+            mainSymbol.endsWith(".DE") || mainSymbol.endsWith(".XETR") -> "DE"
+            // Japan
+            mainSymbol.endsWith(".T") -> "JP"
+            // Krypto-symbol med valuta-suffix (t.ex. "BTC-USD")
+            mainSymbol.contains("-") -> {
+                val parts = mainSymbol.split("-")
+                if (parts.size >= 2) {
+                    when (parts.last()) {
+                        "USD" -> "US"
+                        "EUR" -> "DE" // Default för EUR: Tyskland
+                        "GBP" -> "GB"
+                        "JPY" -> "JP"
+                        "SEK" -> "SE"
+                        "NOK" -> "NO"
+                        else -> null
+                    }
+                } else {
+                    null
+                }
+            }
+            // Amerikanska aktier: ingen punkt och ingen bindestreck betyder vanligtvis US-ticker
+            !mainSymbol.contains(".") && !mainSymbol.contains("-") -> "US"
+            else -> null
+        }
+    }
+
+    /**
      * Hämtar landskod från valuta.
-     * 
+     *
      * @param currency Valuta-kod (t.ex. "USD", "EUR", "SEK")
      * @return ISO 3166-1 alpha-2 landskod, eller null om det inte kan bestämmas
      */

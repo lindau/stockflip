@@ -29,6 +29,7 @@ import com.google.android.material.divider.MaterialDivider
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.combine
 import java.text.SimpleDateFormat
+import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 import com.stockflip.ui.components.cards.ClarityStockDetailPanel
@@ -549,6 +550,7 @@ class StockDetailFragment : Fragment() {
 
     private fun renderDecisionSupport() {
         val data = latestStockData ?: return
+        renderNextReportSection(data)
         renderLevelsSection(data, latestAlerts)
         renderTriggerBanner()
     }
@@ -868,6 +870,34 @@ class StockDetailFragment : Fragment() {
 
     private fun dp(value: Int): Int {
         return (value * resources.displayMetrics.density).toInt()
+    }
+
+    private fun renderNextReportSection(data: StockDetailData) {
+        val earnings = data.nextEarnings
+        val showSection = earnings != null && earnings.reportDateMillis > 0L
+        binding.nextReportLabel.isVisible = showSection
+        binding.nextReportCard.isVisible = showSection
+        if (!showSection || earnings == null) return
+
+        val today = Calendar.getInstance().apply {
+            set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0)
+        }.timeInMillis
+        val reportDay = Calendar.getInstance().apply {
+            timeInMillis = earnings.reportDateMillis
+            set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0)
+        }.timeInMillis
+        val daysLeft = ((reportDay - today) / 86_400_000L).toInt()
+
+        val reportType = if (earnings.isAnnualReport) "Bokslutskommuniké" else "Kvartalsrapport"
+        val dateText = SimpleDateFormat("d MMM yyyy", Locale("sv", "SE")).format(Date(earnings.reportDateMillis))
+        val daysText = when {
+            daysLeft <= 0 -> "idag"
+            daysLeft == 1 -> "1 dag kvar"
+            else -> "$daysLeft dagar kvar"
+        }
+        binding.nextReportText.text = "$reportType · $dateText · $daysText"
     }
 
     private fun renderLevelsSection(
