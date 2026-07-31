@@ -25,3 +25,8 @@ app/StockFlip Google Services.json
 
 # ShipStudio metadata
 .shipstudio/
+
+# Keystore files (signing keys)
+keystore.properties
+*.jks
+*.keystore
