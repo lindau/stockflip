@@ -73,4 +73,9 @@
     <string name="notes_dialog_title">Redigera anteckning</string>
 
     <!-- Sortering -->
+
+    <!-- Handelsplattformar -->
+    <string name="trading_platforms_header">Handelsplattformar</string>
+    <string name="open_avanza">Öppna på Avanza</string>
+    <string name="open_nordnet">Öppna på Nordnet</string>
 </resources>

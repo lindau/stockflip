@@ -1,5 +1,7 @@
 package com.stockflip
 
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.text.TextUtils
 import android.util.Log
@@ -222,6 +224,16 @@ class StockDetailFragment : Fragment() {
             binding.triggerBannerCard.isVisible = false
             syncOverviewInBackground()
             Toast.makeText(requireContext(), "Bevakning borttagen", Toast.LENGTH_SHORT).show()
+        }
+
+        binding.openAvanzaButton.setOnClickListener {
+            val symbol = arguments?.getString(ARG_SYMBOL) ?: return@setOnClickListener
+            openBrokerPage(symbol, "avanza")
+        }
+
+        binding.openNordnetButton.setOnClickListener {
+            val symbol = arguments?.getString(ARG_SYMBOL) ?: return@setOnClickListener
+            openBrokerPage(symbol, "nordnet")
         }
 
         // Ladda data
@@ -1139,6 +1151,19 @@ class StockDetailFragment : Fragment() {
         }
     }
 
+    private fun openBrokerPage(symbol: String, broker: String) {
+        val url = when (broker) {
+            "avanza" -> "https://www.avanza.se/sok?query=${Uri.encode(symbol)}"
+            "nordnet" -> "https://www.nordnet.se/search?query=${Uri.encode(symbol)}"
+            else -> return
+        }
+        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+        try {
+            startActivity(intent)
+        } catch (e: Exception) {
+            Toast.makeText(requireContext(), "Kunde inte öppna länken", Toast.LENGTH_SHORT).show()
+        }
+    }
 
     override fun onDestroyView() {
         super.onDestroyView()
