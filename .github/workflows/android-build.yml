@@ -42,6 +42,7 @@ jobs:
             echo "ERROR: KEYSTORE_BASE64 secret is not set. Cannot build release APK."
             exit 1
           fi
+          mkdir -p ~/.android
           echo "$KEYSTORE_BASE64" | base64 --decode > ~/.android/stockflip-release.jks
 
       - name: Create keystore.properties for CI
