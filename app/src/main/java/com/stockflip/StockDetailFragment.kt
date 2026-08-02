@@ -1151,18 +1151,37 @@ class StockDetailFragment : Fragment() {
         }
     }
 
+    private fun toBrokerSearchQuery(symbol: String): String {
+        val suffixes = listOf(".ST", ".STO", ".OL", ".OSE", ".L", ".DE", ".XETR", ".T")
+        var base = symbol.uppercase()
+        for (suffix in suffixes) {
+            if (base.endsWith(suffix)) {
+                base = base.removeSuffix(suffix)
+                break
+            }
+        }
+        val currencySuffixes = listOf("-USD", "-EUR", "-GBP", "-JPY", "-SEK", "-NOK", "-DKK")
+        for (suffix in currencySuffixes) {
+            if (base.endsWith(suffix)) {
+                base = base.removeSuffix(suffix)
+                break
+            }
+        }
+        return base.replace("-", " ")
+    }
+
     private fun openBrokerPage(symbol: String, broker: String) {
+        val query = toBrokerSearchQuery(symbol)
         val (packageName, webUrl) = when (broker) {
             "avanza" -> {
-                "com.avanza.android" to "https://www.avanza.se/sok?query=${Uri.encode(symbol)}"
+                "se.avanzabank.androidapplikation" to "https://www.avanza.se/sok.html?q=${Uri.encode(query)}"
             }
             "nordnet" -> {
-                "se.nordnet.mobil" to "https://www.nordnet.se/search?query=${Uri.encode(symbol)}"
+                "com.nordnet" to "https://www.nordnet.se/aktier/kurser?freeTextSearch=${Uri.encode(query)}"
             }
             else -> return
         }
 
-        val packageManager = requireContext().packageManager
         try {
             val intent = Intent(Intent.ACTION_VIEW, Uri.parse(webUrl))
             intent.setPackage(packageName)
