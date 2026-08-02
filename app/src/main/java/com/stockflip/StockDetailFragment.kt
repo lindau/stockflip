@@ -1152,16 +1152,26 @@ class StockDetailFragment : Fragment() {
     }
 
     private fun openBrokerPage(symbol: String, broker: String) {
-        val url = when (broker) {
-            "avanza" -> "https://www.avanza.se/sok?query=${Uri.encode(symbol)}"
-            "nordnet" -> "https://www.nordnet.se/search?query=${Uri.encode(symbol)}"
+        val (deepLink, webUrl) = when (broker) {
+            "avanza" -> {
+                "av://sok?q=${Uri.encode(symbol)}" to "https://www.avanza.se/sok?query=${Uri.encode(symbol)}"
+            }
+            "nordnet" -> {
+                "nordnet://search?q=${Uri.encode(symbol)}" to "https://www.nordnet.se/search?query=${Uri.encode(symbol)}"
+            }
             else -> return
         }
-        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+
         try {
+            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(deepLink))
             startActivity(intent)
         } catch (e: Exception) {
-            Toast.makeText(requireContext(), "Kunde inte öppna länken", Toast.LENGTH_SHORT).show()
+            try {
+                val webIntent = Intent(Intent.ACTION_VIEW, Uri.parse(webUrl))
+                startActivity(webIntent)
+            } catch (e: Exception) {
+                Toast.makeText(requireContext(), "Kunde inte öppna länken", Toast.LENGTH_SHORT).show()
+            }
         }
     }
 
