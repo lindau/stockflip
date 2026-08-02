@@ -11,6 +11,10 @@
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
+    <queries>
+        <package android:name="com.nordnet" />
+    </queries>
+
     <application
         android:name=".StockFlipApplication"
         android:allowBackup="false"

@@ -69,6 +69,7 @@ class StockDetailFragment : Fragment() {
     private var triggerBannerDismissed = false
     private var insiderNotificationHandled = false
     private var insiderTransactionsExpanded = false
+    private val avanzaLinkService = AvanzaStockLinkService()
 
     private fun syncOverviewInBackground() {
         (activity as? MainActivity)?.syncWatchItemsAfterDetailChange()
@@ -228,12 +229,11 @@ class StockDetailFragment : Fragment() {
 
         binding.openAvanzaButton.setOnClickListener {
             val symbol = arguments?.getString(ARG_SYMBOL) ?: return@setOnClickListener
-            openBrokerPage(symbol, "avanza")
+            openAvanzaPage(symbol)
         }
 
         binding.openNordnetButton.setOnClickListener {
-            val symbol = arguments?.getString(ARG_SYMBOL) ?: return@setOnClickListener
-            openBrokerPage(symbol, "nordnet")
+            openNordnetPage()
         }
 
         // Ladda data
@@ -1170,25 +1170,42 @@ class StockDetailFragment : Fragment() {
         return base.replace("-", " ")
     }
 
-    private fun openBrokerPage(symbol: String, broker: String) {
+    private fun openAvanzaPage(symbol: String) {
         val query = toBrokerSearchQuery(symbol)
-        val (packageName, webUrl) = when (broker) {
-            "avanza" -> {
-                "se.avanzabank.androidapplikation" to "https://www.avanza.se/sok.html?q=${Uri.encode(query)}"
-            }
-            "nordnet" -> {
-                "com.nordnet" to "https://www.nordnet.se/aktier/kurser?freeTextSearch=${Uri.encode(query)}"
-            }
-            else -> return
-        }
-
-        try {
-            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(webUrl))
-            intent.setPackage(packageName)
-            startActivity(intent)
-        } catch (e: Exception) {
+        binding.openAvanzaButton.isEnabled = false
+        viewLifecycleOwner.lifecycleScope.launch {
             try {
-                val webIntent = Intent(Intent.ACTION_VIEW, Uri.parse(webUrl))
+                val url = avanzaLinkService.findStockPageUrl(query)
+                val finalUrl = url ?: "https://www.avanza.se/sok.html?q=${Uri.encode(query)}"
+                try {
+                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(finalUrl))
+                    intent.setPackage("se.avanzabank.androidapplikation")
+                    startActivity(intent)
+                } catch (e: Exception) {
+                    try {
+                        val webIntent = Intent(Intent.ACTION_VIEW, Uri.parse(finalUrl))
+                        startActivity(webIntent)
+                    } catch (e: Exception) {
+                        Toast.makeText(requireContext(), "Kunde inte öppna Avanza", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            } finally {
+                binding.openAvanzaButton.isEnabled = true
+            }
+        }
+    }
+
+    private fun openNordnetPage() {
+        val launchIntent = requireContext().packageManager.getLaunchIntentForPackage("com.nordnet")
+        if (launchIntent != null) {
+            try {
+                startActivity(launchIntent)
+            } catch (e: Exception) {
+                Toast.makeText(requireContext(), "Kunde inte öppna Nordnet", Toast.LENGTH_SHORT).show()
+            }
+        } else {
+            try {
+                val webIntent = Intent(Intent.ACTION_VIEW, Uri.parse("https://www.nordnet.se/aktier/kurser"))
                 startActivity(webIntent)
             } catch (e: Exception) {
                 Toast.makeText(requireContext(), "Kunde inte öppna länken", Toast.LENGTH_SHORT).show()
