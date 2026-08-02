@@ -1152,18 +1152,20 @@ class StockDetailFragment : Fragment() {
     }
 
     private fun openBrokerPage(symbol: String, broker: String) {
-        val (deepLink, webUrl) = when (broker) {
+        val (packageName, webUrl) = when (broker) {
             "avanza" -> {
-                "av://sok?q=${Uri.encode(symbol)}" to "https://www.avanza.se/sok?query=${Uri.encode(symbol)}"
+                "com.avanza.android" to "https://www.avanza.se/sok?query=${Uri.encode(symbol)}"
             }
             "nordnet" -> {
-                "nordnet://search?q=${Uri.encode(symbol)}" to "https://www.nordnet.se/search?query=${Uri.encode(symbol)}"
+                "se.nordnet.mobil" to "https://www.nordnet.se/search?query=${Uri.encode(symbol)}"
             }
             else -> return
         }
 
+        val packageManager = requireContext().packageManager
         try {
-            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(deepLink))
+            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(webUrl))
+            intent.setPackage(packageName)
             startActivity(intent)
         } catch (e: Exception) {
             try {
