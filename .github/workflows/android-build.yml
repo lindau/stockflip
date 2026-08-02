@@ -65,11 +65,14 @@ jobs:
       - name: Build release APK
         run: ./gradlew assembleRelease -PskipVersionBump=true
 
+      - name: Rename APK to stockflip.apk
+        run: mv app/build/outputs/apk/release/app-release.apk app/build/outputs/apk/release/stockflip.apk
+
       - name: Upload APK as workflow artifact
         uses: actions/upload-artifact@v4
         with:
           name: stockflip-release-apk
-          path: app/build/outputs/apk/release/*.apk
+          path: app/build/outputs/apk/release/stockflip.apk
           if-no-files-found: error
 
       - name: Publish APK to GitHub Release
@@ -77,5 +80,5 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}
-          files: app/build/outputs/apk/release/*.apk
+          files: app/build/outputs/apk/release/stockflip.apk
           generate_release_notes: true
