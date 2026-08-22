@@ -552,7 +552,7 @@
                 android:id="@+id/insiderSectionLabel"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Senaste insiderköp"
+                android:text="Senaste insideraffärer"
                 android:textAppearance="?attr/textAppearanceTitleMedium"
                 android:textColor="?attr/colorOnSurface"
                 android:layout_marginStart="20dp"
@@ -583,7 +583,7 @@
                         android:id="@+id/insiderEmptyText"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="Inga insiderköp har hittats ännu."
+                        android:text="Inga insideraffärer har hittats ännu."
                         android:textAppearance="?attr/textAppearanceBodyMedium"
                         android:textColor="?attr/colorOnSurfaceVariant"
                         android:visibility="gone"
@@ -604,7 +604,7 @@
                         android:textAppearance="?attr/textAppearanceLabelLarge"
                         android:textColor="?attr/colorPrimary"
                         android:visibility="gone"
-                        tools:text="Visar 3 av 8 insiderköp · tryck för att visa alla"
+                        tools:text="Visar 3 av 8 insideraffärer · tryck för att visa alla"
                         tools:visibility="visible" />
 
                 </LinearLayout>
@@ -697,7 +697,7 @@
                         style="@style/Widget.StockFlip.AssistChip"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Insiderköp" />
+                        android:text="Insideraffärer" />
 
                 </com.google.android.material.chip.ChipGroup>
 

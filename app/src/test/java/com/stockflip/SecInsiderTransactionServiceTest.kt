@@ -8,8 +8,8 @@ class SecInsiderTransactionServiceTest {
     private val service = SecInsiderTransactionService()
 
     @Test
-    fun `parseOwnershipXml returns only acquired purchase transactions`() {
-        val purchases = service.parseOwnershipXml(
+    fun `parseOwnershipXml returns both purchase and sale transactions`() {
+        val transactions = service.parseOwnershipXml(
             symbol = "AAPL",
             cik = "0000320193",
             accessionNumber = "0000320193-26-000001",
@@ -18,8 +18,9 @@ class SecInsiderTransactionServiceTest {
             xml = sampleOwnershipXml
         )
 
-        assertEquals(1, purchases.size)
-        val purchase = purchases.first()
+        assertEquals(2, transactions.size)
+
+        val purchase = transactions.first()
         assertEquals("AAPL", purchase.symbol)
         assertEquals("Jane Insider", purchase.reportingOwner)
         assertEquals("Verkställande direktör", purchase.relationship)
@@ -27,7 +28,13 @@ class SecInsiderTransactionServiceTest {
         assertEquals(100.0, purchase.shares ?: 0.0, 0.0)
         assertEquals(150.25, purchase.pricePerShare ?: 0.0, 0.0)
         assertEquals(15_025.0, purchase.estimatedValue ?: 0.0, 0.0)
+        assertEquals(InsiderTransactionType.BUY, purchase.transactionType)
         assertTrue(purchase.id.startsWith("0000320193-26-000001:0"))
+
+        val sale = transactions[1]
+        assertEquals(50.0, sale.shares ?: 0.0, 0.0)
+        assertEquals(160.00, sale.pricePerShare ?: 0.0, 0.0)
+        assertEquals(InsiderTransactionType.SELL, sale.transactionType)
     }
 
     private val sampleOwnershipXml = """

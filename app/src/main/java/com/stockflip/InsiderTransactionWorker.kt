@@ -37,7 +37,7 @@ class InsiderTransactionWorker(
             }
 
         if (insiderWatchItems.isEmpty()) {
-            Log.d(TAG, "No active insider purchase watches")
+            Log.d(TAG, "No active insider transaction watches")
             return Result.success()
         }
 
@@ -64,11 +64,11 @@ class InsiderTransactionWorker(
                 transactionDao.insertAll(purchases.map { it.toEntity() })
                 if (newPurchases.isEmpty()) return@forEachIndexed
 
-                showInsiderPurchaseNotification(item, newPurchases)
+                showInsiderTransactionNotification(item, newPurchases)
                 watchItemDao.update(item.markAsTriggered(today))
                 triggerHistoryRepository.record(item.id)
             } catch (e: Exception) {
-                Log.w(TAG, "Failed to check insider purchases: ${e.message}")
+                Log.w(TAG, "Failed to check insider transactions: ${e.message}")
             }
 
             if (index < insiderWatchItems.lastIndex) {
@@ -79,7 +79,7 @@ class InsiderTransactionWorker(
         return Result.success()
     }
 
-    private fun showInsiderPurchaseNotification(
+    private fun showInsiderTransactionNotification(
         item: WatchItem,
         purchases: List<InsiderPurchase>
     ) {
@@ -88,15 +88,16 @@ class InsiderTransactionWorker(
         val totalValue = purchases.mapNotNull { it.estimatedValue }.sum()
         val currency = purchases.firstOrNull { it.cik == FI_SOURCE }?.let { "SEK" } ?: "USD"
         val title = if (purchases.size == 1) {
-            "Insiderköp i $companyName"
+            "Insideraffär i $companyName"
         } else {
-            "${purchases.size} insiderköp i $companyName"
+            "${purchases.size} insideraffärer i $companyName"
         }
         val leadPurchase = purchases.maxByOrNull { it.estimatedValue ?: 0.0 } ?: purchases.first()
         val valueText = totalValue.takeIf { it > 0.0 }?.let {
             " Totalt cirka ${CurrencyHelper.formatPrice(it, currency)}."
         }.orEmpty()
-        val message = "${leadPurchase.reportingOwner} rapporterade köp av ${leadPurchase.securityTitle ?: ticker}.$valueText"
+        val verb = if (leadPurchase.transactionType == InsiderTransactionType.SELL) "sålde" else "köpte"
+        val message = "${leadPurchase.reportingOwner} rapporterade att de $verb ${leadPurchase.securityTitle ?: ticker}.$valueText"
 
         val notificationToken = NotificationNavigationSecurity.issueToken()
         val intent = Intent(applicationContext, MainActivity::class.java).apply {
@@ -144,7 +145,7 @@ class InsiderTransactionWorker(
         // Deterministiskt notis-ID per bevakning så att dubblettanrop ersätter varandra
         // istället för att staplas som separata notiser.
         notificationManager.notify(item.id, notification)
-        Log.d(TAG, "Sent insider purchase notification")
+        Log.d(TAG, "Sent insider transaction notification")
     }
 
     companion object {

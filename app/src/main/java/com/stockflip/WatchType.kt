@@ -38,7 +38,7 @@ sealed class WatchType {
             isLegacyManaged = false
         ),
         INSIDER_BUY(
-            displayName = "Insiderköp",
+            displayName = "Insideraffärer",
             isLegacyManaged = false
         ),
         COMBINED(

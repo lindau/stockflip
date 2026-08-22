@@ -12,7 +12,7 @@ StockFlip låter dig bevaka aktier och kryptovalutor och få notiser när dina e
   - [2. Dagsrörelse](#2-dagsrorelse)
   - [3. Drawdown](#3-drawdown)
   - [4. Nyckeltal](#4-nyckeltal)
-  - [5. Insiderköp](#5-insiderkop)
+  - [5. Insideraffärer](#5-insideraffarer)
   - [6. Aktiepar](#6-aktiepar)
   - [7. Prisintervall](#7-prisintervall)
   - [8. Kombinerat larm](#8-kombinerat-larm)
@@ -184,20 +184,20 @@ I nuvarande appversion fungerar flikarna så här:
 
 ---
 
-### 5. Insiderköp
+### 5. Insideraffärer
 
-**Vad det gör:** Skickar en notis när nya insiderköp rapporteras för en aktie där appen har stöd för insiderdata.
+**Vad det gör:** Skickar en notis när nya insideraffärer (både köp och försäljningar) rapporteras för en aktie där appen har stöd för insiderdata.
 
 **Typ:** Återkommande — kontrolleras dagligen och kan utlösas igen nästa handelsdag.
 
-**Skapa en insiderköpsbevakning:**
+**Skapa en bevakning för insideraffärer:**
 1. Öppna aktiedetaljvyn för en aktie med insiderstöd.
-2. Tryck på **Insiderköp**.
+2. Tryck på **Insideraffärer**.
 3. Tryck **Spara**.
 
 **Vad händer när den utlöses:**
 - Du får en notis med sammanfattning.
-- Trycker du på notisen öppnas aktiedetaljvyn vid **Senaste insiderköp**.
+- Trycker du på notisen öppnas aktiedetaljvyn vid **Senaste insideraffärer**.
 - Den aktuella transaktionen markeras och visas i ett detaljfönster med person, roll, datum, antal, pris och uppskattat värde.
 
 ---
@@ -384,13 +384,13 @@ Utan notisbehörighet kan appen inte meddela dig när en bevakning utlöses — 
 - Trycker du på notisen öppnas StockFlip direkt på detaljvyn för den berörda aktien, eller pardetaljen för ett aktiepar.
 - Du möts av en tydlig trigger-banner högst upp med varför du hamnade där och kan direkt **återaktivera** eller **ta bort** bevakningen.
 - En trigger markeras som sedd först när du öppnar bevakningen eller detaljvyn, inte bara när listan visas.
-- För **insiderköp** öppnas aktiedetaljvyn vid sektionen **Senaste insiderköp**. Den aktuella transaktionen markeras och visas även i ett detaljfönster som du stänger med **Stäng**.
+- För **insideraffärer** öppnas aktiedetaljvyn vid sektionen **Senaste insideraffärer**. Den aktuella transaktionen markeras och visas även i ett detaljfönster som du stänger med **Stäng**.
 
 ### Engångslarm vs återkommande larm
 
 | | Engångslarm | Återkommande larm |
 |---|---|---|
-| **Typ** | Målpris, Drawdown | Dagsrörelse, Nyckeltal, Insiderköp, Aktiepar, Prisintervall, Kombinerat |
+| **Typ** | Målpris, Drawdown | Dagsrörelse, Nyckeltal, Insideraffärer, Aktiepar, Prisintervall, Kombinerat |
 | **Inaktiveras efter utlösning** | Ja | Nej |
 | **Återaktivering** | Manuell | Automatisk (nästa dag) |
 | **Kan utlösas igen samma dag** | Nej | Normalt nej. Aktiepar kan trigga igen om spreaden byter sida. |

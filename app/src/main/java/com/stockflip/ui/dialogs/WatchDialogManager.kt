@@ -683,16 +683,16 @@ class WatchDialogManager(
     fun showCreateInsiderBuyDialog() {
         val watchType = WatchType.InsiderBuy()
         MaterialAlertDialogBuilder(context)
-            .setTitle("Skapa insiderköp-bevakning")
-            .setMessage("StockFlip kontrollerar nya insiderköp en gång per dag.")
+            .setTitle("Skapa bevakning för insideraffärer")
+            .setMessage("StockFlip kontrollerar nya insideraffärer en gång per dag.")
             .setPositiveButton("Skapa") { _, _ ->
                 lifecycleScope.launch {
                     if (viewModel.isDuplicateWatch(watchType)) {
-                        Toast.makeText(context, "En insiderköp-bevakning finns redan", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, "En bevakning för insideraffärer finns redan", Toast.LENGTH_SHORT).show()
                     } else {
                         viewModel.createAlert(watchType, currentCompanyName())
                         onWatchChanged()
-                        Toast.makeText(context, "Insiderköp-bevakning skapad", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, "Bevakning för insideraffärer skapad", Toast.LENGTH_SHORT).show()
                     }
                 }
             }

@@ -90,7 +90,7 @@ fun WatchItem.triggerConditionText(
             val code = currency ?: CurrencyHelper.getCurrencyFromSymbol(ticker)
             "Kurs mellan ${CurrencyHelper.formatPrice(type.minPrice, code)} och ${CurrencyHelper.formatPrice(type.maxPrice, code)}"
         }
-        is WatchType.InsiderBuy -> "Nytt insiderköp"
+        is WatchType.InsiderBuy -> "Ny insideraffär"
         is WatchType.Combined -> type.expression.getDescription()
     }
 }

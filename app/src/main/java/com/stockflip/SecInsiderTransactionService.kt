@@ -12,6 +12,11 @@ import java.util.Locale
 import java.util.TimeZone
 import javax.xml.parsers.DocumentBuilderFactory
 
+enum class InsiderTransactionType {
+    BUY,
+    SELL
+}
+
 data class InsiderPurchase(
     val id: String,
     val symbol: String,
@@ -25,7 +30,8 @@ data class InsiderPurchase(
     val estimatedValue: Double?,
     val securityTitle: String?,
     val filingDate: String?,
-    val acceptedAtMillis: Long?
+    val acceptedAtMillis: Long?,
+    val transactionType: InsiderTransactionType
 ) {
     fun toEntity(): InsiderTransactionEntity = InsiderTransactionEntity(
         id = id,
@@ -40,7 +46,8 @@ data class InsiderPurchase(
         estimatedValue = estimatedValue,
         securityTitle = securityTitle,
         filingDate = filingDate,
-        acceptedAtMillis = acceptedAtMillis
+        acceptedAtMillis = acceptedAtMillis,
+        transactionType = transactionType.name
     )
 }
 
@@ -159,9 +166,11 @@ class SecInsiderTransactionService(
             val transaction = transactions.item(index) as? Element ?: continue
             val transactionCode = transaction.firstText("transactionCode")
             val acquiredDisposed = transaction.firstText("transactionAcquiredDisposedCode")
-            if (transactionCode != PURCHASE_TRANSACTION_CODE || acquiredDisposed != ACQUIRED_CODE) {
-                continue
-            }
+            val direction = when {
+                transactionCode == PURCHASE_TRANSACTION_CODE && acquiredDisposed == ACQUIRED_CODE -> InsiderTransactionType.BUY
+                transactionCode == SALE_TRANSACTION_CODE && acquiredDisposed == DISPOSED_CODE -> InsiderTransactionType.SELL
+                else -> null
+            } ?: continue
 
             val shares = transaction.firstText("transactionShares")?.parseSecDouble()
             val price = transaction.firstText("transactionPricePerShare")?.parseSecDouble()
@@ -184,7 +193,8 @@ class SecInsiderTransactionService(
                 estimatedValue = estimatedValue,
                 securityTitle = securityTitle,
                 filingDate = filingDate,
-                acceptedAtMillis = acceptedAtMillis
+                acceptedAtMillis = acceptedAtMillis,
+                transactionType = direction
             )
         }
         return purchases
@@ -247,6 +257,8 @@ class SecInsiderTransactionService(
     companion object {
         private const val PURCHASE_TRANSACTION_CODE = "P"
         private const val ACQUIRED_CODE = "A"
+        private const val SALE_TRANSACTION_CODE = "S"
+        private const val DISPOSED_CODE = "D"
         private const val SEC_USER_AGENT = "StockFlip/1.0 personal-android-app"
     }
 }

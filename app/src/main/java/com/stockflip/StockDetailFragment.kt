@@ -607,7 +607,7 @@ class StockDetailFragment : Fragment() {
         binding.insiderTransactionsContainer.removeAllViews()
         if (latestInsiderTransactions.isEmpty()) {
             binding.insiderEmptyText.isVisible = true
-            binding.insiderEmptyText.text = "Inga insiderköp har hittats ännu."
+            binding.insiderEmptyText.text = "Inga insideraffärer har hittats ännu."
             clearInsiderToggle()
             return
         }
@@ -660,10 +660,10 @@ class StockDetailFragment : Fragment() {
         }
 
         binding.insiderToggleText.text = if (insiderTransactionsExpanded) {
-            "Visa endast senaste insiderköpet"
+            "Visa endast senaste insideraffären"
         } else {
             val hiddenCount = totalCount - visibleCount
-            "Visar $visibleCount av $totalCount insiderköp · tryck för att visa $hiddenCount till"
+            "Visar $visibleCount av $totalCount insideraffärer · tryck för att visa $hiddenCount till"
         }
         val toggle = View.OnClickListener { toggleInsiderTransactionsExpanded() }
         binding.insiderToggleText.setOnClickListener(toggle)
@@ -788,7 +788,11 @@ class StockDetailFragment : Fragment() {
         }
 
         content.addView(TextView(requireContext()).apply {
-            text = "Insiderköp"
+            text = if (transaction.transactionType == InsiderTransactionType.SELL.name) {
+                "Insiderförsäljning"
+            } else {
+                "Insiderköp"
+            }
             setTextAppearance(com.google.android.material.R.style.TextAppearance_Material3_TitleLarge)
             setTextColor(MaterialColors.getColor(binding.root, com.google.android.material.R.attr.colorOnSurface))
         })
@@ -856,9 +860,10 @@ class StockDetailFragment : Fragment() {
     }
 
     private fun insiderTransactionSummary(transaction: InsiderTransactionEntity): String {
+        val verb = if (transaction.transactionType == InsiderTransactionType.SELL.name) "Sålde" else "Köpte"
         val shares = transaction.shares?.let { "${CurrencyHelper.formatDecimal(it)} aktier" } ?: "aktier"
         val value = transaction.estimatedValue?.let { " · ${CurrencyHelper.formatPrice(it, insiderCurrency(transaction))}" }.orEmpty()
-        return "Köpte $shares$value"
+        return "$verb $shares$value"
     }
 
     private fun insiderTransactionMeta(transaction: InsiderTransactionEntity): String {
@@ -1003,7 +1008,7 @@ class StockDetailFragment : Fragment() {
             }
 
             is WatchType.PriceRange -> "Pris bevakas inom ditt intervall"
-            is WatchType.InsiderBuy -> "Insiderköp bevakas dagligen"
+            is WatchType.InsiderBuy -> "Insideraffärer bevakas dagligen"
             is WatchType.PricePair -> "Parbevakning"
             is WatchType.Combined -> "Kombinerat villkor"
         }
@@ -1127,7 +1132,7 @@ class StockDetailFragment : Fragment() {
             is WatchType.KeyMetrics -> "${metricLabel(watchType.metricType)} ${directionLabel(watchType.direction)} ${formatMetricValue(watchType.metricType, watchType.targetValue)}"
             is WatchType.DailyMove -> "dagsrörelse ${CurrencyHelper.formatDecimal(watchType.percentThreshold)}%"
             is WatchType.PriceRange -> "pris inom ${CurrencyHelper.formatPrice(watchType.minPrice, data.currency)} - ${CurrencyHelper.formatPrice(watchType.maxPrice, data.currency)}"
-            is WatchType.InsiderBuy -> "insiderköp"
+            is WatchType.InsiderBuy -> "insideraffärer"
             is WatchType.PricePair -> "aktiepar"
             is WatchType.Combined -> "kombinerat larm"
         }

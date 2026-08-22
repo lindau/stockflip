@@ -25,5 +25,6 @@ data class InsiderTransactionEntity(
     val securityTitle: String?,
     val filingDate: String?,
     val acceptedAtMillis: Long?,
+    val transactionType: String = "BUY",
     val storedAtMillis: Long = System.currentTimeMillis()
 )

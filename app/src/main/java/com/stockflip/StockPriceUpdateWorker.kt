@@ -444,7 +444,7 @@ class StockPriceUpdateWorker(
 
             is WatchType.InsiderBuy -> {
                 TriggerNotificationPayload(
-                    title = "Insiderköp rapporterat",
+                    title = "Insideraffär rapporterad",
                     message = item.getDisplayName()
                 )
             }

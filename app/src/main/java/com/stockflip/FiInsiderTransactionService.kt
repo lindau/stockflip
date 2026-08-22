@@ -33,14 +33,27 @@ class FiInsiderTransactionService(
             toDate = DATE_FORMAT.format(toDate.time)
         )
 
-        parseCsv(csv)
+        mapRowsToPurchases(parseCsv(csv), symbol, minPublishedAtMillis)
+    }
+
+    internal fun mapRowsToPurchases(
+        rows: List<Map<String, String>>,
+        symbol: String,
+        minPublishedAtMillis: Long
+    ): List<InsiderPurchase> {
+        return rows
             .filter { row ->
-                row["Karaktär"].equals("Förvärv", ignoreCase = true) &&
+                (row["Karaktär"].equals("Förvärv", ignoreCase = true) || row["Karaktär"].equals("Avyttring", ignoreCase = true)) &&
                     row["Instrumenttyp"].equals("Aktie", ignoreCase = true)
             }
             .mapNotNull { row ->
                 val publishedAt = parseFiDate(row["Publiceringsdatum"].orEmpty())
                 if (publishedAt != null && publishedAt < minPublishedAtMillis) return@mapNotNull null
+                val transactionType = if (row["Karaktär"].equals("Avyttring", ignoreCase = true)) {
+                    InsiderTransactionType.SELL
+                } else {
+                    InsiderTransactionType.BUY
+                }
                 val transactionDate = row["Transaktionsdatum"].orEmpty().take(10)
                 val volume = row["Volym"]?.parseFiDouble()
                 val price = row["Pris"]?.parseFiDouble()
@@ -67,7 +80,8 @@ class FiInsiderTransactionService(
                     estimatedValue = estimatedValue,
                     securityTitle = row["Instrumentnamn"]?.takeIf { it.isNotBlank() } ?: issuer,
                     filingDate = row["Publiceringsdatum"]?.take(10),
-                    acceptedAtMillis = publishedAt
+                    acceptedAtMillis = publishedAt,
+                    transactionType = transactionType
                 )
             }
     }
