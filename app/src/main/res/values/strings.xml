@@ -39,6 +39,7 @@
     <string name="batch_delete">Ta bort</string>
     <string name="batch_cancel">Avsluta</string>
     <string name="batch_selected_count">%1$d case valda</string>
+    <string name="batch_reactivate_all">Återaktivera alla</string>
 
     <string name="menu_add">Lägg till</string>
     <string name="title_add_stock">Lägg till aktie eller krypto</string>

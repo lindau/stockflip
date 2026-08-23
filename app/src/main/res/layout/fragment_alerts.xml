@@ -101,6 +101,33 @@
     </HorizontalScrollView>
 
     <LinearLayout
+        android:id="@+id/reactivateAllBar"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="12dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="12dp"
+        android:background="?attr/colorSurfaceContainerLow"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:padding="12dp"
+        android:visibility="gone"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/filterScroll"
+        app:layout_constraintEnd_toEndOf="parent"
+        tools:visibility="visible">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/reactivateAllButton"
+            style="@style/Widget.Material3.Button.TonalButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/batch_reactivate_all" />
+
+    </LinearLayout>
+
+    <LinearLayout
         android:id="@+id/batchActionsBar"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
@@ -113,7 +140,7 @@
         android:padding="12dp"
         android:visibility="gone"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/filterScroll"
+        app:layout_constraintTop_toBottomOf="@id/reactivateAllBar"
         app:layout_constraintEnd_toEndOf="parent"
         tools:visibility="visible">
 

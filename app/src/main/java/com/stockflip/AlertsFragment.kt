@@ -59,6 +59,7 @@ class AlertsFragment : Fragment() {
     private var latestItems: List<WatchItemUiState> = emptyList()
     private val selectedRuleIds: MutableSet<Int> = mutableSetOf()
     private var selectionMode: Boolean = false
+    private var reactivateAllTargets: List<WatchItem> = emptyList()
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -78,6 +79,7 @@ class AlertsFragment : Fragment() {
         }
         setupFilters()
         setupBatchActions()
+        setupReactivateAll()
         setupRecyclerView()
         setupObservers()
     }
@@ -125,6 +127,12 @@ class AlertsFragment : Fragment() {
         }
         binding.batchCancelButton.setOnClickListener {
             exitSelectionMode()
+        }
+    }
+
+    private fun setupReactivateAll() {
+        binding.reactivateAllButton.setOnClickListener {
+            applyReactivateAll()
         }
     }
 
@@ -287,6 +295,11 @@ class AlertsFragment : Fragment() {
         }
     }
 
+    private fun WatchItemUiState.isEligibleForBulkReactivation(): Boolean {
+        return item.isTriggered &&
+            (item.watchType is WatchType.PriceTarget || item.watchType is WatchType.ATHBased)
+    }
+
     private fun renderFilteredList() {
         val filteredItems = latestItems.filter { uiState ->
             when (currentFilter) {
@@ -316,6 +329,12 @@ class AlertsFragment : Fragment() {
         groupedAdapter.setSelectedItemIds(selectedRuleIds)
         updateHeaderState()
         updateBatchActionState()
+        val eligibleForBulkReactivation = if (currentFilter == AlertsFilter.TRIGGERED) {
+            filteredItems.filter { it.isEligibleForBulkReactivation() }
+        } else {
+            emptyList()
+        }
+        updateReactivateAllState(eligibleForBulkReactivation)
         val showEmpty = filteredItems.isEmpty()
         binding.emptyStateContainer.visibility = if (showEmpty) View.VISIBLE else View.GONE
         if (showEmpty) {
@@ -381,6 +400,34 @@ class AlertsFragment : Fragment() {
         binding.batchActionsBar.visibility = if (selectionMode) View.VISIBLE else View.GONE
         if (selectionMode) {
             binding.batchSelectionCount.text = getString(R.string.batch_selected_count, selectedRuleIds.size)
+        }
+    }
+
+    private fun updateReactivateAllState(eligible: List<WatchItemUiState>) {
+        reactivateAllTargets = eligible.map { it.item }
+        binding.reactivateAllBar.visibility =
+            if (currentFilter == AlertsFilter.TRIGGERED && eligible.isNotEmpty()) View.VISIBLE else View.GONE
+    }
+
+    private fun applyReactivateAll() {
+        val items = reactivateAllTargets
+        if (items.isEmpty()) return
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                var guardedCount = 0
+                items.forEach { watchItem ->
+                    val result = viewModel.reactivateWatchItem(watchItem)
+                    if (result.sameDayTriggerGuarded) guardedCount++
+                }
+                val message = if (guardedCount > 0) {
+                    "${items.size} bevakningar återaktiverade. $guardedCount kan trigga först nästa handelsdag."
+                } else {
+                    "${items.size} bevakningar återaktiverade"
+                }
+                Toast.makeText(requireContext(), message, Toast.LENGTH_LONG).show()
+            } catch (e: Exception) {
+                Toast.makeText(requireContext(), e.message ?: "Kunde inte återaktivera alla bevakningar", Toast.LENGTH_LONG).show()
+            }
         }
     }
 

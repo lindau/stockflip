@@ -349,6 +349,8 @@ Bevakningen är nu aktiv igen. För målpris räknar appen om riktningen från a
 Om du återaktiverar efter att den berörda börsen har stängt behåller appen dagens trigger-spärr. Bevakningen visas som aktiv igen, men kan inte skicka en ny notis för samma utlösning förrän nästa handelsdag.
 I listor visas detta som **Nästa handelsdag**, och återaktiveringsmeddelandet säger att bevakningen kan trigga först nästa handelsdag.
 
+Om flera engångslarm är triggade samtidigt kan du återaktivera dem alla på en gång: välj filtret **Triggade** i **Mina case** och tryck **Återaktivera alla**.
+
 ### Redigera en bevakning
 
 1. Tryck på bevakningskortet.
