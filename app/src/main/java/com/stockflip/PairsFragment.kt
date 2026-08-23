@@ -37,7 +37,8 @@ class PairsFragment : Fragment() {
                 return MainViewModel(
                     database.stockPairDao(),
                     database.watchItemDao(),
-                    YahooFinanceService
+                    YahooFinanceService,
+                    database.stockNoteDao()
                 ) as T
             }
         }

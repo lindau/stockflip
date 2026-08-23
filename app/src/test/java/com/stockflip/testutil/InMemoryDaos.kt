@@ -93,6 +93,9 @@ class InMemoryStockNoteDao : StockNoteDao {
     override fun getByTickerFlow(ticker: String): Flow<StockNote?> =
         state.map { it[ticker] }
 
+    override fun getAllTickersFlow(): Flow<List<String>> =
+        state.map { it.keys.toList() }
+
     override suspend fun upsert(note: StockNote) {
         state.value = state.value + (note.ticker to note)
     }

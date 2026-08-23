@@ -70,7 +70,7 @@ class MainActivity : AppCompatActivity() {
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
                 val database = StockPairDatabase.getDatabase(applicationContext)
                 @Suppress("UNCHECKED_CAST")
-                return MainViewModel(database.stockPairDao(), database.watchItemDao(), YahooFinanceService) as T
+                return MainViewModel(database.stockPairDao(), database.watchItemDao(), YahooFinanceService, database.stockNoteDao()) as T
             }
         }
     }
@@ -130,6 +130,7 @@ class MainActivity : AppCompatActivity() {
     private var currentMainTab: MainTab = MainTab.STOCKS
     private var overviewMode: OverviewMode = OverviewMode.CASES
     private var lastWatchItems: List<WatchItemUiState> = emptyList()
+    private var lastNotedTickers: Set<String> = emptySet()
     private var detailSyncJob: Job? = null
     private val watchItemEditor by lazy {
         WatchItemEditor(
@@ -782,6 +783,14 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.notedTickers.collect { notedTickers ->
+                    lastNotedTickers = notedTickers
+                    showWatchItemSuccess(lastWatchItems)
+                }
+            }
+        }
     }
 
     /**
@@ -865,7 +874,7 @@ class MainActivity : AppCompatActivity() {
             }
             OverviewMode.STOCKS -> {
                 Log.d(TAG, "Rendering overview stock list with ${filteredData.size} items")
-                adapter.submitStocksList(filteredData)
+                adapter.submitStocksList(filteredData, lastNotedTickers)
             }
         }
     }

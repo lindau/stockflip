@@ -13,6 +13,9 @@ interface StockNoteDao {
     @Query("SELECT * FROM stock_notes WHERE ticker = :ticker")
     fun getByTickerFlow(ticker: String): Flow<StockNote?>
 
+    @Query("SELECT ticker FROM stock_notes")
+    fun getAllTickersFlow(): Flow<List<String>>
+
     @Upsert
     suspend fun upsert(note: StockNote)
 

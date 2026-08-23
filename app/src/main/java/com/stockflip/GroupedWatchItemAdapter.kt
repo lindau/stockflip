@@ -61,7 +61,8 @@ sealed class GroupedListItem {
         val triggeredCount: Int,
         val currentPrice: Double,
         val dailyChangePercent: Double?,
-        val watchItems: List<WatchItem>
+        val watchItems: List<WatchItem>,
+        val hasNote: Boolean = false
     ) : GroupedListItem()
 
     data class GroupSeparator(val id: Int) : GroupedListItem()
@@ -109,6 +110,7 @@ class GroupedWatchItemAdapter(
     private var displayMode: DisplayMode = DisplayMode.GROUPED
     private var allWatchItems: List<WatchItemUiState> = emptyList()
     private var alertsSummaryItems: List<WatchItemUiState> = emptyList()
+    private var notedTickers: Set<String> = emptySet()
     private var selectionMode: Boolean = false
     private var selectedItemIds: Set<Int> = emptySet()
 
@@ -282,10 +284,11 @@ class GroupedWatchItemAdapter(
         buildOverviewList(items)
     }
 
-    fun submitStocksList(items: List<WatchItemUiState>) {
+    fun submitStocksList(items: List<WatchItemUiState>, notedTickers: Set<String> = emptySet()) {
         displayMode = DisplayMode.STOCKS
         allWatchItems = items
         alertsSummaryItems = emptyList()
+        this.notedTickers = notedTickers
         buildStocksList(items)
     }
 
@@ -424,6 +427,7 @@ class GroupedWatchItemAdapter(
                     currentPrice = live.currentPrice,
                     dailyChangePercent = live.currentDailyChangePercent,
                     watchItems = groupItems.map { it.item },
+                    hasNote = notedTickers.contains(symbol),
                 )
             )
         }
@@ -892,6 +896,7 @@ class GroupedWatchItemAdapter(
                         triggeredCount = wrapper.triggeredCount,
                         currentPrice = wrapper.currentPrice,
                         dailyChangePercent = wrapper.dailyChangePercent,
+                        hasNote = wrapper.hasNote,
                         priceFormat = { value -> CurrencyHelper.formatDecimal(value) },
                         presentation = MultipleWatchesPresentation.Clarity,
                         modifier = Modifier

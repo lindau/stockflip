@@ -9,8 +9,11 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
@@ -18,7 +21,8 @@ import kotlinx.coroutines.sync.withPermit
 class MainViewModel(
     private val stockPairDao: StockPairDao,
     private val watchItemDao: WatchItemDao,
-    private val yahooFinanceService: MarketDataService
+    private val yahooFinanceService: MarketDataService,
+    private val stockNoteDao: StockNoteDao
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<UiState<List<StockPair>>>(UiState.Loading)
@@ -26,6 +30,10 @@ class MainViewModel(
 
     private val _watchItemUiState = MutableStateFlow<UiState<List<WatchItemUiState>>>(UiState.Loading)
     val watchItemUiState: StateFlow<UiState<List<WatchItemUiState>>> = _watchItemUiState.asStateFlow()
+
+    val notedTickers: StateFlow<Set<String>> = stockNoteDao.getAllTickersFlow()
+        .map { it.toSet() }
+        .stateIn(viewModelScope, SharingStarted.Lazily, emptySet())
 
     private var isRefreshing = false
 

@@ -14,8 +14,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Notes
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -60,6 +63,7 @@ fun MultipleWatchesCard(
     triggeredCount: Int = 0,
     currentPrice: Double,
     dailyChangePercent: Double? = null,
+    hasNote: Boolean = false,
     priceFormat: (Double) -> String,
     presentation: MultipleWatchesPresentation = MultipleWatchesPresentation.Default,
     modifier: Modifier = Modifier,
@@ -88,6 +92,7 @@ fun MultipleWatchesCard(
                 triggeredCount = triggeredCount,
                 currentPrice = currentPrice,
                 dailyChangePercent = dailyChangePercent,
+                hasNote = hasNote,
             )
             return@Card
         }
@@ -110,7 +115,18 @@ fun MultipleWatchesCard(
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.End,
+                verticalAlignment = Alignment.CenterVertically,
             ) {
+                if (hasNote) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.Notes,
+                        contentDescription = null,
+                        modifier = Modifier
+                            .size(14.dp)
+                            .padding(end = 4.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
                 Text(
                     text = "$watchCount bevakningar",
                     style = MaterialTheme.typography.bodySmall,
@@ -136,6 +152,7 @@ private fun MultipleWatchesClarityContent(
     triggeredCount: Int,
     currentPrice: Double,
     dailyChangePercent: Double?,
+    hasNote: Boolean = false,
 ) {
     val currency = CurrencyHelper.getCurrencyFromSymbol(symbol)
     val changeColor = when {
@@ -180,11 +197,24 @@ private fun MultipleWatchesClarityContent(
                     ),
                     color = MaterialTheme.colorScheme.onSurface,
                 )
-                Text(
-                    text = symbol,
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.68f),
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    Text(
+                        text = symbol,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.68f),
+                    )
+                    if (hasNote) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.Notes,
+                            contentDescription = null,
+                            modifier = Modifier.size(14.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.68f),
+                        )
+                    }
+                }
             }
 
             MiniSparkline(
