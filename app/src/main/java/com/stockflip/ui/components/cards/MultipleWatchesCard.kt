@@ -31,6 +31,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.stockflip.CountryFlagHelper
 import com.stockflip.CurrencyHelper
 import com.stockflip.ui.components.CompanyLogoAvatar
 import com.stockflip.ui.components.StockSummaryRow
@@ -185,6 +186,13 @@ private fun MultipleWatchesClarityContent(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
+                    val flag = CountryFlagHelper.getCountryCodeFromSymbol(symbol)?.let(CountryFlagHelper::getFlagEmoji)
+                    if (flag != null) {
+                        Text(
+                            text = flag,
+                            style = MaterialTheme.typography.labelMedium,
+                        )
+                    }
                     Text(
                         text = symbol,
                         style = MaterialTheme.typography.labelMedium,

@@ -14,6 +14,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import com.stockflip.CountryFlagHelper
 import com.stockflip.CurrencyHelper
 import com.stockflip.R
 import com.stockflip.ui.theme.LocalPriceDown
@@ -61,11 +62,23 @@ fun StockSummaryRow(
                 color = MaterialTheme.colorScheme.onSurface,
             )
             if (ticker != null) {
-                Text(
-                    text = ticker,
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+                val flag = CountryFlagHelper.getCountryCodeFromSymbol(ticker)?.let(CountryFlagHelper::getFlagEmoji)
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    if (flag != null) {
+                        Text(
+                            text = flag,
+                            style = MaterialTheme.typography.labelMedium,
+                        )
+                    }
+                    Text(
+                        text = ticker,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
             }
         }
         if (showPrice) {

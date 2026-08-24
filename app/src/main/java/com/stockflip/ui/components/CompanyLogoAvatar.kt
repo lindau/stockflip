@@ -1,6 +1,8 @@
 package com.stockflip.ui.components
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -21,6 +23,7 @@ import coil.compose.AsyncImage
 import com.stockflip.BuildConfig
 import com.stockflip.CountryFlagHelper
 import com.stockflip.StockSearchResult
+import com.stockflip.ui.theme.LocalCardBorder
 
 /**
  * Extraherar kryptokoden ur en Yahoo-ticker, t.ex. "BTC-USD" -> "btc", för uppslag mot
@@ -58,7 +61,8 @@ fun CompanyLogoAvatar(
         modifier = modifier
             .size(size)
             .clip(RoundedCornerShape(size * 0.32f))
-            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.65f)),
+            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.65f))
+            .border(BorderStroke(1.dp, LocalCardBorder.current), RoundedCornerShape(size * 0.32f)),
         contentAlignment = Alignment.Center,
     ) {
         if (showCryptoLogo) {
