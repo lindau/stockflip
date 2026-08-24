@@ -40,6 +40,7 @@ import com.stockflip.CountryFlagHelper
 import com.stockflip.CurrencyHelper
 import com.stockflip.IntradayChartData
 import com.stockflip.StockDetailData
+import com.stockflip.ui.components.CompanyLogoAvatar
 import com.stockflip.ui.theme.LocalCardBorder
 import com.stockflip.ui.theme.LocalPriceDown
 import com.stockflip.ui.theme.LocalPriceUp
@@ -103,39 +104,48 @@ private fun ClarityStockHeroCard(
             modifier = Modifier.padding(22.dp),
         ) {
             Row(
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.Top,
             ) {
-                Text(
-                    text = CountryFlagHelper.getFlagForExchange(data.exchange, data.currency).orEmpty(),
-                    style = MaterialTheme.typography.titleLarge,
-                )
-                Text(
-                    text = stockMeta(data),
-                    style = MaterialTheme.typography.labelSmall.copy(
-                        fontSize = 11.sp,
-                        lineHeight = 14.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        letterSpacing = 0.5.sp,
-                    ),
-                    color = LocalTextTertiary.current,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            }
+                CompanyLogoAvatar(symbol = data.symbol, size = 48.dp)
 
-            Text(
-                text = data.companyName,
-                modifier = Modifier.padding(top = 6.dp),
-                style = MaterialTheme.typography.headlineSmall.copy(
-                    fontSize = 26.sp,
-                    lineHeight = 32.sp,
-                    fontWeight = FontWeight.Bold,
-                ),
-                color = colorScheme.onSurface,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-            )
+                Column(modifier = Modifier.weight(1f)) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            text = CountryFlagHelper.getFlagForExchange(data.exchange, data.currency).orEmpty(),
+                            style = MaterialTheme.typography.titleLarge,
+                        )
+                        Text(
+                            text = stockMeta(data),
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontSize = 11.sp,
+                                lineHeight = 14.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                letterSpacing = 0.5.sp,
+                            ),
+                            color = LocalTextTertiary.current,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+
+                    Text(
+                        text = data.companyName,
+                        modifier = Modifier.padding(top = 6.dp),
+                        style = MaterialTheme.typography.headlineSmall.copy(
+                            fontSize = 26.sp,
+                            lineHeight = 32.sp,
+                            fontWeight = FontWeight.Bold,
+                        ),
+                        color = colorScheme.onSurface,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+            }
 
             Row(
                 modifier = Modifier.padding(top = 18.dp),

@@ -23,9 +23,16 @@ import com.stockflip.CountryFlagHelper
 import com.stockflip.StockSearchResult
 
 /**
- * Bolagslogga som avatar. Hämtas från Logo.dev via ticker och faller tillbaka till samma
- * tonade flagg-/initialruta som tidigare var den enda visualiseringen — vid krypto-par
- * (ingen bolagslogga att visa), okänd symbol, eller nätverksfel.
+ * Extraherar kryptokoden ur en Yahoo-ticker, t.ex. "BTC-USD" -> "btc", för uppslag mot
+ * CoinCap:s ikon-API. Returnerar null om symbolen inte matchar mönstret.
+ */
+private fun cryptoIconCode(symbol: String): String? =
+    symbol.substringBefore("-", missingDelimiterValue = "").takeIf { it.isNotBlank() }?.lowercase()
+
+/**
+ * Bolagslogga som avatar. Hämtas från Logo.dev via ticker (bolag) eller CoinCap via
+ * kryptokod (krypto), och faller tillbaka till samma tonade flagg-/initialruta som tidigare
+ * var den enda visualiseringen — vid krypto-par (÷), okänd symbol, eller nätverksfel.
  */
 @Composable
 fun CompanyLogoAvatar(
@@ -35,11 +42,17 @@ fun CompanyLogoAvatar(
 ) {
     val isCrypto = symbol != null && StockSearchResult.isCryptoSymbol(symbol)
     val isPair = symbol?.contains("÷") == true
+    val cryptoIconUrl = if (isCrypto) {
+        symbol?.let(::cryptoIconCode)?.let { "https://assets.coincap.io/assets/icons/$it@2x.png" }
+    } else {
+        null
+    }
     val flag = symbol?.let {
         CountryFlagHelper.getCountryCodeFromSymbol(it)?.let(CountryFlagHelper::getFlagEmoji)
     }
     var loadFailed by remember(symbol) { mutableStateOf(false) }
-    val showLogo = !isCrypto && !isPair && symbol != null && !loadFailed
+    val showCompanyLogo = !isCrypto && !isPair && symbol != null && !loadFailed
+    val showCryptoLogo = isCrypto && !isPair && cryptoIconUrl != null && !loadFailed
 
     Box(
         modifier = modifier
@@ -48,7 +61,15 @@ fun CompanyLogoAvatar(
             .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.65f)),
         contentAlignment = Alignment.Center,
     ) {
-        if (showLogo) {
+        if (showCryptoLogo) {
+            AsyncImage(
+                model = cryptoIconUrl,
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.size(size),
+                onError = { loadFailed = true },
+            )
+        } else if (showCompanyLogo) {
             AsyncImage(
                 model = "https://img.logo.dev/ticker/$symbol?token=${BuildConfig.LOGO_DEV_TOKEN}&size=128",
                 contentDescription = null,

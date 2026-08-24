@@ -17,7 +17,6 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
-import coil.load
 import com.stockflip.ui.SwipeToDeleteCallback
 import com.stockflip.databinding.FragmentStockDetailBinding
 import com.stockflip.repository.MetricHistoryRepository
@@ -447,16 +446,6 @@ class StockDetailFragment : Fragment() {
         
         // Dölj nyckeltal-knappen om det är en kryptovaluta
         val isCrypto = StockSearchResult.isCryptoSymbol(data.symbol)
-
-        // Bolagslogga (ingen logga för krypto, döljs vid nätverksfel)
-        if (isCrypto) {
-            binding.companyLogo.visibility = android.view.View.GONE
-        } else {
-            binding.companyLogo.visibility = android.view.View.VISIBLE
-            binding.companyLogo.load("https://img.logo.dev/ticker/${data.symbol}?token=${BuildConfig.LOGO_DEV_TOKEN}&size=128") {
-                listener(onError = { _, _ -> binding.companyLogo.visibility = android.view.View.GONE })
-            }
-        }
 
         binding.createKeyMetricsButton.visibility = if (isCrypto) android.view.View.GONE else android.view.View.VISIBLE
         binding.createInsiderBuyButton.visibility = if (canUseSecInsiderData(data)) {
