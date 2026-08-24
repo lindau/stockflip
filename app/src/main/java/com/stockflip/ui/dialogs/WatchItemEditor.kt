@@ -393,7 +393,7 @@ class WatchItemEditor(
         if (item.watchType !is WatchType.InsiderBuy) return
         MaterialAlertDialogBuilder(context)
             .setTitle("Bevakning för insideraffärer")
-            .setMessage("StockFlip kontrollerar nya insideraffärer en gång per dag.")
+            .setMessage("StockFlip kontrollerar nya insideraffärer var 6:e timme.")
             .setOnDismissListener { onDialogDismissed?.invoke() }
             .setPositiveButton("Stäng", null)
             .setNeutralButton("Ta bort") { _, _ -> onDeleteRequested(item) }

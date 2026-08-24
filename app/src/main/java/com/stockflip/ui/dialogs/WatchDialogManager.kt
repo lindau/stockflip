@@ -684,7 +684,7 @@ class WatchDialogManager(
         val watchType = WatchType.InsiderBuy()
         MaterialAlertDialogBuilder(context)
             .setTitle("Skapa bevakning för insideraffärer")
-            .setMessage("StockFlip kontrollerar nya insideraffärer en gång per dag.")
+            .setMessage("StockFlip kontrollerar nya insideraffärer var 6:e timme.")
             .setPositiveButton("Skapa") { _, _ ->
                 lifecycleScope.launch {
                     if (viewModel.isDuplicateWatch(watchType)) {
