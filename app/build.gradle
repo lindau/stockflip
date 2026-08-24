@@ -77,13 +77,14 @@ if (keystorePropertiesFile.exists()) {
     keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
 }
 
-// Load local.properties for the Logo.dev API token (not checked into version control)
+// Logo.dev publishable key: safe to embed client-side by design. Default below works out of
+// the box; override via local.properties (LOGO_DEV_TOKEN=...) if the key is ever rotated.
 def localPropertiesFile = rootProject.file("local.properties")
 def localProperties = new Properties()
 if (localPropertiesFile.exists()) {
     localProperties.load(new FileInputStream(localPropertiesFile))
 }
-def logoDevToken = localProperties.getProperty("LOGO_DEV_TOKEN", "")
+def logoDevToken = localProperties.getProperty("LOGO_DEV_TOKEN", "pk_aAXNDchkShyH7xL15WtS4A")
 
 android {
     namespace = 'com.stockflip'
