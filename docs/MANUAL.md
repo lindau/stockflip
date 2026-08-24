@@ -188,7 +188,7 @@ I nuvarande appversion fungerar flikarna så här:
 
 **Vad det gör:** Skickar en notis när nya insideraffärer (både köp och försäljningar) rapporteras för en aktie där appen har stöd för insiderdata.
 
-**Typ:** Återkommande — kontrolleras dagligen och kan utlösas igen nästa handelsdag.
+**Typ:** Återkommande — kontrolleras var 6:e timme och kan utlösas igen nästa handelsdag.
 
 **Skapa en bevakning för insideraffärer:**
 1. Öppna aktiedetaljvyn för en aktie med insiderstöd.

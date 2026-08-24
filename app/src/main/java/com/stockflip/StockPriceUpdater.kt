@@ -42,7 +42,7 @@ object StockPriceUpdater {
             .setConstraints(constraints)
             .build()
         val insiderTransactionWork = PeriodicWorkRequestBuilder<InsiderTransactionWorker>(
-            1, TimeUnit.DAYS
+            6, TimeUnit.HOURS
         )
             .setConstraints(constraints)
             .build()
@@ -59,7 +59,7 @@ object StockPriceUpdater {
             )
             enqueueUniquePeriodicWork(
                 WORK_NAME_INSIDER_TRANSACTIONS,
-                ExistingPeriodicWorkPolicy.KEEP,
+                ExistingPeriodicWorkPolicy.UPDATE,
                 insiderTransactionWork
             )
         }

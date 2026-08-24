@@ -263,7 +263,7 @@ private fun clarityCaseSubtitle(
                 "Återkommande · väntar på dagsrörelse"
             }
         }
-        is WatchType.InsiderBuy -> "Kontrolleras dagligen"
+        is WatchType.InsiderBuy -> "Kontrolleras var 6:e timme"
         is WatchType.Combined -> "Äldre bevakningstyp · kombinerat villkor"
         is WatchType.PricePair -> "Trigger när spreaden når nivån oavsett riktning"
     }
@@ -275,7 +275,7 @@ private fun clarityCaseStatus(item: WatchItem): String {
     return when {
         !item.isActive -> "Pausad"
         LocalIsNewTrigger.current -> "Ny"
-        item.watchType is WatchType.InsiderBuy -> "Kontrolleras dagligen"
+        item.watchType is WatchType.InsiderBuy -> "Kontrolleras var 6:e timme"
         item.isTriggered -> triggeredStatusLabel(item.lastTriggeredDate)
         item.hasPendingNextTradingDayGuard() -> "Nästa handelsdag"
         nearLabel != null -> nearLabel

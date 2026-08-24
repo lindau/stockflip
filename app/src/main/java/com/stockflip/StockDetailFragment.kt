@@ -1008,7 +1008,7 @@ class StockDetailFragment : Fragment() {
             }
 
             is WatchType.PriceRange -> "Pris bevakas inom ditt intervall"
-            is WatchType.InsiderBuy -> "Insideraffärer bevakas dagligen"
+            is WatchType.InsiderBuy -> "Insideraffärer bevakas var 6:e timme"
             is WatchType.PricePair -> "Parbevakning"
             is WatchType.Combined -> "Kombinerat villkor"
         }
