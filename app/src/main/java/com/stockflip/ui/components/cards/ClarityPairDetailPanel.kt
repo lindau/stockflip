@@ -38,6 +38,7 @@ import com.stockflip.StockSummary
 import com.stockflip.WatchType
 import com.stockflip.hasPendingNextTradingDayGuard
 import com.stockflip.pairSpreadDirectionLabel
+import com.stockflip.ui.components.CompanyLogoAvatar
 import com.stockflip.ui.components.PairPerformanceChart
 import com.stockflip.ui.theme.LocalCardBorder
 import com.stockflip.ui.theme.LocalPriceDown
@@ -250,13 +251,19 @@ private fun ClarityPairStockCell(
             .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.42f), RoundedCornerShape(16.dp))
             .padding(14.dp),
     ) {
-        Text(
-            text = listOfNotNull(flag, stock.companyName ?: stock.symbol).joinToString(" "),
-            style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
-            color = MaterialTheme.colorScheme.onSurface,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            CompanyLogoAvatar(symbol = stock.symbol, size = 28.dp)
+            Text(
+                text = listOfNotNull(flag, stock.companyName ?: stock.symbol).joinToString(" "),
+                style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
         Text(
             text = stock.symbol,
             modifier = Modifier.padding(top = 2.dp),

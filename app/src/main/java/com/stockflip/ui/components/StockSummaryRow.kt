@@ -46,6 +46,11 @@ fun StockSummaryRow(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.Top,
     ) {
+        CompanyLogoAvatar(
+            symbol = ticker,
+            modifier = Modifier.padding(end = 12.dp),
+            size = 44.dp,
+        )
         Column(
             modifier = Modifier.weight(1f),
             verticalArrangement = Arrangement.Center,

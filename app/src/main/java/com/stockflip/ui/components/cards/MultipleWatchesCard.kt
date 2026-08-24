@@ -4,7 +4,6 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -32,8 +31,8 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.stockflip.CountryFlagHelper
 import com.stockflip.CurrencyHelper
+import com.stockflip.ui.components.CompanyLogoAvatar
 import com.stockflip.ui.components.StockSummaryRow
 import com.stockflip.ui.theme.ListCardShape
 import com.stockflip.ui.theme.LocalCardBorder
@@ -160,10 +159,6 @@ private fun MultipleWatchesClarityContent(
         dailyChangePercent >= 0.0 -> LocalPriceUp.current
         else -> LocalPriceDown.current
     }
-    val flag = CountryFlagHelper
-        .getCountryCodeFromSymbol(symbol)
-        ?.let { CountryFlagHelper.getFlagEmoji(it) }
-
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -174,18 +169,7 @@ private fun MultipleWatchesClarityContent(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Box(
-                modifier = Modifier
-                    .size(40.dp)
-                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.65f), RoundedCornerShape(12.dp)),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    text = flag ?: symbol.take(1),
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
-            }
+            CompanyLogoAvatar(symbol = symbol, size = 44.dp)
 
             Column(modifier = Modifier.weight(1f)) {
                 Text(

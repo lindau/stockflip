@@ -2,6 +2,8 @@
 
 ## 1.2
 
+- Bolagsloggor visas nu i översikten och på aktiedetaljen, med flagga som sekundär info
+- Insideraffärer kontrolleras nu var 6:e timme istället för en gång per dag
 - Ny huvudnavigation med `Översikt`, `Par` och `Mina case`
 - `Översikt` byggd som läsläge med sammanfattningskort och sektioner för `Nytt och triggade`, `Nära att triggas`, `Aktiva case` och `Inaktiva`
 - `Mina case` samlar nu tillägg av aktier, bevakningshantering, filter och masshantering på ett ställe

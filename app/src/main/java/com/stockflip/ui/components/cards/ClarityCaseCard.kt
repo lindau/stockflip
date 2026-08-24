@@ -41,6 +41,7 @@ import com.stockflip.WatchItem
 import com.stockflip.WatchType
 import com.stockflip.hasPendingNextTradingDayGuard
 import com.stockflip.triggerConditionText
+import com.stockflip.ui.components.CompanyLogoAvatar
 import com.stockflip.ui.theme.LocalCardBorder
 import com.stockflip.ui.theme.LocalTextTertiary
 import java.text.SimpleDateFormat
@@ -110,6 +111,12 @@ fun ClarityCaseCard(
                     .fillMaxHeight()
                     .clip(RoundedCornerShape(5.dp))
                     .background(stripeColor),
+            )
+
+            CompanyLogoAvatar(
+                symbol = clarityCaseSymbol(item),
+                modifier = Modifier.align(Alignment.CenterVertically),
+                size = 44.dp,
             )
 
             Column(

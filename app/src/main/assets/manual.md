@@ -418,3 +418,6 @@ Utan notisbehörighet kan appen inte meddela dig när en bevakning utlöses — 
 
 **Vilka aktier kan jag bevaka?**
 - Alla aktier som finns på Yahoo Finance: svenska (OMX), amerikanska (NASDAQ/NYSE), krypto och mer. Svenska aktier söks med tickersuffix `.ST` (t.ex. `VOLV-B.ST`).
+
+**Varifrån kommer bolagsloggorna?**
+- Bolagsloggor tillhandahålls av [Logo.dev](https://www.logo.dev).

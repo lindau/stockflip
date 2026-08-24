@@ -77,6 +77,14 @@ if (keystorePropertiesFile.exists()) {
     keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
 }
 
+// Load local.properties for the Logo.dev API token (not checked into version control)
+def localPropertiesFile = rootProject.file("local.properties")
+def localProperties = new Properties()
+if (localPropertiesFile.exists()) {
+    localProperties.load(new FileInputStream(localPropertiesFile))
+}
+def logoDevToken = localProperties.getProperty("LOGO_DEV_TOKEN", "")
+
 android {
     namespace = 'com.stockflip'
     compileSdk = 35
@@ -87,6 +95,8 @@ android {
         targetSdk 35
         versionCode appVersionCode
         versionName appVersionName
+
+        buildConfigField "String", "LOGO_DEV_TOKEN", "\"${logoDevToken}\""
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         
@@ -173,7 +183,9 @@ dependencies {
     implementation 'net.zetetic:sqlcipher-android:4.14.1'
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3'
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3'
-    
+    implementation 'io.coil-kt:coil:2.7.0'
+    implementation 'io.coil-kt:coil-compose:2.7.0'
+
     // Compose
     implementation platform('androidx.compose:compose-bom:2024.10.00')
     implementation 'androidx.compose.ui:ui'
