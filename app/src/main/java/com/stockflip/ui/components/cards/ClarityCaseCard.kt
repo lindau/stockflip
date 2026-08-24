@@ -282,7 +282,6 @@ private fun clarityCaseStatus(item: WatchItem): String {
     return when {
         !item.isActive -> "Pausad"
         LocalIsNewTrigger.current -> "Ny"
-        item.watchType is WatchType.InsiderBuy -> "Kontrolleras var 6:e timme"
         item.isTriggered -> triggeredStatusLabel(item.lastTriggeredDate)
         item.hasPendingNextTradingDayGuard() -> "Nästa handelsdag"
         nearLabel != null -> nearLabel
