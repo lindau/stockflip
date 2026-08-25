@@ -5,8 +5,10 @@ import android.webkit.WebView
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.work.Configuration
 import androidx.work.WorkManager
+import coil.ImageLoader
+import coil.ImageLoaderFactory
 
-class StockFlipApplication : Application() {
+class StockFlipApplication : Application(), ImageLoaderFactory {
     override fun onCreate() {
         super.onCreate()
 
@@ -27,4 +29,6 @@ class StockFlipApplication : Application() {
         StockPriceUpdater.startPeriodicUpdate(this)
         TriggerSeenTracker.init(this)
     }
+
+    override fun newImageLoader(): ImageLoader = LogoImageLoader.build(this)
 }
