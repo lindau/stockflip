@@ -22,6 +22,7 @@
     <string name="alert_deleted">Bevakning borttagen</string>
     <string name="alert_deactivated">Bevakning inaktiverad</string>
     <string name="alert_undo">Ångra</string>
+    <string name="alerts_refresh_failed">Kunde inte uppdatera – visar senast kända värden</string>
 
     <string name="tab_stocks">Översikt</string>
     <string name="tab_pairs">Par</string>

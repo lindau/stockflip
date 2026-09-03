@@ -31,6 +31,11 @@ class MainViewModel(
     private val _watchItemUiState = MutableStateFlow<UiState<List<WatchItemUiState>>>(UiState.Loading)
     val watchItemUiState: StateFlow<UiState<List<WatchItemUiState>>> = _watchItemUiState.asStateFlow()
 
+    // True medan live-priser hämtas i bakgrunden. Driver en icke-blockerande spinner i UI:t,
+    // till skillnad från UiState.Loading som ersätter hela skärmen.
+    private val _watchItemsRefreshing = MutableStateFlow(false)
+    val watchItemsRefreshing: StateFlow<Boolean> = _watchItemsRefreshing.asStateFlow()
+
     val notedTickers: StateFlow<Set<String>> = stockNoteDao.getAllTickersFlow()
         .map { it.toSet() }
         .stateIn(viewModelScope, SharingStarted.Lazily, emptySet())
@@ -51,7 +56,7 @@ class MainViewModel(
                 delay(120_000)
                 try {
                     refreshStockPairs()
-                    refreshWatchItems()
+                    refreshWatchItems(showLoading = false)
                 } catch (e: Exception) {
                     Log.w(TAG, "Auto-refresh failed: ${e.message}")
                 }
@@ -157,23 +162,24 @@ class MainViewModel(
     suspend fun loadWatchItems(forceShowStaleData: Boolean) {
         try {
             Log.d(TAG, "Loading watch items from database")
-            _watchItemUiState.value = UiState.Loading
+            // Blinka inte skelett om vi redan visar data — bara vid äkta första laddning.
+            if (_watchItemUiState.value !is UiState.Success) {
+                _watchItemUiState.value = UiState.Loading
+            }
             val items = watchItemDao.getAllWatchItems()
             Log.d(TAG, "Loaded ${items.size} watch items")
-            
-            // Check if there are KeyMetrics items that need refreshing
+
             // KeyMetrics currentMetricValue is @Ignore and not saved to database,
-            // so we need to refresh to get the actual values
+            // so we need to refresh to get the actual values.
             val hasKeyMetrics = items.any { it.watchType is WatchType.KeyMetrics }
-            
+
+            // Visa alltid DB-datan direkt så skärmen aldrig fastnar i Loading.
+            _watchItemUiState.value = UiState.Success(items.map { WatchItemUiState(it) })
+            Log.d(TAG, "Set UI state to Success with ${items.size} watch items (stale=${forceShowStaleData || hasKeyMetrics})")
+
             if (hasKeyMetrics && !forceShowStaleData) {
-                Log.d(TAG, "Found KeyMetrics items, keeping Loading state until refresh completes")
-                // Don't set Success state yet - wait for refreshWatchItems() to complete
-                // This ensures KeyMetrics values are loaded before showing UI
-            } else {
-                // No KeyMetrics items, safe to show data from database immediately
-                _watchItemUiState.value = UiState.Success(items.map { WatchItemUiState(it) })
-                Log.d(TAG, "No KeyMetrics items, set UI state to Success")
+                // KeyMetrics-värden saknas i DB — hämta dem tyst i bakgrunden (spinner via refreshWatchItems).
+                viewModelScope.launch { refreshWatchItems(showLoading = false) }
             }
         } catch (e: Exception) {
             Log.e(TAG, "Error loading watch items: ${e.message}")
@@ -189,6 +195,7 @@ class MainViewModel(
         }
         
         isRefreshing = true
+        _watchItemsRefreshing.value = true
         try {
             Log.d(TAG, "=== START refreshWatchItems() ===")
             if (showLoading) {
@@ -378,6 +385,7 @@ class MainViewModel(
             Log.d(TAG, "Set UI state to Error")
         } finally {
             isRefreshing = false
+            _watchItemsRefreshing.value = false
             Log.d(TAG, "Refresh flag reset")
         }
     }

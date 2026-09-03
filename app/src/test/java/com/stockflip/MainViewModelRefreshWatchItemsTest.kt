@@ -102,6 +102,60 @@ class MainViewModelRefreshWatchItemsTest {
     }
 
     @Test
+    fun `loadWatchItems without stale flag still emits success for key metrics`() = runBlocking {
+        val watchItems: List<WatchItem> = listOf(
+            WatchItem(
+                id = 1,
+                watchType = WatchType.KeyMetrics(
+                    metricType = WatchType.MetricType.PE_RATIO,
+                    targetValue = 15.0,
+                    direction = WatchType.PriceDirection.BELOW
+                ),
+                ticker = "VOLV-B.ST",
+                companyName = "Volvo B"
+            )
+        )
+
+        val watchItemDao: WatchItemDao = InMemoryWatchItemDao(watchItems)
+        val viewModel = MainViewModel(
+            InMemoryStockPairDao(emptyList()),
+            watchItemDao,
+            FakeMarketDataService(pricesBySymbol = mapOf("VOLV-B.ST" to 300.0)),
+            InMemoryStockNoteDao()
+        )
+
+        viewModel.loadWatchItems(forceShowStaleData = false)
+
+        val state = viewModel.watchItemUiState.value
+        assertTrue("Expected Success, was $state", state is UiState.Success)
+        assertEquals(1, (state as UiState.Success).data.size)
+    }
+
+    @Test
+    fun `watchItemsRefreshing flag is cleared after refresh completes`() = runBlocking {
+        val watchItemDao = InMemoryWatchItemDao(
+            listOf(
+                WatchItem(
+                    id = 1,
+                    watchType = WatchType.PriceTarget(targetPrice = 250.0, direction = WatchType.PriceDirection.ABOVE),
+                    ticker = "VOLV-B.ST",
+                    companyName = "Volvo B"
+                )
+            )
+        )
+        val viewModel = MainViewModel(
+            InMemoryStockPairDao(emptyList()),
+            watchItemDao,
+            FakeMarketDataService(pricesBySymbol = mapOf("VOLV-B.ST" to 300.0)),
+            InMemoryStockNoteDao()
+        )
+
+        viewModel.refreshWatchItems(showLoading = false)
+
+        assertFalse(viewModel.watchItemsRefreshing.value)
+    }
+
+    @Test
     fun `toggleWatchItemActive only changes active flag`() = runBlocking {
         val triggeredItem = WatchItem(
             id = 1,

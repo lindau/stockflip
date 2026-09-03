@@ -742,9 +742,10 @@ class MainActivity : AppCompatActivity() {
             // Show stale data immediately, then refresh live values in the background.
             // This avoids a blank overview on cold start, especially when KeyMetrics items are present.
             viewModel.loadWatchItems(forceShowStaleData = true)
-            // Then immediately refresh to get latest prices and key metrics
-            // This ensures KeyMetrics values are loaded correctly
-            viewModel.refreshWatchItems()
+            // Then immediately refresh to get latest prices and key metrics.
+            // Silent (showLoading = false): the stale DB data is already on screen, so enrich it
+            // in the background with just the refresh spinner instead of a full skeleton/error flash.
+            viewModel.refreshWatchItems(showLoading = false)
         }
     }
 
@@ -788,6 +789,14 @@ class MainActivity : AppCompatActivity() {
                 viewModel.notedTickers.collect { notedTickers ->
                     lastNotedTickers = notedTickers
                     showWatchItemSuccess(lastWatchItems)
+                }
+            }
+        }
+        // Background refresh indicator for the Stocks overview (Alerts/Pairs drive their own).
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.watchItemsRefreshing.collect { refreshing ->
+                    binding.swipeRefreshLayout.isRefreshing = refreshing && currentMainTab == MainTab.STOCKS
                 }
             }
         }
@@ -1329,7 +1338,9 @@ class MainActivity : AppCompatActivity() {
     fun refreshPrices() {
         lifecycleScope.launch {
             try {
-                viewModel.refreshWatchItems()
+                // Silent: the swipe spinner is driven by watchItemsRefreshing (see setupObservers).
+                // Avoids a full-screen Error/skeleton flash if a single ticker fetch fails.
+                viewModel.refreshWatchItems(showLoading = false)
                 updateLastUpdateTime()
             } catch (e: Exception) {
                 Toast.makeText(this@MainActivity, "Failed to refresh: ${e.message}", Toast.LENGTH_LONG).show()

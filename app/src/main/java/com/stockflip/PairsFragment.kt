@@ -46,6 +46,7 @@ class PairsFragment : Fragment() {
 
     private lateinit var groupedAdapter: GroupedWatchItemAdapter
     private var pendingDeleteSnackbar: Snackbar? = null
+    private var latestPairs: List<WatchItemUiState> = emptyList()
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -65,6 +66,11 @@ class PairsFragment : Fragment() {
         }
         setupRecyclerView()
         setupObservers()
+
+        // Fragmentet skapas om vid varje flikbyte — trigga en tyst refresh så listan alltid fylls.
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewModel.refreshWatchItems(showLoading = false)
+        }
     }
 
     private fun setupRecyclerView() {
@@ -117,7 +123,7 @@ class PairsFragment : Fragment() {
         binding.swipeRefreshLayout.setOnRefreshListener {
             viewLifecycleOwner.lifecycleScope.launch {
                 try {
-                    viewModel.refreshWatchItems()
+                    viewModel.refreshWatchItems(showLoading = false)
                 } catch (e: Exception) {
                     binding.swipeRefreshLayout.isRefreshing = false
                 }
@@ -175,23 +181,34 @@ class PairsFragment : Fragment() {
                 viewModel.watchItemUiState.collect { state ->
                     when (state) {
                         is UiState.Loading -> {
-                            if (!binding.swipeRefreshLayout.isRefreshing) {
+                            if (latestPairs.isEmpty()) {
+                                binding.emptyStateContainer.visibility = View.GONE
                                 binding.skeletonLoadingView.visibility = View.VISIBLE
                             }
                         }
                         is UiState.Success -> {
                             binding.skeletonLoadingView.visibility = View.GONE
-                            binding.swipeRefreshLayout.isRefreshing = false
                             val pairs = state.data.filter { it.item.watchType is WatchType.PricePair }
+                            latestPairs = pairs
                             groupedAdapter.submitGroupedList(pairs)
                             binding.emptyStateContainer.visibility = if (pairs.isEmpty()) View.VISIBLE else View.GONE
                         }
                         is UiState.Error -> {
                             binding.skeletonLoadingView.visibility = View.GONE
-                            binding.swipeRefreshLayout.isRefreshing = false
-                            binding.emptyStateContainer.visibility = View.VISIBLE
+                            if (latestPairs.isEmpty()) {
+                                binding.emptyStateContainer.visibility = View.VISIBLE
+                            } else {
+                                Snackbar.make(binding.root, R.string.alerts_refresh_failed, Snackbar.LENGTH_LONG).show()
+                            }
                         }
                     }
+                }
+            }
+        }
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.watchItemsRefreshing.collect { refreshing ->
+                    binding.swipeRefreshLayout.isRefreshing = refreshing
                 }
             }
         }

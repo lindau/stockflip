@@ -82,6 +82,13 @@ class AlertsFragment : Fragment() {
         setupReactivateAll()
         setupRecyclerView()
         setupObservers()
+
+        // Fragmentet skapas om vid varje flikbyte och lyssnar bara passivt på det delade flödet.
+        // Trigga en tyst refresh så listan alltid fylls (och en fastnad Loading läks) utan att
+        // användaren måste dra för att uppdatera.
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewModel.refreshWatchItems(showLoading = false)
+        }
     }
 
     private fun setupFilters() {
@@ -198,7 +205,8 @@ class AlertsFragment : Fragment() {
         binding.swipeRefreshLayout.setOnRefreshListener {
             viewLifecycleOwner.lifecycleScope.launch {
                 try {
-                    viewModel.refreshWatchItems()
+                    // Spinnern styrs av watchItemsRefreshing-observern.
+                    viewModel.refreshWatchItems(showLoading = false)
                 } catch (e: Exception) {
                     binding.swipeRefreshLayout.isRefreshing = false
                 }
@@ -273,23 +281,35 @@ class AlertsFragment : Fragment() {
                 viewModel.watchItemUiState.collect { state ->
                     when (state) {
                         is UiState.Loading -> {
-                            if (!binding.swipeRefreshLayout.isRefreshing) {
+                            // Visa skelett bara vid äkta första laddning; har vi redan data
+                            // låter vi listan ligga kvar och spinnern indikerar arbetet.
+                            if (latestItems.isEmpty()) {
+                                binding.emptyStateContainer.visibility = View.GONE
                                 binding.skeletonLoadingView.visibility = View.VISIBLE
                             }
                         }
                         is UiState.Success -> {
                             binding.skeletonLoadingView.visibility = View.GONE
-                            binding.swipeRefreshLayout.isRefreshing = false
                             latestItems = state.data
                             renderFilteredList()
                         }
                         is UiState.Error -> {
                             binding.skeletonLoadingView.visibility = View.GONE
-                            binding.swipeRefreshLayout.isRefreshing = false
-                            binding.emptyStateContainer.visibility = View.VISIBLE
-                            binding.emptyStateText.text = state.message
+                            if (latestItems.isEmpty()) {
+                                binding.emptyStateContainer.visibility = View.VISIBLE
+                                binding.emptyStateText.text = state.message
+                            } else {
+                                Snackbar.make(binding.root, R.string.alerts_refresh_failed, Snackbar.LENGTH_LONG).show()
+                            }
                         }
                     }
+                }
+            }
+        }
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.watchItemsRefreshing.collect { refreshing ->
+                    binding.swipeRefreshLayout.isRefreshing = refreshing
                 }
             }
         }
