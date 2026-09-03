@@ -346,7 +346,7 @@ Engångslarm (Målpris och Drawdown) inaktiveras automatiskt efter utlösning.
 
 Bevakningen är nu aktiv igen. För målpris räknar appen om riktningen från aktuell kurs: om kursen ligger över målpriset bevakas nästa passage ned under nivån, och om kursen ligger under målpriset bevakas nästa passage upp över nivån.
 
-Om du återaktiverar efter att den berörda börsen har stängt behåller appen dagens trigger-spärr. Bevakningen visas som aktiv igen, men kan inte skicka en ny notis för samma utlösning förrän nästa handelsdag.
+Om villkoret fortfarande är uppfyllt när du återaktiverar (kursen ligger till exempel kvar över målpriset, eller aktien är kvar i drawdown), eller om den berörda börsen har stängt, behåller appen dagens trigger-spärr. Bevakningen visas som aktiv igen, men kan inte skicka en ny notis för samma utlösning förrän nästa handelsdag — då utvärderas den på nytt. Detta hindrar att bevakningen utlöses igen direkt av det aktuella värdet.
 I listor visas detta som **Nästa handelsdag**, och återaktiveringsmeddelandet säger att bevakningen kan trigga först nästa handelsdag.
 
 Om flera engångslarm är triggade samtidigt kan du återaktivera dem alla på en gång: välj filtret **Triggade** i **Mina case** och tryck **Återaktivera alla**.

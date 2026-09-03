@@ -39,7 +39,7 @@ fun WatchItemUiState.isTriggeredTodayForDisplay(today: String): Boolean {
     return hasLiveTriggerCondition() || (item.isTriggered && item.lastTriggeredDate == today)
 }
 
-private fun WatchItemUiState.hasLiveTriggerCondition(): Boolean {
+internal fun WatchItemUiState.hasLiveTriggerCondition(): Boolean {
     return when (val watchType = item.watchType) {
         is WatchType.PricePair -> {
             if (live.currentPrice1 <= 0.0 || live.currentPrice2 <= 0.0) return false

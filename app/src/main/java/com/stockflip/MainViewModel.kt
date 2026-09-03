@@ -429,7 +429,7 @@ class MainViewModel(
     suspend fun reactivateWatchItem(watchItem: WatchItem): WatchReactivationResult {
         try {
             Log.d(TAG, "Reactivating watch item")
-            val keepLastTriggeredDate = shouldKeepLastTriggeredDateAfterClose(watchItem)
+            val keepLastTriggeredDate = shouldGuardAgainstImmediateRetrigger(watchItem)
             val updatedWatchItem: WatchItem = watchItem.reactivate(
                 currentPrice = currentPriceForReactivation(watchItem),
                 keepLastTriggeredDate = keepLastTriggeredDate
@@ -466,8 +466,22 @@ class MainViewModel(
         }
     }
 
-    private suspend fun shouldKeepLastTriggeredDateAfterClose(watchItem: WatchItem): Boolean {
+    /**
+     * Avgör om datumspärren ska behållas vid återaktivering, så att larmet inte utlöses
+     * på nytt direkt av bakgrundsjobbet. Spärras (return true) om larmet triggades idag OCH:
+     *  1. villkoret fortfarande är uppfyllt just nu, eller
+     *  2. villkoret inte går att avgöra (data saknas) – konservativ spärr, eller
+     *  3. marknaden för symbolen är stängd.
+     */
+    private suspend fun shouldGuardAgainstImmediateRetrigger(watchItem: WatchItem): Boolean {
         if (watchItem.lastTriggeredDate != WatchItem.getTodayDateString()) return false
+
+        when (conditionCurrentlyMet(watchItem)) {
+            true -> return true
+            null -> return true
+            false -> { /* villkoret har upphört – kontrollera marknadstid nedan */ }
+        }
+
         val ticker = watchItem.ticker ?: watchItem.ticker1 ?: return false
         if (StockSearchResult.isCryptoSymbol(ticker)) return false
 
@@ -479,6 +493,19 @@ class MainViewModel(
         }
 
         return !StockMarketScheduler.isMarketOpenForSymbol(ticker, exchange)
+    }
+
+    /**
+     * Utvärderar larmets villkor mot senaste live-data i UI-tillståndet.
+     * @return true/false om det går att avgöra, annars null.
+     */
+    private fun conditionCurrentlyMet(watchItem: WatchItem): Boolean? {
+        val uiState = (_watchItemUiState.value as? UiState.Success<List<WatchItemUiState>>)
+            ?.data
+            ?.firstOrNull { it.item.id == watchItem.id }
+            ?: return null
+        if (uiState.live.lastUpdatedAt == 0L || uiState.live.updateFailed) return null
+        return uiState.hasLiveTriggerCondition()
     }
 
     private suspend fun currentPriceForReactivation(watchItem: WatchItem): Double? {

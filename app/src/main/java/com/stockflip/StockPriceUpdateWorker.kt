@@ -220,38 +220,52 @@ class StockPriceUpdateWorker(
                     item.canTrigger(today) && (evaluateWatchItem(item, snapshots) ?: false)
                 }
                 if (triggered) {
-                    val payload = buildTriggerNotificationPayload(item, snapshots)
-                    when (item.watchType) {
+                    // Läs om raden färskt precis före skrivning. Under nätverksanropen ovan kan
+                    // användaren ha hunnit återaktivera larmet (med datumspärr) – då ska vi inte
+                    // skriva över den återaktiveringen med en ny markAsTriggered.
+                    val fresh = watchItemDao.getWatchItemById(item.id) ?: continue
+                    if (!fresh.isActive) continue
+                    val stillTriggerable = if (fresh.watchType is WatchType.PricePair) {
+                        fresh.canTrigger(today, pairTriggerSide)
+                    } else {
+                        fresh.canTrigger(today) && (evaluateWatchItem(fresh, snapshots) ?: false)
+                    }
+                    if (!stillTriggerable) {
+                        Log.d(TAG, "Skipping trigger – watch item changed concurrently")
+                        continue
+                    }
+                    val payload = buildTriggerNotificationPayload(fresh, snapshots)
+                    when (fresh.watchType) {
                         is WatchType.PricePair -> {
                             showNotification(
                                 title = payload.title,
                                 message = payload.message,
-                                pairWatchItemId = item.id,
+                                pairWatchItemId = fresh.id,
                                 triggerTitle = payload.title,
                                 triggerMessage = payload.message
                             )
                         }
                         else -> {
-                            val ticker = item.ticker ?: item.ticker1
+                            val ticker = fresh.ticker ?: fresh.ticker1
                             showNotification(
                                 title = payload.title,
                                 message = payload.message,
                                 ticker = ticker,
-                                companyName = item.companyName,
-                                watchItemId = item.id,
+                                companyName = fresh.companyName,
+                                watchItemId = fresh.id,
                                 triggerTitle = payload.title,
                                 triggerMessage = payload.message
                             )
                         }
                     }
-                    val triggeredItem = item.markAsTriggered(today, pairTriggerSide)
-                    val updatedItem = when (item.watchType) {
+                    val triggeredItem = fresh.markAsTriggered(today, pairTriggerSide)
+                    val updatedItem = when (fresh.watchType) {
                         is WatchType.PriceTarget, is WatchType.ATHBased ->
                             triggeredItem.copy(isActive = false)
                         else -> triggeredItem
                     }
                     watchItemDao.update(updatedItem)
-                    triggerHistoryRepository.record(item.id)
+                    triggerHistoryRepository.record(fresh.id)
                     Log.d(TAG, "Watch item triggered")
                 }
             } catch (e: Exception) {

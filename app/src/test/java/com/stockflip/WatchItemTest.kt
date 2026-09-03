@@ -204,4 +204,49 @@ class WatchItemTest {
 
         assertFalse(updated.isActive)
     }
+
+    @Test
+    fun `reactivate with keepLastTriggeredDate blocks ATH alarm same day but allows next day`() {
+        val item = WatchItem(
+            watchType = WatchType.ATHBased(
+                dropType = WatchType.DropType.PERCENTAGE,
+                dropValue = 20.0
+            ),
+            ticker = "AAPL",
+            isTriggered = true,
+            isActive = false,
+            lastTriggeredDate = "2024-01-01"
+        )
+
+        val updated = item.reactivate(keepLastTriggeredDate = true)
+
+        assertTrue(updated.isActive)
+        assertFalse(updated.isTriggered)
+        assertEquals("2024-01-01", updated.lastTriggeredDate)
+        // Får inte kunna trigga igen samma handelsdag när villkoret fortfarande gäller.
+        assertFalse(updated.canTrigger("2024-01-01"))
+        // Nästa handelsdag utvärderas det på nytt.
+        assertTrue(updated.canTrigger("2024-01-02"))
+    }
+
+    @Test
+    fun `reactivate without keepLastTriggeredDate fully re-arms ATH alarm`() {
+        val item = WatchItem(
+            watchType = WatchType.ATHBased(
+                dropType = WatchType.DropType.PERCENTAGE,
+                dropValue = 20.0
+            ),
+            ticker = "AAPL",
+            isTriggered = true,
+            isActive = false,
+            lastTriggeredDate = "2024-01-01"
+        )
+
+        val updated = item.reactivate(keepLastTriggeredDate = false)
+
+        assertTrue(updated.isActive)
+        assertFalse(updated.isTriggered)
+        assertEquals(null, updated.lastTriggeredDate)
+        assertTrue(updated.canTrigger("2024-01-01"))
+    }
 }

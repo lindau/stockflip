@@ -446,7 +446,7 @@ class StockDetailViewModel(
     }
 
     suspend fun reactivateAlertAndReturnResult(watchItem: WatchItem): WatchReactivationResult {
-        val keepLastTriggeredDate = shouldKeepLastTriggeredDateAfterClose(watchItem)
+        val keepLastTriggeredDate = shouldGuardAgainstImmediateRetrigger(watchItem)
         val updated = watchItem.reactivate(
             currentPrice = currentPriceForReactivation(watchItem),
             keepLastTriggeredDate = keepLastTriggeredDate
@@ -474,8 +474,20 @@ class StockDetailViewModel(
         }
     }
 
-    private suspend fun shouldKeepLastTriggeredDateAfterClose(watchItem: WatchItem): Boolean {
+    /**
+     * Se [MainViewModel.shouldGuardAgainstImmediateRetrigger]. Spärrar datumet vid återaktivering om
+     * larmet triggades idag och villkoret fortfarande är uppfyllt (eller inte går att avgöra), eller
+     * om marknaden är stängd.
+     */
+    private suspend fun shouldGuardAgainstImmediateRetrigger(watchItem: WatchItem): Boolean {
         if (watchItem.lastTriggeredDate != WatchItem.getTodayDateString()) return false
+
+        when (conditionCurrentlyMet(watchItem)) {
+            true -> return true
+            null -> return true
+            false -> { /* villkoret har upphört – kontrollera marknadstid nedan */ }
+        }
+
         val ticker = watchItem.ticker ?: watchItem.ticker1 ?: symbol
         if (StockSearchResult.isCryptoSymbol(ticker)) return false
 
@@ -490,6 +502,30 @@ class StockDetailViewModel(
         }
 
         return !StockMarketScheduler.isMarketOpenForSymbol(ticker, exchange, cachedCurrency)
+    }
+
+    /**
+     * Utvärderar larmets villkor mot senaste hämtade detaljdata.
+     * @return true/false om det går att avgöra, annars null.
+     */
+    private fun conditionCurrentlyMet(watchItem: WatchItem): Boolean? {
+        val data = (_stockDataState.value as? UiState.Success<StockDetailData>)?.data ?: return null
+        val ticker = watchItem.ticker ?: watchItem.ticker1 ?: symbol
+        if (data.symbol != ticker) return null
+
+        val snapshot = MarketSnapshot(
+            lastPrice = data.lastPrice,
+            previousCloseOrPriceB = data.previousClose,
+            week52High = data.week52High,
+            allTimeHigh = data.allTimeHigh,
+            keyMetrics = buildMap<AlertRule.KeyMetricType, Double> {
+                data.peRatio?.let { put(AlertRule.KeyMetricType.PE_RATIO, it) }
+                data.psRatio?.let { put(AlertRule.KeyMetricType.PS_RATIO, it) }
+                data.dividendYield?.let { put(AlertRule.KeyMetricType.DIVIDEND_YIELD, it) }
+                data.earningsPerShare?.let { put(AlertRule.KeyMetricType.EARNINGS_PER_SHARE, it) }
+            }
+        )
+        return WatchConditionChecker.isConditionCurrentlyMet(watchItem, snapshot)
     }
 
     private suspend fun currentPriceForReactivation(watchItem: WatchItem): Double? {
