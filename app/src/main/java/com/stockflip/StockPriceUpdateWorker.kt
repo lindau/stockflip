@@ -4,6 +4,7 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.work.CoroutineWorker
@@ -76,24 +77,41 @@ class StockPriceUpdateWorker(
         triggerTitle: String? = null,
         triggerMessage: String? = null
     ) {
-        val notificationToken = NotificationNavigationSecurity.issueToken()
+        // Ordningen pair → stock → alerts MÅSTE matcha MainActivity.handleDeepLinkIntent exakt,
+        // annars byggs olika kanoniska payloads och HMAC-token avvisas.
+        val destination: NotificationDestination? = when {
+            pairWatchItemId != null -> NotificationDestination.PairWatch(pairWatchItemId)
+            ticker != null -> NotificationDestination.Stock(ticker, watchItemId)
+            watchItemId != null -> NotificationDestination.AlertList(watchItemId)
+            else -> null
+        }
+
+        // Deterministiskt ID per bevakning: används både som notis-ID, PendingIntent-requestCode
+        // och i intent.data, så att varje notis får sin egen PendingIntent (Intent.filterEquals
+        // jämför varken extras eller flags).
+        val stableId = watchItemId ?: pairWatchItemId ?: System.currentTimeMillis().toInt()
+
         val intent = Intent(applicationContext, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+            data = Uri.parse("stockflip://watch/$stableId")
             if (pairWatchItemId != null) {
                 putExtra(MainActivity.EXTRA_OPEN_PAIR_WATCH_ID, pairWatchItemId)
             } else if (ticker != null) {
                 putExtra(MainActivity.EXTRA_OPEN_TICKER, ticker)
                 putExtra(MainActivity.EXTRA_OPEN_COMPANY, companyName)
-                watchItemId?.let { putExtra(MainActivity.EXTRA_OPEN_WATCH_ID, it) }
             }
+            // Behövs för både stock-highlight och alerts-fallback (Combined utan ticker).
+            watchItemId?.let { putExtra(MainActivity.EXTRA_OPEN_WATCH_ID, it) }
             putExtra(MainActivity.EXTRA_TRIGGER_TITLE, triggerTitle ?: title)
             putExtra(MainActivity.EXTRA_TRIGGER_MESSAGE, triggerMessage ?: message)
-            putExtra(MainActivity.EXTRA_NOTIFICATION_TOKEN, notificationToken)
+            destination?.let {
+                putExtra(MainActivity.EXTRA_NOTIFICATION_TOKEN, NotificationNavigationSecurity.issueToken(it))
+            }
         }
 
         val pendingIntent = PendingIntent.getActivity(
             applicationContext,
-            pairWatchItemId ?: (ticker?.hashCode() ?: 0),
+            stableId,
             intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
@@ -123,8 +141,7 @@ class StockPriceUpdateWorker(
         val notificationManager = applicationContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         // Deterministiskt notis-ID per bevakning så att två tätt inpå-anrop (t.ex. immediate-
         // och periodic-workern vid start) kollapsar till en notis istället för att staplas.
-        val notificationId = watchItemId ?: pairWatchItemId ?: System.currentTimeMillis().toInt()
-        notificationManager.notify(notificationId, notification)
+        notificationManager.notify(stableId, notification)
         Log.d(TAG, "Sent trigger notification")
     }
 
