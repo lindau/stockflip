@@ -54,6 +54,8 @@ StockFlip hämtar aktuella kurser automatiskt:
 
 Notiser skickas direkt när ett villkor uppfylls. Trycker du på notisen öppnas appen och du hamnar direkt på aktiedetaljvyn för den berörda aktien.
 
+Kurslarm skickar bara notiser medan aktiens marknad är öppen, samt upp till 30 minuter efter stängning. Det gör att du inte väcks av notiser nattetid som bygger på gårdagens stängningskurs. Kryptolarm kan utlösas dygnet runt. Ett återkommande larm vars villkor fortfarande är uppfyllt när nästa handelsdag öppnar notifierar då igen. Insiderbevakningar kontrolleras enligt sitt eget schema och påverkas inte av börsens öppettider.
+
 ### Börser och öppettider (lokal tid)
 
 | Börs | Öppettider |

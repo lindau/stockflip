@@ -171,7 +171,13 @@ class StockPriceUpdateWorker(
 
         // Fetch market snapshots for all tickers
         val snapshots = mutableMapOf<String, MarketSnapshot>()
+        // symbol → börs-kod, för att grinda notiser till marknadstid (öppet + grace).
+        val exchanges = mutableMapOf<String, String?>()
         for (ticker in tickers) {
+            exchanges[ticker] = StockMarketScheduler.inferExchangeFromSymbol(ticker)
+                ?: exchangeCache[ticker]
+                ?: runCatching { marketDataService.getExchange(ticker) }.getOrNull()
+                    ?.also { exchangeCache[ticker] = it }
             try {
                 val price = marketDataService.getStockPrice(ticker)
                 val prevClose = marketDataService.getPreviousClose(ticker)
@@ -202,6 +208,18 @@ class StockPriceUpdateWorker(
         // Evaluate each active watch item
         for (item in activeItems) {
             try {
+                // Grinda notiser till marknadstid: hoppa över om ingen av bevakningens
+                // symboler tillhör en börs som är öppen just nu (+ grace efter stängning).
+                // Krypto och okänd börs släpps igenom. Detta hindrar notiser nattetid som
+                // annars triggar på Yahoos frysta stängningsdata eller vid datumbyte 00:00.
+                val itemSymbols = (listOfNotNull(item.ticker, item.ticker1, item.ticker2) +
+                    (item.watchType as? WatchType.Combined)?.expression?.getSymbols().orEmpty())
+                    .associateWith { exchanges[it] }
+                if (itemSymbols.isNotEmpty() &&
+                    !StockMarketScheduler.isAnyRelevantMarketOpen(itemSymbols)) {
+                    Log.d(TAG, "Skipping watch item – ingen relevant marknad öppen")
+                    continue
+                }
                 val pairTriggerSide = if (item.watchType is WatchType.PricePair) {
                     evaluatePairTriggerSide(item, snapshots)
                 } else {
@@ -519,5 +537,10 @@ class StockPriceUpdateWorker(
     companion object {
         private const val TAG = "StockPriceUpdateWorker"
         const val ACTION_PRICES_UPDATED = "com.stockflip.ACTION_PRICES_UPDATED"
+
+        // En akties börs ändras aldrig i praktiken – cachea per process så vi inte
+        // gör ett extra nätverksanrop varje worker-cykel för symboler vars börs
+        // inte kan härledas från suffixet (t.ex. amerikanska tickers).
+        private val exchangeCache = java.util.concurrent.ConcurrentHashMap<String, String>()
     }
 } 

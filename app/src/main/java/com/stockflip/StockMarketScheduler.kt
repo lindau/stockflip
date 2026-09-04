@@ -12,12 +12,18 @@ object StockMarketScheduler {
     private val stockholmZone = ZoneId.of("Europe/Stockholm")
     
     private val marketOpen = LocalTime.of(9, 0)
-    private val marketClose = LocalTime.of(17, 0)
-    
+    private val marketClose = LocalTime.of(17, 30)
+
     const val MARKET_HOURS_INTERVAL_MINUTES = 1L
     const val AFTER_HOURS_INTERVAL_MINUTES = 60L
     const val MAX_RETRY_ATTEMPTS = 3
     const val RETRY_DELAY_MINUTES = 1L
+
+    /**
+     * Hur länge efter ordinarie stängning ett kurslarm fortfarande får skicka
+     * notis, så att den sista rörelsen vid stängning inte tappas.
+     */
+    const val NOTIFICATION_GRACE_MINUTES = 30L
 
     fun isMarketOpen(): Boolean {
         val now = LocalDateTime.now(stockholmZone)
@@ -84,12 +90,52 @@ object StockMarketScheduler {
     }
 
     fun isMarketOpenForExchange(exchange: String?, instant: Instant = Instant.now()): Boolean {
+        return evaluateExchangeWindow(exchange, instant, graceMinutes = 0L)
+    }
+
+    /**
+     * Som [isMarketOpenForExchange] men släpper även igenom upp till
+     * [NOTIFICATION_GRACE_MINUTES] efter ordinarie stängning. Används för att
+     * grinda kurslarms-notiser så de inte skickas nattetid på fryst data.
+     */
+    fun isWithinNotificationWindowForExchange(exchange: String?, instant: Instant = Instant.now()): Boolean {
+        return evaluateExchangeWindow(exchange, instant, graceMinutes = NOTIFICATION_GRACE_MINUTES)
+    }
+
+    /**
+     * Avgör om en bevaknings notiser får skickas just nu: sant om bevakningen
+     * saknar kända symboler, om någon symbol är krypto, om någon symbols börs är
+     * okänd (fail-open – hellre en notis för mycket än att tyst mörklägga larm),
+     * eller om någon symbols börs är inom notifieringsfönstret.
+     *
+     * @param symbolsToExchange symbol → känd börs-kod (null om okänd).
+     */
+    fun isAnyRelevantMarketOpen(
+        symbolsToExchange: Map<String, String?>,
+        instant: Instant = Instant.now()
+    ): Boolean {
+        if (symbolsToExchange.isEmpty()) return true
+        return symbolsToExchange.any { (symbol, exchange) ->
+            val resolvedExchange = exchange ?: inferExchangeFromSymbol(symbol)
+            when {
+                StockSearchResult.isCryptoSymbol(symbol) -> true
+                resolvedExchange == null -> true // fail-open på okänd börs
+                else -> isWithinNotificationWindowForExchange(resolvedExchange, instant)
+            }
+        }
+    }
+
+    private fun evaluateExchangeWindow(
+        exchange: String?,
+        instant: Instant,
+        graceMinutes: Long
+    ): Boolean {
         if (exchange == null) {
             return false
         }
-        
+
         val exchangeUpper = exchange.uppercase()
-        
+
         // Krypto är alltid öppet
         if (exchangeUpper.contains("CRYPTO", ignoreCase = true)) {
             return true
@@ -98,7 +144,7 @@ object StockMarketScheduler {
         return when {
             // Svenska börsen (Stockholm)
             exchangeUpper == "STO" || exchangeUpper.contains("STOCKHOLM", ignoreCase = true) -> {
-                isOpenInZone(instant, ZoneId.of("Europe/Stockholm"), LocalTime.of(9, 0), LocalTime.of(17, 30))
+                isOpenInZone(instant, ZoneId.of("Europe/Stockholm"), LocalTime.of(9, 0), LocalTime.of(17, 30), graceMinutes)
             }
             // Amerikanska börser (NASDAQ, NYSE, etc.)
             exchangeUpper.contains("NASDAQ", ignoreCase = true) ||
@@ -111,27 +157,27 @@ object StockMarketScheduler {
             exchangeUpper == "AMEX" ||
             exchangeUpper.contains("AMERICAN", ignoreCase = true) -> {
                 // USA börser: 09:30 - 16:00 ET
-                isOpenInZone(instant, ZoneId.of("America/New_York"), LocalTime.of(9, 30), LocalTime.of(16, 0))
+                isOpenInZone(instant, ZoneId.of("America/New_York"), LocalTime.of(9, 30), LocalTime.of(16, 0), graceMinutes)
             }
             // Storbritannien (LSE)
             exchangeUpper == "LSE" || exchangeUpper.contains("LONDON", ignoreCase = true) -> {
-                isOpenInZone(instant, ZoneId.of("Europe/London"), LocalTime.of(8, 0), LocalTime.of(16, 30))
+                isOpenInZone(instant, ZoneId.of("Europe/London"), LocalTime.of(8, 0), LocalTime.of(16, 30), graceMinutes)
             }
             // Tyskland (XETR, XFRA)
             exchangeUpper == "XETR" || exchangeUpper == "XFRA" || exchangeUpper.contains("XETRA", ignoreCase = true) -> {
-                isOpenInZone(instant, ZoneId.of("Europe/Berlin"), LocalTime.of(9, 0), LocalTime.of(17, 30))
+                isOpenInZone(instant, ZoneId.of("Europe/Berlin"), LocalTime.of(9, 0), LocalTime.of(17, 30), graceMinutes)
             }
             // Japan (TSE)
             exchangeUpper == "TSE" || exchangeUpper.contains("TOKYO", ignoreCase = true) -> {
-                isOpenInZone(instant, ZoneId.of("Asia/Tokyo"), LocalTime.of(9, 0), LocalTime.of(15, 0))
+                isOpenInZone(instant, ZoneId.of("Asia/Tokyo"), LocalTime.of(9, 0), LocalTime.of(15, 0), graceMinutes)
             }
             // Norge (OSE - Oslo Stock Exchange)
             exchangeUpper == "OSE" || exchangeUpper.contains("OSLO", ignoreCase = true) -> {
-                isOpenInZone(instant, ZoneId.of("Europe/Oslo"), LocalTime.of(9, 0), LocalTime.of(16, 25))
+                isOpenInZone(instant, ZoneId.of("Europe/Oslo"), LocalTime.of(9, 0), LocalTime.of(16, 25), graceMinutes)
             }
             // Default: använd svensk börstid
             else -> {
-                isOpenInZone(instant, ZoneId.of("Europe/Stockholm"), LocalTime.of(9, 0), LocalTime.of(17, 30))
+                isOpenInZone(instant, ZoneId.of("Europe/Stockholm"), LocalTime.of(9, 0), LocalTime.of(17, 30), graceMinutes)
             }
         }
     }
@@ -140,7 +186,8 @@ object StockMarketScheduler {
         instant: Instant,
         zoneId: ZoneId,
         opensAt: LocalTime,
-        closesAt: LocalTime
+        closesAt: LocalTime,
+        graceMinutes: Long = 0L
     ): Boolean {
         val localDateTime = LocalDateTime.ofInstant(instant, zoneId)
         val currentDay = localDateTime.dayOfWeek
@@ -148,6 +195,9 @@ object StockMarketScheduler {
             return false
         }
         val localTime = localDateTime.toLocalTime()
-        return localTime.isAfter(opensAt) && localTime.isBefore(closesAt)
+        val effectiveClose = closesAt.plusMinutes(graceMinutes)
+        // plusMinutes kan rulla över midnatt; hantera bara det icke-rullande fallet
+        // (grace på 30 min gör aldrig det för någon av börstiderna ovan).
+        return localTime.isAfter(opensAt) && localTime.isBefore(effectiveClose)
     }
 } 
