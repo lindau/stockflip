@@ -24,13 +24,5 @@
     <color name="pine_error_container">@color/pine_error_container_dark</color>
     <color name="pine_on_error_container">@color/pine_on_error_container_dark</color>
 
-    <!-- Status colors tuned for dark background -->
-    <color name="notification_highlight">#242937</color>
-    <color name="notification_active">@color/sand_secondary_dark</color>
-    <color name="notification_inactive">#727986</color>
-
-    <!-- Price colors for dark mode -->
-    <color name="price_down">#FF4A4A</color>
-    <color name="price_up">#2ECC71</color>
 </resources>
 

@@ -63,32 +63,11 @@
         <item name="android:textColor">?attr/colorOnSurfaceVariant</item>
     </style>
 
-    <!-- AppBar/Toolbar styling -->
-    <style name="Widget.StockFlip.Toolbar" parent="Widget.Material3.Toolbar">
-        <item name="android:background">?attr/colorSurface</item>
-        <item name="titleTextColor">?attr/colorOnSurface</item>
-    </style>
-
     <!-- Chip styling for secondary container -->
     <style name="Widget.StockFlip.AssistChip" parent="Widget.Material3.Chip.Assist">
         <item name="chipBackgroundColor">?attr/colorSecondaryContainer</item>
         <item name="android:textColor">?attr/colorOnSecondaryContainer</item>
         <item name="chipStrokeColor">?attr/colorOutline</item>
         <item name="chipStrokeWidth">1dp</item>
-    </style>
-
-    <style name="Widget.StockFlip.FilterChip" parent="Widget.Material3.Chip.Filter">
-        <item name="chipBackgroundColor">?attr/colorSecondaryContainer</item>
-        <item name="android:textColor">?attr/colorOnSecondaryContainer</item>
-        <item name="chipStrokeColor">?attr/colorOutline</item>
-        <item name="chipStrokeWidth">1dp</item>
-    </style>
-
-    <!-- Dialog styling -->
-    <style name="Theme.StockFlip.Dialog" parent="ThemeOverlay.Material3.Dialog">
-    </style>
-
-    <!-- BottomSheet styling -->
-    <style name="Theme.StockFlip.BottomSheet" parent="ThemeOverlay.Material3.BottomSheetDialog">
     </style>
 </resources>

@@ -50,14 +50,4 @@
     <color name="pine_error_container_dark">#3D1A1D</color>
     <color name="pine_on_error_container_dark">#E06C75</color>
 
-    <!-- Legacy colors (kept for compatibility) -->
-    <color name="black">#FF000000</color>
-    <color name="white">#FFFFFFFF</color>
-
-    <!-- Status colors — NP semantic -->
-    <color name="notification_highlight">#EAF1F6</color>
-    <color name="notification_active">#1F8A7A</color>
-    <color name="notification_inactive">#7A8897</color>
-    <color name="price_down">#B94A5A</color>
-    <color name="price_up">#238B57</color>
 </resources>

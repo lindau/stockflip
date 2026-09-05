@@ -4,7 +4,6 @@
     <string name="last_updated">Last updated: %1$s</string>
     <string name="icon_description">Icon</string>
 
-    <string name="alerts_empty_state">Inga case ännu. Lägg till en aktie och skapa en bevakning för att se den här.</string>
     <string name="alerts_empty_title">Inga case ännu</string>
     <string name="alerts_empty_subtitle">Lägg till en aktie och börja bygga upp dina case</string>
 
@@ -42,7 +41,6 @@
     <string name="batch_selected_count">%1$d case valda</string>
     <string name="batch_reactivate_all">Återaktivera alla</string>
 
-    <string name="menu_add">Lägg till</string>
     <string name="title_add_stock">Lägg till aktie eller krypto</string>
     <string name="add_stock_search_hint">Sök aktie eller krypto…</string>
     <string name="add_stock_empty">Skriv minst två tecken för att söka efter aktier eller krypto.</string>
@@ -57,7 +55,6 @@
     <string name="dialog_price_range_invalid">Ange giltiga prisintervall (min &lt; max)</string>
     <string name="dialog_fill_all_fields">Fyll i alla fält</string>
     <string name="toast_price_range_updated">Prisintervall-bevakning uppdaterad</string>
-    <string name="toast_watch_updated">Bevakning uppdaterad</string>
     <string name="toast_watch_update_failed">Kunde inte uppdatera bevakning: %1$s</string>
 
     <!-- Backup/Restore -->
