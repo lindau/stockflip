@@ -7,6 +7,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.fragment.app.Fragment
+import androidx.core.view.isVisible
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModel
@@ -205,9 +206,12 @@ class AlertsFragment : Fragment() {
         binding.swipeRefreshLayout.setOnRefreshListener {
             viewLifecycleOwner.lifecycleScope.launch {
                 try {
-                    // Spinnern styrs av watchItemsRefreshing-observern.
+                    // Bakgrundsuppdateringen indikeras av backgroundRefreshIndicator-linjen;
+                    // här stänger vi bara av SwipeRefreshLayouts egen dra-spinner när kallet är klart.
                     viewModel.refreshWatchItems(showLoading = false)
                 } catch (e: Exception) {
+                    // Felet ytas via watchItemUiState-observern (Snackbar).
+                } finally {
                     binding.swipeRefreshLayout.isRefreshing = false
                 }
             }
@@ -309,7 +313,8 @@ class AlertsFragment : Fragment() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.watchItemsRefreshing.collect { refreshing ->
-                    binding.swipeRefreshLayout.isRefreshing = refreshing
+                    // Tunn linje istället för den runda spinnern — listan ligger kvar och är läsbar.
+                    binding.backgroundRefreshIndicator.isVisible = refreshing
                 }
             }
         }

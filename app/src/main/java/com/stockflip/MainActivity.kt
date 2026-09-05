@@ -23,6 +23,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.content.edit
+import androidx.core.view.isVisible
 import androidx.core.widget.doAfterTextChanged
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -793,10 +794,11 @@ class MainActivity : AppCompatActivity() {
             }
         }
         // Background refresh indicator for the Stocks overview (Alerts/Pairs drive their own).
+        // Tunn linje istället för den runda spinnern — listan ligger kvar och är läsbar.
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.watchItemsRefreshing.collect { refreshing ->
-                    binding.swipeRefreshLayout.isRefreshing = refreshing && currentMainTab == MainTab.STOCKS
+                    binding.backgroundRefreshIndicator.isVisible = refreshing && currentMainTab == MainTab.STOCKS
                 }
             }
         }

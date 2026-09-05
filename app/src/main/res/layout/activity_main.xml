@@ -121,6 +121,16 @@
 
         </LinearLayout>
 
+        <!-- Tunn, icke-blockerande linje som indikerar bakgrundsuppdatering (ersätter den runda spinnern). -->
+        <com.google.android.material.progressindicator.LinearProgressIndicator
+            android:id="@+id/backgroundRefreshIndicator"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="top"
+            android:indeterminate="true"
+            android:visibility="gone"
+            app:trackCornerRadius="0dp" />
+
     </FrameLayout>
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
