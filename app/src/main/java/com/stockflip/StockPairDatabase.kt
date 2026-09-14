@@ -19,12 +19,13 @@ import java.io.File
         MetricHistoryEntity::class,
         TriggerHistoryEntity::class,
         StockNote::class,
-        InsiderTransactionEntity::class
+        InsiderTransactionEntity::class,
+        PodcastObservationEntity::class
     ],
-    version = 14,
+    version = 15,
     exportSchema = true
 )
-@TypeConverters(WatchTypeConverter::class)
+@TypeConverters(WatchTypeConverter::class, StringListConverter::class)
 abstract class StockPairDatabase : RoomDatabase() {
     abstract fun stockPairDao(): StockPairDao
     abstract fun watchItemDao(): WatchItemDao
@@ -32,6 +33,7 @@ abstract class StockPairDatabase : RoomDatabase() {
     abstract fun triggerHistoryDao(): TriggerHistoryDao
     abstract fun stockNoteDao(): StockNoteDao
     abstract fun insiderTransactionDao(): InsiderTransactionDao
+    abstract fun podcastObservationDao(): PodcastObservationDao
 
     companion object {
         private const val LEGACY_DATABASE_NAME = "stock_pair_database"
@@ -176,6 +178,12 @@ abstract class StockPairDatabase : RoomDatabase() {
             }
         }
 
+        private val MIGRATION_14_15 = object : Migration(14, 15) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                createPodcastObservationsSchema(db)
+            }
+        }
+
         private val MIGRATION_8_9 = object : Migration(8, 9) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("""
@@ -247,6 +255,7 @@ abstract class StockPairDatabase : RoomDatabase() {
             val triggerHistory = legacy.triggerHistoryDao().getAllEntries()
             val notes = legacy.stockNoteDao().getAllNotes()
             val insiderTransactions = legacy.insiderTransactionDao().getAllEntries()
+            val podcastObservations = legacy.podcastObservationDao().getAllEntries()
 
             encrypted.withTransaction {
                 stockPairs.forEach { encrypted.stockPairDao().insertStockPair(it) }
@@ -255,6 +264,7 @@ abstract class StockPairDatabase : RoomDatabase() {
                 triggerHistory.forEach { encrypted.triggerHistoryDao().insert(it) }
                 notes.forEach { encrypted.stockNoteDao().upsert(it) }
                 encrypted.insiderTransactionDao().insertAll(insiderTransactions)
+                encrypted.podcastObservationDao().insertAll(podcastObservations)
             }
         }
 
@@ -277,7 +287,8 @@ abstract class StockPairDatabase : RoomDatabase() {
                 MIGRATION_10_11,
                 MIGRATION_11_12,
                 MIGRATION_12_13,
-                MIGRATION_13_14
+                MIGRATION_13_14,
+                MIGRATION_14_15
             ).fallbackToDestructiveMigrationOnDowngrade(false)
 
             if (encrypted) {
@@ -319,6 +330,30 @@ abstract class StockPairDatabase : RoomDatabase() {
             )
             db.execSQL(
                 "CREATE INDEX IF NOT EXISTS index_insider_transactions_accessionNumber ON insider_transactions(accessionNumber)"
+            )
+        }
+
+        private fun createPodcastObservationsSchema(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                """
+                CREATE TABLE IF NOT EXISTS podcast_observations (
+                    observationId TEXT NOT NULL PRIMARY KEY,
+                    ticker TEXT NOT NULL,
+                    companyName TEXT,
+                    podcast TEXT NOT NULL,
+                    episodeTitle TEXT,
+                    recommendation TEXT,
+                    stance TEXT,
+                    exactQuote TEXT,
+                    thesis TEXT NOT NULL,
+                    risks TEXT NOT NULL,
+                    publishedAtMillis INTEGER,
+                    storedAtMillis INTEGER NOT NULL
+                )
+                """.trimIndent()
+            )
+            db.execSQL(
+                "CREATE INDEX IF NOT EXISTS index_podcast_observations_ticker_publishedAtMillis ON podcast_observations(ticker, publishedAtMillis)"
             )
         }
 

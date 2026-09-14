@@ -22,6 +22,7 @@ object StockPriceUpdater {
     const val WORK_NAME_PERIODIC = "StockPriceUpdatePeriodic"
     const val WORK_NAME_IMMEDIATE = "StockPriceUpdateImmediate"
     const val WORK_NAME_INSIDER_TRANSACTIONS = "InsiderTransactionDaily"
+    const val WORK_NAME_PODCAST_OBSERVATIONS = "PodcastObservationSync"
     private const val PRICE_EQUALITY_THRESHOLD = 0.01
     const val CHANNEL_ID = "stock_price_alerts"
 
@@ -46,6 +47,13 @@ object StockPriceUpdater {
         )
             .setConstraints(constraints)
             .build()
+        // No-ops immediately (before any network call) unless the developer's
+        // own PODCAST_ANALYSIS_BASE_URL is configured -- see PodcastObservationWorker.
+        val podcastObservationWork = PeriodicWorkRequestBuilder<PodcastObservationWorker>(
+            6, TimeUnit.HOURS
+        )
+            .setConstraints(constraints)
+            .build()
         workManager.apply {
             enqueueUniqueWork(
                 WORK_NAME_IMMEDIATE,
@@ -61,6 +69,11 @@ object StockPriceUpdater {
                 WORK_NAME_INSIDER_TRANSACTIONS,
                 ExistingPeriodicWorkPolicy.UPDATE,
                 insiderTransactionWork
+            )
+            enqueueUniquePeriodicWork(
+                WORK_NAME_PODCAST_OBSERVATIONS,
+                ExistingPeriodicWorkPolicy.UPDATE,
+                podcastObservationWork
             )
         }
         monitorWorkStatus(workManager)

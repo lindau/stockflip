@@ -157,7 +157,8 @@ class StockDetailFragment : Fragment() {
                         TriggerHistoryRepository(database.triggerHistoryDao()),
                         database.stockNoteDao(),
                         MetricHistoryRepository(database.metricHistoryDao()),
-                        database.insiderTransactionDao()
+                        database.insiderTransactionDao(),
+                        database.podcastObservationDao()
                     ) as T
                 }
                 throw IllegalArgumentException("Unknown ViewModel class")

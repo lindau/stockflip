@@ -86,6 +86,15 @@ if (localPropertiesFile.exists()) {
 }
 def logoDevToken = localProperties.getProperty("LOGO_DEV_TOKEN", "pk_aAXNDchkShyH7xL15WtS4A")
 
+// Personal podcast-analysis integration (see PodcastAnalysisService.kt):
+// base URL of the developer's own homelab service, reached over Tailscale
+// Serve, e.g. "https://homelab.<tailnet>.ts.net:8420". Empty by default and
+// on PURPOSE never given a real default like LOGO_DEV_TOKEN above -- unlike
+// that public key, this points at a private service only the developer's
+// own devices can reach, so every build that isn't made from the
+// developer's own local.properties must have this feature fully inert.
+def podcastAnalysisBaseUrl = localProperties.getProperty("PODCAST_ANALYSIS_BASE_URL", "")
+
 android {
     namespace = 'com.stockflip'
     compileSdk = 35
@@ -98,6 +107,7 @@ android {
         versionName appVersionName
 
         buildConfigField "String", "LOGO_DEV_TOKEN", "\"${logoDevToken}\""
+        buildConfigField "String", "PODCAST_ANALYSIS_BASE_URL", "\"${podcastAnalysisBaseUrl}\""
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         

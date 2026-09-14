@@ -26,7 +26,8 @@ class StockDetailViewModel(
     private val triggerHistoryRepository: TriggerHistoryRepository,
     private val stockNoteDao: StockNoteDao,
     private val metricHistoryRepository: MetricHistoryRepository,
-    private val insiderTransactionDao: InsiderTransactionDao? = null
+    private val insiderTransactionDao: InsiderTransactionDao? = null,
+    private val podcastObservationDao: PodcastObservationDao? = null
 ) : ViewModel() {
 
     private val TAG = "StockDetailViewModel"
@@ -53,6 +54,9 @@ class StockDetailViewModel(
     private val _insiderTransactionsState = MutableStateFlow<List<InsiderTransactionEntity>>(emptyList())
     val insiderTransactionsState: StateFlow<List<InsiderTransactionEntity>> = _insiderTransactionsState.asStateFlow()
 
+    private val _podcastObservationsState = MutableStateFlow<List<PodcastObservationEntity>>(emptyList())
+    val podcastObservationsState: StateFlow<List<PodcastObservationEntity>> = _podcastObservationsState.asStateFlow()
+
     val noteState: StateFlow<StockNote?> = stockNoteDao.getByTickerFlow(symbol)
         .stateIn(viewModelScope, SharingStarted.Lazily, null)
 
@@ -67,6 +71,7 @@ class StockDetailViewModel(
         loadStockData()
         loadChartData()
         loadInsiderTransactions()
+        loadPodcastObservations()
         observeAlerts()
     }
 
@@ -204,6 +209,18 @@ class StockDetailViewModel(
             } catch (e: Exception) {
                 Log.e(TAG, "Error loading insider transactions for $symbol: ${e.message}", e)
                 _insiderTransactionsState.value = emptyList()
+            }
+        }
+    }
+
+    fun loadPodcastObservations() {
+        val observationDao = podcastObservationDao ?: return
+        viewModelScope.launch {
+            try {
+                _podcastObservationsState.value = observationDao.getForTicker(symbol)
+            } catch (e: Exception) {
+                Log.e(TAG, "Error loading podcast observations for $symbol: ${e.message}", e)
+                _podcastObservationsState.value = emptyList()
             }
         }
     }
@@ -622,6 +639,7 @@ class StockDetailViewModel(
         loadStockData()
         loadChartData()
         loadInsiderTransactions()
+        loadPodcastObservations()
         loadAlerts()
     }
 }
