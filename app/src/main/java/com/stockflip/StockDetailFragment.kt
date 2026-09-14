@@ -66,9 +66,11 @@ class StockDetailFragment : Fragment() {
     private var latestAlerts: List<WatchItemUiState> = emptyList()
     private var latestMetricHistory: Map<WatchType.MetricType, MetricHistorySummary> = emptyMap()
     private var latestInsiderTransactions: List<InsiderTransactionEntity> = emptyList()
+    private var latestPodcastObservations: List<PodcastObservationEntity> = emptyList()
     private var triggerBannerDismissed = false
     private var insiderNotificationHandled = false
     private var insiderTransactionsExpanded = false
+    private var podcastObservationsExpanded = false
     private val avanzaLinkService = AvanzaStockLinkService()
 
     private fun syncOverviewInBackground() {
@@ -93,6 +95,7 @@ class StockDetailFragment : Fragment() {
         private const val VERY_CLOSE_THRESHOLD = 0.05
         private const val CLOSE_THRESHOLD = 0.12
         private const val COLLAPSED_INSIDER_TRANSACTION_COUNT = 1
+        private const val COLLAPSED_PODCAST_OBSERVATION_COUNT = 1
 
         /**
          * Skapar en ny instans av StockDetailFragment.
@@ -215,6 +218,7 @@ class StockDetailFragment : Fragment() {
         setupQuickActions()
         setupObservers()
         setupSwipeRefresh()
+        setupPodcastToggle()
 
         binding.notesCard.setOnClickListener { dialogManager.showEditNoteDialog() }
         binding.triggerReactivateButton.setOnClickListener {
@@ -422,6 +426,13 @@ class StockDetailFragment : Fragment() {
             viewModel.insiderTransactionsState.collect { transactions ->
                 latestInsiderTransactions = transactions
                 renderInsiderTransactions()
+            }
+        }
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewModel.podcastObservationsState.collect { observations ->
+                latestPodcastObservations = observations
+                renderPodcastObservations()
             }
         }
 
@@ -773,6 +784,182 @@ class StockDetailFragment : Fragment() {
                 })
             }
         }
+    }
+
+    // --- Poddomnämnanden (podcast-analysis) -------------------------------
+    // Speglar renderInsiderTransactions()/createInsiderTransactionRow() ovan
+    // så nära som möjligt: samma kollapsa/expandera-mönster, samma
+    // visuella struktur. Skillnaden är att hela sektionen bara syns över
+    // huvud taget på den utvecklarbyggda versionen av appen
+    // (BuildConfig.PODCAST_ANALYSIS_BASE_URL satt, se PodcastAnalysisService)
+    // -- plus en på/av-växel (PodcastObservationSettings) i sektionsrubriken.
+
+    private fun setupPodcastToggle() {
+        val configured = BuildConfig.PODCAST_ANALYSIS_BASE_URL.isNotBlank()
+        binding.podcastSectionHeader.isVisible = configured
+        if (!configured) return
+
+        binding.podcastEnabledSwitch.isChecked = PodcastObservationSettings.isEnabled(requireContext())
+        binding.podcastEnabledSwitch.setOnCheckedChangeListener { _, isChecked ->
+            PodcastObservationSettings.setEnabled(requireContext(), isChecked)
+            renderPodcastObservations()
+        }
+    }
+
+    private fun renderPodcastObservations() {
+        if (BuildConfig.PODCAST_ANALYSIS_BASE_URL.isBlank()) {
+            binding.podcastObservationsCard.isVisible = false
+            return
+        }
+        val enabled = PodcastObservationSettings.isEnabled(requireContext())
+        binding.podcastObservationsCard.isVisible = enabled
+        if (!enabled) return
+
+        binding.podcastObservationsContainer.removeAllViews()
+        if (latestPodcastObservations.isEmpty()) {
+            binding.podcastEmptyText.isVisible = true
+            binding.podcastEmptyText.text = "Inga poddomnämnanden har hittats ännu."
+            clearPodcastToggle()
+            return
+        }
+
+        binding.podcastEmptyText.isVisible = false
+        val visibleObservations = visiblePodcastObservations()
+        visibleObservations.forEachIndexed { index, observation ->
+            if (index > 0) {
+                binding.podcastObservationsContainer.addView(
+                    MaterialDivider(requireContext()).apply {
+                        layoutParams = LinearLayout.LayoutParams(
+                            LinearLayout.LayoutParams.MATCH_PARENT,
+                            LinearLayout.LayoutParams.WRAP_CONTENT
+                        ).apply {
+                            topMargin = dp(10)
+                            bottomMargin = dp(10)
+                        }
+                    }
+                )
+            }
+            binding.podcastObservationsContainer.addView(
+                createPodcastObservationRow(
+                    observation = observation,
+                    compact = !podcastObservationsExpanded
+                )
+            )
+        }
+        renderPodcastToggle(visibleObservations.size)
+    }
+
+    private fun visiblePodcastObservations(): List<PodcastObservationEntity> {
+        if (podcastObservationsExpanded || !hasHiddenPodcastObservations()) {
+            return latestPodcastObservations
+        }
+        return latestPodcastObservations.take(COLLAPSED_PODCAST_OBSERVATION_COUNT)
+    }
+
+    private fun renderPodcastToggle(visibleCount: Int) {
+        val totalCount = latestPodcastObservations.size
+        val canToggle = hasHiddenPodcastObservations()
+        binding.podcastToggleText.isVisible = canToggle
+        if (!canToggle) {
+            clearPodcastToggle()
+            return
+        }
+
+        binding.podcastToggleText.text = if (podcastObservationsExpanded) {
+            "Visa endast senaste omnämnandet"
+        } else {
+            val hiddenCount = totalCount - visibleCount
+            "Visar $visibleCount av $totalCount omnämnanden · tryck för att visa $hiddenCount till"
+        }
+        val toggle = View.OnClickListener { togglePodcastObservationsExpanded() }
+        binding.podcastToggleText.setOnClickListener(toggle)
+        binding.podcastToggleText.isClickable = true
+        binding.podcastToggleText.isFocusable = true
+        binding.podcastSectionLabel.setOnClickListener(toggle)
+        binding.podcastSectionLabel.isClickable = true
+        binding.podcastSectionLabel.isFocusable = true
+    }
+
+    private fun clearPodcastToggle() {
+        binding.podcastToggleText.isVisible = false
+        binding.podcastToggleText.setOnClickListener(null)
+        binding.podcastToggleText.isClickable = false
+        binding.podcastToggleText.isFocusable = false
+        binding.podcastSectionLabel.setOnClickListener(null)
+        binding.podcastSectionLabel.isClickable = false
+        binding.podcastSectionLabel.isFocusable = false
+    }
+
+    private fun hasHiddenPodcastObservations(): Boolean {
+        return latestPodcastObservations.size > COLLAPSED_PODCAST_OBSERVATION_COUNT
+    }
+
+    private fun togglePodcastObservationsExpanded() {
+        if (!hasHiddenPodcastObservations()) return
+        podcastObservationsExpanded = !podcastObservationsExpanded
+        renderPodcastObservations()
+        if (!podcastObservationsExpanded) {
+            binding.stockDetailScrollView.post {
+                binding.stockDetailScrollView.smoothScrollTo(0, binding.podcastSectionHeader.top)
+            }
+        }
+    }
+
+    private fun createPodcastObservationRow(
+        observation: PodcastObservationEntity,
+        compact: Boolean
+    ): View {
+        val context = requireContext()
+        return LinearLayout(context).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(10), dp(8), dp(10), dp(8))
+            setOnClickListener {
+                if (compact && hasHiddenPodcastObservations()) {
+                    togglePodcastObservationsExpanded()
+                }
+            }
+
+            addView(TextView(context).apply {
+                text = observation.podcast
+                setTextAppearance(com.google.android.material.R.style.TextAppearance_Material3_TitleSmall)
+                setTextColor(MaterialColors.getColor(binding.root, com.google.android.material.R.attr.colorOnSurface))
+                maxLines = 1
+                ellipsize = TextUtils.TruncateAt.END
+            })
+            addView(TextView(context).apply {
+                text = podcastObservationSummary(observation)
+                setTextAppearance(com.google.android.material.R.style.TextAppearance_Material3_BodyMedium)
+                setTextColor(MaterialColors.getColor(binding.root, com.google.android.material.R.attr.colorOnSurfaceVariant))
+                maxLines = if (compact) 2 else Int.MAX_VALUE
+                if (compact) {
+                    ellipsize = TextUtils.TruncateAt.END
+                }
+            })
+            if (!compact && observation.risks.isNotEmpty()) {
+                addView(TextView(context).apply {
+                    text = "Risker: " + observation.risks.joinToString(" · ")
+                    setTextAppearance(com.google.android.material.R.style.TextAppearance_Material3_LabelMedium)
+                    setTextColor(MaterialColors.getColor(binding.root, com.google.android.material.R.attr.colorError))
+                    setPadding(0, dp(6), 0, 0)
+                })
+            }
+        }
+    }
+
+    private fun podcastObservationSummary(observation: PodcastObservationEntity): String {
+        val meta = listOfNotNull(
+            formatPodcastDate(observation.publishedAtMillis),
+            observation.recommendation?.takeIf { it.isNotBlank() }
+        ).joinToString(" · ")
+        val quotes = observation.thesis.ifEmpty { listOfNotNull(observation.exactQuote) }
+        return (listOf(meta) + quotes).filter { it.isNotBlank() }.joinToString(" · ")
+    }
+
+    private fun formatPodcastDate(publishedAtMillis: Long?): String? {
+        publishedAtMillis ?: return null
+        return runCatching {
+            SimpleDateFormat("d MMM yyyy", Locale("sv", "SE")).format(Date(publishedAtMillis))
+        }.getOrNull()
     }
 
     private fun maybeHandleInsiderNotification() {
