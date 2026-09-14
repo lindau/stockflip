@@ -804,6 +804,20 @@ class StockDetailFragment : Fragment() {
             PodcastObservationSettings.setEnabled(requireContext(), isChecked)
             renderPodcastObservations()
         }
+        binding.podcastManualSyncButton.setOnClickListener {
+            // Kör direkt i förgrunden istället för via WorkManager -- kringgår
+            // helt ev. tillverkarspecifika bakgrundsbegränsningar som kan hindra
+            // det schemalagda jobbet, och ger ett garanterat, omedelbart resultat
+            // (data eller ett tydligt felmeddelande) medan användaren tittar på skärmen.
+            binding.podcastManualSyncButton.isEnabled = false
+            binding.podcastManualSyncButton.text = "Synkar…"
+            viewLifecycleOwner.lifecycleScope.launch {
+                PodcastObservationWorker.performSync(requireContext())
+                binding.podcastManualSyncButton.isEnabled = true
+                binding.podcastManualSyncButton.text = "Synka nu"
+                renderPodcastObservations()
+            }
+        }
     }
 
     private fun renderPodcastObservations() {
@@ -818,6 +832,7 @@ class StockDetailFragment : Fragment() {
         binding.podcastObservationsContainer.removeAllViews()
         if (latestPodcastObservations.isEmpty()) {
             binding.podcastEmptyText.isVisible = true
+            binding.podcastManualSyncButton.isVisible = true
             // Diagnostik utan adb: visa senaste synkresultat (aldrig kört /
             // nätverksfel med felmeddelande / kört fint men inga träffar) --
             // se PodcastObservationSettings.recordSyncResult().
@@ -831,6 +846,7 @@ class StockDetailFragment : Fragment() {
             return
         }
 
+        binding.podcastManualSyncButton.isVisible = false
         binding.podcastEmptyText.isVisible = false
         val visibleObservations = visiblePodcastObservations()
         visibleObservations.forEachIndexed { index, observation ->

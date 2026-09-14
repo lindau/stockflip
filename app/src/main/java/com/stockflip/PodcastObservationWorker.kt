@@ -28,55 +28,66 @@ class PodcastObservationWorker(
             return Result.success()
         }
 
-        val database = StockPairDatabase.getDatabase(applicationContext)
-        val watchItemDao = database.watchItemDao()
-        val observationDao = database.podcastObservationDao()
-
-        val watchedTickers = watchItemDao.getAllWatchItems()
-            .flatMap { listOfNotNull(it.ticker, it.ticker1, it.ticker2) }
-            .map { it.uppercase() }
-            .toSet()
-        if (watchedTickers.isEmpty()) {
-            Log.d(TAG, "No watched tickers, skipping")
-            return Result.success()
-        }
-
-        try {
-            val byTicker = PodcastAnalysisService().getObservationsByTicker()
-            val matchedTickers = watchedTickers.filter { byTicker.containsKey(it) }
-            val entities = matchedTickers
-                .mapNotNull { ticker -> byTicker[ticker]?.let { ticker to it } }
-                .flatMap { (ticker, mentions) ->
-                    mentions.mapNotNull { it.toEntity(ticker, companyName = null) }
-                }
-            if (entities.isNotEmpty()) {
-                observationDao.insertAll(entities)
-                Log.d(TAG, "Stored ${entities.size} podcast observation(s) for ${watchedTickers.size} watched ticker(s)")
-            }
-            PodcastObservationSettings.recordSyncResult(
-                context = applicationContext,
-                watchedTickerCount = watchedTickers.size,
-                matchedTickerCount = matchedTickers.size,
-                storedCount = entities.size,
-                error = null
-            )
-        } catch (e: Exception) {
-            // Background sync against a personal, sometimes-unreachable homelab
-            // endpoint -- never fail the whole worker over a network hiccup.
-            Log.w(TAG, "Failed to sync podcast observations: ${e.message}")
-            PodcastObservationSettings.recordSyncResult(
-                context = applicationContext,
-                watchedTickerCount = watchedTickers.size,
-                matchedTickerCount = 0,
-                storedCount = 0,
-                error = e.message ?: e.javaClass.simpleName
-            )
-        }
-
+        performSync(applicationContext)
         return Result.success()
     }
 
     companion object {
         private const val TAG = "PodcastObservationWorker"
+
+        /**
+         * One sync attempt against the podcast-analysis service, recording the
+         * outcome via PodcastObservationSettings so the UI can show it. Shared
+         * between the scheduled WorkManager job and a manual "Synka nu" tap in
+         * StockDetailFragment -- the manual path runs in the foreground while
+         * the user is looking at the screen, sidestepping any OEM background-job
+         * restrictions that can otherwise leave the WorkManager job stuck pending.
+         */
+        suspend fun performSync(context: Context) {
+            val database = StockPairDatabase.getDatabase(context)
+            val watchItemDao = database.watchItemDao()
+            val observationDao = database.podcastObservationDao()
+
+            val watchedTickers = watchItemDao.getAllWatchItems()
+                .flatMap { listOfNotNull(it.ticker, it.ticker1, it.ticker2) }
+                .map { it.uppercase() }
+                .toSet()
+            if (watchedTickers.isEmpty()) {
+                Log.d(TAG, "No watched tickers, skipping")
+                return
+            }
+
+            try {
+                val byTicker = PodcastAnalysisService().getObservationsByTicker()
+                val matchedTickers = watchedTickers.filter { byTicker.containsKey(it) }
+                val entities = matchedTickers
+                    .mapNotNull { ticker -> byTicker[ticker]?.let { ticker to it } }
+                    .flatMap { (ticker, mentions) ->
+                        mentions.mapNotNull { it.toEntity(ticker, companyName = null) }
+                    }
+                if (entities.isNotEmpty()) {
+                    observationDao.insertAll(entities)
+                    Log.d(TAG, "Stored ${entities.size} podcast observation(s) for ${watchedTickers.size} watched ticker(s)")
+                }
+                PodcastObservationSettings.recordSyncResult(
+                    context = context,
+                    watchedTickerCount = watchedTickers.size,
+                    matchedTickerCount = matchedTickers.size,
+                    storedCount = entities.size,
+                    error = null
+                )
+            } catch (e: Exception) {
+                // Background sync against a personal, sometimes-unreachable homelab
+                // endpoint -- never fail the whole worker over a network hiccup.
+                Log.w(TAG, "Failed to sync podcast observations: ${e.message}")
+                PodcastObservationSettings.recordSyncResult(
+                    context = context,
+                    watchedTickerCount = watchedTickers.size,
+                    matchedTickerCount = 0,
+                    storedCount = 0,
+                    error = e.message ?: e.javaClass.simpleName
+                )
+            }
+        }
     }
 }
