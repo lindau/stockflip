@@ -23,6 +23,7 @@ object StockPriceUpdater {
     const val WORK_NAME_IMMEDIATE = "StockPriceUpdateImmediate"
     const val WORK_NAME_INSIDER_TRANSACTIONS = "InsiderTransactionDaily"
     const val WORK_NAME_PODCAST_OBSERVATIONS = "PodcastObservationSync"
+    const val WORK_NAME_PODCAST_OBSERVATIONS_IMMEDIATE = "PodcastObservationSyncImmediate"
     private const val PRICE_EQUALITY_THRESHOLD = 0.01
     const val CHANNEL_ID = "stock_price_alerts"
 
@@ -49,6 +50,14 @@ object StockPriceUpdater {
             .build()
         // No-ops immediately (before any network call) unless the developer's
         // own PODCAST_ANALYSIS_BASE_URL is configured -- see PodcastObservationWorker.
+        // Both an immediate one-time run and the periodic backup, same reasoning
+        // as StockPriceUpdateWorker above: a periodic-only schedule's first run
+        // timing after (re-)enqueueing isn't something to rely on guessing right,
+        // an explicit OneTimeWorkRequest unambiguously runs as soon as constraints
+        // allow instead of potentially waiting up to a full period.
+        val podcastObservationInitialWork = OneTimeWorkRequestBuilder<PodcastObservationWorker>()
+            .setConstraints(constraints)
+            .build()
         val podcastObservationWork = PeriodicWorkRequestBuilder<PodcastObservationWorker>(
             6, TimeUnit.HOURS
         )
@@ -69,6 +78,11 @@ object StockPriceUpdater {
                 WORK_NAME_INSIDER_TRANSACTIONS,
                 ExistingPeriodicWorkPolicy.UPDATE,
                 insiderTransactionWork
+            )
+            enqueueUniqueWork(
+                WORK_NAME_PODCAST_OBSERVATIONS_IMMEDIATE,
+                ExistingWorkPolicy.KEEP,
+                podcastObservationInitialWork
             )
             enqueueUniquePeriodicWork(
                 WORK_NAME_PODCAST_OBSERVATIONS,
