@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Notes
+import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -64,6 +65,7 @@ fun MultipleWatchesCard(
     currentPrice: Double,
     dailyChangePercent: Double? = null,
     hasNote: Boolean = false,
+    hasPodcastMention: Boolean = false,
     priceFormat: (Double) -> String,
     presentation: MultipleWatchesPresentation = MultipleWatchesPresentation.Default,
     modifier: Modifier = Modifier,
@@ -93,6 +95,7 @@ fun MultipleWatchesCard(
                 currentPrice = currentPrice,
                 dailyChangePercent = dailyChangePercent,
                 hasNote = hasNote,
+                hasPodcastMention = hasPodcastMention,
             )
             return@Card
         }
@@ -117,6 +120,16 @@ fun MultipleWatchesCard(
                 horizontalArrangement = Arrangement.End,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
+                if (hasPodcastMention) {
+                    Icon(
+                        imageVector = Icons.Filled.Mic,
+                        contentDescription = "Omnämnd i poddavsnitt",
+                        modifier = Modifier
+                            .size(14.dp)
+                            .padding(end = 4.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
                 if (hasNote) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.Notes,
@@ -153,6 +166,7 @@ private fun MultipleWatchesClarityContent(
     currentPrice: Double,
     dailyChangePercent: Double?,
     hasNote: Boolean = false,
+    hasPodcastMention: Boolean = false,
 ) {
     val currency = CurrencyHelper.getCurrencyFromSymbol(symbol)
     val changeColor = when {
@@ -244,7 +258,18 @@ private fun MultipleWatchesClarityContent(
                 .fillMaxWidth()
                 .padding(top = 12.dp),
             horizontalArrangement = Arrangement.End,
+            verticalAlignment = Alignment.CenterVertically,
         ) {
+            if (hasPodcastMention) {
+                Icon(
+                    imageVector = Icons.Filled.Mic,
+                    contentDescription = "Omnämnd i poddavsnitt",
+                    modifier = Modifier
+                        .size(14.dp)
+                        .padding(end = 4.dp),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
             Text(
                 text = "$watchCount bevakningar",
                 style = MaterialTheme.typography.bodySmall,

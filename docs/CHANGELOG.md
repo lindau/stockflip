@@ -19,3 +19,4 @@
 - Notiser öppnar nu relevanta detaljvyer med tydligare triggerkontext
 - Pair-detaljen och pair-graferna har hårdnats för att undvika krascher vid ofullständig data
 - Versionsraden öppnar nu den här ändringsloggen
+- Aktiekortet visar nu en mikrofon-ikon när bolaget nämnts i ett poddavsnitt (kräver Tailscale-anslutning till podcast-pipeline)

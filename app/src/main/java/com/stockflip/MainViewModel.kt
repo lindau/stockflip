@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.stockflip.backup.BackupManager
+import com.stockflip.repository.PodcastMentionRepository
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
@@ -22,7 +23,8 @@ class MainViewModel(
     private val stockPairDao: StockPairDao,
     private val watchItemDao: WatchItemDao,
     private val yahooFinanceService: MarketDataService,
-    private val stockNoteDao: StockNoteDao
+    private val stockNoteDao: StockNoteDao,
+    private val podcastMentionRepository: PodcastMentionRepository = PodcastMentionRepository(),
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<UiState<List<StockPair>>>(UiState.Loading)
@@ -40,6 +42,9 @@ class MainViewModel(
         .map { it.toSet() }
         .stateIn(viewModelScope, SharingStarted.Lazily, emptySet())
 
+    private val _mentionedTickers = MutableStateFlow<Set<String>>(emptySet())
+    val mentionedTickers: StateFlow<Set<String>> = _mentionedTickers.asStateFlow()
+
     private var isRefreshing = false
 
     init {
@@ -47,7 +52,14 @@ class MainViewModel(
         viewModelScope.launch {
             loadStockPairs()
         }
+        viewModelScope.launch {
+            refreshMentionedTickers()
+        }
         startAutoRefresh()
+    }
+
+    private suspend fun refreshMentionedTickers() {
+        _mentionedTickers.value = podcastMentionRepository.getMentionedTickers()
     }
 
     private fun startAutoRefresh() {
@@ -57,6 +69,7 @@ class MainViewModel(
                 try {
                     refreshStockPairs()
                     refreshWatchItems(showLoading = false)
+                    refreshMentionedTickers()
                 } catch (e: Exception) {
                     Log.w(TAG, "Auto-refresh failed: ${e.message}")
                 }

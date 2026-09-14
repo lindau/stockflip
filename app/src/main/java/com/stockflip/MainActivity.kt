@@ -132,6 +132,7 @@ class MainActivity : AppCompatActivity() {
     private var overviewMode: OverviewMode = OverviewMode.CASES
     private var lastWatchItems: List<WatchItemUiState> = emptyList()
     private var lastNotedTickers: Set<String> = emptySet()
+    private var lastMentionedTickers: Set<String> = emptySet()
     private var detailSyncJob: Job? = null
     private val watchItemEditor by lazy {
         WatchItemEditor(
@@ -793,6 +794,14 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.mentionedTickers.collect { mentionedTickers ->
+                    lastMentionedTickers = mentionedTickers
+                    showWatchItemSuccess(lastWatchItems)
+                }
+            }
+        }
         // Background refresh indicator for the Stocks overview (Alerts/Pairs drive their own).
         // Tunn linje istället för den runda spinnern — listan ligger kvar och är läsbar.
         lifecycleScope.launch {
@@ -885,7 +894,7 @@ class MainActivity : AppCompatActivity() {
             }
             OverviewMode.STOCKS -> {
                 Log.d(TAG, "Rendering overview stock list with ${filteredData.size} items")
-                adapter.submitStocksList(filteredData, lastNotedTickers)
+                adapter.submitStocksList(filteredData, lastNotedTickers, lastMentionedTickers)
             }
         }
     }

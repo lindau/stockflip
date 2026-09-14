@@ -14,6 +14,7 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.stockflip.databinding.ItemSectionHeaderBinding
+import com.stockflip.repository.PodcastMentionRepository
 import com.stockflip.ui.ComposeWatchItemCard
 import com.stockflip.ui.WatchItemCardPresentation
 import com.stockflip.ui.components.cards.ClarityAlertsSummaryCard
@@ -62,7 +63,8 @@ sealed class GroupedListItem {
         val currentPrice: Double,
         val dailyChangePercent: Double?,
         val watchItems: List<WatchItem>,
-        val hasNote: Boolean = false
+        val hasNote: Boolean = false,
+        val hasPodcastMention: Boolean = false,
     ) : GroupedListItem()
 
     data class GroupSeparator(val id: Int) : GroupedListItem()
@@ -111,6 +113,7 @@ class GroupedWatchItemAdapter(
     private var allWatchItems: List<WatchItemUiState> = emptyList()
     private var alertsSummaryItems: List<WatchItemUiState> = emptyList()
     private var notedTickers: Set<String> = emptySet()
+    private var mentionedTickers: Set<String> = emptySet()
     private var selectionMode: Boolean = false
     private var selectedItemIds: Set<Int> = emptySet()
 
@@ -284,11 +287,16 @@ class GroupedWatchItemAdapter(
         buildOverviewList(items)
     }
 
-    fun submitStocksList(items: List<WatchItemUiState>, notedTickers: Set<String> = emptySet()) {
+    fun submitStocksList(
+        items: List<WatchItemUiState>,
+        notedTickers: Set<String> = emptySet(),
+        mentionedTickers: Set<String> = emptySet(),
+    ) {
         displayMode = DisplayMode.STOCKS
         allWatchItems = items
         alertsSummaryItems = emptyList()
         this.notedTickers = notedTickers
+        this.mentionedTickers = mentionedTickers
         buildStocksList(items)
     }
 
@@ -428,6 +436,7 @@ class GroupedWatchItemAdapter(
                     dailyChangePercent = live.currentDailyChangePercent,
                     watchItems = groupItems.map { it.item },
                     hasNote = notedTickers.contains(symbol),
+                    hasPodcastMention = mentionedTickers.contains(PodcastMentionRepository.normalizeTicker(symbol)),
                 )
             )
         }
@@ -897,6 +906,7 @@ class GroupedWatchItemAdapter(
                         currentPrice = wrapper.currentPrice,
                         dailyChangePercent = wrapper.dailyChangePercent,
                         hasNote = wrapper.hasNote,
+                        hasPodcastMention = wrapper.hasPodcastMention,
                         priceFormat = { value -> CurrencyHelper.formatDecimal(value) },
                         presentation = MultipleWatchesPresentation.Clarity,
                         modifier = Modifier

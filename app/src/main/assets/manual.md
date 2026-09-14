@@ -370,6 +370,12 @@ Om flera engångslarm är triggade samtidigt kan du återaktivera dem alla på e
 - **Triggad-badge (amber/gul):** Visar datumet då bevakningen utlöstes. Visas alltid så länge bevakningen är i triggat läge.
 - **Ny-märke (lila/primärfärg):** Visar att det är en utlösning du *inte sett* sedan den inträffade. Försvinner automatiskt när du öppnar aktiedetaljvyn för den berörda aktien.
 
+### Mikrofon-ikon: omnämnd i poddavsnitt
+
+På aktiekortet i **Mina case → Aktier** kan en liten mikrofon-ikon visas till vänster om texten som anger antal bevakningar. Den betyder att bolaget nyligen nämnts i ett poddavsnitt som analyserats i den fristående tjänsten podcast-pipeline.
+
+Den här funktionen kräver att telefonen är ansluten till samma Tailscale-nätverk som podcast-pipeline-instansen. Är instansen inte nåbar visas kortet precis som vanligt, bara utan mikrofon-ikonen.
+
 ---
 
 ## Notiser
