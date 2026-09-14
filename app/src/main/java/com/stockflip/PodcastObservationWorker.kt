@@ -44,20 +44,31 @@ class PodcastObservationWorker(
          * restrictions that can otherwise leave the WorkManager job stuck pending.
          */
         suspend fun performSync(context: Context) {
-            val database = StockPairDatabase.getDatabase(context)
-            val watchItemDao = database.watchItemDao()
-            val observationDao = database.podcastObservationDao()
-
-            val watchedTickers = watchItemDao.getAllWatchItems()
-                .flatMap { listOfNotNull(it.ticker, it.ticker1, it.ticker2) }
-                .map { it.uppercase() }
-                .toSet()
-            if (watchedTickers.isEmpty()) {
-                Log.d(TAG, "No watched tickers, skipping")
-                return
-            }
-
+            // Everything below -- including the Room lookups, not just the network
+            // call -- is wrapped in one try/catch. Run as a WorkManager job, an
+            // uncaught exception here would otherwise be swallowed silently by
+            // WorkManager (job just marked failed, nothing recorded, nothing
+            // crashes); run directly from the UI's own coroutine scope (the
+            // manual "Synka nu" button), the exact same uncaught exception
+            // crashes the app instead. Catching it here fixes both: no crash,
+            // and the real failure reason finally becomes visible in the UI via
+            // PodcastObservationSettings.lastSyncSummary().
+            var watchedTickerCount = 0
             try {
+                val database = StockPairDatabase.getDatabase(context)
+                val watchItemDao = database.watchItemDao()
+                val observationDao = database.podcastObservationDao()
+
+                val watchedTickers = watchItemDao.getAllWatchItems()
+                    .flatMap { listOfNotNull(it.ticker, it.ticker1, it.ticker2) }
+                    .map { it.uppercase() }
+                    .toSet()
+                watchedTickerCount = watchedTickers.size
+                if (watchedTickers.isEmpty()) {
+                    Log.d(TAG, "No watched tickers, skipping")
+                    return
+                }
+
                 val byTicker = PodcastAnalysisService().getObservationsByTicker()
                 val matchedTickers = watchedTickers.filter { byTicker.containsKey(it) }
                 val entities = matchedTickers
@@ -71,18 +82,19 @@ class PodcastObservationWorker(
                 }
                 PodcastObservationSettings.recordSyncResult(
                     context = context,
-                    watchedTickerCount = watchedTickers.size,
+                    watchedTickerCount = watchedTickerCount,
                     matchedTickerCount = matchedTickers.size,
                     storedCount = entities.size,
                     error = null
                 )
             } catch (e: Exception) {
                 // Background sync against a personal, sometimes-unreachable homelab
-                // endpoint -- never fail the whole worker over a network hiccup.
-                Log.w(TAG, "Failed to sync podcast observations: ${e.message}")
+                // endpoint -- never fail the whole worker (or crash the app) over
+                // a network hiccup or a local bug; record it and move on.
+                Log.w(TAG, "Failed to sync podcast observations: ${e.message}", e)
                 PodcastObservationSettings.recordSyncResult(
                     context = context,
-                    watchedTickerCount = watchedTickers.size,
+                    watchedTickerCount = watchedTickerCount,
                     matchedTickerCount = 0,
                     storedCount = 0,
                     error = e.message ?: e.javaClass.simpleName
