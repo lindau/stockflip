@@ -145,6 +145,18 @@ class StockDetailFragment : Fragment() {
         }
 
         val database = StockPairDatabase.getDatabase(requireContext())
+        // Nytt (poddintegration): fångas separat och tillåts falla tillbaka till null.
+        // database.podcastObservationDao() är den enda delen av poddintegrationen som
+        // körs synkront på huvudtråden när skärmen öppnas -- om något är fel i den
+        // (t.ex. schema-/migrationsproblem som inte upptäckts på huvudlistan) ska det
+        // inte krascha hela detaljvyn, bara stänga av poddsektionen. insiderTransactionDao
+        // var redan valfri av samma anledning innan poddintegrationen lades till.
+        val podcastObservationDao = try {
+            database.podcastObservationDao()
+        } catch (e: Exception) {
+            android.util.Log.e("StockDetailFragment", "Failed to obtain podcastObservationDao, disabling podcast section", e)
+            null
+        }
         // Skapa ViewModel med Factory eftersom vi har parametrar
         val factory = object : ViewModelProvider.Factory {
             override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
@@ -158,7 +170,7 @@ class StockDetailFragment : Fragment() {
                         database.stockNoteDao(),
                         MetricHistoryRepository(database.metricHistoryDao()),
                         database.insiderTransactionDao(),
-                        database.podcastObservationDao()
+                        podcastObservationDao
                     ) as T
                 }
                 throw IllegalArgumentException("Unknown ViewModel class")
