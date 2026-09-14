@@ -81,7 +81,7 @@ object StockPriceUpdater {
             )
             enqueueUniqueWork(
                 WORK_NAME_PODCAST_OBSERVATIONS_IMMEDIATE,
-                ExistingWorkPolicy.KEEP,
+                ExistingWorkPolicy.REPLACE,
                 podcastObservationInitialWork
             )
             enqueueUniquePeriodicWork(
