@@ -43,7 +43,8 @@ class PodcastObservationWorker(
 
         try {
             val byTicker = PodcastAnalysisService().getObservationsByTicker()
-            val entities = watchedTickers
+            val matchedTickers = watchedTickers.filter { byTicker.containsKey(it) }
+            val entities = matchedTickers
                 .mapNotNull { ticker -> byTicker[ticker]?.let { ticker to it } }
                 .flatMap { (ticker, mentions) ->
                     mentions.mapNotNull { it.toEntity(ticker, companyName = null) }
@@ -52,10 +53,24 @@ class PodcastObservationWorker(
                 observationDao.insertAll(entities)
                 Log.d(TAG, "Stored ${entities.size} podcast observation(s) for ${watchedTickers.size} watched ticker(s)")
             }
+            PodcastObservationSettings.recordSyncResult(
+                context = applicationContext,
+                watchedTickerCount = watchedTickers.size,
+                matchedTickerCount = matchedTickers.size,
+                storedCount = entities.size,
+                error = null
+            )
         } catch (e: Exception) {
             // Background sync against a personal, sometimes-unreachable homelab
             // endpoint -- never fail the whole worker over a network hiccup.
             Log.w(TAG, "Failed to sync podcast observations: ${e.message}")
+            PodcastObservationSettings.recordSyncResult(
+                context = applicationContext,
+                watchedTickerCount = watchedTickers.size,
+                matchedTickerCount = 0,
+                storedCount = 0,
+                error = e.message ?: e.javaClass.simpleName
+            )
         }
 
         return Result.success()

@@ -1,6 +1,5 @@
 package com.stockflip
 
-import android.util.Log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
@@ -77,24 +76,23 @@ class PodcastAnalysisService(
     /**
      * Fetches every company's mentions and returns them keyed by ticker
      * (uppercased, matching how StockFlip stores tickers elsewhere).
-     * Returns an empty map on any failure -- this is a background sync,
-     * never something that should crash or surface an error to the user.
+     *
+     * Deliberately lets a network/parsing failure propagate (unlike most
+     * of this app's other best-effort fetches) -- the caller
+     * (PodcastObservationWorker) records the failure via
+     * PodcastObservationSettings so it's visible in the app's own UI. This
+     * is a personal integration with no server dashboard and no adb
+     * access to fall back on for diagnosing a silent "found nothing"; a
+     * swallowed exception here would be indistinguishable from "synced
+     * fine, no matches" -- exactly the ambiguity that made an earlier
+     * "no observations showing" report hard to diagnose.
      */
     suspend fun getObservationsByTicker(): Map<String, List<PodcastMentionDto>> = withContext(Dispatchers.IO) {
         val service = api ?: return@withContext emptyMap()
-        try {
-            val response = service.getCompanies()
-            response.companies
-                .filter { !it.ticker.isNullOrBlank() }
-                .associate { it.ticker!!.uppercase(Locale.US) to it.mentions }
-        } catch (e: Exception) {
-            Log.w(TAG, "Failed to fetch podcast observations: ${e.message}")
-            emptyMap()
-        }
-    }
-
-    companion object {
-        private const val TAG = "PodcastAnalysisService"
+        val response = service.getCompanies()
+        response.companies
+            .filter { !it.ticker.isNullOrBlank() }
+            .associate { it.ticker!!.uppercase(Locale.US) to it.mentions }
     }
 }
 

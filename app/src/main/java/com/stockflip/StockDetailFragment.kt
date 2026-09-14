@@ -818,7 +818,15 @@ class StockDetailFragment : Fragment() {
         binding.podcastObservationsContainer.removeAllViews()
         if (latestPodcastObservations.isEmpty()) {
             binding.podcastEmptyText.isVisible = true
-            binding.podcastEmptyText.text = "Inga poddomnämnanden har hittats ännu."
+            // Diagnostik utan adb: visa senaste synkresultat (aldrig kört /
+            // nätverksfel med felmeddelande / kört fint men inga träffar) --
+            // se PodcastObservationSettings.recordSyncResult().
+            val syncSummary = PodcastObservationSettings.lastSyncSummary(requireContext())
+            binding.podcastEmptyText.text = if (syncSummary != null) {
+                "Inga poddomnämnanden har hittats ännu för denna ticker.\n$syncSummary"
+            } else {
+                "Inga poddomnämnanden har hittats ännu. Synken har inte kört än."
+            }
             clearPodcastToggle()
             return
         }
