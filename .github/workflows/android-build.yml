@@ -73,6 +73,12 @@ jobs:
           keyPassword=$KEYSTORE_KEY_PASSWORD
           EOF
 
+      - name: Configure personal podcast-analysis integration
+        env:
+          PODCAST_ANALYSIS_BASE_URL: ${{ secrets.PODCAST_ANALYSIS_BASE_URL }}
+        run: |
+          echo "PODCAST_ANALYSIS_BASE_URL=$PODCAST_ANALYSIS_BASE_URL" >> local.properties
+
       - name: Build release APK
         run: ./gradlew assembleRelease -PskipVersionBump=true
 
