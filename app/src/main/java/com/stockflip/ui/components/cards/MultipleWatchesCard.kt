@@ -125,8 +125,8 @@ fun MultipleWatchesCard(
                         imageVector = Icons.Filled.Mic,
                         contentDescription = "Omnämnd i poddavsnitt",
                         modifier = Modifier
-                            .size(14.dp)
-                            .padding(end = 4.dp),
+                            .size(20.dp)
+                            .padding(end = 6.dp),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
@@ -265,8 +265,8 @@ private fun MultipleWatchesClarityContent(
                     imageVector = Icons.Filled.Mic,
                     contentDescription = "Omnämnd i poddavsnitt",
                     modifier = Modifier
-                        .size(14.dp)
-                        .padding(end = 4.dp),
+                        .size(20.dp)
+                        .padding(end = 6.dp),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
