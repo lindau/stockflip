@@ -29,6 +29,9 @@ interface PodcastObservationDao {
     )
     fun getForTickerFlow(ticker: String): Flow<List<PodcastObservationEntity>>
 
+    @Query("SELECT DISTINCT ticker FROM podcast_observations")
+    fun getAllTickersFlow(): Flow<List<String>>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAll(observations: List<PodcastObservationEntity>)
 

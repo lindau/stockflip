@@ -1,11 +1,13 @@
 package com.stockflip
 
 import com.stockflip.testutil.FakeMarketDataService
+import com.stockflip.testutil.InMemoryPodcastObservationDao
 import com.stockflip.testutil.InMemoryStockNoteDao
 import com.stockflip.testutil.InMemoryStockPairDao
 import com.stockflip.testutil.InMemoryWatchItemDao
 import com.stockflip.testutil.MainDispatcherRule
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -59,7 +61,7 @@ class MainViewModelRefreshWatchItemsTest {
             )
         )
 
-        val viewModel = MainViewModel(stockPairDao, watchItemDao, marketDataService, InMemoryStockNoteDao())
+        val viewModel = MainViewModel(stockPairDao, watchItemDao, marketDataService, InMemoryStockNoteDao(), InMemoryPodcastObservationDao())
         viewModel.refreshWatchItems()
         val state: UiState<List<WatchItemUiState>> = viewModel.watchItemUiState.value
         val success: UiState.Success<List<WatchItemUiState>> = state as UiState.Success<List<WatchItemUiState>>
@@ -92,7 +94,7 @@ class MainViewModelRefreshWatchItemsTest {
         val stockPairDao: StockPairDao = InMemoryStockPairDao(emptyList())
         val marketDataService: MarketDataService = FakeMarketDataService()
 
-        val viewModel = MainViewModel(stockPairDao, watchItemDao, marketDataService, InMemoryStockNoteDao())
+        val viewModel = MainViewModel(stockPairDao, watchItemDao, marketDataService, InMemoryStockNoteDao(), InMemoryPodcastObservationDao())
         viewModel.loadWatchItems(forceShowStaleData = true)
 
         val state: UiState<List<WatchItemUiState>> = viewModel.watchItemUiState.value
@@ -121,7 +123,8 @@ class MainViewModelRefreshWatchItemsTest {
             InMemoryStockPairDao(emptyList()),
             watchItemDao,
             FakeMarketDataService(pricesBySymbol = mapOf("VOLV-B.ST" to 300.0)),
-            InMemoryStockNoteDao()
+            InMemoryStockNoteDao(),
+            InMemoryPodcastObservationDao()
         )
 
         viewModel.loadWatchItems(forceShowStaleData = false)
@@ -147,7 +150,8 @@ class MainViewModelRefreshWatchItemsTest {
             InMemoryStockPairDao(emptyList()),
             watchItemDao,
             FakeMarketDataService(pricesBySymbol = mapOf("VOLV-B.ST" to 300.0)),
-            InMemoryStockNoteDao()
+            InMemoryStockNoteDao(),
+            InMemoryPodcastObservationDao()
         )
 
         viewModel.refreshWatchItems(showLoading = false)
@@ -171,7 +175,8 @@ class MainViewModelRefreshWatchItemsTest {
             stockPairDao = InMemoryStockPairDao(emptyList()),
             watchItemDao = watchItemDao,
             yahooFinanceService = FakeMarketDataService(),
-            stockNoteDao = InMemoryStockNoteDao()
+            stockNoteDao = InMemoryStockNoteDao(),
+            podcastObservationDao = InMemoryPodcastObservationDao()
         )
 
         viewModel.toggleWatchItemActive(triggeredItem, false)
@@ -198,7 +203,8 @@ class MainViewModelRefreshWatchItemsTest {
             stockPairDao = InMemoryStockPairDao(emptyList()),
             watchItemDao = watchItemDao,
             yahooFinanceService = FakeMarketDataService(pricesBySymbol = mapOf("VOLV-B.ST" to 105.0)),
-            stockNoteDao = InMemoryStockNoteDao()
+            stockNoteDao = InMemoryStockNoteDao(),
+            podcastObservationDao = InMemoryPodcastObservationDao()
         )
 
         viewModel.reactivateWatchItem(triggeredItem)
@@ -232,7 +238,8 @@ class MainViewModelRefreshWatchItemsTest {
             stockPairDao = stockPairDao,
             watchItemDao = watchItemDao,
             yahooFinanceService = FakeMarketDataService(),
-            stockNoteDao = InMemoryStockNoteDao()
+            stockNoteDao = InMemoryStockNoteDao(),
+            podcastObservationDao = InMemoryPodcastObservationDao()
         )
 
         val result = viewModel.importData(importBackupJson())
@@ -266,7 +273,7 @@ class MainViewModelRefreshWatchItemsTest {
             pricesBySymbol = mapOf("VOLV-B.ST" to 300.0)
         )
 
-        val viewModel = MainViewModel(stockPairDao, watchItemDao, marketDataService, InMemoryStockNoteDao())
+        val viewModel = MainViewModel(stockPairDao, watchItemDao, marketDataService, InMemoryStockNoteDao(), InMemoryPodcastObservationDao())
 
         viewModel.syncAfterImport()
 
@@ -274,6 +281,34 @@ class MainViewModelRefreshWatchItemsTest {
         val success: UiState.Success<List<WatchItemUiState>> = state as UiState.Success<List<WatchItemUiState>>
         assertEquals(1, success.data.size)
         assertEquals(300.0, success.data.first().live.currentPrice, 0.0001)
+    }
+
+    @Test
+    fun `mentionedTickers reflects tickers present in podcast_observations`() = runBlocking {
+        val podcastObservationDao = InMemoryPodcastObservationDao(
+            listOf(
+                PodcastObservationEntity(
+                    observationId = "obs-1",
+                    ticker = "RVRC.ST",
+                    companyName = "RevolutionRace",
+                    podcast = "Kvalitetsaktiepodden",
+                    episodeTitle = "Avsnitt 1",
+                    recommendation = "Köp",
+                    stance = "Positiv",
+                    exactQuote = null,
+                    publishedAtMillis = null,
+                )
+            )
+        )
+        val viewModel = MainViewModel(
+            stockPairDao = InMemoryStockPairDao(emptyList()),
+            watchItemDao = InMemoryWatchItemDao(emptyList()),
+            yahooFinanceService = FakeMarketDataService(),
+            stockNoteDao = InMemoryStockNoteDao(),
+            podcastObservationDao = podcastObservationDao
+        )
+
+        assertEquals(setOf("RVRC.ST"), viewModel.mentionedTickers.first())
     }
 
     private fun importBackupJson(): String {

@@ -48,7 +48,8 @@ class AlertsFragment : Fragment() {
                     database.stockPairDao(),
                     database.watchItemDao(),
                     YahooFinanceService,
-                    database.stockNoteDao()
+                    database.stockNoteDao(),
+                    database.podcastObservationDao()
                 ) as T
             }
         }

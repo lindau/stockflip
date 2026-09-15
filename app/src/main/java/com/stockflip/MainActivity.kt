@@ -71,7 +71,7 @@ class MainActivity : AppCompatActivity() {
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
                 val database = StockPairDatabase.getDatabase(applicationContext)
                 @Suppress("UNCHECKED_CAST")
-                return MainViewModel(database.stockPairDao(), database.watchItemDao(), YahooFinanceService, database.stockNoteDao()) as T
+                return MainViewModel(database.stockPairDao(), database.watchItemDao(), YahooFinanceService, database.stockNoteDao(), database.podcastObservationDao()) as T
             }
         }
     }

@@ -14,7 +14,6 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.stockflip.databinding.ItemSectionHeaderBinding
-import com.stockflip.repository.PodcastMentionRepository
 import com.stockflip.ui.ComposeWatchItemCard
 import com.stockflip.ui.WatchItemCardPresentation
 import com.stockflip.ui.components.cards.ClarityAlertsSummaryCard
@@ -436,7 +435,7 @@ class GroupedWatchItemAdapter(
                     dailyChangePercent = live.currentDailyChangePercent,
                     watchItems = groupItems.map { it.item },
                     hasNote = notedTickers.contains(symbol),
-                    hasPodcastMention = mentionedTickers.contains(PodcastMentionRepository.normalizeTicker(symbol)),
+                    hasPodcastMention = mentionedTickers.contains(symbol.uppercase()),
                 )
             )
         }

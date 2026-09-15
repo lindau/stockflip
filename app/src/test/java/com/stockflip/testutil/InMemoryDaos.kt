@@ -2,6 +2,8 @@ package com.stockflip.testutil
 
 import com.stockflip.MetricHistoryDao
 import com.stockflip.MetricHistoryEntity
+import com.stockflip.PodcastObservationDao
+import com.stockflip.PodcastObservationEntity
 import com.stockflip.StockNote
 import com.stockflip.StockNoteDao
 import com.stockflip.StockPair
@@ -102,6 +104,37 @@ class InMemoryStockNoteDao : StockNoteDao {
 
     override suspend fun deleteByTicker(ticker: String) {
         state.value = state.value - ticker
+    }
+}
+
+class InMemoryPodcastObservationDao(
+    initialEntries: List<PodcastObservationEntity> = emptyList()
+) : PodcastObservationDao {
+    private val state: MutableStateFlow<List<PodcastObservationEntity>> = MutableStateFlow(initialEntries)
+
+    override suspend fun getAllEntries(): List<PodcastObservationEntity> = state.value
+
+    override suspend fun getForTicker(ticker: String): List<PodcastObservationEntity> =
+        state.value.filter { it.ticker == ticker }
+
+    override fun getForTickerFlow(ticker: String): Flow<List<PodcastObservationEntity>> =
+        state.map { entries -> entries.filter { it.ticker == ticker } }
+
+    override fun getAllTickersFlow(): Flow<List<String>> =
+        state.map { entries -> entries.map { it.ticker }.distinct() }
+
+    override suspend fun insertAll(observations: List<PodcastObservationEntity>) {
+        val byId = state.value.associateBy { it.observationId }.toMutableMap()
+        observations.forEach { byId[it.observationId] = it }
+        state.value = byId.values.toList()
+    }
+
+    override suspend fun deleteAll() {
+        state.value = emptyList()
+    }
+
+    override suspend fun deleteForTicker(ticker: String) {
+        state.value = state.value.filterNot { it.ticker == ticker }
     }
 }
 
