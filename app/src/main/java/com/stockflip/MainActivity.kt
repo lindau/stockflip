@@ -1082,10 +1082,6 @@ class MainActivity : AppCompatActivity() {
         handleEditClick(item)
     }
 
-    internal fun navigateToStockDetailFromPairs(symbol: String, companyName: String?) {
-        navigateToStockDetail(symbol, companyName)
-    }
-
     internal fun navigateToPairDetailFromPairs(watchItemId: Int) {
         navigateToPairDetail(watchItemId)
     }

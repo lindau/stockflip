@@ -66,7 +66,6 @@ data class Meta(
     val fiftyTwoWeekHigh: Double? = null,
     val fiftyTwoWeekLow: Double? = null,
     val regularMarketDayHigh: Double? = null,
-    val regularMarketDayLow: Double? = null,
     val regularMarketChangePercent: Double? = null,
     val chartPreviousClose: Double? = null,
 )

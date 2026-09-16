@@ -26,9 +26,6 @@ class MainViewModel(
     private val podcastObservationDao: PodcastObservationDao,
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow<UiState<List<StockPair>>>(UiState.Loading)
-    val uiState: StateFlow<UiState<List<StockPair>>> = _uiState
-
     private val _watchItemUiState = MutableStateFlow<UiState<List<WatchItemUiState>>>(UiState.Loading)
     val watchItemUiState: StateFlow<UiState<List<WatchItemUiState>>> = _watchItemUiState.asStateFlow()
 
@@ -49,9 +46,6 @@ class MainViewModel(
 
     init {
         Log.d(TAG, "MainViewModel initialized")
-        viewModelScope.launch {
-            loadStockPairs()
-        }
         startAutoRefresh()
     }
 
@@ -60,103 +54,11 @@ class MainViewModel(
             while (true) {
                 delay(120_000)
                 try {
-                    refreshStockPairs()
                     refreshWatchItems(showLoading = false)
                 } catch (e: Exception) {
                     Log.w(TAG, "Auto-refresh failed: ${e.message}")
                 }
             }
-        }
-    }
-
-    suspend fun loadStockPairs() {
-        try {
-            Log.d(TAG, "Loading stock pairs from database")
-            _uiState.value = UiState.Loading
-            val pairs = stockPairDao.getAllStockPairs()
-            Log.d(TAG, "Loaded ${pairs.size} stock pairs")
-            _uiState.value = UiState.Success(pairs)
-        } catch (e: Exception) {
-            Log.e(TAG, "Error loading stock pairs: ${e.message}")
-            _uiState.value = UiState.Error("Failed to load stock pairs: ${e.message}")
-        }
-    }
-
-    suspend fun refreshStockPairs() {
-        try {
-            Log.d(TAG, "Refreshing stock pairs")
-            _uiState.value = UiState.Loading
-            
-            val pairs = stockPairDao.getAllStockPairs()
-            Log.d(TAG, "Found ${pairs.size} pairs to refresh")
-            
-            val semaphore = Semaphore(4)
-            val updatedPairs = coroutineScope {
-                pairs.map { pair ->
-                    async {
-                        semaphore.withPermit {
-                            try {
-                                Log.d(TAG, "Fetching prices for stock pair")
-                                val price1 = yahooFinanceService.getStockPrice(pair.ticker1)
-                                val price2 = yahooFinanceService.getStockPrice(pair.ticker2)
-
-                                if (price1 != null && price2 != null) {
-                                    Log.d(TAG, "Fetched prices for stock pair")
-                                    val updatedPair = pair.withCurrentPrices(price1, price2)
-                                    stockPairDao.update(updatedPair)
-                                    Log.d(TAG, "Updated stock pair prices in database")
-                                    updatedPair
-                                } else {
-                                    Log.w(TAG, "Could not get prices for stock pair, keeping existing values")
-                                    pair
-                                }
-                            } catch (e: Exception) {
-                                Log.e(TAG, "Error fetching stock pair prices: ${e.message}")
-                                pair
-                            }
-                        }
-                    }
-                }.awaitAll()
-            }
-            
-            _uiState.value = UiState.Success(updatedPairs)
-            Log.d(TAG, "Successfully refreshed ${updatedPairs.size} stock pairs")
-        } catch (e: Exception) {
-            Log.e(TAG, "Error refreshing stock pairs: ${e.message}")
-            _uiState.value = UiState.Error("Failed to refresh stock pairs: ${e.message}")
-        }
-    }
-
-    suspend fun addStockPair(stockPair: StockPair) {
-        try {
-            Log.d(TAG, "Adding stock pair")
-            stockPairDao.insertStockPair(stockPair)
-            refreshStockPairs() // Immediately refresh prices after adding
-        } catch (e: Exception) {
-            Log.e(TAG, "Error adding stock pair: ${e.message}")
-            _uiState.value = UiState.Error("Failed to add stock pair: ${e.message}")
-        }
-    }
-
-    suspend fun deleteStockPair(stockPair: StockPair) {
-        try {
-            Log.d(TAG, "Deleting stock pair")
-            stockPairDao.deleteStockPair(stockPair)
-            loadStockPairs() // Reload the list after deleting
-        } catch (e: Exception) {
-            Log.e(TAG, "Error deleting stock pair: ${e.message}")
-            _uiState.value = UiState.Error("Failed to delete stock pair: ${e.message}")
-        }
-    }
-
-    suspend fun updateStockPair(stockPair: StockPair) {
-        try {
-            Log.d(TAG, "Updating stock pair")
-            stockPairDao.update(stockPair)
-            loadStockPairs() // Reload the list after updating
-        } catch (e: Exception) {
-            Log.e(TAG, "Error updating stock pair: ${e.message}")
-            _uiState.value = UiState.Error("Failed to update stock pair: ${e.message}")
         }
     }
 
@@ -564,7 +466,6 @@ class MainViewModel(
         // och hämta livevärden utan att lämna UI:t i ett laddningsläge.
         loadWatchItems(forceShowStaleData = true)
         refreshWatchItems(showLoading = false)
-        loadStockPairs()
     }
 
     sealed class ImportResult {

@@ -95,7 +95,6 @@ class StockDetailFragment : Fragment() {
         private const val ARG_OPENED_FROM_NOTIFICATION = "opened_from_notification"
         private const val ARG_HIGHLIGHT_INSIDER_TRANSACTION_ID = "highlight_insider_transaction_id"
         private const val VERY_CLOSE_THRESHOLD = 0.05
-        private const val CLOSE_THRESHOLD = 0.12
         private const val COLLAPSED_INSIDER_TRANSACTION_COUNT = 1
         private const val COLLAPSED_PODCAST_OBSERVATION_COUNT = 1
 
