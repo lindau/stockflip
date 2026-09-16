@@ -7,6 +7,8 @@ import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.GET
 import retrofit2.http.Path
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withContext
 import java.net.URL
 import java.net.URLEncoder
@@ -22,9 +24,6 @@ import kotlin.math.abs
 interface YahooFinanceApi {
     @GET("v8/finance/chart/{symbol}")
     suspend fun getStockPrice(@Path("symbol") symbol: String): YahooFinanceResponse
-
-    @GET("v8/finance/chart/{symbol}")
-    suspend fun getStockInfo(@Path("symbol") symbol: String): YahooFinanceResponse
 
     @GET("v8/finance/chart/{symbol}")
     suspend fun getIntradayChart(
@@ -232,115 +231,17 @@ object YahooFinanceService : MarketDataService {
         return chartMarketDataService.getExchange(symbol)
     }
 
-    override suspend fun getKeyMetric(symbol: String, metricType: WatchType.MetricType): Double? = withContext(Dispatchers.IO) {
-        try {
-            if (consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {
-                val timeSinceLastFailure = System.currentTimeMillis() - lastFailureTime
-                if (timeSinceLastFailure < FAILURE_COOLDOWN_MS) {
-                    Log.w(TAG, "Yahoo Finance circuit breaker open (failures: $consecutiveFailures)")
-                    throw Exception("Circuit breaker open")
-                } else {
-                    Log.i(TAG, "Circuit breaker cooldown expired, retrying Yahoo Finance")
-                    consecutiveFailures = 0
-                }
-            }
-            
-            Log.d(TAG, "Fetching key metric from Yahoo Finance")
-            ensureCrumb()
-            
-            if (crumb == null) {
-                Log.w(TAG, "Crumb is null after ensureCrumb(), will try without crumb (may get 401)")
-            }
-            
-            // Construct URL with crumb if available
-            var url = "https://query2.finance.yahoo.com/v10/finance/quoteSummary/$symbol?modules=summaryDetail,defaultKeyStatistics,financialData"
-            if (crumb != null) {
-                url += "&crumb=$crumb"
-                Log.d(TAG, "Using Yahoo crumb for quoteSummary request")
-            } else {
-                Log.d(TAG, "Making request without crumb (may fail with 401)")
-            }
-
-            val request = Request.Builder()
-                .url(url)
-                .addHeader("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
-                .build()
-                
-            Log.d(TAG, "Making Yahoo Finance quoteSummary request")
-            val response = client.newCall(request).execute()
-            Log.d(TAG, "Yahoo Finance API response received: ${response.code} ${response.message}")
-            
-            if (response.isSuccessful) {
-                val responseBody = response.body?.string()
-                Log.d(TAG, "Response body length: ${responseBody?.length ?: 0}")
-                
-                if (responseBody != null) {
-                    val jsonObject = JSONObject(responseBody)
-                    val quoteSummary = jsonObject.optJSONObject("quoteSummary")
-                    val result = quoteSummary?.optJSONArray("result")?.optJSONObject(0)
-                    val summaryDetail = result?.optJSONObject("summaryDetail")
-                    val defaultKeyStatistics = result?.optJSONObject("defaultKeyStatistics")
-
-                    if (summaryDetail != null || defaultKeyStatistics != null) {
-                        Log.d(TAG, "Found key metric modules in response")
-                        val value = when (metricType) {
-                            WatchType.MetricType.PE_RATIO -> {
-                                val pe = summaryDetail?.optJSONObject("trailingPE")?.optDouble("raw")
-                                if (pe == null || pe.isNaN()) {
-                                    summaryDetail?.optJSONObject("forwardPE")?.optDouble("raw")
-                                } else pe
-                            }
-                            WatchType.MetricType.PS_RATIO -> {
-                                summaryDetail?.optJSONObject("priceToSalesTrailing12Months")?.optDouble("raw")
-                            }
-                            WatchType.MetricType.DIVIDEND_YIELD -> {
-                                // Try dividendYield first, then trailingAnnualDividendYield (common for non-US stocks)
-                                val yield = summaryDetail?.optJSONObject("dividendYield")?.optDouble("raw")
-                                    ?.takeIf { !it.isNaN() && it > 0 }
-                                    ?: summaryDetail?.optJSONObject("trailingAnnualDividendYield")?.optDouble("raw")
-                                        ?.takeIf { !it.isNaN() && it > 0 }
-                                if (yield != null) yield * 100 else null
-                            }
-                            WatchType.MetricType.EARNINGS_PER_SHARE -> {
-                                defaultKeyStatistics?.optJSONObject("trailingEps")?.optDouble("raw")
-                                    ?.takeIf { !it.isNaN() && it > 0 }
-                                    ?: defaultKeyStatistics?.optJSONObject("forwardEps")?.optDouble("raw")
-                                        ?.takeIf { !it.isNaN() && it > 0 }
-                            }
-                        }
-                        
-                        if (value != null && !value.isNaN() && value > 0) {
-                            Log.d(TAG, "Successfully fetched ${metricType.name} from Yahoo")
-                            return@withContext value
-                        } else {
-                            Log.w(TAG, "Could not extract ${metricType.name} from Yahoo response (value: $value)")
-                        }
-                    } else {
-                        Log.w(TAG, "No key metric modules found in Yahoo response. Result: ${result != null}, quoteSummary: ${quoteSummary != null}")
-                    }
-                } else {
-                    Log.w(TAG, "Yahoo Finance response body is null")
-                }
-            } else {
-                Log.w(TAG, "Yahoo Finance API Error: ${response.code} - ${response.message}")
-                 // If 401, maybe crumb expired? Reset for next time
-                if (response.code == 401) {
-                    Log.w(TAG, "Yahoo Finance returned 401, resetting crumb")
-                    crumb = null
-                }
-            }
-            response.close()
-        } catch (e: Exception) {
-            Log.e(TAG, "Error fetching key metric from Yahoo: ${e.message}")
-            if (e.message != "Circuit breaker open") {
-                consecutiveFailures++
-                lastFailureTime = System.currentTimeMillis()
-                Log.w(TAG, "Yahoo failure count: $consecutiveFailures")
-            }
-            return@withContext null
+    // getKeyMetric och getAllKeyMetrics anropar samma quoteSummary-endpoint och parsade
+    // tidigare samma JSON två gånger (dubbla nätverksanrop för en KeyMetrics-bevakning).
+    // getKeyMetric delegerar nu till getAllKeyMetrics och plockar ut ett fält.
+    override suspend fun getKeyMetric(symbol: String, metricType: WatchType.MetricType): Double? {
+        val metrics = getAllKeyMetrics(symbol) ?: return null
+        return when (metricType) {
+            WatchType.MetricType.PE_RATIO -> metrics.peRatio
+            WatchType.MetricType.PS_RATIO -> metrics.psRatio
+            WatchType.MetricType.DIVIDEND_YIELD -> metrics.dividendYield
+            WatchType.MetricType.EARNINGS_PER_SHARE -> metrics.earningsPerShare
         }
-
-        null
     }
 
     override suspend fun getATH(symbol: String): Double? {
@@ -425,48 +326,44 @@ object YahooFinanceService : MarketDataService {
             if (response.isSuccessful) {
                 val body = response.body?.string()
                 if (body != null) {
-	                    val summaryDetail = JSONObject(body)
-	                        .optJSONObject("quoteSummary")
-	                        ?.optJSONArray("result")
-	                        ?.optJSONObject(0)
-	                        ?.optJSONObject("summaryDetail")
-                        val defaultKeyStatistics = JSONObject(body)
-                            .optJSONObject("quoteSummary")
-                            ?.optJSONArray("result")
-                            ?.optJSONObject(0)
-                            ?.optJSONObject("defaultKeyStatistics")
-                        val financialData = JSONObject(body)
-                            .optJSONObject("quoteSummary")
-                            ?.optJSONArray("result")
-                            ?.optJSONObject(0)
-                            ?.optJSONObject("financialData")
+                    val result = JSONObject(body)
+                        .optJSONObject("quoteSummary")
+                        ?.optJSONArray("result")
+                        ?.optJSONObject(0)
+                    val summaryDetail = result?.optJSONObject("summaryDetail")
+                    val defaultKeyStatistics = result?.optJSONObject("defaultKeyStatistics")
+                    val financialData = result?.optJSONObject("financialData")
 
-		                    if (summaryDetail != null || defaultKeyStatistics != null || financialData != null) {
-		                        val pe = summaryDetail?.optJSONObject("trailingPE")?.optDouble("raw").takeIf { it != null && !it.isNaN() && it > 0 }
-		                            ?: summaryDetail?.optJSONObject("forwardPE")?.optDouble("raw").takeIf { it != null && !it.isNaN() && it > 0 }
-		                        val ps = summaryDetail?.optJSONObject("priceToSalesTrailing12Months")?.optDouble("raw").takeIf { it != null && !it.isNaN() && it > 0 }
-		                        val yieldRaw = summaryDetail?.optJSONObject("dividendYield")?.optDouble("raw")
-		                        val dividendYield = if (yieldRaw != null && !yieldRaw.isNaN() && yieldRaw > 0) yieldRaw * 100 else null
-                                val marketCap = summaryDetail?.optJSONObject("marketCap")?.optDouble("raw")
-                                    ?.takeIf { !it.isNaN() && it > 0 }
-                                val returnOnEquityRaw = financialData?.optJSONObject("returnOnEquity")?.optDouble("raw")
-                                    ?.takeIf { !it.isNaN() }
-                                val returnOnEquity = returnOnEquityRaw?.let { if (abs(it) <= 1.0) it * 100 else it }
-	                        val earningsPerShare = defaultKeyStatistics?.optJSONObject("trailingEps")?.optDouble("raw")
-	                            ?.takeIf { !it.isNaN() && it > 0 }
-	                            ?: defaultKeyStatistics?.optJSONObject("forwardEps")?.optDouble("raw")
-	                                ?.takeIf { !it.isNaN() && it > 0 }
+                    if (summaryDetail != null || defaultKeyStatistics != null || financialData != null) {
+                        val pe = summaryDetail?.optJSONObject("trailingPE")?.optDouble("raw").takeIf { it != null && !it.isNaN() && it > 0 }
+                            ?: summaryDetail?.optJSONObject("forwardPE")?.optDouble("raw").takeIf { it != null && !it.isNaN() && it > 0 }
+                        val ps = summaryDetail?.optJSONObject("priceToSalesTrailing12Months")?.optDouble("raw").takeIf { it != null && !it.isNaN() && it > 0 }
+                        // Prova dividendYield först, sedan trailingAnnualDividendYield (vanligt för icke-amerikanska aktier)
+                        val yieldRaw = summaryDetail?.optJSONObject("dividendYield")?.optDouble("raw")
+                            ?.takeIf { !it.isNaN() && it > 0 }
+                            ?: summaryDetail?.optJSONObject("trailingAnnualDividendYield")?.optDouble("raw")
+                                ?.takeIf { !it.isNaN() && it > 0 }
+                        val dividendYield = yieldRaw?.let { it * 100 }
+                        val marketCap = summaryDetail?.optJSONObject("marketCap")?.optDouble("raw")
+                            ?.takeIf { !it.isNaN() && it > 0 }
+                        val returnOnEquityRaw = financialData?.optJSONObject("returnOnEquity")?.optDouble("raw")
+                            ?.takeIf { !it.isNaN() }
+                        val returnOnEquity = returnOnEquityRaw?.let { if (abs(it) <= 1.0) it * 100 else it }
+                        val earningsPerShare = defaultKeyStatistics?.optJSONObject("trailingEps")?.optDouble("raw")
+                            ?.takeIf { !it.isNaN() && it > 0 }
+                            ?: defaultKeyStatistics?.optJSONObject("forwardEps")?.optDouble("raw")
+                                ?.takeIf { !it.isNaN() && it > 0 }
 
-	                        response.close()
-	                        return@withContext KeyMetrics(
-                                peRatio = pe,
-                                psRatio = ps,
-                                dividendYield = dividendYield,
-                                earningsPerShare = earningsPerShare,
-                                marketCap = marketCap,
-                                returnOnEquity = returnOnEquity
-                            )
-	                    }
+                        response.close()
+                        return@withContext KeyMetrics(
+                            peRatio = pe,
+                            psRatio = ps,
+                            dividendYield = dividendYield,
+                            earningsPerShare = earningsPerShare,
+                            marketCap = marketCap,
+                            returnOnEquity = returnOnEquity
+                        )
+                    }
                 }
             } else if (response.code == 401) {
                 crumb = null
@@ -563,12 +460,7 @@ object YahooFinanceService : MarketDataService {
                 "&fields=symbol,shortname,exchange,quoteType,longname,typeDisp,market"
 
             Log.d(TAG, "Searching crypto results for query length ${query.length}")
-            
-            val client = OkHttpClient.Builder()
-                .connectTimeout(10, TimeUnit.SECONDS)
-                .readTimeout(10, TimeUnit.SECONDS)
-                .build()
-                
+
             val request = okhttp3.Request.Builder()
                 .url(url)
                 .addHeader("User-Agent", "Mozilla/5.0")
@@ -628,87 +520,88 @@ object YahooFinanceService : MarketDataService {
     suspend fun searchStocks(query: String, includeCrypto: Boolean = true): List<StockSearchResult> = withContext(Dispatchers.IO) {
         try {
             if (query.length < 2) return@withContext emptyList()
-            
-            val encodedQuery = URLEncoder.encode(query, "UTF-8")
-            
-            // Sök aktier
-            val equityUrl = "$SEARCH_URL?q=$encodedQuery" +
-                "&quotesCount=50" +
-                "&lang=en" +
-                "&region=SE" +
-                "&enableFuzzyQuery=false" +
-                "&type=equity" +
-                "&newsCount=0" +
-                "&enableEnhancedTrivialQuery=false" +
-                "&exchange=STO" +
-                "&fields=symbol,shortname,exchange,quoteType,longname,typeDisp,market"
 
-            Log.d(TAG, "Searching stock results for query length ${query.length}")
-            
-            val client = OkHttpClient.Builder()
-                .connectTimeout(10, TimeUnit.SECONDS)
-                .readTimeout(10, TimeUnit.SECONDS)
-                .build()
-                
-            val equityRequest = okhttp3.Request.Builder()
-                .url(equityUrl)
-                .addHeader("User-Agent", "Mozilla/5.0")
-                .build()
-                
-            val equityResponse = client.newCall(equityRequest).execute()
-            
-            val allResults = mutableListOf<StockSearchResult>()
-            
-            // Parse aktier
-            if (equityResponse.isSuccessful) {
-                val responseBody = equityResponse.body?.string()
-                if (responseBody != null) {
-                    val jsonObject = JSONObject(responseBody)
-                    val quotes = jsonObject.optJSONArray("quotes")
-                    
-                    if (quotes != null) {
-                        for (i in 0 until quotes.length()) {
-                            val quote = quotes.getJSONObject(i)
-                            if (quote.has("symbol")) {
-                                val quoteType = quote.optString("quoteType", "")
-                                val symbol = quote.getString("symbol")
-                                val name = quote.optString("shortname") ?: 
-                                         quote.optString("longname") ?: 
-                                         symbol
-                                val exchange = quote.optString("exchange", "")
-                                val typeDisp = quote.optString("typeDisp", "")
-                                val market = quote.optString("market", "")
-                                
-                                if (isValidStock(quoteType, symbol, name, typeDisp)) {
-                                    val displayName = buildDisplayName(name, exchange, market)
-                                    allResults.add(
-                                        StockSearchResult(
-                                            symbol = symbol,
-                                            name = displayName,
-                                            isSwedish = symbol.endsWith(".ST") || exchange == "STO",
-                                            isCrypto = false
-                                        )
+            // Sök aktier och krypto parallellt i stället för sekventiellt.
+            val allResults = coroutineScope {
+                val equityDeferred = async { searchEquities(query) }
+                val cryptoDeferred = if (includeCrypto) async { searchCrypto(query) } else null
+                val results = mutableListOf<StockSearchResult>()
+                results.addAll(equityDeferred.await())
+                cryptoDeferred?.let { results.addAll(it.await()) }
+                results
+            }
+
+            Log.d(TAG, "Found ${allResults.size} total search results")
+            allResults
+
+        } catch (e: Exception) {
+            Log.e(TAG, "Error searching stocks: ${e.message}", e)
+            emptyList()
+        }
+    }
+
+    private suspend fun searchEquities(query: String): List<StockSearchResult> {
+        val encodedQuery = URLEncoder.encode(query, "UTF-8")
+
+        val equityUrl = "$SEARCH_URL?q=$encodedQuery" +
+            "&quotesCount=50" +
+            "&lang=en" +
+            "&region=SE" +
+            "&enableFuzzyQuery=false" +
+            "&type=equity" +
+            "&newsCount=0" +
+            "&enableEnhancedTrivialQuery=false" +
+            "&exchange=STO" +
+            "&fields=symbol,shortname,exchange,quoteType,longname,typeDisp,market"
+
+        Log.d(TAG, "Searching stock results for query length ${query.length}")
+
+        val equityRequest = okhttp3.Request.Builder()
+            .url(equityUrl)
+            .addHeader("User-Agent", "Mozilla/5.0")
+            .build()
+
+        val equityResponse = client.newCall(equityRequest).execute()
+
+        val results = mutableListOf<StockSearchResult>()
+
+        if (equityResponse.isSuccessful) {
+            val responseBody = equityResponse.body?.string()
+            if (responseBody != null) {
+                val jsonObject = JSONObject(responseBody)
+                val quotes = jsonObject.optJSONArray("quotes")
+
+                if (quotes != null) {
+                    for (i in 0 until quotes.length()) {
+                        val quote = quotes.getJSONObject(i)
+                        if (quote.has("symbol")) {
+                            val quoteType = quote.optString("quoteType", "")
+                            val symbol = quote.getString("symbol")
+                            val name = quote.optString("shortname") ?:
+                                     quote.optString("longname") ?:
+                                     symbol
+                            val exchange = quote.optString("exchange", "")
+                            val typeDisp = quote.optString("typeDisp", "")
+                            val market = quote.optString("market", "")
+
+                            if (isValidStock(quoteType, symbol, name, typeDisp)) {
+                                val displayName = buildDisplayName(name, exchange, market)
+                                results.add(
+                                    StockSearchResult(
+                                        symbol = symbol,
+                                        name = displayName,
+                                        isSwedish = symbol.endsWith(".ST") || exchange == "STO",
+                                        isCrypto = false
                                     )
-                                }
+                                )
                             }
                         }
                     }
                 }
             }
-            
-            // Sök krypto om includeCrypto är true
-            if (includeCrypto) {
-                val cryptoResults = searchCrypto(query)
-                allResults.addAll(cryptoResults)
-            }
-            
-            Log.d(TAG, "Found ${allResults.size} total search results")
-            allResults
-            
-        } catch (e: Exception) {
-            Log.e(TAG, "Error searching stocks: ${e.message}", e)
-            emptyList()
         }
+
+        return results
     }
 
     private fun isValidStock(quoteType: String, symbol: String, name: String, typeDisp: String): Boolean {
