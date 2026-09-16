@@ -77,7 +77,6 @@
     </com.google.android.material.chip.ChipGroup>
 
     <com.google.android.material.textfield.TextInputLayout
-        android:id="@+id/thresholdLayout"
         style="@style/Widget.StockFlip.TextInputLayout.OutlinedBox"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

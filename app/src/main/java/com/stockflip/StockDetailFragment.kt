@@ -460,14 +460,6 @@ class StockDetailFragment : Fragment() {
     }
 
     private fun displayStockData(data: StockDetailData) {
-        binding.companyName.text = data.companyName
-        binding.symbol.text = data.symbol
-        
-        // Visa landsflagga baserat på börs och valuta (valuta som fallback)
-        // För krypto returneras null, då visas ingen flagga
-        val flagEmoji = CountryFlagHelper.getFlagForExchange(data.exchange, data.currency)
-        binding.countryFlag.text = flagEmoji ?: ""
-        
         // Dölj nyckeltal-knappen om det är en kryptovaluta
         val isCrypto = StockSearchResult.isCryptoSymbol(data.symbol)
 
@@ -477,98 +469,8 @@ class StockDetailFragment : Fragment() {
         } else {
             android.view.View.GONE
         }
-        
-        binding.lastPrice.text = data.lastPrice?.let { 
-            CurrencyHelper.formatPrice(it, data.currency)
-        } ?: "Laddar..."
-        
-        // Kontrollera om börsen är öppen baserat på börs-kod
-        // Om exchange är null, försök gissa från symbol (t.ex. .ST för svenska, .OL för norska)
-        val exchangeToCheck = data.exchange ?: run {
-            when {
-                data.symbol.endsWith(".ST") || data.symbol.endsWith(".STO") -> "STO"
-                data.symbol.endsWith(".OL") || data.symbol.endsWith(".OSE") -> "OSE"
-                data.symbol.endsWith(".L") -> "LSE"
-                data.symbol.endsWith(".DE") || data.symbol.endsWith(".XETR") -> "XETR"
-                data.symbol.endsWith(".T") -> "TSE"
-                // För amerikanska aktier utan suffix, anta NASDAQ/NYSE
-                !data.symbol.contains(".") && data.currency == "USD" -> "NASDAQ"
-                else -> null
-            }
-        }
-        
-        val isMarketOpen = if (isCrypto) {
-            true // Krypto är alltid öppet
-        } else {
-            val marketOpen = StockMarketScheduler.isMarketOpenForExchange(exchangeToCheck)
-            Log.d(TAG, "Market status for ${data.symbol} (exchange: ${data.exchange}, checked: $exchangeToCheck, currency: ${data.currency}): $marketOpen")
-            marketOpen
-        }
-        
-        val canShowDailyChange: Boolean = data.dailyChangePercent != null ||
-            (data.lastPrice != null && data.previousClose != null && data.previousClose > 0)
-        if (canShowDailyChange) {
-            binding.dailyChangePercent.visibility = android.view.View.VISIBLE
-            val change: Double = data.dailyChangePercent ?: run {
-                val lp = requireNotNull(data.lastPrice)
-                val pc = requireNotNull(data.previousClose)
-                ((lp - pc) / pc) * 100
-            }
-            if (!isMarketOpen) {
-                binding.dailyChangePercent.setTextColor(android.graphics.Color.parseColor("#757575")) // Gray
-                binding.dailyChangePercent.text = "Börsen stängd"
-            } else {
-                val sign = if (change >= 0) "+" else ""
-                val color = if (change >= 0) {
-                    android.graphics.Color.parseColor("#4CAF50") // Green
-                } else {
-                    android.graphics.Color.parseColor("#F44336") // Red
-                }
-                binding.dailyChangePercent.setTextColor(color)
-                binding.dailyChangePercent.text = "$sign${CurrencyHelper.formatDecimal(change)}%"
-            }
-        } else {
-            binding.dailyChangePercent.visibility = android.view.View.GONE
-        }
-        
-        binding.week52High.text = data.week52High?.let {
-            CurrencyHelper.formatPrice(it, data.currency)
-        } ?: "Laddar..."
-        
-        binding.week52Low.text = data.week52Low?.let {
-            CurrencyHelper.formatPrice(it, data.currency)
-        } ?: "Laddar..."
-        
-        binding.drawdownPercent.text = data.drawdownPercent?.let {
-            "${CurrencyHelper.formatDecimal(it)}%"
-        } ?: "Laddar..."
-        val dropValue = data.drawdownPercent ?: 0.0
-        val dropColor = if (dropValue > 0)
-            android.graphics.Color.parseColor("#F44336")
-        else
-            com.google.android.material.color.MaterialColors.getColor(
-                binding.drawdownPercent,
-                com.google.android.material.R.attr.colorOnSurface
-            )
-        binding.drawdownPercent.setTextColor(dropColor)
 
-        // Nyckeltal-rad (dold för krypto och om inga värden finns)
-	        val hasAnyMetric = data.peRatio != null ||
-	            data.psRatio != null ||
-	            data.dividendYield != null ||
-	            data.earningsPerShare != null
-	        binding.keyMetricsRow.visibility = if (hasAnyMetric) android.view.View.VISIBLE else android.view.View.GONE
-	        binding.peRatioValue.text = data.peRatio?.let { CurrencyHelper.formatDecimal(it) } ?: "-"
-	        binding.psRatioValue.text = data.psRatio?.let { CurrencyHelper.formatDecimal(it) } ?: "-"
-	        binding.dividendYieldValue.text = data.dividendYield?.let { "${CurrencyHelper.formatDecimal(it)}%" } ?: "-"
-	        binding.earningsPerShareValue.text = data.earningsPerShare?.let { CurrencyHelper.formatDecimal(it) } ?: "-"
         binding.notesCard.isVisible = true
-
-        if (data.lastUpdatedAt > 0) {
-            val timeStr = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(data.lastUpdatedAt))
-            binding.lastUpdatedText.text = "Uppdaterad $timeStr"
-            binding.lastUpdatedText.isVisible = true
-        }
     }
 
     private fun renderClarityStockPanel() {
