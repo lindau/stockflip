@@ -37,16 +37,7 @@ data class StockPair(
         }
     }
 
-    fun formatPrice1(): String = formatPrice(currentPrice1)
-
-    fun formatPrice2(): String = formatPrice(currentPrice2)
-
-    fun formatPriceDifference(): String = CurrencyHelper.formatDecimal(priceDifference)
-
     fun getDisplayName(): String = "$companyName1 - $companyName2"
-
-    private fun formatPrice(price: Double): String =
-        if (price > 0.0) "${CurrencyHelper.formatDecimal(price)} SEK" else "Loading..."
 
     companion object {
         private const val TAG = "StockPair"

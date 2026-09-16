@@ -449,19 +449,6 @@ class StockDetailViewModel(
         }
     }
 
-    /**
-     * Återaktiverar en alert (tar bort triggad-status).
-     */
-    fun reactivateAlert(watchItem: WatchItem) {
-        viewModelScope.launch {
-            try {
-                reactivateAlertAndReturnResult(watchItem)
-            } catch (e: Exception) {
-                Log.e(TAG, "Error reactivating alert: ${e.message}", e)
-            }
-        }
-    }
-
     suspend fun reactivateAlertAndReturnResult(watchItem: WatchItem): WatchReactivationResult {
         val keepLastTriggeredDate = shouldGuardAgainstImmediateRetrigger(watchItem)
         val updated = watchItem.reactivate(
@@ -572,20 +559,6 @@ class StockDetailViewModel(
                 Log.d(TAG, "Updated alert ${watchItem.id}")
             } catch (e: Exception) {
                 Log.e(TAG, "Error updating alert: ${e.message}", e)
-            }
-        }
-    }
-
-    /**
-     * Tar bort alla bevakningar för denna aktie.
-     */
-    fun deleteStock() {
-        viewModelScope.launch {
-            try {
-                watchItemDao.deleteBySymbol(symbol)
-                Log.d(TAG, "Deleted all watches for $symbol")
-            } catch (e: Exception) {
-                Log.e(TAG, "Error deleting stock watches: ${e.message}", e)
             }
         }
     }

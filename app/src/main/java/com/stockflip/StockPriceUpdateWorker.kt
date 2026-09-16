@@ -184,14 +184,28 @@ class StockPriceUpdateWorker(
                 val week52High = if (ticker in week52HighNeeds) marketDataService.getATH(ticker) else null
                 val allTimeHigh = if (ticker in allTimeHighNeeds) marketDataService.getAllTimeHigh(ticker) else null
                 val metricsMap = mutableMapOf<AlertRule.KeyMetricType, Double>()
-                keyMetricNeeds[ticker]?.forEach { metricType ->
-	                    val alertMetricType = when (metricType) {
-	                        WatchType.MetricType.PE_RATIO -> AlertRule.KeyMetricType.PE_RATIO
-	                        WatchType.MetricType.PS_RATIO -> AlertRule.KeyMetricType.PS_RATIO
-	                        WatchType.MetricType.DIVIDEND_YIELD -> AlertRule.KeyMetricType.DIVIDEND_YIELD
-	                        WatchType.MetricType.EARNINGS_PER_SHARE -> AlertRule.KeyMetricType.EARNINGS_PER_SHARE
-	                    }
-                    marketDataService.getKeyMetric(ticker, metricType)?.let { metricsMap[alertMetricType] = it }
+                val neededMetrics = keyMetricNeeds[ticker]
+                if (!neededMetrics.isNullOrEmpty()) {
+                    // Ett getAllKeyMetrics-anrop täcker alla nyckeltal som behövs för
+                    // den här tickern, i stället för ett getKeyMetric-anrop per nyckeltal.
+                    val allMetrics = marketDataService.getAllKeyMetrics(ticker)
+                    if (allMetrics != null) {
+                        neededMetrics.forEach { metricType ->
+                            val alertMetricType = when (metricType) {
+                                WatchType.MetricType.PE_RATIO -> AlertRule.KeyMetricType.PE_RATIO
+                                WatchType.MetricType.PS_RATIO -> AlertRule.KeyMetricType.PS_RATIO
+                                WatchType.MetricType.DIVIDEND_YIELD -> AlertRule.KeyMetricType.DIVIDEND_YIELD
+                                WatchType.MetricType.EARNINGS_PER_SHARE -> AlertRule.KeyMetricType.EARNINGS_PER_SHARE
+                            }
+                            val value = when (metricType) {
+                                WatchType.MetricType.PE_RATIO -> allMetrics.peRatio
+                                WatchType.MetricType.PS_RATIO -> allMetrics.psRatio
+                                WatchType.MetricType.DIVIDEND_YIELD -> allMetrics.dividendYield
+                                WatchType.MetricType.EARNINGS_PER_SHARE -> allMetrics.earningsPerShare
+                            }
+                            value?.let { metricsMap[alertMetricType] = it }
+                        }
+                    }
                 }
                 snapshots[ticker] = MarketSnapshot.forSingleStock(
                     lastPrice = price,

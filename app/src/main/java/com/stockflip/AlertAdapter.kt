@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.compose.ui.unit.dp
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
@@ -37,6 +38,7 @@ class AlertAdapter(
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): AlertViewHolder {
         val composeView = ComposeView(parent.context)
+        composeView.setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
         return AlertViewHolder(composeView)
     }
 
@@ -78,8 +80,6 @@ class AlertAdapter(
                             live = uiState.live,
                             priceFormat = { value -> CurrencyHelper.formatDecimal(value) },
                             onToggleActive = { onToggleActive(watchItem) },
-                            onReactivate = { onReactivate(watchItem) },
-                            onDelete = { onDelete(watchItem) },
                             onEdit = { onEdit(watchItem) },
                             containerColor = containerColor,
                             triggerHistory = triggerHistory[watchItem.id] ?: emptyList()
@@ -96,7 +96,10 @@ class AlertAdapter(
         }
 
         override fun areContentsTheSame(oldItem: WatchItemUiState, newItem: WatchItemUiState): Boolean {
-            return oldItem == newItem
+            // Se motsvarande kommentar i GroupedListItemDiffCallback — lastUpdatedAt
+            // ska inte trigga en ombindning när inget annat ändrats.
+            return oldItem.copy(live = oldItem.live.copy(lastUpdatedAt = 0L)) ==
+                newItem.copy(live = newItem.live.copy(lastUpdatedAt = 0L))
         }
     }
 }

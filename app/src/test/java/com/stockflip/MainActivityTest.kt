@@ -63,7 +63,6 @@ class MainActivityTest {
     private lateinit var binding: ActivityMainBinding
     private lateinit var rootView: ConstraintLayout
     private lateinit var mockBuilder: MaterialAlertDialogBuilder
-    private lateinit var uiStateFlow: MutableStateFlow<UiState<List<StockPair>>>
     private lateinit var layoutInflater: LayoutInflater
     private lateinit var lifecycle: Lifecycle
     private lateinit var activity: MainActivity
@@ -85,10 +84,6 @@ class MainActivityTest {
         mockkStatic(Toast::class)
         mockkStatic(ViewModelProvider::class)
         mockkStatic(StockPairDatabase::class)
-        
-        // Set up UI state flow
-        uiStateFlow = MutableStateFlow(UiState.Loading)
-        every { mainViewModel.uiState } returns uiStateFlow
         
         // Inflate a real binding; view fields are final and not mock-friendly
         val themedContext: Context = ContextThemeWrapper(ApplicationProvider.getApplicationContext(), R.style.Theme_StockFlip)
@@ -233,33 +228,8 @@ class MainActivityTest {
         }
     }
 
-    @Test
-    fun `test UI state handling`() = runTest {
-        scenario.onActivity { activity ->
-            // Test loading state
-            uiStateFlow.value = UiState.Loading
-            testDispatcher.scheduler.advanceUntilIdle()
-            
-            // Test success state
-            val stockPair = StockPair(
-                ticker1 = "AAPL.ST",
-                ticker2 = "GOOGL.ST",
-                companyName1 = "Apple Inc",
-                companyName2 = "Google Inc",
-                priceDifference = 10.0,
-                notifyWhenEqual = false
-            )
-            uiStateFlow.value = UiState.Success(listOf(stockPair))
-            testDispatcher.scheduler.advanceUntilIdle()
-            
-            // Test error state
-            uiStateFlow.value = UiState.Error("Test error")
-            testDispatcher.scheduler.advanceUntilIdle()
-            
-            // Verify error toast is shown
-            verify { Toast.makeText(any(), "Test error", Toast.LENGTH_LONG).show() }
-        }
-    }
+    // `test UI state handling` togs bort — testade MainViewModel.uiState/StockPair-flödet,
+    // som togs bort i etapp 3.1 (observerades inte av något i produktionskoden).
 
     @Test
     fun `test stock adapter creation`() = runTest {
@@ -280,17 +250,19 @@ class MainActivityTest {
     @Test
     fun `test refresh prices`() = runTest {
         scenario.onActivity { activity ->
-            // Mock successful refresh
-            coEvery { mainViewModel.refreshStockPairs() } just Runs
-            
+            // Mock successful refresh. refreshPrices() actually calls refreshWatchItems
+            // (the old refreshStockPairs() this test mocked was removed in etapp 3.1 —
+            // MainViewModel.uiState/StockPair-flödet observerades inte av något).
+            coEvery { mainViewModel.refreshWatchItems(showLoading = false) } just Runs
+
             // Execute refresh
             activity.refreshPrices()
-            
+
             // Advance time to allow coroutine to complete
             testDispatcher.scheduler.advanceUntilIdle()
-            
+
             // Verify refresh was called
-            coVerify { mainViewModel.refreshStockPairs() }
+            coVerify { mainViewModel.refreshWatchItems(showLoading = false) }
         }
     }
 
@@ -298,7 +270,7 @@ class MainActivityTest {
     fun `test refresh prices handles error`() = runTest {
         scenario.onActivity { activity ->
             // Mock refresh failure
-            coEvery { mainViewModel.refreshStockPairs() } throws Exception("Network error")
+            coEvery { mainViewModel.refreshWatchItems(showLoading = false) } throws Exception("Network error")
             
             // Execute refresh
             activity.refreshPrices()

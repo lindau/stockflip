@@ -105,8 +105,6 @@ fun StockFlipTheme(
     CompositionLocalProvider(
         LocalPriceUp          provides if (darkTheme) NP_Dark_Positive      else NP_Light_Positive,
         LocalPriceDown        provides if (darkTheme) NP_Dark_Negative      else NP_Light_Negative,
-        LocalTrendUp          provides if (darkTheme) NP_Dark_Positive      else NP_Light_Positive,
-        LocalTrendDown        provides if (darkTheme) NP_Dark_Negative      else NP_Light_Negative,
         LocalTriggeredBadge   provides if (darkTheme) NP_Dark_Warning       else NP_Light_Warning,
         // Dark: mörk text på amber (#09111D/#E7B65C → 11.7:1 ✓)
         // Light: mörk text på amber (#10202E/#B8842F → 6.8:1 ✓) — vit misslyckas (~3.1:1)

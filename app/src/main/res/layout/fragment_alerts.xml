@@ -233,8 +233,7 @@
             android:clipToPadding="false"
             android:paddingHorizontal="8dp"
             android:paddingTop="8dp"
-            android:paddingBottom="8dp"
-            tools:listitem="@layout/item_alert" />
+            android:paddingBottom="8dp" />
 
     </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 

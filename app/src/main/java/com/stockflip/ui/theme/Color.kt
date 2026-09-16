@@ -10,7 +10,6 @@ val NP_Dark_Surface       = Color(0xFF101A27)
 val NP_Dark_SurfaceAlt    = Color(0xFF152233)
 val NP_Dark_SurfaceHigh   = Color(0xFF1A2A3D)
 val NP_Dark_Primary       = Color(0xFF3AB7A4)
-val NP_Dark_PrimaryMuted  = Color(0xFF2B8C80)
 val NP_Dark_Secondary     = Color(0xFF7FA8C9)
 val NP_Dark_Positive      = Color(0xFF3CCB7F)
 val NP_Dark_Negative      = Color(0xFFE06C75)
@@ -34,7 +33,6 @@ val NP_Light_Surface       = Color(0xFFFFFFFF)
 val NP_Light_SurfaceAlt    = Color(0xFFF0F4F8)
 val NP_Light_SurfaceHigh   = Color(0xFFE7EEF5)
 val NP_Light_Primary       = Color(0xFF1F8A7A)
-val NP_Light_PrimaryMuted  = Color(0xFF2F6E67)
 val NP_Light_Secondary     = Color(0xFF5E7FA3)
 val NP_Light_Positive      = Color(0xFF238B57)
 val NP_Light_Negative      = Color(0xFFB94A5A)
@@ -56,10 +54,6 @@ val NP_Light_ErrorContainer          = Color(0xFFF9E0E3)
 /** Prisrörelse uppåt/nedåt — adapterar automatiskt till aktivt tema. */
 val LocalPriceUp   = compositionLocalOf { NP_Light_Positive }
 val LocalPriceDown = compositionLocalOf { NP_Light_Negative }
-
-/** Trendpil i MetricAlertCard — semantiskt skilt från prisrörelse. */
-val LocalTrendUp   = compositionLocalOf { NP_Light_Positive }
-val LocalTrendDown = compositionLocalOf { NP_Light_Negative }
 
 /**
  * Triggered-badge — amber/warning-ton, lågmält men distinkt.

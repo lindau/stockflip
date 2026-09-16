@@ -5,6 +5,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.stockflip.repository.TriggerHistoryRepository
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -131,28 +133,35 @@ class PairDetailViewModel(
                 val symbolA = item.ticker1 ?: return@launch
                 val symbolB = item.ticker2 ?: return@launch
 
-                val priceA = marketDataService.getStockPrice(symbolA)
-                val priceB = marketDataService.getStockPrice(symbolB)
-                val changeA = marketDataService.getDailyChangePercent(symbolA)
-                val changeB = marketDataService.getDailyChangePercent(symbolB)
-                val currencyA = marketDataService.getCurrency(symbolA)
-                val currencyB = marketDataService.getCurrency(symbolB)
+                // Hämta båda aktiernas data parallellt i stället för sex sekventiella anrop.
+                val (stockA, stockB, spread) = coroutineScope {
+                    val priceADeferred = async { marketDataService.getStockPrice(symbolA) }
+                    val priceBDeferred = async { marketDataService.getStockPrice(symbolB) }
+                    val changeADeferred = async { marketDataService.getDailyChangePercent(symbolA) }
+                    val changeBDeferred = async { marketDataService.getDailyChangePercent(symbolB) }
+                    val currencyADeferred = async { marketDataService.getCurrency(symbolA) }
+                    val currencyBDeferred = async { marketDataService.getCurrency(symbolB) }
 
-                val stockA = StockSummary(
-                    symbol = symbolA,
-                    companyName = item.companyName1,
-                    lastPrice = priceA,
-                    dailyChangePercent = changeA,
-                    currency = currencyA
-                )
-                val stockB = StockSummary(
-                    symbol = symbolB,
-                    companyName = item.companyName2,
-                    lastPrice = priceB,
-                    dailyChangePercent = changeB,
-                    currency = currencyB
-                )
-                val spread = if (priceA != null && priceB != null) priceA - priceB else null
+                    val priceA = priceADeferred.await()
+                    val priceB = priceBDeferred.await()
+
+                    val a = StockSummary(
+                        symbol = symbolA,
+                        companyName = item.companyName1,
+                        lastPrice = priceA,
+                        dailyChangePercent = changeADeferred.await(),
+                        currency = currencyADeferred.await()
+                    )
+                    val b = StockSummary(
+                        symbol = symbolB,
+                        companyName = item.companyName2,
+                        lastPrice = priceB,
+                        dailyChangePercent = changeBDeferred.await(),
+                        currency = currencyBDeferred.await()
+                    )
+                    val spreadValue = if (priceA != null && priceB != null) priceA - priceB else null
+                    Triple(a, b, spreadValue)
+                }
 
                 _pairState.value = UiState.Success(
                     PairDetailData(
@@ -188,8 +197,11 @@ class PairDetailViewModel(
                 }
 
                 val period = _selectedPeriod.value
-                val chartA = marketDataService.getIntradayChart(symbolA, period)
-                val chartB = marketDataService.getIntradayChart(symbolB, period)
+                val (chartA, chartB) = coroutineScope {
+                    val chartADeferred = async { marketDataService.getIntradayChart(symbolA, period) }
+                    val chartBDeferred = async { marketDataService.getIntradayChart(symbolB, period) }
+                    chartADeferred.await() to chartBDeferred.await()
+                }
 
                 val pairChart = buildPairChart(item, chartA, chartB)
                 _chartState.value = if (pairChart != null) {

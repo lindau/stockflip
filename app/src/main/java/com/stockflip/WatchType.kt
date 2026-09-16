@@ -10,41 +10,16 @@ sealed class WatchType {
     abstract val kind: Kind
 
     enum class Kind(
-        val displayName: String,
-        val isLegacyManaged: Boolean
+        val displayName: String
     ) {
-        PRICE_PAIR(
-            displayName = "Aktiepar",
-            isLegacyManaged = true
-        ),
-        PRICE_TARGET(
-            displayName = "Prisbevakning",
-            isLegacyManaged = false
-        ),
-        KEY_METRICS(
-            displayName = "Nyckeltal",
-            isLegacyManaged = false
-        ),
-        ATH_BASED(
-            displayName = "Drawdown",
-            isLegacyManaged = false
-        ),
-        PRICE_RANGE(
-            displayName = "Prisintervall",
-            isLegacyManaged = true
-        ),
-        DAILY_MOVE(
-            displayName = "Dagsrörelse",
-            isLegacyManaged = false
-        ),
-        INSIDER_BUY(
-            displayName = "Insideraffärer",
-            isLegacyManaged = false
-        ),
-        COMBINED(
-            displayName = "Kombinerat larm",
-            isLegacyManaged = true
-        );
+        PRICE_PAIR(displayName = "Aktiepar"),
+        PRICE_TARGET(displayName = "Prisbevakning"),
+        KEY_METRICS(displayName = "Nyckeltal"),
+        ATH_BASED(displayName = "Drawdown"),
+        PRICE_RANGE(displayName = "Prisintervall"),
+        DAILY_MOVE(displayName = "Dagsrörelse"),
+        INSIDER_BUY(displayName = "Insideraffärer"),
+        COMBINED(displayName = "Kombinerat larm");
     }
 
     /**

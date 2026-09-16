@@ -13,8 +13,10 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.stockflip.ui.SwipeToDeleteCallback
@@ -93,7 +95,6 @@ class StockDetailFragment : Fragment() {
         private const val ARG_OPENED_FROM_NOTIFICATION = "opened_from_notification"
         private const val ARG_HIGHLIGHT_INSIDER_TRANSACTION_ID = "highlight_insider_transaction_id"
         private const val VERY_CLOSE_THRESHOLD = 0.05
-        private const val CLOSE_THRESHOLD = 0.12
         private const val COLLAPSED_INSIDER_TRANSACTION_COUNT = 1
         private const val COLLAPSED_PODCAST_OBSERVATION_COUNT = 1
 
@@ -343,6 +344,7 @@ class StockDetailFragment : Fragment() {
 
     private fun setupObservers() {
         viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
             viewModel.stockDataState.collect { state ->
                 when (state) {
                     is UiState.Loading -> {
@@ -363,9 +365,11 @@ class StockDetailFragment : Fragment() {
                     }
                 }
             }
+            }
         }
 
         viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
             viewModel.alertsState.collect { state ->
                 when (state) {
                     is UiState.Loading -> {
@@ -385,15 +389,19 @@ class StockDetailFragment : Fragment() {
                     }
                 }
             }
-        }
-
-        viewLifecycleOwner.lifecycleScope.launch {
-            viewModel.triggerHistoryState.collect { history ->
-                alertAdapter.updateTriggerHistory(history)
             }
         }
 
         viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+            viewModel.triggerHistoryState.collect { history ->
+                alertAdapter.updateTriggerHistory(history)
+            }
+            }
+        }
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
             combine(viewModel.chartState, viewModel.selectedPeriod) { state, period -> state to period }
                 .collect { (state, period) ->
                     latestChartPeriod = period
@@ -413,30 +421,38 @@ class StockDetailFragment : Fragment() {
                         }
                     }
                 }
+            }
         }
 
         viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
             viewModel.metricHistoryState.collect { metricHistory ->
                 latestMetricHistory = metricHistory
                 renderDecisionSupport()
             }
+            }
         }
 
         viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
             viewModel.insiderTransactionsState.collect { transactions ->
                 latestInsiderTransactions = transactions
                 renderInsiderTransactions()
             }
-        }
-
-        viewLifecycleOwner.lifecycleScope.launch {
-            viewModel.podcastObservationsState.collect { observations ->
-                latestPodcastObservations = observations
-                renderPodcastObservations()
             }
         }
 
         viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+            viewModel.podcastObservationsState.collect { observations ->
+                latestPodcastObservations = observations
+                renderPodcastObservations()
+            }
+            }
+        }
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
             viewModel.noteState.collect { note ->
                 if (note != null && note.note.isNotBlank()) {
                     binding.notesText.text = note.note
@@ -456,18 +472,11 @@ class StockDetailFragment : Fragment() {
                     )
                 }
             }
+            }
         }
     }
 
     private fun displayStockData(data: StockDetailData) {
-        binding.companyName.text = data.companyName
-        binding.symbol.text = data.symbol
-        
-        // Visa landsflagga baserat på börs och valuta (valuta som fallback)
-        // För krypto returneras null, då visas ingen flagga
-        val flagEmoji = CountryFlagHelper.getFlagForExchange(data.exchange, data.currency)
-        binding.countryFlag.text = flagEmoji ?: ""
-        
         // Dölj nyckeltal-knappen om det är en kryptovaluta
         val isCrypto = StockSearchResult.isCryptoSymbol(data.symbol)
 
@@ -477,98 +486,8 @@ class StockDetailFragment : Fragment() {
         } else {
             android.view.View.GONE
         }
-        
-        binding.lastPrice.text = data.lastPrice?.let { 
-            CurrencyHelper.formatPrice(it, data.currency)
-        } ?: "Laddar..."
-        
-        // Kontrollera om börsen är öppen baserat på börs-kod
-        // Om exchange är null, försök gissa från symbol (t.ex. .ST för svenska, .OL för norska)
-        val exchangeToCheck = data.exchange ?: run {
-            when {
-                data.symbol.endsWith(".ST") || data.symbol.endsWith(".STO") -> "STO"
-                data.symbol.endsWith(".OL") || data.symbol.endsWith(".OSE") -> "OSE"
-                data.symbol.endsWith(".L") -> "LSE"
-                data.symbol.endsWith(".DE") || data.symbol.endsWith(".XETR") -> "XETR"
-                data.symbol.endsWith(".T") -> "TSE"
-                // För amerikanska aktier utan suffix, anta NASDAQ/NYSE
-                !data.symbol.contains(".") && data.currency == "USD" -> "NASDAQ"
-                else -> null
-            }
-        }
-        
-        val isMarketOpen = if (isCrypto) {
-            true // Krypto är alltid öppet
-        } else {
-            val marketOpen = StockMarketScheduler.isMarketOpenForExchange(exchangeToCheck)
-            Log.d(TAG, "Market status for ${data.symbol} (exchange: ${data.exchange}, checked: $exchangeToCheck, currency: ${data.currency}): $marketOpen")
-            marketOpen
-        }
-        
-        val canShowDailyChange: Boolean = data.dailyChangePercent != null ||
-            (data.lastPrice != null && data.previousClose != null && data.previousClose > 0)
-        if (canShowDailyChange) {
-            binding.dailyChangePercent.visibility = android.view.View.VISIBLE
-            val change: Double = data.dailyChangePercent ?: run {
-                val lp = requireNotNull(data.lastPrice)
-                val pc = requireNotNull(data.previousClose)
-                ((lp - pc) / pc) * 100
-            }
-            if (!isMarketOpen) {
-                binding.dailyChangePercent.setTextColor(android.graphics.Color.parseColor("#757575")) // Gray
-                binding.dailyChangePercent.text = "Börsen stängd"
-            } else {
-                val sign = if (change >= 0) "+" else ""
-                val color = if (change >= 0) {
-                    android.graphics.Color.parseColor("#4CAF50") // Green
-                } else {
-                    android.graphics.Color.parseColor("#F44336") // Red
-                }
-                binding.dailyChangePercent.setTextColor(color)
-                binding.dailyChangePercent.text = "$sign${CurrencyHelper.formatDecimal(change)}%"
-            }
-        } else {
-            binding.dailyChangePercent.visibility = android.view.View.GONE
-        }
-        
-        binding.week52High.text = data.week52High?.let {
-            CurrencyHelper.formatPrice(it, data.currency)
-        } ?: "Laddar..."
-        
-        binding.week52Low.text = data.week52Low?.let {
-            CurrencyHelper.formatPrice(it, data.currency)
-        } ?: "Laddar..."
-        
-        binding.drawdownPercent.text = data.drawdownPercent?.let {
-            "${CurrencyHelper.formatDecimal(it)}%"
-        } ?: "Laddar..."
-        val dropValue = data.drawdownPercent ?: 0.0
-        val dropColor = if (dropValue > 0)
-            android.graphics.Color.parseColor("#F44336")
-        else
-            com.google.android.material.color.MaterialColors.getColor(
-                binding.drawdownPercent,
-                com.google.android.material.R.attr.colorOnSurface
-            )
-        binding.drawdownPercent.setTextColor(dropColor)
 
-        // Nyckeltal-rad (dold för krypto och om inga värden finns)
-	        val hasAnyMetric = data.peRatio != null ||
-	            data.psRatio != null ||
-	            data.dividendYield != null ||
-	            data.earningsPerShare != null
-	        binding.keyMetricsRow.visibility = if (hasAnyMetric) android.view.View.VISIBLE else android.view.View.GONE
-	        binding.peRatioValue.text = data.peRatio?.let { CurrencyHelper.formatDecimal(it) } ?: "-"
-	        binding.psRatioValue.text = data.psRatio?.let { CurrencyHelper.formatDecimal(it) } ?: "-"
-	        binding.dividendYieldValue.text = data.dividendYield?.let { "${CurrencyHelper.formatDecimal(it)}%" } ?: "-"
-	        binding.earningsPerShareValue.text = data.earningsPerShare?.let { CurrencyHelper.formatDecimal(it) } ?: "-"
         binding.notesCard.isVisible = true
-
-        if (data.lastUpdatedAt > 0) {
-            val timeStr = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(data.lastUpdatedAt))
-            binding.lastUpdatedText.text = "Uppdaterad $timeStr"
-            binding.lastUpdatedText.isVisible = true
-        }
     }
 
     private fun renderClarityStockPanel() {
@@ -1149,7 +1068,7 @@ class StockDetailFragment : Fragment() {
         val activeAlerts = alerts.filter { it.item.isActive && !it.item.isTriggered }
         val nearest = activeAlerts
             .mapNotNull { uiState ->
-                calculateTriggerProximity(uiState)?.let { proximity -> uiState to proximity }
+                uiState.triggerProximity()?.let { proximity -> uiState to proximity }
             }
             .minByOrNull { it.second }
 
@@ -1165,7 +1084,7 @@ class StockDetailFragment : Fragment() {
             prefix = "Målpris",
             uiState = activeAlerts
                 .filter { it.item.watchType is WatchType.PriceTarget }
-                .minByOrNull { calculateTriggerProximity(it) ?: Double.MAX_VALUE },
+                .minByOrNull { it.triggerProximity() ?: Double.MAX_VALUE },
             fallback = "Ingen prismålsnivå än"
         ) { state ->
             val watchType = state.item.watchType as WatchType.PriceTarget
@@ -1247,54 +1166,6 @@ class StockDetailFragment : Fragment() {
         renderer: (WatchItemUiState) -> String
     ): String {
         return if (uiState != null) "$prefix: ${renderer(uiState)}" else "$prefix: $fallback"
-    }
-
-    private fun calculateTriggerProximity(uiState: WatchItemUiState): Double? {
-        val live = uiState.live
-        return when (val watchType = uiState.item.watchType) {
-            is WatchType.PriceTarget -> {
-                if (live.currentPrice <= 0.0 || watchType.targetPrice <= 0.0) null
-                else when (watchType.direction) {
-                    WatchType.PriceDirection.ABOVE -> ((watchType.targetPrice - live.currentPrice).coerceAtLeast(0.0) / watchType.targetPrice)
-                    WatchType.PriceDirection.BELOW -> ((live.currentPrice - watchType.targetPrice).coerceAtLeast(0.0) / watchType.targetPrice)
-                }
-            }
-
-            is WatchType.KeyMetrics -> {
-                if (live.currentMetricValue <= 0.0 || watchType.targetValue <= 0.0) null
-                else when (watchType.direction) {
-                    WatchType.PriceDirection.ABOVE -> ((watchType.targetValue - live.currentMetricValue).coerceAtLeast(0.0) / watchType.targetValue)
-                    WatchType.PriceDirection.BELOW -> ((live.currentMetricValue - watchType.targetValue).coerceAtLeast(0.0) / watchType.targetValue)
-                }
-            }
-
-            is WatchType.ATHBased -> {
-                val currentValue = when (watchType.dropType) {
-                    WatchType.DropType.PERCENTAGE -> live.currentDropPercentage
-                    WatchType.DropType.ABSOLUTE -> live.currentDropAbsolute
-                }
-                if (currentValue <= 0.0 || watchType.dropValue <= 0.0) null
-                else ((watchType.dropValue - currentValue).coerceAtLeast(0.0) / watchType.dropValue)
-            }
-
-            is WatchType.DailyMove -> {
-                if (watchType.percentThreshold <= 0.0) null
-                else ((watchType.percentThreshold - currentDailyMoveFor(uiState)).coerceAtLeast(0.0) / watchType.percentThreshold)
-            }
-
-            is WatchType.PriceRange -> {
-                if (live.currentPrice <= 0.0) null
-                else when {
-                    live.currentPrice in watchType.minPrice..watchType.maxPrice -> 0.0
-                    live.currentPrice < watchType.minPrice -> abs(live.currentPrice - watchType.minPrice) / watchType.minPrice
-                    else -> abs(live.currentPrice - watchType.maxPrice) / watchType.maxPrice
-                }
-            }
-
-            is WatchType.PricePair -> null
-            is WatchType.InsiderBuy -> null
-            is WatchType.Combined -> null
-        }
     }
 
     private fun currentDailyMoveFor(uiState: WatchItemUiState): Double {

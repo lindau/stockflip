@@ -107,25 +107,4 @@ object ExpressionEvaluator {
         }
     }
 
-    /**
-     * Validerar att alla nödvändiga snapshots finns för ett uttryck.
-     * 
-     * @param expression AlertExpression att validera
-     * @param snapshots Map av symbol -> MarketSnapshot
-     * @return true om alla nödvändiga snapshots finns, false annars
-     */
-    fun validateSnapshots(
-        expression: AlertExpression,
-        snapshots: Map<String, MarketSnapshot>
-    ): Boolean {
-        val requiredSymbols = expression.getSymbols()
-        val missingSymbols = requiredSymbols.filter { !snapshots.containsKey(it) }
-        
-        if (missingSymbols.isNotEmpty()) {
-            Log.w(TAG, "Missing snapshots for symbols: $missingSymbols")
-            return false
-        }
-        
-        return true
-    }
 }

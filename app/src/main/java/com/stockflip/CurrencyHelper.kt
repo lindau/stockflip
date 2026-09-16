@@ -61,29 +61,6 @@ object CurrencyHelper {
         }
     }
 
-    fun isCryptoCurrency(currency: String): Boolean {
-        val cryptoList = listOf("BTC", "ETH", "BNB", "ADA", "SOL", "XRP", "DOT", "DOGE", "USDT", "USDC", "DAI")
-        return cryptoList.contains(currency.uppercase())
-    }
-
-    /**
-     * Hämtar valuta från börs-kod.
-     * 
-     * @param exchange Börs-kod (t.ex. "STO", "NASDAQ", "NYSE")
-     * @return Valuta-kod, eller "SEK" som default
-     */
-    fun getCurrencyFromExchange(exchange: String?): String {
-        return when (exchange?.uppercase()) {
-            "STO" -> "SEK"
-            "NASDAQ", "NYSE", "AMEX" -> "USD"
-            "LSE" -> "GBP"
-            "XETR", "XFRA" -> "EUR"
-            "TSE" -> "JPY"
-            "OSE" -> "NOK" // Oslobörsen
-            else -> "SEK" // Default
-        }
-    }
-
     /**
      * Hämtar valuta från symbol.
      * För krypto-symboler (t.ex. "BTC-USD") extraheras valutan från suffixet.

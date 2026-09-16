@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.compose.ui.unit.dp
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
@@ -24,7 +25,6 @@ import com.stockflip.ui.components.cards.PairCardPresentation
 import com.stockflip.ui.theme.GroupPosition
 import com.stockflip.ui.theme.NP
 import com.stockflip.ui.theme.StockFlipTheme
-import kotlin.math.abs
 
 sealed class GroupedListItem {
     data class AlertsSummary(
@@ -158,6 +158,7 @@ class GroupedWatchItemAdapter(
         return when (viewType) {
             VIEW_TYPE_ALERTS_SUMMARY -> {
                 val composeView = ComposeView(parent.context)
+                composeView.setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
                 composeView.layoutParams = ViewGroup.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT,
                     ViewGroup.LayoutParams.WRAP_CONTENT
@@ -167,6 +168,7 @@ class GroupedWatchItemAdapter(
 
             VIEW_TYPE_SUMMARY -> {
                 val composeView = ComposeView(parent.context)
+                composeView.setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
                 composeView.layoutParams = ViewGroup.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT,
                     ViewGroup.LayoutParams.WRAP_CONTENT
@@ -176,6 +178,7 @@ class GroupedWatchItemAdapter(
 
             VIEW_TYPE_STOCKS_HEADER -> {
                 val composeView = ComposeView(parent.context)
+                composeView.setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
                 composeView.layoutParams = ViewGroup.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT,
                     ViewGroup.LayoutParams.WRAP_CONTENT
@@ -194,6 +197,7 @@ class GroupedWatchItemAdapter(
 
             VIEW_TYPE_WATCH_ITEM -> {
                 val composeView = ComposeView(parent.context)
+                composeView.setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
                 composeView.layoutParams = ViewGroup.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT,
                     ViewGroup.LayoutParams.WRAP_CONTENT
@@ -203,6 +207,7 @@ class GroupedWatchItemAdapter(
 
             VIEW_TYPE_MULTIPLE_WATCHES -> {
                 val composeView = ComposeView(parent.context)
+                composeView.setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
                 composeView.layoutParams = ViewGroup.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT,
                     ViewGroup.LayoutParams.WRAP_CONTENT
@@ -455,7 +460,7 @@ class GroupedWatchItemAdapter(
         val nearTriggerItems = stockItems
             .filter { it.item.isActive && !it.item.isTriggered }
             .mapNotNull { uiState ->
-                val proximity = calculateTriggerProximity(uiState) ?: return@mapNotNull null
+                val proximity = uiState.triggerProximity() ?: return@mapNotNull null
                 if (proximity <= NEAR_TRIGGER_SECTION_THRESHOLD) {
                     OverviewCandidate(
                         uiState = uiState,
@@ -594,7 +599,7 @@ class GroupedWatchItemAdapter(
 
     private fun sortActiveItemsByProximity(items: List<WatchItemUiState>): List<WatchItemUiState> {
         return items.sortedWith(
-            compareBy<WatchItemUiState> { calculateTriggerProximity(it) ?: Double.MAX_VALUE }
+            compareBy<WatchItemUiState> { it.triggerProximity() ?: Double.MAX_VALUE }
                 .thenBy { overviewDisplayName(it.item).lowercase() }
                 .thenByDescending { it.item.id }
         )
@@ -645,79 +650,6 @@ class GroupedWatchItemAdapter(
             ?: item.companyName1
             ?: item.ticker1
             ?: item.watchType.kind.displayName
-    }
-
-    private fun calculateTriggerProximity(uiState: WatchItemUiState): Double? {
-        val item = uiState.item
-        val live = uiState.live
-        return when (val watchType = item.watchType) {
-            is WatchType.PriceTarget -> {
-                if (live.currentPrice <= 0.0 || watchType.targetPrice <= 0.0) null
-                else when (watchType.direction) {
-                    WatchType.PriceDirection.ABOVE -> {
-                        val remaining = watchType.targetPrice - live.currentPrice
-                        if (remaining <= 0.0) 0.0 else remaining / watchType.targetPrice
-                    }
-                    WatchType.PriceDirection.BELOW -> {
-                        val remaining = live.currentPrice - watchType.targetPrice
-                        if (remaining <= 0.0) 0.0 else remaining / watchType.targetPrice
-                    }
-                }
-            }
-
-            is WatchType.KeyMetrics -> {
-                if (live.currentMetricValue <= 0.0 || watchType.targetValue <= 0.0) null
-                else when (watchType.direction) {
-                    WatchType.PriceDirection.ABOVE -> {
-                        val remaining = watchType.targetValue - live.currentMetricValue
-                        if (remaining <= 0.0) 0.0 else remaining / watchType.targetValue
-                    }
-                    WatchType.PriceDirection.BELOW -> {
-                        val remaining = live.currentMetricValue - watchType.targetValue
-                        if (remaining <= 0.0) 0.0 else remaining / watchType.targetValue
-                    }
-                }
-            }
-
-            is WatchType.ATHBased -> {
-                val currentValue = when (watchType.dropType) {
-                    WatchType.DropType.PERCENTAGE -> live.currentDropPercentage
-                    WatchType.DropType.ABSOLUTE -> live.currentDropAbsolute
-                }
-                if (currentValue <= 0.0 || watchType.dropValue <= 0.0) null
-                else {
-                    val remaining = watchType.dropValue - currentValue
-                    if (remaining <= 0.0) 0.0 else remaining / watchType.dropValue
-                }
-            }
-
-            is WatchType.DailyMove -> {
-                val currentChange = live.currentDailyChangePercent ?: return null
-                val currentMove = when (watchType.direction) {
-                    WatchType.DailyMoveDirection.UP -> currentChange.coerceAtLeast(0.0)
-                    WatchType.DailyMoveDirection.DOWN -> (-currentChange).coerceAtLeast(0.0)
-                    WatchType.DailyMoveDirection.BOTH -> abs(currentChange)
-                }
-                if (watchType.percentThreshold <= 0.0) null
-                else {
-                    val remaining = watchType.percentThreshold - currentMove
-                    if (remaining <= 0.0) 0.0 else remaining / watchType.percentThreshold
-                }
-            }
-
-            is WatchType.PriceRange -> {
-                if (live.currentPrice <= 0.0) return null
-                when {
-                    live.currentPrice in watchType.minPrice..watchType.maxPrice -> 0.0
-                    live.currentPrice < watchType.minPrice -> abs(live.currentPrice - watchType.minPrice) / watchType.minPrice
-                    else -> abs(live.currentPrice - watchType.maxPrice) / watchType.maxPrice
-                }
-            }
-
-            is WatchType.PricePair -> null
-            is WatchType.InsiderBuy -> null
-            is WatchType.Combined -> null
-        }
     }
 
     private fun addTickerGroupSection(
@@ -947,7 +879,11 @@ class GroupedWatchItemAdapter(
                 oldItem is GroupedListItem.Header && newItem is GroupedListItem.Header ->
                     oldItem.title == newItem.title
                 oldItem is GroupedListItem.WatchItemWrapper && newItem is GroupedListItem.WatchItemWrapper ->
-                    oldItem == newItem
+                    // lastUpdatedAt sätts till "nu" vid varje bakgrundsuppdatering även när
+                    // inget pris har ändrats — jämför utan den så att raden inte bindas om
+                    // och komponeras om i onödan var 120:e sekund.
+                    oldItem.copy(live = oldItem.live.copy(lastUpdatedAt = 0L)) ==
+                        newItem.copy(live = newItem.live.copy(lastUpdatedAt = 0L))
                 oldItem is GroupedListItem.MultipleWatchesWrapper && newItem is GroupedListItem.MultipleWatchesWrapper ->
                     oldItem == newItem
                 oldItem is GroupedListItem.GroupSeparator && newItem is GroupedListItem.GroupSeparator -> true

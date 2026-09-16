@@ -14,6 +14,13 @@ object TriggerSeenTracker {
 
     private const val KEY_SEEN_SET = "seen_trigger_keys"
 
+    // isNew() anropas upprepade gånger per listuppbyggnad (bl.a. inifrån sorterings-
+    // komparatorer och per rad i setContent), och varje anrop till seenKeys() gjorde
+    // tidigare en AES-GCM-dekryptering via AndroidKeyStore. Den dekrypterade mängden
+    // cachas i minnet och ogiltigförklaras bara av markSeen().
+    @Volatile
+    private var cachedSeenKeys: Set<String>? = null
+
     fun init(context: Context) {
         AppSecurityManager.init(context)
     }
@@ -29,10 +36,15 @@ object TriggerSeenTracker {
         if (item.lastTriggeredDate == null) return
         val updated = seenKeys().toMutableSet().also { it.add(seenKey(item)) }
         AppSecurityManager.putStringSet(KEY_SEEN_SET, updated)
+        cachedSeenKeys = updated
     }
 
     private fun seenKey(item: WatchItem) = "${item.id}:${item.lastTriggeredDate}:${item.lastPairTriggerSide ?: ""}"
 
-    private fun seenKeys(): Set<String> =
-        AppSecurityManager.getStringSet(KEY_SEEN_SET)
+    private fun seenKeys(): Set<String> {
+        cachedSeenKeys?.let { return it }
+        val keys = AppSecurityManager.getStringSet(KEY_SEEN_SET)
+        cachedSeenKeys = keys
+        return keys
+    }
 }

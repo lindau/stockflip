@@ -35,14 +35,6 @@ val LocalNearTriggerLabel = compositionLocalOf<String?> { null }
 /**
  * Hjälpfunktioner för kortkomponenter.
  */
-internal fun formatAlertStatus(watchItem: WatchItem): String {
-    return when {
-        !watchItem.isActive -> "Status: Inaktiverad"
-        watchItem.isTriggered -> "Status: Triggad (${watchItem.lastTriggeredDate ?: "idag"})"
-        else -> "Status: Aktiv"
-    }
-}
-
 @Composable
 internal fun watchItemSwitchColors() = SwitchDefaults.colors(
     checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
@@ -75,28 +67,6 @@ internal fun TriggerHistoryRow(timestamps: List<Long>) {
         style = MaterialTheme.typography.labelSmall,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
-}
-
-/**
- * Visar senaste uppdateringstid eller felindikator per kort.
- */
-@Composable
-internal fun LastUpdatedRow(lastUpdatedAt: Long, updateFailed: Boolean) {
-    if (lastUpdatedAt == 0L && !updateFailed) return
-    Spacer(modifier = Modifier.height(4.dp))
-    val text: String
-    val color: androidx.compose.ui.graphics.Color
-    if (updateFailed) {
-        text = "Misslyckades att uppdatera"
-        color = MaterialTheme.colorScheme.error.copy(alpha = 0.8f)
-    } else {
-        val timeStr = remember(lastUpdatedAt) {
-            SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(lastUpdatedAt))
-        }
-        text = "Uppdaterad $timeStr"
-        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-    }
-    Text(text = text, style = MaterialTheme.typography.labelSmall, color = color)
 }
 
 /**

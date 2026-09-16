@@ -140,25 +140,37 @@ object AppSecurityManager {
             ?: throw IllegalStateException("AppSecurityManager.init() must be called first")
     }
 
+    // KeyStore.getInstance(...).load(null) gör diskoperationer och var tidigare den
+    // dyraste delen av varje encrypt()/decrypt()-anrop — dyrt när det körs upprepade
+    // gånger inifrån listornas sorteringskomparatorer (se TriggerSeenTracker). Nyckeln
+    // ändras inte under appens livstid, så den cachas i minnet efter första hämtningen.
+    @Volatile
+    private var cachedMasterKey: SecretKey? = null
+
     private fun masterKey(): SecretKey {
-        val keyStore = KeyStore.getInstance(ANDROID_KEYSTORE).apply { load(null) }
-        val existingKey = keyStore.getKey(MASTER_KEY_ALIAS, null) as? SecretKey
-        if (existingKey != null) {
-            return existingKey
+        cachedMasterKey?.let { return it }
+        synchronized(this) {
+            cachedMasterKey?.let { return it }
+
+            val keyStore = KeyStore.getInstance(ANDROID_KEYSTORE).apply { load(null) }
+            val existingKey = keyStore.getKey(MASTER_KEY_ALIAS, null) as? SecretKey
+            val key = existingKey ?: run {
+                val keyGenerator = KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, ANDROID_KEYSTORE)
+                val purposes = KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT
+                val builder = KeyGenParameterSpec.Builder(MASTER_KEY_ALIAS, purposes)
+                    .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
+                    .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
+                    .setKeySize(256)
+
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                    builder.setUnlockedDeviceRequired(false)
+                }
+
+                keyGenerator.init(builder.build())
+                keyGenerator.generateKey()
+            }
+            cachedMasterKey = key
+            return key
         }
-
-        val keyGenerator = KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, ANDROID_KEYSTORE)
-        val purposes = KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT
-        val builder = KeyGenParameterSpec.Builder(MASTER_KEY_ALIAS, purposes)
-            .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
-            .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
-            .setKeySize(256)
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            builder.setUnlockedDeviceRequired(false)
-        }
-
-        keyGenerator.init(builder.build())
-        return keyGenerator.generateKey()
     }
 }
