@@ -1068,7 +1068,7 @@ class StockDetailFragment : Fragment() {
         val activeAlerts = alerts.filter { it.item.isActive && !it.item.isTriggered }
         val nearest = activeAlerts
             .mapNotNull { uiState ->
-                calculateTriggerProximity(uiState)?.let { proximity -> uiState to proximity }
+                uiState.triggerProximity()?.let { proximity -> uiState to proximity }
             }
             .minByOrNull { it.second }
 
@@ -1084,7 +1084,7 @@ class StockDetailFragment : Fragment() {
             prefix = "Målpris",
             uiState = activeAlerts
                 .filter { it.item.watchType is WatchType.PriceTarget }
-                .minByOrNull { calculateTriggerProximity(it) ?: Double.MAX_VALUE },
+                .minByOrNull { it.triggerProximity() ?: Double.MAX_VALUE },
             fallback = "Ingen prismålsnivå än"
         ) { state ->
             val watchType = state.item.watchType as WatchType.PriceTarget
@@ -1166,54 +1166,6 @@ class StockDetailFragment : Fragment() {
         renderer: (WatchItemUiState) -> String
     ): String {
         return if (uiState != null) "$prefix: ${renderer(uiState)}" else "$prefix: $fallback"
-    }
-
-    private fun calculateTriggerProximity(uiState: WatchItemUiState): Double? {
-        val live = uiState.live
-        return when (val watchType = uiState.item.watchType) {
-            is WatchType.PriceTarget -> {
-                if (live.currentPrice <= 0.0 || watchType.targetPrice <= 0.0) null
-                else when (watchType.direction) {
-                    WatchType.PriceDirection.ABOVE -> ((watchType.targetPrice - live.currentPrice).coerceAtLeast(0.0) / watchType.targetPrice)
-                    WatchType.PriceDirection.BELOW -> ((live.currentPrice - watchType.targetPrice).coerceAtLeast(0.0) / watchType.targetPrice)
-                }
-            }
-
-            is WatchType.KeyMetrics -> {
-                if (live.currentMetricValue <= 0.0 || watchType.targetValue <= 0.0) null
-                else when (watchType.direction) {
-                    WatchType.PriceDirection.ABOVE -> ((watchType.targetValue - live.currentMetricValue).coerceAtLeast(0.0) / watchType.targetValue)
-                    WatchType.PriceDirection.BELOW -> ((live.currentMetricValue - watchType.targetValue).coerceAtLeast(0.0) / watchType.targetValue)
-                }
-            }
-
-            is WatchType.ATHBased -> {
-                val currentValue = when (watchType.dropType) {
-                    WatchType.DropType.PERCENTAGE -> live.currentDropPercentage
-                    WatchType.DropType.ABSOLUTE -> live.currentDropAbsolute
-                }
-                if (currentValue <= 0.0 || watchType.dropValue <= 0.0) null
-                else ((watchType.dropValue - currentValue).coerceAtLeast(0.0) / watchType.dropValue)
-            }
-
-            is WatchType.DailyMove -> {
-                if (watchType.percentThreshold <= 0.0) null
-                else ((watchType.percentThreshold - currentDailyMoveFor(uiState)).coerceAtLeast(0.0) / watchType.percentThreshold)
-            }
-
-            is WatchType.PriceRange -> {
-                if (live.currentPrice <= 0.0) null
-                else when {
-                    live.currentPrice in watchType.minPrice..watchType.maxPrice -> 0.0
-                    live.currentPrice < watchType.minPrice -> abs(live.currentPrice - watchType.minPrice) / watchType.minPrice
-                    else -> abs(live.currentPrice - watchType.maxPrice) / watchType.maxPrice
-                }
-            }
-
-            is WatchType.PricePair -> null
-            is WatchType.InsiderBuy -> null
-            is WatchType.Combined -> null
-        }
     }
 
     private fun currentDailyMoveFor(uiState: WatchItemUiState): Double {

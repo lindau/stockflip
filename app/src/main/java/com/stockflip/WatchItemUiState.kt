@@ -94,3 +94,64 @@ internal fun WatchItemUiState.hasLiveTriggerCondition(): Boolean {
         is WatchType.Combined -> false
     }
 }
+
+/**
+ * Hur nära bevakningens villkor är att utlösas, som ett tal mellan 0.0 (utlöst nu)
+ * och 1.0 (långt kvar), eller null om det inte går att beräkna för denna typ.
+ */
+internal fun WatchItemUiState.triggerProximity(): Double? {
+    return when (val watchType = item.watchType) {
+        is WatchType.PriceTarget -> {
+            if (live.currentPrice <= 0.0 || watchType.targetPrice <= 0.0) null
+            else when (watchType.direction) {
+                WatchType.PriceDirection.ABOVE ->
+                    (watchType.targetPrice - live.currentPrice).coerceAtLeast(0.0) / watchType.targetPrice
+                WatchType.PriceDirection.BELOW ->
+                    (live.currentPrice - watchType.targetPrice).coerceAtLeast(0.0) / watchType.targetPrice
+            }
+        }
+
+        is WatchType.KeyMetrics -> {
+            if (live.currentMetricValue <= 0.0 || watchType.targetValue <= 0.0) null
+            else when (watchType.direction) {
+                WatchType.PriceDirection.ABOVE ->
+                    (watchType.targetValue - live.currentMetricValue).coerceAtLeast(0.0) / watchType.targetValue
+                WatchType.PriceDirection.BELOW ->
+                    (live.currentMetricValue - watchType.targetValue).coerceAtLeast(0.0) / watchType.targetValue
+            }
+        }
+
+        is WatchType.ATHBased -> {
+            val currentValue = when (watchType.dropType) {
+                WatchType.DropType.PERCENTAGE -> live.currentDropPercentage
+                WatchType.DropType.ABSOLUTE -> live.currentDropAbsolute
+            }
+            if (currentValue <= 0.0 || watchType.dropValue <= 0.0) null
+            else (watchType.dropValue - currentValue).coerceAtLeast(0.0) / watchType.dropValue
+        }
+
+        is WatchType.DailyMove -> {
+            val currentChange = live.currentDailyChangePercent ?: return null
+            val currentMove = when (watchType.direction) {
+                WatchType.DailyMoveDirection.UP -> currentChange.coerceAtLeast(0.0)
+                WatchType.DailyMoveDirection.DOWN -> (-currentChange).coerceAtLeast(0.0)
+                WatchType.DailyMoveDirection.BOTH -> abs(currentChange)
+            }
+            if (watchType.percentThreshold <= 0.0) null
+            else (watchType.percentThreshold - currentMove).coerceAtLeast(0.0) / watchType.percentThreshold
+        }
+
+        is WatchType.PriceRange -> {
+            if (live.currentPrice <= 0.0) null
+            else when {
+                live.currentPrice in watchType.minPrice..watchType.maxPrice -> 0.0
+                live.currentPrice < watchType.minPrice -> abs(live.currentPrice - watchType.minPrice) / watchType.minPrice
+                else -> abs(live.currentPrice - watchType.maxPrice) / watchType.maxPrice
+            }
+        }
+
+        is WatchType.PricePair -> null
+        is WatchType.InsiderBuy -> null
+        is WatchType.Combined -> null
+    }
+}
