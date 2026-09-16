@@ -25,6 +25,9 @@ class MarkdownAssetFragment : Fragment() {
             .getString(ARG_ASSET_NAME)
             .takeIf { it in ALLOWED_ASSETS }
             ?: DEFAULT_ASSET_NAME
+        // Aktiveras här (först när manualen/ändringsloggen faktiskt öppnas) i stället för
+        // ovillkorligt vid varje appstart i StockFlipApplication.onCreate().
+        WebView.setWebContentsDebuggingEnabled(BuildConfig.DEBUG)
         val wv = WebView(requireContext())
         webView = wv
         val isDark = (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) ==

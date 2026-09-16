@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.compose.ui.unit.dp
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
@@ -158,6 +159,7 @@ class GroupedWatchItemAdapter(
         return when (viewType) {
             VIEW_TYPE_ALERTS_SUMMARY -> {
                 val composeView = ComposeView(parent.context)
+                composeView.setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
                 composeView.layoutParams = ViewGroup.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT,
                     ViewGroup.LayoutParams.WRAP_CONTENT
@@ -167,6 +169,7 @@ class GroupedWatchItemAdapter(
 
             VIEW_TYPE_SUMMARY -> {
                 val composeView = ComposeView(parent.context)
+                composeView.setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
                 composeView.layoutParams = ViewGroup.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT,
                     ViewGroup.LayoutParams.WRAP_CONTENT
@@ -176,6 +179,7 @@ class GroupedWatchItemAdapter(
 
             VIEW_TYPE_STOCKS_HEADER -> {
                 val composeView = ComposeView(parent.context)
+                composeView.setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
                 composeView.layoutParams = ViewGroup.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT,
                     ViewGroup.LayoutParams.WRAP_CONTENT
@@ -194,6 +198,7 @@ class GroupedWatchItemAdapter(
 
             VIEW_TYPE_WATCH_ITEM -> {
                 val composeView = ComposeView(parent.context)
+                composeView.setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
                 composeView.layoutParams = ViewGroup.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT,
                     ViewGroup.LayoutParams.WRAP_CONTENT
@@ -203,6 +208,7 @@ class GroupedWatchItemAdapter(
 
             VIEW_TYPE_MULTIPLE_WATCHES -> {
                 val composeView = ComposeView(parent.context)
+                composeView.setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
                 composeView.layoutParams = ViewGroup.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT,
                     ViewGroup.LayoutParams.WRAP_CONTENT
@@ -947,7 +953,11 @@ class GroupedWatchItemAdapter(
                 oldItem is GroupedListItem.Header && newItem is GroupedListItem.Header ->
                     oldItem.title == newItem.title
                 oldItem is GroupedListItem.WatchItemWrapper && newItem is GroupedListItem.WatchItemWrapper ->
-                    oldItem == newItem
+                    // lastUpdatedAt sätts till "nu" vid varje bakgrundsuppdatering även när
+                    // inget pris har ändrats — jämför utan den så att raden inte bindas om
+                    // och komponeras om i onödan var 120:e sekund.
+                    oldItem.copy(live = oldItem.live.copy(lastUpdatedAt = 0L)) ==
+                        newItem.copy(live = newItem.live.copy(lastUpdatedAt = 0L))
                 oldItem is GroupedListItem.MultipleWatchesWrapper && newItem is GroupedListItem.MultipleWatchesWrapper ->
                     oldItem == newItem
                 oldItem is GroupedListItem.GroupSeparator && newItem is GroupedListItem.GroupSeparator -> true
