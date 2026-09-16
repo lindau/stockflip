@@ -7,9 +7,11 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import com.stockflip.databinding.FragmentPairDetailBinding
 import com.stockflip.repository.TriggerHistoryRepository
 import com.stockflip.ui.components.cards.ClarityPairDetailPanel
@@ -110,6 +112,7 @@ class PairDetailFragment : Fragment() {
 
     private fun observeState() {
         viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
             viewModel.pairState.collect { state ->
                 when (state) {
                     is UiState.Loading -> {
@@ -132,9 +135,11 @@ class PairDetailFragment : Fragment() {
                     }
                 }
             }
+            }
         }
 
         viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
             combine(viewModel.chartState, viewModel.selectedPeriod) { state, period -> state to period }
                 .collect { (state, period) ->
                     when (state) {
@@ -154,12 +159,15 @@ class PairDetailFragment : Fragment() {
                         }
                     }
                 }
+            }
         }
 
         viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
             viewModel.historyState.collect { history ->
                 latestHistory = history
                 renderClarityPairPanel()
+            }
             }
         }
     }

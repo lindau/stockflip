@@ -13,8 +13,10 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.stockflip.ui.SwipeToDeleteCallback
@@ -343,6 +345,7 @@ class StockDetailFragment : Fragment() {
 
     private fun setupObservers() {
         viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
             viewModel.stockDataState.collect { state ->
                 when (state) {
                     is UiState.Loading -> {
@@ -363,9 +366,11 @@ class StockDetailFragment : Fragment() {
                     }
                 }
             }
+            }
         }
 
         viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
             viewModel.alertsState.collect { state ->
                 when (state) {
                     is UiState.Loading -> {
@@ -385,15 +390,19 @@ class StockDetailFragment : Fragment() {
                     }
                 }
             }
-        }
-
-        viewLifecycleOwner.lifecycleScope.launch {
-            viewModel.triggerHistoryState.collect { history ->
-                alertAdapter.updateTriggerHistory(history)
             }
         }
 
         viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+            viewModel.triggerHistoryState.collect { history ->
+                alertAdapter.updateTriggerHistory(history)
+            }
+            }
+        }
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
             combine(viewModel.chartState, viewModel.selectedPeriod) { state, period -> state to period }
                 .collect { (state, period) ->
                     latestChartPeriod = period
@@ -413,30 +422,38 @@ class StockDetailFragment : Fragment() {
                         }
                     }
                 }
+            }
         }
 
         viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
             viewModel.metricHistoryState.collect { metricHistory ->
                 latestMetricHistory = metricHistory
                 renderDecisionSupport()
             }
+            }
         }
 
         viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
             viewModel.insiderTransactionsState.collect { transactions ->
                 latestInsiderTransactions = transactions
                 renderInsiderTransactions()
             }
-        }
-
-        viewLifecycleOwner.lifecycleScope.launch {
-            viewModel.podcastObservationsState.collect { observations ->
-                latestPodcastObservations = observations
-                renderPodcastObservations()
             }
         }
 
         viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+            viewModel.podcastObservationsState.collect { observations ->
+                latestPodcastObservations = observations
+                renderPodcastObservations()
+            }
+            }
+        }
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
             viewModel.noteState.collect { note ->
                 if (note != null && note.note.isNotBlank()) {
                     binding.notesText.text = note.note
@@ -455,6 +472,7 @@ class StockDetailFragment : Fragment() {
                         )
                     )
                 }
+            }
             }
         }
     }

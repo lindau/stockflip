@@ -57,6 +57,7 @@ import java.util.Locale
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -767,10 +768,21 @@ class MainActivity : AppCompatActivity() {
      */
     private fun setupObservers() {
         Log.d(TAG, "Setting up observers for watchItemUiState")
+        // Slagit ihop till en kollektor: tidigare kunde watchItemUiState, notedTickers och
+        // mentionedTickers var för sig bygga om, sortera om och diffa listan — upp till tre
+        // gånger för en enda logisk uppdatering.
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 Log.d(TAG, "Starting to collect from watchItemUiState StateFlow (lifecycle: STARTED)")
-                viewModel.watchItemUiState.collect { state: UiState<List<WatchItemUiState>> ->
+                combine(
+                    viewModel.watchItemUiState,
+                    viewModel.notedTickers,
+                    viewModel.mentionedTickers
+                ) { state, notedTickers, mentionedTickers ->
+                    Triple(state, notedTickers, mentionedTickers)
+                }.collect { (state, notedTickers, mentionedTickers) ->
+                    lastNotedTickers = notedTickers
+                    lastMentionedTickers = mentionedTickers
                     when (state) {
                         is UiState.Loading -> {
                             Log.d(TAG, "=== UI STATE: Loading ===")
@@ -783,22 +795,6 @@ class MainActivity : AppCompatActivity() {
                         }
                     }
                     handleWatchItemUiState(state)
-                }
-            }
-        }
-        lifecycleScope.launch {
-            repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.notedTickers.collect { notedTickers ->
-                    lastNotedTickers = notedTickers
-                    showWatchItemSuccess(lastWatchItems)
-                }
-            }
-        }
-        lifecycleScope.launch {
-            repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.mentionedTickers.collect { mentionedTickers ->
-                    lastMentionedTickers = mentionedTickers
-                    showWatchItemSuccess(lastWatchItems)
                 }
             }
         }
