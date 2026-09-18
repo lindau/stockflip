@@ -4,6 +4,7 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.work.CoroutineWorker
@@ -99,16 +100,17 @@ class InsiderTransactionWorker(
         val verb = if (leadPurchase.transactionType == InsiderTransactionType.SELL) "sålde" else "köpte"
         val message = "${leadPurchase.reportingOwner} rapporterade att de $verb ${leadPurchase.securityTitle ?: ticker}.$valueText"
 
-        val notificationToken = NotificationNavigationSecurity.issueToken()
+        val destination = NotificationDestination.Stock(ticker, item.id)
         val intent = Intent(applicationContext, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+            data = Uri.parse("stockflip://watch/${item.id}")
             putExtra(MainActivity.EXTRA_OPEN_TICKER, ticker)
             putExtra(MainActivity.EXTRA_OPEN_COMPANY, item.companyName)
             putExtra(MainActivity.EXTRA_OPEN_WATCH_ID, item.id)
             putExtra(MainActivity.EXTRA_OPEN_INSIDER_TRANSACTION_ID, leadPurchase.id)
             putExtra(MainActivity.EXTRA_TRIGGER_TITLE, title)
             putExtra(MainActivity.EXTRA_TRIGGER_MESSAGE, message)
-            putExtra(MainActivity.EXTRA_NOTIFICATION_TOKEN, notificationToken)
+            putExtra(MainActivity.EXTRA_NOTIFICATION_TOKEN, NotificationNavigationSecurity.issueToken(destination))
         }
 
         val pendingIntent = PendingIntent.getActivity(

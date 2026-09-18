@@ -392,9 +392,11 @@ Utan notisbehörighet kan appen inte meddela dig när en bevakning utlöses — 
 
 - Notisen visar vad som faktiskt triggade, till exempel att ett målpris nåtts, att drawdown-nivån nåtts eller att ett nyckeltal passerat din nivå.
 - Trycker du på notisen öppnas StockFlip direkt på detaljvyn för den berörda aktien, eller pardetaljen för ett aktiepar.
+- Ett **kombinerat larm** som inte är knutet till en enskild aktie öppnar i stället **Bevakningar**-fliken och visar trigger-texten kort på skärmen.
 - Du möts av en tydlig trigger-banner högst upp med varför du hamnade där och kan direkt **återaktivera** eller **ta bort** bevakningen.
 - En trigger markeras som sedd först när du öppnar bevakningen eller detaljvyn, inte bara när listan visas.
 - För **insideraffärer** öppnas aktiedetaljvyn vid sektionen **Senaste insideraffärer**. Den aktuella transaktionen markeras och visas även i ett detaljfönster som du stänger med **Stäng**.
+- Notisen fungerar även om du trycker på den långt senare, till exempel dagen efter, och du kan trycka på samma notis flera gånger.
 
 ### Engångslarm vs återkommande larm
 

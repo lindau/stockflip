@@ -22,6 +22,7 @@ object AppSecurityManager {
     private const val PREFS_NAME = "stockflip_secure_store"
     private const val KEY_DB_PASSPHRASE = "db_passphrase"
     private const val KEY_BACKUP_HMAC_SECRET = "backup_hmac_secret"
+    private const val KEY_NOTIFICATION_HMAC_SECRET = "notification_hmac_secret"
     private const val GCM_IV_SIZE_BYTES = 12
     private const val GCM_TAG_SIZE_BITS = 128
 
@@ -48,6 +49,28 @@ object AppSecurityManager {
         return try {
             val expected = Base64.decode(signature, Base64.NO_WRAP)
             val actual = Base64.decode(signBackupPayload(payload), Base64.NO_WRAP)
+            java.security.MessageDigest.isEqual(expected, actual)
+        } catch (_: IllegalArgumentException) {
+            false
+        }
+    }
+
+    /**
+     * Signerar en notis-navigeringspayload med en egen Keystore-baserad HMAC-hemlighet.
+     * Egen nyckel (skild från backup-signaturen) ger domänseparation.
+     */
+    fun signNotificationPayload(payload: String): String {
+        val secret = getOrCreateRandomSecret(KEY_NOTIFICATION_HMAC_SECRET, 32)
+        val mac = Mac.getInstance("HmacSHA256")
+        mac.init(SecretKeySpec(secret, "HmacSHA256"))
+        val signature = mac.doFinal(payload.toByteArray(StandardCharsets.UTF_8))
+        return Base64.encodeToString(signature, Base64.NO_WRAP)
+    }
+
+    fun verifyNotificationPayload(payload: String, signature: String): Boolean {
+        return try {
+            val expected = Base64.decode(signature, Base64.NO_WRAP)
+            val actual = Base64.decode(signNotificationPayload(payload), Base64.NO_WRAP)
             java.security.MessageDigest.isEqual(expected, actual)
         } catch (_: IllegalArgumentException) {
             false
@@ -93,6 +116,7 @@ object AppSecurityManager {
         }
     }
 
+    @Synchronized
     private fun getOrCreateRandomSecret(key: String, sizeBytes: Int): ByteArray {
         getString(key)?.let {
             return Base64.decode(it, Base64.NO_WRAP)

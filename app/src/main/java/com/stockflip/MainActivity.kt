@@ -196,38 +196,50 @@ class MainActivity : AppCompatActivity() {
             intent.hasExtra(EXTRA_TRIGGER_MESSAGE)
         if (!hasProtectedExtras) return
 
-        val notificationToken = intent.getStringExtra(EXTRA_NOTIFICATION_TOKEN)
-        if (!NotificationNavigationSecurity.consumeToken(notificationToken)) {
-            Log.w(TAG, "Rejected navigation intent without a valid notification token")
-            clearProtectedIntentExtras(intent)
-            return
-        }
-
+        val token = intent.getStringExtra(EXTRA_NOTIFICATION_TOKEN)
         val triggerTitle = intent.getStringExtra(EXTRA_TRIGGER_TITLE)
         val triggerMessage = intent.getStringExtra(EXTRA_TRIGGER_MESSAGE)
         val companyName = intent.getStringExtra(EXTRA_OPEN_COMPANY)
         val insiderTransactionId = intent.getStringExtra(EXTRA_OPEN_INSIDER_TRANSACTION_ID)
         val pairWatchItemId = intent.getIntExtra(EXTRA_OPEN_PAIR_WATCH_ID, -1)
-        if (pairWatchItemId != -1) {
+        val ticker = intent.getStringExtra(EXTRA_OPEN_TICKER)
+        val watchItemId = intent.getIntExtra(EXTRA_OPEN_WATCH_ID, -1).takeIf { it > 0 }
+
+        // Ordningen pair → stock → alerts MÅSTE matcha notis-producenterna
+        // (StockPriceUpdateWorker / InsiderTransactionWorker) exakt.
+        val destination: NotificationDestination? = when {
+            pairWatchItemId != -1 -> NotificationDestination.PairWatch(pairWatchItemId)
+            ticker != null -> NotificationDestination.Stock(ticker, watchItemId)
+            watchItemId != null -> NotificationDestination.AlertList(watchItemId)
+            else -> null
+        }
+
+        if (destination == null || !NotificationNavigationSecurity.verifyToken(destination, token)) {
+            Log.w(TAG, "Rejected navigation intent without a valid notification token")
             clearProtectedIntentExtras(intent)
-            openPairDetailFromNotification(
-                watchItemId = pairWatchItemId,
+            return
+        }
+
+        clearProtectedIntentExtras(intent)
+        when (destination) {
+            is NotificationDestination.PairWatch -> openPairDetailFromNotification(
+                watchItemId = destination.pairWatchItemId,
                 triggerTitle = triggerTitle,
                 triggerMessage = triggerMessage
             )
-            return
+            is NotificationDestination.Stock -> openStockDetailFromNotification(
+                symbol = destination.ticker,
+                companyName = companyName,
+                highlightWatchItemId = destination.watchItemId,
+                triggerTitle = triggerTitle,
+                triggerMessage = triggerMessage,
+                highlightInsiderTransactionId = insiderTransactionId
+            )
+            is NotificationDestination.AlertList -> openAlertsFromNotification(
+                triggerTitle = triggerTitle,
+                triggerMessage = triggerMessage
+            )
         }
-        val ticker = intent.getStringExtra(EXTRA_OPEN_TICKER) ?: return
-        val watchItemId = intent.getIntExtra(EXTRA_OPEN_WATCH_ID, -1).takeIf { it > 0 }
-        clearProtectedIntentExtras(intent)
-        openStockDetailFromNotification(
-            symbol = ticker,
-            companyName = companyName,
-            highlightWatchItemId = watchItemId,
-            triggerTitle = triggerTitle,
-            triggerMessage = triggerMessage,
-            highlightInsiderTransactionId = insiderTransactionId
-        )
     }
 
     private fun clearProtectedIntentExtras(intent: Intent) {
@@ -625,6 +637,17 @@ class MainActivity : AppCompatActivity() {
             triggerMessage = triggerMessage,
             openedFromNotification = true
         )
+    }
+
+    /**
+     * Kombinerade larm utan enskild aktie har ingen detaljvy att navigera till — landa
+     * deterministiskt på Bevakningar-fliken och visa trigger-texten som en toast.
+     */
+    private fun openAlertsFromNotification(triggerTitle: String?, triggerMessage: String?) {
+        prepareRootStateForNotification(MainTab.ALERTS)
+        (triggerTitle ?: triggerMessage)?.takeIf { it.isNotBlank() }?.let {
+            Toast.makeText(this, it, Toast.LENGTH_LONG).show()
+        }
     }
 
     private fun prepareRootStateForNotification(targetTab: MainTab) {

@@ -1,81 +1,49 @@
 package com.stockflip
 
-import org.json.JSONArray
-import org.json.JSONObject
-import java.util.UUID
+/**
+ * Navigeringsmål för en push-notis. Bestäms av notis-producenten (workers) och verifieras
+ * på nytt av [MainActivity] utifrån intent-extras.
+ *
+ * VIKTIGT: producent och konsument måste välja variant i EXAKT samma ordning
+ * (pair → stock → alerts), annars byggs olika kanoniska payloads och token avvisas.
+ */
+sealed interface NotificationDestination {
+    data class PairWatch(val pairWatchItemId: Int) : NotificationDestination
+    data class Stock(val ticker: String, val watchItemId: Int?) : NotificationDestination
+    data class AlertList(val watchItemId: Int) : NotificationDestination
+}
 
+/**
+ * Skyddar notis-navigation mot förfalskade intents mot den exporterade [MainActivity].
+ *
+ * Token = HMAC-SHA256 över en kanonisk representation av navigeringsmålet, signerad med en
+ * Keystore-baserad hemlighet ([AppSecurityManager]). Stateless:
+ *  - ingen TTL (notiser kan ligga kvar i systemfältet i dagar),
+ *  - icke-konsumerande (samma notis kan tryckas flera gånger),
+ *  - inga SharedPreferences-races mellan samtidiga workers,
+ *  - överlever process-omstart och enhetsomstart.
+ */
 object NotificationNavigationSecurity {
-    private const val TOKENS_KEY = "notification_navigation_tokens"
-    private const val TOKEN_TTL_MS = 15 * 60 * 1000L
+    private const val PAYLOAD_VERSION = "v1"
 
-    fun issueToken(): String {
-        val now = System.currentTimeMillis()
-        val entries = loadEntries()
-            .filter { it.expiresAt > now }
-            .toMutableList()
-        val token = UUID.randomUUID().toString()
-        entries.add(TokenEntry(token = token, expiresAt = now + TOKEN_TTL_MS))
-        saveEntries(entries)
-        return token
-    }
+    fun issueToken(destination: NotificationDestination): String =
+        AppSecurityManager.signNotificationPayload(canonicalPayload(destination))
 
-    fun consumeToken(token: String?): Boolean {
+    fun verifyToken(destination: NotificationDestination, token: String?): Boolean {
         if (token.isNullOrBlank()) return false
-
-        val now = System.currentTimeMillis()
-        var valid = false
-        val remaining = loadEntries()
-            .filter { entry ->
-                when {
-                    entry.expiresAt <= now -> false
-                    entry.token == token -> {
-                        valid = true
-                        false
-                    }
-                    else -> true
-                }
-            }
-
-        saveEntries(remaining)
-        return valid
+        return AppSecurityManager.verifyNotificationPayload(canonicalPayload(destination), token)
     }
 
-    private fun loadEntries(): List<TokenEntry> {
-        val raw = AppSecurityManager.getString(TOKENS_KEY) ?: return emptyList()
-        val array = JSONArray(raw)
-        return buildList {
-            for (index in 0 until array.length()) {
-                val json = array.getJSONObject(index)
-                add(
-                    TokenEntry(
-                        token = json.getString("token"),
-                        expiresAt = json.getLong("expiresAt")
-                    )
-                )
-            }
-        }
+    /**
+     * Kanonisk, entydig strängrepresentation av navigeringsmålet. Delimiter '|' — Yahoo-tickers
+     * innehåller bara [A-Z0-9.^=-] så '|' kan aldrig förekomma i en ticker.
+     */
+    internal fun canonicalPayload(destination: NotificationDestination): String = when (destination) {
+        is NotificationDestination.PairWatch ->
+            "$PAYLOAD_VERSION|pair|${destination.pairWatchItemId}"
+        is NotificationDestination.Stock ->
+            "$PAYLOAD_VERSION|stock|${destination.ticker}|${destination.watchItemId ?: 0}"
+        is NotificationDestination.AlertList ->
+            "$PAYLOAD_VERSION|alerts|${destination.watchItemId}"
     }
-
-    private fun saveEntries(entries: List<TokenEntry>) {
-        if (entries.isEmpty()) {
-            AppSecurityManager.putString(TOKENS_KEY, null)
-            return
-        }
-
-        val array = JSONArray()
-        entries.forEach { entry ->
-            array.put(
-                JSONObject().apply {
-                    put("token", entry.token)
-                    put("expiresAt", entry.expiresAt)
-                }
-            )
-        }
-        AppSecurityManager.putString(TOKENS_KEY, array.toString())
-    }
-
-    private data class TokenEntry(
-        val token: String,
-        val expiresAt: Long
-    )
 }

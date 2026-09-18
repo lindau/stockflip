@@ -17,6 +17,8 @@
 - Aktiedetaljen har förenklats med tydligare fokus på nivåer och bevakningar
 - Skapa-dialogerna har fått mer balanserade snabbval med mindre standardnivåer först
 - Notiser öppnar nu relevanta detaljvyer med tydligare triggerkontext
+- Notisklick landar nu tillförlitligt på rätt aktie eller bevakning: navigationen fungerar även för äldre notiser, vid flera samtidiga notiser på samma aktie och efter omstart
+- Kombinerade larm utan enskild aktie öppnar nu `Bevakningar`-fliken i stället för bara appen
 - Pair-detaljen och pair-graferna har hårdnats för att undvika krascher vid ofullständig data
 - Versionsraden öppnar nu den här ändringsloggen
 - Aktiekortet visar nu en mikrofon-ikon när bolaget nämnts i ett poddavsnitt (kräver Tailscale-anslutning till podcast-pipeline)
