@@ -493,21 +493,18 @@ class StockDetailViewModel(
     }
 
     /**
-     * Se [MainViewModel.shouldGuardAgainstImmediateRetrigger]. Spärrar datumet vid återaktivering om
-     * larmet triggades idag och villkoret fortfarande är uppfyllt (eller inte går att avgöra), eller
-     * om marknaden är stängd.
+     * Se [shouldGuardAgainstImmediateRetrigger] i ReactivationGuard.kt.
      */
-    private suspend fun shouldGuardAgainstImmediateRetrigger(watchItem: WatchItem): Boolean {
-        if (watchItem.lastTriggeredDate != WatchItem.getTodayDateString()) return false
+    private suspend fun shouldGuardAgainstImmediateRetrigger(watchItem: WatchItem): Boolean =
+        shouldGuardAgainstImmediateRetrigger(
+            watchItem = watchItem,
+            conditionCurrentlyMet = { conditionCurrentlyMet(watchItem) },
+            isMarketOpen = { isMarketOpenForReactivation(watchItem) }
+        )
 
-        when (conditionCurrentlyMet(watchItem)) {
-            true -> return true
-            null -> return true
-            false -> { /* villkoret har upphört – kontrollera marknadstid nedan */ }
-        }
-
+    private suspend fun isMarketOpenForReactivation(watchItem: WatchItem): Boolean {
         val ticker = watchItem.ticker ?: watchItem.ticker1 ?: symbol
-        if (StockSearchResult.isCryptoSymbol(ticker)) return false
+        if (StockSearchResult.isCryptoSymbol(ticker)) return true
 
         val currentStockData = (_stockDataState.value as? UiState.Success<StockDetailData>)?.data
         val cachedExchange = currentStockData?.takeIf { it.symbol == ticker }?.exchange
@@ -519,7 +516,7 @@ class StockDetailViewModel(
             null
         }
 
-        return !StockMarketScheduler.isMarketOpenForSymbol(ticker, exchange, cachedCurrency)
+        return StockMarketScheduler.isMarketOpenForSymbol(ticker, exchange, cachedCurrency)
     }
 
     /**
@@ -569,7 +566,13 @@ class StockDetailViewModel(
     fun updateWatchItem(watchItem: WatchItem) {
         viewModelScope.launch {
             try {
-                watchItemDao.update(watchItem.reactivate())
+                val keepLastTriggeredDate = shouldGuardAgainstImmediateRetrigger(watchItem)
+                watchItemDao.update(
+                    watchItem.reactivate(
+                        currentPrice = currentPriceForReactivation(watchItem),
+                        keepLastTriggeredDate = keepLastTriggeredDate
+                    )
+                )
                 Log.d(TAG, "Updated alert ${watchItem.id}")
             } catch (e: Exception) {
                 Log.e(TAG, "Error updating alert: ${e.message}", e)

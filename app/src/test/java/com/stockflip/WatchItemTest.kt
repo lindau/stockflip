@@ -250,6 +250,46 @@ class WatchItemTest {
     }
 
     @Test
+    fun `hasStructuralReactivationAdjustment is true only for PriceTarget`() {
+        val priceTarget = WatchItem(
+            watchType = WatchType.PriceTarget(100.0, WatchType.PriceDirection.BELOW),
+            ticker = "AAPL"
+        )
+        val ath = WatchItem(
+            watchType = WatchType.ATHBased(dropType = WatchType.DropType.PERCENTAGE, dropValue = 20.0),
+            ticker = "AAPL"
+        )
+        val dailyMove = WatchItem(
+            watchType = WatchType.DailyMove(5.0, WatchType.DailyMoveDirection.UP),
+            ticker = "AAPL"
+        )
+        val keyMetrics = WatchItem(
+            watchType = WatchType.KeyMetrics(
+                metricType = WatchType.MetricType.PE_RATIO,
+                targetValue = 15.0,
+                direction = WatchType.PriceDirection.BELOW
+            ),
+            ticker = "AAPL"
+        )
+        val priceRange = WatchItem(
+            watchType = WatchType.PriceRange(minPrice = 90.0, maxPrice = 110.0),
+            ticker = "AAPL"
+        )
+        val pricePair = WatchItem(
+            watchType = WatchType.PricePair(5.0, false),
+            ticker1 = "AAPL",
+            ticker2 = "MSFT"
+        )
+
+        assertTrue(priceTarget.hasStructuralReactivationAdjustment)
+        assertFalse(ath.hasStructuralReactivationAdjustment)
+        assertFalse(dailyMove.hasStructuralReactivationAdjustment)
+        assertFalse(keyMetrics.hasStructuralReactivationAdjustment)
+        assertFalse(priceRange.hasStructuralReactivationAdjustment)
+        assertFalse(pricePair.hasStructuralReactivationAdjustment)
+    }
+
+    @Test
     fun `triggered DailyMove alarm is manually reactivatable`() {
         val item = WatchItem(
             watchType = WatchType.DailyMove(5.0, WatchType.DailyMoveDirection.UP),

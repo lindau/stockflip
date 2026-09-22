@@ -135,6 +135,18 @@ data class WatchItem(
     }
 
     /**
+     * True för larmtyper vars reactivate() gör en strukturell justering (idag: PriceTargets
+     * riktningsomvändning) som gör att hasLiveTriggerCondition() inte kan läsa true igen på
+     * exakt samma villkor direkt efter återaktivering. Endast dessa typer är säkra att köra
+     * genom ReactivationGuard.kt:s villkors-/marknadstidsbaserade tidigare-återväpning; övriga
+     * typer måste alltid behålla lastTriggeredDate om de triggade idag, annars kan en flimrande
+     * live-avläsning (t.ex. dagsrörelse) göra att larmet "återuppstår" som utlöst i UI:t och
+     * trigga en ny notis samma dag. Håll i synk med when-grenarna i reactivate().
+     */
+    val hasStructuralReactivationAdjustment: Boolean
+        get() = watchType is WatchType.PriceTarget
+
+    /**
      * Återaktiverar alerten (tar bort triggad-status).
      *
      * @param keepLastTriggeredDate Behåller datumspärren för dagens trigger, exempelvis

@@ -218,6 +218,66 @@ class MainViewModelRefreshWatchItemsTest {
     }
 
     @Test
+    fun `reactivateWatchItem keeps lastTriggeredDate lock for DailyMove triggered today`() = runBlocking {
+        val today = WatchItem.getTodayDateString()
+        val triggeredItem = WatchItem(
+            id = 1,
+            watchType = WatchType.DailyMove(5.0, WatchType.DailyMoveDirection.UP),
+            ticker = "VOLV-B.ST",
+            companyName = "Volvo B",
+            isActive = true,
+            isTriggered = true,
+            lastTriggeredDate = today
+        )
+        val watchItemDao = InMemoryWatchItemDao(listOf(triggeredItem))
+        val viewModel = MainViewModel(
+            stockPairDao = InMemoryStockPairDao(emptyList()),
+            watchItemDao = watchItemDao,
+            yahooFinanceService = FakeMarketDataService(pricesBySymbol = mapOf("VOLV-B.ST" to 105.0)),
+            stockNoteDao = InMemoryStockNoteDao(),
+            podcastObservationDao = InMemoryPodcastObservationDao()
+        )
+
+        viewModel.reactivateWatchItem(triggeredItem)
+
+        val updated = watchItemDao.getWatchItemById(1)!!
+        assertTrue(updated.isActive)
+        assertFalse(updated.isTriggered)
+        assertEquals(today, updated.lastTriggeredDate)
+        assertTrue(updated.hasPendingNextTradingDayGuard())
+    }
+
+    @Test
+    fun `reactivateWatchItem keeps lastTriggeredDate lock for ATHBased triggered today`() = runBlocking {
+        val today = WatchItem.getTodayDateString()
+        val triggeredItem = WatchItem(
+            id = 1,
+            watchType = WatchType.ATHBased(dropType = WatchType.DropType.PERCENTAGE, dropValue = 20.0),
+            ticker = "VOLV-B.ST",
+            companyName = "Volvo B",
+            isActive = false,
+            isTriggered = true,
+            lastTriggeredDate = today
+        )
+        val watchItemDao = InMemoryWatchItemDao(listOf(triggeredItem))
+        val viewModel = MainViewModel(
+            stockPairDao = InMemoryStockPairDao(emptyList()),
+            watchItemDao = watchItemDao,
+            yahooFinanceService = FakeMarketDataService(pricesBySymbol = mapOf("VOLV-B.ST" to 105.0)),
+            stockNoteDao = InMemoryStockNoteDao(),
+            podcastObservationDao = InMemoryPodcastObservationDao()
+        )
+
+        viewModel.reactivateWatchItem(triggeredItem)
+
+        val updated = watchItemDao.getWatchItemById(1)!!
+        assertTrue(updated.isActive)
+        assertFalse(updated.isTriggered)
+        assertEquals(today, updated.lastTriggeredDate)
+        assertTrue(updated.hasPendingNextTradingDayGuard())
+    }
+
+    @Test
     fun `importData replaces existing watch items and stock pairs`() = runBlocking {
         val existingWatchItem = WatchItem(
             id = 1,

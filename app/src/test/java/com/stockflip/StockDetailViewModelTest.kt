@@ -162,4 +162,68 @@ class StockDetailViewModelTest {
         assertTrue(allItems.filter { it.ticker == symbol }.none { it.isActive })
         assertTrue(allItems.first { it.ticker == otherSymbol }.isActive)
     }
+
+    @Test
+    fun `reactivateAlertAndReturnResult keeps lastTriggeredDate lock for DailyMove triggered today`() = runTest {
+        val symbol = "VOLV-B.ST"
+        val today = WatchItem.getTodayDateString()
+        val triggeredItem = WatchItem(
+            id = 1,
+            watchType = WatchType.DailyMove(5.0, WatchType.DailyMoveDirection.UP),
+            ticker = symbol,
+            isActive = true,
+            isTriggered = true,
+            lastTriggeredDate = today
+        )
+        val watchItemDao: WatchItemDao = InMemoryWatchItemDao(listOf(triggeredItem))
+        val marketDataService: MarketDataService = FakeMarketDataService(
+            pricesBySymbol = mapOf(symbol to 300.0)
+        )
+        val viewModel = StockDetailViewModel(
+            watchItemDao, marketDataService, symbol,
+            TriggerHistoryRepository(InMemoryTriggerHistoryDao()), InMemoryStockNoteDao(),
+            com.stockflip.repository.MetricHistoryRepository(InMemoryMetricHistoryDao())
+        )
+        // Ingen advanceUntilIdle() — se CLAUDE.md: observeAlerts() håller en oändlig loop.
+        // reactivateAlertAndReturnResult är ett direkt suspend-anrop som körs klart synkront
+        // under UnconfinedTestDispatcher eftersom DailyMove-vägen inte gör någon riktig
+        // suspension (nätverksanrop hoppas över helt av ReactivationGuard för icke-
+        // strukturellt justerade typer).
+        viewModel.reactivateAlertAndReturnResult(triggeredItem)
+
+        val updated = watchItemDao.getWatchItemById(1)!!
+        assertTrue(updated.isActive)
+        assertEquals(false, updated.isTriggered)
+        assertEquals(today, updated.lastTriggeredDate)
+    }
+
+    @Test
+    fun `updateWatchItem keeps lastTriggeredDate lock for DailyMove triggered today`() = runTest {
+        val symbol = "VOLV-B.ST"
+        val today = WatchItem.getTodayDateString()
+        val triggeredItem = WatchItem(
+            id = 1,
+            watchType = WatchType.DailyMove(5.0, WatchType.DailyMoveDirection.UP),
+            ticker = symbol,
+            isActive = true,
+            isTriggered = true,
+            lastTriggeredDate = today
+        )
+        val watchItemDao: WatchItemDao = InMemoryWatchItemDao(listOf(triggeredItem))
+        val marketDataService: MarketDataService = FakeMarketDataService(
+            pricesBySymbol = mapOf(symbol to 300.0)
+        )
+        val viewModel = StockDetailViewModel(
+            watchItemDao, marketDataService, symbol,
+            TriggerHistoryRepository(InMemoryTriggerHistoryDao()), InMemoryStockNoteDao(),
+            com.stockflip.repository.MetricHistoryRepository(InMemoryMetricHistoryDao())
+        )
+        // Ingen advanceUntilIdle() — se motivering i föregående test.
+        viewModel.updateWatchItem(triggeredItem)
+
+        val updated = watchItemDao.getWatchItemById(1)!!
+        assertTrue(updated.isActive)
+        assertEquals(false, updated.isTriggered)
+        assertEquals(today, updated.lastTriggeredDate)
+    }
 }

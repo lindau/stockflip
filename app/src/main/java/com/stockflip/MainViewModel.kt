@@ -387,24 +387,16 @@ class MainViewModel(
         }
     }
 
-    /**
-     * Avgör om datumspärren ska behållas vid återaktivering, så att larmet inte utlöses
-     * på nytt direkt av bakgrundsjobbet. Spärras (return true) om larmet triggades idag OCH:
-     *  1. villkoret fortfarande är uppfyllt just nu, eller
-     *  2. villkoret inte går att avgöra (data saknas) – konservativ spärr, eller
-     *  3. marknaden för symbolen är stängd.
-     */
-    private suspend fun shouldGuardAgainstImmediateRetrigger(watchItem: WatchItem): Boolean {
-        if (watchItem.lastTriggeredDate != WatchItem.getTodayDateString()) return false
+    private suspend fun shouldGuardAgainstImmediateRetrigger(watchItem: WatchItem): Boolean =
+        shouldGuardAgainstImmediateRetrigger(
+            watchItem = watchItem,
+            conditionCurrentlyMet = { conditionCurrentlyMet(watchItem) },
+            isMarketOpen = { isMarketOpenForReactivation(watchItem) }
+        )
 
-        when (conditionCurrentlyMet(watchItem)) {
-            true -> return true
-            null -> return true
-            false -> { /* villkoret har upphört – kontrollera marknadstid nedan */ }
-        }
-
-        val ticker = watchItem.ticker ?: watchItem.ticker1 ?: return false
-        if (StockSearchResult.isCryptoSymbol(ticker)) return false
+    private suspend fun isMarketOpenForReactivation(watchItem: WatchItem): Boolean {
+        val ticker = watchItem.ticker ?: watchItem.ticker1 ?: return true
+        if (StockSearchResult.isCryptoSymbol(ticker)) return true
 
         val exchange = try {
             yahooFinanceService.getExchange(ticker)
@@ -413,7 +405,7 @@ class MainViewModel(
             null
         }
 
-        return !StockMarketScheduler.isMarketOpenForSymbol(ticker, exchange)
+        return StockMarketScheduler.isMarketOpenForSymbol(ticker, exchange)
     }
 
     /**
