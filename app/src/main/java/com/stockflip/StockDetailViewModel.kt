@@ -479,6 +479,20 @@ class StockDetailViewModel(
     }
 
     /**
+     * Aktiverar/inaktiverar samtliga bevakningar för aktien i ett svep.
+     */
+    fun toggleAllAlerts(active: Boolean) {
+        viewModelScope.launch {
+            try {
+                watchItemDao.setActiveBySymbol(symbol, active)
+                Log.d(TAG, "Toggled all alerts for $symbol to $active")
+            } catch (e: Exception) {
+                Log.e(TAG, "Error toggling all alerts: ${e.message}", e)
+            }
+        }
+    }
+
+    /**
      * Se [MainViewModel.shouldGuardAgainstImmediateRetrigger]. Spärrar datumet vid återaktivering om
      * larmet triggades idag och villkoret fortfarande är uppfyllt (eller inte går att avgöra), eller
      * om marknaden är stängd.

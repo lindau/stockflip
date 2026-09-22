@@ -83,6 +83,14 @@ class InMemoryWatchItemDao(
         }
     }
 
+    override suspend fun setActiveBySymbol(symbol: String, active: Boolean) {
+        state.value = state.value.map { existing: WatchItem ->
+            if (existing.ticker == symbol || existing.ticker1 == symbol || existing.ticker2 == symbol) {
+                existing.setActive(active)
+            } else existing
+        }
+    }
+
     override suspend fun getWatchItemById(id: Int): WatchItem? = state.value.firstOrNull { it.id == id }
 }
 

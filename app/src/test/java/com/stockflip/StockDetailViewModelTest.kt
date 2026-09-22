@@ -133,4 +133,33 @@ class StockDetailViewModelTest {
             viewModel.chartState.value is UiState.Success
         )
     }
+
+    @Test
+    fun `toggleAllAlerts sets isActive for all watch items of the symbol only`() = runTest {
+        val symbol = "VOLV-B.ST"
+        val otherSymbol = "AAPL"
+        val watchItems = listOf(
+            WatchItem(id = 1, watchType = WatchType.PriceTarget(100.0, WatchType.PriceDirection.ABOVE), ticker = symbol, isActive = true),
+            WatchItem(id = 2, watchType = WatchType.PriceTarget(200.0, WatchType.PriceDirection.ABOVE), ticker = symbol, isActive = false),
+            WatchItem(id = 3, watchType = WatchType.PriceTarget(50.0, WatchType.PriceDirection.ABOVE), ticker = otherSymbol, isActive = true)
+        )
+        val watchItemDao: WatchItemDao = InMemoryWatchItemDao(watchItems)
+        val marketDataService: MarketDataService = FakeMarketDataService(
+            pricesBySymbol = mapOf(symbol to 150.0),
+            previousCloseBySymbol = mapOf(symbol to 150.0)
+        )
+        val viewModel = StockDetailViewModel(
+            watchItemDao, marketDataService, symbol,
+            TriggerHistoryRepository(InMemoryTriggerHistoryDao()), InMemoryStockNoteDao(),
+            com.stockflip.repository.MetricHistoryRepository(InMemoryMetricHistoryDao())
+        )
+        advanceUntilIdle()
+
+        viewModel.toggleAllAlerts(false)
+        advanceUntilIdle()
+
+        val allItems = watchItemDao.getAllWatchItems()
+        assertTrue(allItems.filter { it.ticker == symbol }.none { it.isActive })
+        assertTrue(allItems.first { it.ticker == otherSymbol }.isActive)
+    }
 }

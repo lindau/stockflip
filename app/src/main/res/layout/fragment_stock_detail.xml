@@ -366,14 +366,34 @@
             </com.google.android.material.card.MaterialCardView>
 
             <!-- Bevakningar — inline sektionsetikett, inga kort-wrapper -->
-            <TextView
-                android:layout_width="wrap_content"
+            <LinearLayout
+                android:id="@+id/alertsSectionHeader"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Bevakningar"
-                android:textAppearance="?attr/textAppearanceTitleMedium"
-                android:textColor="?attr/colorOnSurface"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
                 android:layout_marginStart="20dp"
-                android:layout_marginBottom="6dp" />
+                android:layout_marginEnd="16dp"
+                android:layout_marginBottom="6dp">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Bevakningar"
+                    android:textAppearance="?attr/textAppearanceTitleMedium"
+                    android:textColor="?attr/colorOnSurface" />
+
+                <androidx.appcompat.widget.SwitchCompat
+                    android:id="@+id/allAlertsEnabledSwitch"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:contentDescription="Aktivera eller inaktivera alla bevakningar"
+                    android:visibility="gone"
+                    tools:visibility="visible"
+                    tools:checked="true" />
+
+            </LinearLayout>
 
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/alertsRecyclerView"

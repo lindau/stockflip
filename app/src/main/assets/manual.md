@@ -330,6 +330,8 @@ Om du redan har äldre bevakningar av typen **Prisintervall** eller **Kombinerat
 
 Tryck på **reglaget** på bevakningskortet för att stänga av eller slå på en bevakning utan att ta bort den. En inaktiv bevakning kontrolleras inte och skickar inga notiser.
 
+Vill du snabbt stänga av eller slå på *alla* bevakningar för en aktie utan att öppna varje bevakning för sig, använd reglaget bredvid rubriken "Bevakningar" på aktiens detaljvy.
+
 ### Masshantering i Mina case
 
 I fliken **Mina case** kan du långtrycka på en regel för att gå in i markeringsläge. Där kan du välja flera regler samtidigt och:

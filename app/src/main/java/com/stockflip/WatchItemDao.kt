@@ -34,4 +34,7 @@ interface WatchItemDao {
 
     @Query("DELETE FROM watch_items WHERE ticker = :symbol OR ticker1 = :symbol OR ticker2 = :symbol")
     suspend fun deleteBySymbol(symbol: String)
+
+    @Query("UPDATE watch_items SET isActive = :active WHERE ticker = :symbol OR ticker1 = :symbol OR ticker2 = :symbol")
+    suspend fun setActiveBySymbol(symbol: String, active: Boolean)
 }

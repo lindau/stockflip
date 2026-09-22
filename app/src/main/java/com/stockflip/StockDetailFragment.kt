@@ -380,6 +380,12 @@ class StockDetailFragment : Fragment() {
                         alertAdapter.submitList(state.data)
                         binding.noAlertsText.isVisible = state.data.isEmpty()
                         binding.alertsRecyclerView.isVisible = state.data.isNotEmpty()
+                        binding.allAlertsEnabledSwitch.isVisible = state.data.isNotEmpty()
+                        binding.allAlertsEnabledSwitch.setOnCheckedChangeListener(null)
+                        binding.allAlertsEnabledSwitch.isChecked = state.data.isNotEmpty() && state.data.all { it.item.isActive }
+                        binding.allAlertsEnabledSwitch.setOnCheckedChangeListener { _, isChecked ->
+                            viewModel.toggleAllAlerts(isChecked)
+                        }
                         renderDecisionSupport()
                         renderInsiderTransactions()
                         renderTriggerBanner()
