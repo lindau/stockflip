@@ -1,0 +1,18 @@
+{
+  "tag_name": "v1.2.94",
+  "name": "v1.2.94",
+  "body": "## What's Changed\n* Fix flickering triggered state by @lindau\n* Bump version to 1.2.94",
+  "html_url": "https://github.com/lindau/StockFlip/releases/tag/v1.2.94",
+  "assets": [
+    {
+      "name": "source.zip",
+      "browser_download_url": "https://github.com/lindau/StockFlip/releases/download/v1.2.94/source.zip",
+      "size": 12345
+    },
+    {
+      "name": "stockflip.apk",
+      "browser_download_url": "https://github.com/lindau/StockFlip/releases/download/v1.2.94/stockflip.apk",
+      "size": 15728640
+    }
+  ]
+}

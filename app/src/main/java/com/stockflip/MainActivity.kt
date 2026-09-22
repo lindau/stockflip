@@ -103,6 +103,11 @@ class MainActivity : AppCompatActivity() {
             showImportConfirmationDialog(json)
         }
     }
+    // Eagerligt fält, INTE `by lazy` -- AppUpdateInstallers konstruktor anropar
+    // registerForActivityResult, som måste ske innan Activity:n når STARTED. Ett lazy-
+    // fält som först nås vid ett menyval (långt efter onStart) skulle krascha med
+    // IllegalStateException. Samma mönster som notificationPermissionLauncher ovan.
+    private val appUpdateInstaller = AppUpdateInstaller(this) { resumeInstallFlowAfterSettingsReturn() }
     private val stockSearchViewModelFactory = object : ViewModelProvider.Factory {
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
             @Suppress("UNCHECKED_CAST")
@@ -164,6 +169,7 @@ class MainActivity : AppCompatActivity() {
             }
         )
     }
+    private var pendingUpdateApkFile: java.io.File? = null
 
     /**
      * Initializes the activity's UI components and starts data loading.
@@ -192,6 +198,7 @@ class MainActivity : AppCompatActivity() {
         val hasProtectedExtras = intent.hasExtra(EXTRA_OPEN_PAIR_WATCH_ID) ||
             intent.hasExtra(EXTRA_OPEN_TICKER) ||
             intent.hasExtra(EXTRA_OPEN_WATCH_ID) ||
+            intent.hasExtra(EXTRA_OPEN_UPDATE_VERSION) ||
             intent.hasExtra(EXTRA_TRIGGER_TITLE) ||
             intent.hasExtra(EXTRA_TRIGGER_MESSAGE)
         if (!hasProtectedExtras) return
@@ -204,13 +211,15 @@ class MainActivity : AppCompatActivity() {
         val pairWatchItemId = intent.getIntExtra(EXTRA_OPEN_PAIR_WATCH_ID, -1)
         val ticker = intent.getStringExtra(EXTRA_OPEN_TICKER)
         val watchItemId = intent.getIntExtra(EXTRA_OPEN_WATCH_ID, -1).takeIf { it > 0 }
+        val updateVersion = intent.getStringExtra(EXTRA_OPEN_UPDATE_VERSION)
 
-        // Ordningen pair → stock → alerts MÅSTE matcha notis-producenterna
-        // (StockPriceUpdateWorker / InsiderTransactionWorker) exakt.
+        // Ordningen pair → stock → alerts → update MÅSTE matcha notis-producenterna
+        // (StockPriceUpdateWorker / InsiderTransactionWorker / AppUpdateCheckWorker) exakt.
         val destination: NotificationDestination? = when {
             pairWatchItemId != -1 -> NotificationDestination.PairWatch(pairWatchItemId)
             ticker != null -> NotificationDestination.Stock(ticker, watchItemId)
             watchItemId != null -> NotificationDestination.AlertList(watchItemId)
+            updateVersion != null -> NotificationDestination.AppUpdate(updateVersion)
             else -> null
         }
 
@@ -239,6 +248,7 @@ class MainActivity : AppCompatActivity() {
                 triggerTitle = triggerTitle,
                 triggerMessage = triggerMessage
             )
+            is NotificationDestination.AppUpdate -> showUpdateAvailableDialogFromNotification()
         }
     }
 
@@ -248,6 +258,7 @@ class MainActivity : AppCompatActivity() {
         intent.removeExtra(EXTRA_OPEN_WATCH_ID)
         intent.removeExtra(EXTRA_OPEN_COMPANY)
         intent.removeExtra(EXTRA_OPEN_INSIDER_TRANSACTION_ID)
+        intent.removeExtra(EXTRA_OPEN_UPDATE_VERSION)
         intent.removeExtra(EXTRA_TRIGGER_TITLE)
         intent.removeExtra(EXTRA_TRIGGER_MESSAGE)
         intent.removeExtra(EXTRA_NOTIFICATION_TOKEN)
@@ -437,6 +448,10 @@ class MainActivity : AppCompatActivity() {
                     importFileLauncher.launch(arrayOf("application/json", "text/plain"))
                     true
                 }
+                R.id.menu_check_update -> {
+                    checkForUpdateManually()
+                    true
+                }
                 R.id.menu_help -> {
                     openHelpScreen()
                     true
@@ -512,6 +527,91 @@ class MainActivity : AppCompatActivity() {
             }
             .setNegativeButton(getString(R.string.dialog_button_cancel), null)
             .show()
+    }
+
+    private fun checkForUpdateManually() {
+        lifecycleScope.launch {
+            binding.progressBar.visibility = View.VISIBLE
+            val result = try {
+                AppUpdateChecker().checkForUpdate()
+            } finally {
+                binding.progressBar.visibility = View.GONE
+            }
+            when (result) {
+                is UpdateCheckResult.UpdateAvailable -> showUpdateConfirmationDialog(result.release)
+                UpdateCheckResult.UpToDate -> Toast.makeText(
+                    this@MainActivity,
+                    "Du har den senaste versionen (v${BuildConfig.VERSION_NAME})",
+                    Toast.LENGTH_SHORT
+                ).show()
+                UpdateCheckResult.CheckFailed -> Toast.makeText(
+                    this@MainActivity,
+                    "Kunde inte kontrollera uppdateringar. Kontrollera din internetanslutning.",
+                    Toast.LENGTH_LONG
+                ).show()
+            }
+        }
+    }
+
+    private fun showUpdateAvailableDialogFromNotification() {
+        lifecycleScope.launch {
+            val result = AppUpdateChecker().checkForUpdate()
+            if (result is UpdateCheckResult.UpdateAvailable) {
+                showUpdateConfirmationDialog(result.release)
+            }
+        }
+    }
+
+    private fun showUpdateConfirmationDialog(release: UpdateReleaseInfo) {
+        MaterialAlertDialogBuilder(this)
+            .setTitle("Uppdatering tillgänglig")
+            .setMessage("StockFlip v${release.versionName} finns tillgänglig.\n\n${release.releaseNotes}")
+            .setPositiveButton("Hämta och installera") { _, _ ->
+                startDownloadAndInstallFlow(release)
+            }
+            .setNegativeButton("Avbryt", null)
+            .setNeutralButton("Hoppa över denna version") { _, _ ->
+                AppUpdateSettings.setSkippedVersion(release.versionName)
+            }
+            .show()
+    }
+
+    private fun startDownloadAndInstallFlow(release: UpdateReleaseInfo) {
+        lifecycleScope.launch {
+            binding.progressBar.visibility = View.VISIBLE
+            val apkFile = try {
+                appUpdateInstaller.downloadApk(release) { _, _ -> }
+            } catch (e: ApkSizeMismatchException) {
+                Toast.makeText(this@MainActivity, "Den hämtade filen verkar skadad. Försök igen.", Toast.LENGTH_LONG).show()
+                return@launch
+            } catch (e: Exception) {
+                Toast.makeText(
+                    this@MainActivity,
+                    "Hämtningen misslyckades. Kontrollera din internetanslutning och försök igen.",
+                    Toast.LENGTH_LONG
+                ).show()
+                return@launch
+            } finally {
+                binding.progressBar.visibility = View.GONE
+            }
+
+            if (appUpdateInstaller.canInstallPackages()) {
+                appUpdateInstaller.launchInstall(apkFile)
+            } else {
+                pendingUpdateApkFile = apkFile
+                appUpdateInstaller.requestInstallPermission()
+            }
+        }
+    }
+
+    private fun resumeInstallFlowAfterSettingsReturn() {
+        val apkFile = pendingUpdateApkFile ?: return
+        if (appUpdateInstaller.canInstallPackages()) {
+            pendingUpdateApkFile = null
+            appUpdateInstaller.launchInstall(apkFile)
+        } else {
+            Toast.makeText(this, "Installation avbröts — behörighet saknas", Toast.LENGTH_LONG).show()
+        }
     }
 
     private suspend fun readImportedBackupJson(uri: Uri): String? = withContext(Dispatchers.IO) {
@@ -1444,6 +1544,8 @@ class MainActivity : AppCompatActivity() {
         const val EXTRA_OPEN_COMPANY = "extra_open_company"
         /** Intent extra: insider transaction id to highlight when opening from an insider notification */
         const val EXTRA_OPEN_INSIDER_TRANSACTION_ID = "extra_open_insider_transaction_id"
+        /** Intent extra: version name to open the update confirmation dialog for (from update notification deep link) */
+        const val EXTRA_OPEN_UPDATE_VERSION = "extra_open_update_version"
         /** Intent extra: human-readable trigger title for notification landing */
         const val EXTRA_TRIGGER_TITLE = "extra_trigger_title"
         /** Intent extra: human-readable trigger message for notification landing */

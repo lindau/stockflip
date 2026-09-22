@@ -5,12 +5,13 @@ package com.stockflip
  * på nytt av [MainActivity] utifrån intent-extras.
  *
  * VIKTIGT: producent och konsument måste välja variant i EXAKT samma ordning
- * (pair → stock → alerts), annars byggs olika kanoniska payloads och token avvisas.
+ * (pair → stock → alerts → update), annars byggs olika kanoniska payloads och token avvisas.
  */
 sealed interface NotificationDestination {
     data class PairWatch(val pairWatchItemId: Int) : NotificationDestination
     data class Stock(val ticker: String, val watchItemId: Int?) : NotificationDestination
     data class AlertList(val watchItemId: Int) : NotificationDestination
+    data class AppUpdate(val versionName: String) : NotificationDestination
 }
 
 /**
@@ -45,5 +46,7 @@ object NotificationNavigationSecurity {
             "$PAYLOAD_VERSION|stock|${destination.ticker}|${destination.watchItemId ?: 0}"
         is NotificationDestination.AlertList ->
             "$PAYLOAD_VERSION|alerts|${destination.watchItemId}"
+        is NotificationDestination.AppUpdate ->
+            "$PAYLOAD_VERSION|update|${destination.versionName}"
     }
 }

@@ -29,6 +29,8 @@ class StockFlipApplication : Application(), ImageLoaderFactory {
         WorkManager.initialize(this, config)
         StockPriceUpdater.startPeriodicUpdate(this)
         TriggerSeenTracker.init(this)
+        AppUpdateSettings.init(this)
+        AppUpdateScheduler.schedulePeriodicCheck(this)
     }
 
     override fun newImageLoader(): ImageLoader = LogoImageLoader.build(this)

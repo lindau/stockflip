@@ -65,6 +65,9 @@
     <string name="import_success">Ersatte nuvarande bevakningar med %1$d bevakningar och %2$d aktiepar</string>
     <string name="import_error">Kunde inte importera: %1$s</string>
 
+    <!-- App-uppdatering -->
+    <string name="menu_check_update">Sök efter uppdateringar</string>
+
     <!-- Anteckningar -->
     <string name="notes_card_title">Anteckning</string>
     <string name="notes_placeholder">Tryck för att lägga till anteckning...</string>

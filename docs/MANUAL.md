@@ -400,6 +400,21 @@ Utan notisbehörighet kan appen inte meddela dig när en bevakning utlöses — 
 - För **insideraffärer** öppnas aktiedetaljvyn vid sektionen **Senaste insideraffärer**. Den aktuella transaktionen markeras och visas även i ett detaljfönster som du stänger med **Stäng**.
 - Notisen fungerar även om du trycker på den långt senare, till exempel dagen efter, och du kan trycka på samma notis flera gånger.
 
+### Appuppdateringar
+
+StockFlip distribueras inte via Play Store, så appen håller själv koll på om det finns en nyare version att hämta.
+
+- **Sök efter uppdateringar** finns i menyn högst upp (bredvid Tema/Exportera/Importera/Hjälp/Version) och kontrollerar direkt om en nyare version finns.
+- I bakgrunden kontrolleras samma sak automatiskt ungefär en gång per dygn (kräver nätverksanslutning). Hittas ingen ny version, eller misslyckas kontrollen, händer inget synligt.
+- Hittas en ny version i bakgrunden får du en notis. Trycker du på den öppnas samma bekräftelsedialog som vid en manuell kontroll.
+- Dialogen har tre val:
+  - **Hämta och installera** — laddar ner filen och startar installationen.
+  - **Avbryt** — gör inget just nu; du kan söka igen senare.
+  - **Hoppa över denna version** — den automatiska bakgrundskontrollen slutar notifiera om just den versionen (en manuell sökning visar den ändå).
+- Om StockFlip inte redan har tillstånd att installera appar från denna källa tas du till en systeminställning för att tillåta det, innan installationen kan fortsätta.
+- Själva installationen bekräftas en andra gång av Androids egen installationsskärm — StockFlip startar bara den, det är inte StockFlip som installerar.
+- Uppdateringskontrollen pratar med det publika GitHub-repot `github.com/lindau/StockFlip` över krypterad anslutning (HTTPS); ingen inloggning behövs.
+
 ### Engångslarm vs återkommande larm
 
 | | Engångslarm | Återkommande larm |
