@@ -1,17 +1,12 @@
 package com.stockflip.ui.components
 
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SegmentedButton
@@ -25,7 +20,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.DrawScope
@@ -39,7 +33,6 @@ import androidx.compose.ui.unit.sp
 import com.stockflip.ChartPeriod
 import com.stockflip.CurrencyHelper
 import com.stockflip.PairChartData
-import com.stockflip.PairChartSeries
 import com.stockflip.ui.theme.LocalPriceDown
 import com.stockflip.ui.theme.LocalPriceUp
 import java.text.SimpleDateFormat
@@ -54,14 +47,6 @@ private enum class PairSignalState {
     NEAR,
     TRIGGERED
 }
-
-private enum class SeriesStyle {
-    SOLID_CIRCLE,
-    DASHED_SQUARE
-}
-
-private val PairSeriesAColor = Color(0xFF0057D9)
-private val PairSeriesBColor = Color(0xFFD97706)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -84,7 +69,7 @@ fun PairPerformanceChart(
             }
         }
 
-        if (data.normalizedA.values.isEmpty() || data.normalizedB.values.isEmpty()) {
+        if (data.spread.prices.isEmpty() || data.spread.timestamps.isEmpty()) {
             EmptyChartState(
                 reason = data.emptyReason ?: data.spread.emptyReason ?: "Ingen data",
                 timestamp = data.lastTradeTimestamp
@@ -101,25 +86,10 @@ fun PairPerformanceChart(
             )
         }
 
-        NormalizedComparisonChart(
-            seriesA = data.normalizedA,
-            seriesB = data.normalizedB,
-            stockALabel = data.stockALabel,
-            stockBLabel = data.stockBLabel,
+        PairPriceDifferenceChart(
+            data = data,
             selectedPeriod = selectedPeriod,
             modifier = Modifier.padding(top = 8.dp)
-        )
-
-        Text(
-            text = "Spread och signal",
-            style = MaterialTheme.typography.titleSmall,
-            color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.padding(top = 16.dp, bottom = 6.dp)
-        )
-
-        SpreadMiniChart(
-            data = data,
-            selectedPeriod = selectedPeriod
         )
 
         data.lastTradeTimestamp?.let { ts ->
@@ -137,205 +107,10 @@ fun PairPerformanceChart(
 }
 
 @Composable
-private fun LegendRow(
-    stockALabel: String,
-    stockBLabel: String,
-    modifier: Modifier = Modifier
-) {
-    Row(
-        modifier = modifier,
-        horizontalArrangement = Arrangement.spacedBy(16.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        LegendItem(color = PairSeriesAColor, label = stockALabel, style = SeriesStyle.SOLID_CIRCLE)
-        LegendItem(color = PairSeriesBColor, label = stockBLabel, style = SeriesStyle.DASHED_SQUARE)
-    }
-}
-
-@Composable
-private fun LegendItem(color: Color, label: String, style: SeriesStyle) {
-    Row(
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Box(
-            modifier = Modifier
-                .size(10.dp)
-                .background(
-                    color,
-                    if (style == SeriesStyle.SOLID_CIRCLE) RoundedCornerShape(50) else RoundedCornerShape(2.dp)
-                )
-        )
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-    }
-}
-
-@Composable
-private fun NormalizedComparisonChart(
-    seriesA: PairChartSeries,
-    seriesB: PairChartSeries,
-    stockALabel: String,
-    stockBLabel: String,
+private fun PairPriceDifferenceChart(
+    data: PairChartData,
     selectedPeriod: ChartPeriod,
     modifier: Modifier = Modifier
-) {
-    val textMeasurer = rememberTextMeasurer()
-    val labelColor = MaterialTheme.colorScheme.onSurface
-    val gridColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.22f)
-    val labelStyle = TextStyle(fontSize = 9.sp, color = labelColor)
-    val primaryColor = PairSeriesAColor
-    val secondaryColor = PairSeriesBColor
-    val baselineColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
-    val timestamps = seriesA.timestamps.ifEmpty { seriesB.timestamps }
-    val values = seriesA.values + seriesB.values + 100.0
-    val minValue = values.minOrNull() ?: 100.0
-    val maxValue = values.maxOrNull() ?: 100.0
-    val chartMin = min(minValue, 100.0)
-    val chartMax = max(maxValue, 100.0)
-    val range = (chartMax - chartMin).coerceAtLeast(0.5)
-
-    Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .height(200.dp)
-    ) {
-        Canvas(
-            modifier = Modifier.fillMaxSize()
-        ) {
-            val yLabelWidth = 54.dp.toPx()
-            val rightPadding = 18.dp.toPx()
-            val xLabelHeight = 20.dp.toPx()
-            val chartLeft = yLabelWidth
-            val chartTop = 34.dp.toPx()
-            val chartRight = size.width - rightPadding
-            val chartBottom = size.height - xLabelHeight
-            val chartWidth = chartRight - chartLeft
-            val chartHeight = chartBottom - chartTop
-
-            fun xFor(index: Int, count: Int): Float {
-                return chartLeft + index * (chartWidth / (count - 1).coerceAtLeast(1).toFloat())
-            }
-
-            fun yFor(value: Double): Float {
-                return chartTop + (chartHeight * (1.0 - (value - chartMin) / range)).toFloat()
-            }
-
-            val yTicks = listOf(chartMax, 100.0, chartMin).distinct()
-            yTicks.forEach { tick ->
-                val y = yFor(tick)
-                drawLine(
-                    color = if (abs(tick - 100.0) < 0.01) baselineColor else gridColor,
-                    start = Offset(chartLeft, y),
-                    end = Offset(chartRight, y),
-                    strokeWidth = if (abs(tick - 100.0) < 0.01) 1.2.dp.toPx() else 0.9.dp.toPx()
-                )
-                val text = CurrencyHelper.formatDecimal(tick)
-                val measured = textMeasurer.measure(text, labelStyle)
-                val maxLabelY = (chartBottom - measured.size.height).coerceAtLeast(chartTop)
-                drawText(
-                    textMeasurer = textMeasurer,
-                    text = text,
-                    style = labelStyle,
-                    topLeft = Offset(
-                        x = (yLabelWidth - measured.size.width - 4.dp.toPx()).coerceAtLeast(0f),
-                        y = (y - measured.size.height / 2f).coerceIn(chartTop, maxLabelY)
-                    )
-                )
-            }
-
-            drawSeries(
-                values = seriesA.values,
-                color = primaryColor,
-                chartLeft = chartLeft,
-                chartTop = chartTop,
-                chartBottom = chartBottom,
-                chartWidth = chartWidth,
-                minValue = chartMin,
-                range = range,
-                style = SeriesStyle.SOLID_CIRCLE
-            )
-            drawSeries(
-                values = seriesB.values,
-                color = secondaryColor,
-                chartLeft = chartLeft,
-                chartTop = chartTop,
-                chartBottom = chartBottom,
-                chartWidth = chartWidth,
-                minValue = chartMin,
-                range = range,
-                style = SeriesStyle.DASHED_SQUARE
-            )
-
-            buildXLabels(timestamps, selectedPeriod).forEach { (index, label) ->
-                val x = xFor(index, timestamps.size)
-                val measured = textMeasurer.measure(label, labelStyle)
-                drawText(
-                    textMeasurer = textMeasurer,
-                    text = label,
-                    style = labelStyle,
-                    topLeft = Offset(
-                        x = (x - measured.size.width / 2f).coerceIn(chartLeft, chartRight - measured.size.width),
-                        y = chartBottom + 3.dp.toPx()
-                    )
-                )
-            }
-
-            listOf(
-                Triple(stockALabel, seriesA.values.last(), primaryColor),
-                Triple(stockBLabel, seriesB.values.last(), secondaryColor)
-            ).map { (label, value, color) ->
-                val measured = textMeasurer.measure(label, labelStyle)
-                val maxLabelY = (chartBottom - measured.size.height).coerceAtLeast(chartTop)
-                Triple(
-                    measured,
-                    Offset(
-                        x = (chartRight - measured.size.width - 4.dp.toPx()).coerceAtLeast(chartLeft),
-                        y = (yFor(value) - measured.size.height / 2f)
-                            .coerceIn(chartTop, maxLabelY)
-                    ),
-                    color
-                )
-            }.let { positioned ->
-                val separated = separateLabelPositions(
-                    items = positioned.map { Triple(it.first, it.second.x, it.second.y) },
-                    minGap = 6.dp.toPx(),
-                    minY = chartTop,
-                    maxY = chartBottom
-                )
-                separated.forEachIndexed { index, adjusted ->
-                    val (measured, _, color) = positioned[index]
-                    val label = if (index == 0) stockALabel else stockBLabel
-                    drawText(
-                        textMeasurer = textMeasurer,
-                        text = label,
-                        style = labelStyle.copy(color = color),
-                        topLeft = Offset(
-                            x = adjusted.x,
-                            y = adjusted.y
-                        )
-                    )
-                }
-            }
-        }
-
-        LegendRow(
-            stockALabel = stockALabel,
-            stockBLabel = stockBLabel,
-            modifier = Modifier
-                .align(Alignment.TopStart)
-                .padding(start = 60.dp, top = 8.dp)
-        )
-    }
-}
-
-@Composable
-private fun SpreadMiniChart(
-    data: PairChartData,
-    selectedPeriod: ChartPeriod
 ) {
     val prices = data.spread.prices
     val timestamps = data.spread.timestamps
@@ -393,9 +168,9 @@ private fun SpreadMiniChart(
     val range = (maxValue - minValue).coerceAtLeast(0.5)
 
     Canvas(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
-            .height(124.dp)
+            .height(200.dp)
     ) {
         val yLabelWidth = 54.dp.toPx()
         val rightPadding = 18.dp.toPx()
@@ -510,8 +285,7 @@ private fun SpreadMiniChart(
             chartBottom = chartBottom,
             chartWidth = chartWidth,
             minValue = minValue,
-            range = range,
-            style = SeriesStyle.SOLID_CIRCLE
+            range = range
         )
 
         val latestX = xFor(prices.lastIndex)
@@ -593,8 +367,7 @@ private fun DrawScope.drawSeries(
     chartBottom: Float,
     chartWidth: Float,
     minValue: Double,
-    range: Double,
-    style: SeriesStyle
+    range: Double
 ) {
     fun xFor(index: Int): Float {
         return chartLeft + index * (chartWidth / (values.size - 1).coerceAtLeast(1).toFloat())
@@ -614,31 +387,17 @@ private fun DrawScope.drawSeries(
         path = linePath,
         color = color,
         style = Stroke(
-            width = if (style == SeriesStyle.SOLID_CIRCLE) 2.4.dp.toPx() else 2.8.dp.toPx(),
+            width = 2.4.dp.toPx(),
             cap = StrokeCap.Round,
-            join = StrokeJoin.Round,
-            pathEffect = if (style == SeriesStyle.DASHED_SQUARE) {
-                PathEffect.dashPathEffect(floatArrayOf(14.dp.toPx(), 9.dp.toPx()))
-            } else {
-                null
-            }
+            join = StrokeJoin.Round
         )
     )
     val endCenter = Offset(xFor(values.size - 1), yFor(values.last()))
-    if (style == SeriesStyle.SOLID_CIRCLE) {
-        drawCircle(
-            color = color,
-            radius = 3.5.dp.toPx(),
-            center = endCenter
-        )
-    } else {
-        val half = 3.5.dp.toPx()
-        drawRect(
-            color = color,
-            topLeft = Offset(endCenter.x - half, endCenter.y - half),
-            size = androidx.compose.ui.geometry.Size(half * 2, half * 2)
-        )
-    }
+    drawCircle(
+        color = color,
+        radius = 3.5.dp.toPx(),
+        center = endCenter
+    )
 }
 
 @Composable
@@ -682,54 +441,6 @@ private fun buildXLabels(timestamps: List<Long>, period: ChartPeriod): List<Pair
         val index = (idx * step).toInt().coerceIn(0, timestamps.lastIndex)
         index to format.format(Date(timestamps[index] * 1000L))
     }.distinctBy { it.first }
-}
-
-private fun separateLabelPositions(
-    items: List<Triple<androidx.compose.ui.text.TextLayoutResult, Float, Float>>,
-    minGap: Float,
-    minY: Float,
-    maxY: Float
-): List<Offset> {
-    if (items.isEmpty()) return emptyList()
-
-    val sorted = items.mapIndexed { index, (measured, x, y) ->
-        val maxAllowedY = (maxY - measured.size.height).coerceAtLeast(minY)
-        Pair(index, Triple(measured, x, y.coerceIn(minY, maxAllowedY)))
-    }.sortedBy { it.second.third }
-
-    val adjusted = mutableListOf<Pair<Int, Triple<androidx.compose.ui.text.TextLayoutResult, Float, Float>>>()
-    sorted.forEach { (index, item) ->
-        val (measured, x, desiredY) = item
-        val previous = adjusted.lastOrNull()
-        val minAllowedY = previous?.let { it.second.third + it.second.first.size.height + minGap } ?: minY
-        val maxAllowedY = (maxY - measured.size.height).coerceAtLeast(minY)
-        adjusted += index to Triple(
-            measured,
-            x,
-            desiredY.coerceAtLeast(minAllowedY).coerceAtMost(maxAllowedY)
-        )
-    }
-
-    for (i in adjusted.indices.reversed()) {
-        val (index, current) = adjusted[i]
-        val maxAllowedY = if (i == adjusted.lastIndex) {
-            (maxY - current.first.size.height).coerceAtLeast(minY)
-        } else {
-            (adjusted[i + 1].second.third - current.first.size.height - minGap).coerceAtLeast(minY)
-        }
-        adjusted[i] = index to Triple(current.first, current.second, current.third.coerceAtMost(maxAllowedY))
-    }
-
-    return adjusted
-        .sortedBy { it.first }
-        .map { (_, item) ->
-            val (measured, x, y) = item
-            val maxAllowedY = (maxY - measured.size.height).coerceAtLeast(minY)
-            Offset(
-                x = x,
-                y = y.coerceIn(minY, maxAllowedY)
-            )
-        }
 }
 
 private fun chartTimeFormat(selectedPeriod: ChartPeriod): SimpleDateFormat = when (selectedPeriod) {
