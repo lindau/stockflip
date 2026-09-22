@@ -85,8 +85,7 @@ fun ClarityCaseCard(
     } else {
         containerColor
     }
-    val canReactivateOneTimeAlert = item.isTriggered &&
-        (item.watchType is WatchType.PriceTarget || item.watchType is WatchType.ATHBased)
+    val canReactivate = item.isManuallyReactivatable
 
     Card(
         modifier = modifier.fillMaxWidth(),
@@ -179,7 +178,7 @@ fun ClarityCaseCard(
                     color = statusColor,
                     maxLines = 1,
                 )
-                if (canReactivateOneTimeAlert && onReactivate != null) {
+                if (canReactivate && onReactivate != null) {
                     TextButton(
                         onClick = onReactivate,
                         contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),

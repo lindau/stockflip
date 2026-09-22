@@ -365,7 +365,13 @@ class MainViewModel(
     suspend fun updateWatchItem(watchItem: WatchItem) {
         try {
             Log.d(TAG, "Updating watch item")
-            watchItemDao.update(watchItem.reactivate())
+            val keepLastTriggeredDate = shouldGuardAgainstImmediateRetrigger(watchItem)
+            watchItemDao.update(
+                watchItem.reactivate(
+                    currentPrice = currentPriceForReactivation(watchItem),
+                    keepLastTriggeredDate = keepLastTriggeredDate
+                )
+            )
             syncWatchItemsAfterMutation()
         } catch (e: Exception) {
             Log.e(TAG, "Error updating watch item: ${e.message}")

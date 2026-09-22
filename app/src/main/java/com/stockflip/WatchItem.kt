@@ -71,6 +71,24 @@ data class WatchItem(
     }
 
     /**
+     * Engångslarm (PriceTarget, ATHBased) blockeras permanent av isTriggered och stängs
+     * av (isActive = false) när de triggar — de kräver manuell återaktivering.
+     * Övriga larmtyper (DailyMove, KeyMetrics, PriceRange, PricePair, Combined) är
+     * återkommande: de kan trigga igen nästa handelsdag utan manuellt ingrepp, men
+     * isTriggered förblir true i UI:t tills alerten återaktiveras manuellt eller ett
+     * nytt datum passeras.
+     */
+    val isOneTimeAlarm: Boolean
+        get() = watchType is WatchType.PriceTarget || watchType is WatchType.ATHBased
+
+    /**
+     * Om alerten kan återaktiveras manuellt via UI (nollställa den "utlöst"-status som
+     * visas för användaren). Gäller alla larmtyper som kan vara markerade som triggade.
+     */
+    val isManuallyReactivatable: Boolean
+        get() = isTriggered
+
+    /**
      * Kontrollerar om alerten kan trigga baserat på spam-skydd.
      * Enligt PRD: max en gång per handelsdag eller markeras triggad tills manuellt återaktiverad.
      *
@@ -88,7 +106,6 @@ data class WatchItem(
         // Engångslarm (PriceTarget, ATHBased) blockeras permanent av isTriggered — kräver
         // manuell återaktivering. Övriga larmtyper är återkommande och blockeras bara av
         // datumet (ett larm per dag), inte av isTriggered-flaggan.
-        val isOneTimeAlarm = watchType is WatchType.PriceTarget || watchType is WatchType.ATHBased
         if (isOneTimeAlarm && isTriggered) return false
         if (lastTriggeredDate == today) return false
         return true

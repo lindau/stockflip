@@ -322,8 +322,7 @@ class AlertsFragment : Fragment() {
     }
 
     private fun WatchItemUiState.isEligibleForBulkReactivation(): Boolean {
-        return item.isTriggered &&
-            (item.watchType is WatchType.PriceTarget || item.watchType is WatchType.ATHBased)
+        return item.isManuallyReactivatable
     }
 
     private fun renderFilteredList() {

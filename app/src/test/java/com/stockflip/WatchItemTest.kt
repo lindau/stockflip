@@ -230,6 +230,53 @@ class WatchItemTest {
     }
 
     @Test
+    fun `isOneTimeAlarm is true only for PriceTarget and ATHBased`() {
+        val priceTarget = WatchItem(
+            watchType = WatchType.PriceTarget(100.0, WatchType.PriceDirection.BELOW),
+            ticker = "AAPL"
+        )
+        val ath = WatchItem(
+            watchType = WatchType.ATHBased(dropType = WatchType.DropType.PERCENTAGE, dropValue = 20.0),
+            ticker = "AAPL"
+        )
+        val dailyMove = WatchItem(
+            watchType = WatchType.DailyMove(5.0, WatchType.DailyMoveDirection.UP),
+            ticker = "AAPL"
+        )
+
+        assertTrue(priceTarget.isOneTimeAlarm)
+        assertTrue(ath.isOneTimeAlarm)
+        assertFalse(dailyMove.isOneTimeAlarm)
+    }
+
+    @Test
+    fun `triggered DailyMove alarm is manually reactivatable`() {
+        val item = WatchItem(
+            watchType = WatchType.DailyMove(5.0, WatchType.DailyMoveDirection.UP),
+            ticker = "AAPL",
+            isTriggered = true
+        )
+
+        assertTrue(item.isManuallyReactivatable)
+
+        val reactivated = item.reactivate()
+
+        assertFalse(reactivated.isTriggered)
+        assertTrue(reactivated.isActive)
+    }
+
+    @Test
+    fun `untriggered DailyMove alarm is not manually reactivatable`() {
+        val item = WatchItem(
+            watchType = WatchType.DailyMove(5.0, WatchType.DailyMoveDirection.UP),
+            ticker = "AAPL",
+            isTriggered = false
+        )
+
+        assertFalse(item.isManuallyReactivatable)
+    }
+
+    @Test
     fun `reactivate without keepLastTriggeredDate fully re-arms ATH alarm`() {
         val item = WatchItem(
             watchType = WatchType.ATHBased(
