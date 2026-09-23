@@ -18,6 +18,9 @@
 -keep class com.stockflip.PodcastCompaniesResponse { <fields>; }
 -keep class com.stockflip.PodcastCompanyDto { <fields>; }
 -keep class com.stockflip.PodcastMentionDto { <fields>; }
+-keep interface com.stockflip.GithubReleaseApi { *; }
+-keep class com.stockflip.GithubReleaseDto { <fields>; }
+-keep class com.stockflip.GithubReleaseAssetDto { <fields>; }
 
 # Keep worker names stable across app upgrades and preserve required constructors.
 -keepnames class * extends androidx.work.ListenableWorker
