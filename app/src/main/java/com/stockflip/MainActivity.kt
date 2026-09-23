@@ -1,8 +1,6 @@
 package com.stockflip
 
 import android.Manifest
-import android.content.ClipData // TEMP DIAGNOSTIC
-import android.content.ClipboardManager // TEMP DIAGNOSTIC
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
@@ -546,20 +544,11 @@ class MainActivity : AppCompatActivity() {
                     "Du har den senaste versionen (v${BuildConfig.VERSION_NAME})",
                     Toast.LENGTH_SHORT
                 ).show()
-                is UpdateCheckResult.CheckFailed -> {
-                    // TEMP DIAGNOSTIC — ta bort hela denna gren (och gå tillbaka till Toasten
-                    // nedan) när den verkliga orsaken till det misslyckade anropet är bekräftad.
-                    MaterialAlertDialogBuilder(this@MainActivity)
-                        .setTitle("Uppdateringskontroll misslyckades (diagnostik)")
-                        .setMessage(result.diagnostic ?: "Ingen diagnostikinformation tillgänglig.")
-                        .setPositiveButton("Kopiera") { _, _ ->
-                            val clipboard = getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
-                            clipboard.setPrimaryClip(ClipData.newPlainText("StockFlip update check error", result.diagnostic))
-                            Toast.makeText(this@MainActivity, "Kopierat", Toast.LENGTH_SHORT).show()
-                        }
-                        .setNegativeButton("Stäng", null)
-                        .show()
-                }
+                UpdateCheckResult.CheckFailed -> Toast.makeText(
+                    this@MainActivity,
+                    "Kunde inte kontrollera uppdateringar. Kontrollera din internetanslutning.",
+                    Toast.LENGTH_LONG
+                ).show()
             }
         }
     }

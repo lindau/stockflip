@@ -3,9 +3,7 @@ package com.stockflip
 sealed interface UpdateCheckResult {
     data class UpdateAvailable(val release: UpdateReleaseInfo) : UpdateCheckResult
     object UpToDate : UpdateCheckResult
-    // TEMP DIAGNOSTIC — ta bort diagnostic-fältet och gå tillbaka till `object CheckFailed`
-    // när den verkliga orsaken till det misslyckade uppdateringskontroll-anropet är bekräftad.
-    data class CheckFailed(val diagnostic: String? = null) : UpdateCheckResult
+    object CheckFailed : UpdateCheckResult
 }
 
 /**
@@ -17,8 +15,7 @@ sealed interface UpdateCheckResult {
 class AppUpdateChecker(private val releaseService: GithubReleaseServiceContract = GithubReleaseService) {
 
     suspend fun checkForUpdate(currentVersionName: String = BuildConfig.VERSION_NAME): UpdateCheckResult {
-        val release = releaseService.getLatestReleaseInfo()
-            ?: return UpdateCheckResult.CheckFailed(releaseService.getLatestReleaseInfoDiagnostic()) // TEMP DIAGNOSTIC
+        val release = releaseService.getLatestReleaseInfo() ?: return UpdateCheckResult.CheckFailed
         return if (isNewerVersion(currentVersionName, release.versionName)) {
             UpdateCheckResult.UpdateAvailable(release)
         } else {
