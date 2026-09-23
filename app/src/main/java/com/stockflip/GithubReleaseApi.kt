@@ -41,6 +41,8 @@ data class UpdateReleaseInfo(
 
 interface GithubReleaseServiceContract {
     suspend fun getLatestReleaseInfo(): UpdateReleaseInfo?
+    // TEMP DIAGNOSTIC — ta bort denna metod tillsammans med alla "TEMP DIAGNOSTIC"-markeringar.
+    suspend fun getLatestReleaseInfoDiagnostic(): String? = null
 }
 
 /**
@@ -79,6 +81,9 @@ object GithubReleaseService : GithubReleaseServiceContract {
     private const val TAG = "GithubReleaseService"
     private const val BASE_URL = "https://api.github.com/"
 
+    // TEMP DIAGNOSTIC — ta bort tillsammans med alla "TEMP DIAGNOSTIC"-markeringar.
+    @Volatile private var lastFailureDiagnostic: String? = null
+
     private val client = OkHttpClient.Builder()
         .connectTimeout(10, TimeUnit.SECONDS)
         .readTimeout(10, TimeUnit.SECONDS)
@@ -94,10 +99,20 @@ object GithubReleaseService : GithubReleaseServiceContract {
 
     override suspend fun getLatestReleaseInfo(): UpdateReleaseInfo? = withContext(Dispatchers.IO) {
         try {
-            mapper.getLatestReleaseInfo()
+            val info = mapper.getLatestReleaseInfo()
+            lastFailureDiagnostic = if (info == null) { // TEMP DIAGNOSTIC
+                "Mapper returnerade null (release-JSON saknar tag_name, stockflip.apk, browser_download_url eller size)"
+            } else {
+                null
+            }
+            info
         } catch (e: Exception) {
             Log.w(TAG, "Failed to fetch latest release: ${e.message}")
+            lastFailureDiagnostic = "${e::class.simpleName}: ${e.message}" // TEMP DIAGNOSTIC
             null
         }
     }
+
+    // TEMP DIAGNOSTIC
+    override suspend fun getLatestReleaseInfoDiagnostic(): String? = lastFailureDiagnostic
 }

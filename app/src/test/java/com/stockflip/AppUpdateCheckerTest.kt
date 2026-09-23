@@ -33,7 +33,8 @@ class AppUpdateCheckerTest {
     @Test
     fun `checkForUpdate returns CheckFailed when the release service returns null`() = runBlocking {
         val checker = AppUpdateChecker(FakeGithubReleaseService(null))
-        assertEquals(UpdateCheckResult.CheckFailed, checker.checkForUpdate(currentVersionName = "1.2.93"))
+        val result = checker.checkForUpdate(currentVersionName = "1.2.93")
+        assertTrue(result is UpdateCheckResult.CheckFailed)
     }
 
     @Test
