@@ -212,14 +212,6 @@ private fun MultipleWatchesClarityContent(
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.68f),
                     )
-                    if (hasNote) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.Notes,
-                            contentDescription = null,
-                            modifier = Modifier.size(14.dp),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.68f),
-                        )
-                    }
                 }
             }
 
@@ -266,6 +258,16 @@ private fun MultipleWatchesClarityContent(
                     contentDescription = "Omnämnd i poddavsnitt",
                     modifier = Modifier
                         .size(20.dp)
+                        .padding(end = 6.dp),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            if (hasNote) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.Notes,
+                    contentDescription = "Har anteckning",
+                    modifier = Modifier
+                        .size(16.dp)
                         .padding(end = 6.dp),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
