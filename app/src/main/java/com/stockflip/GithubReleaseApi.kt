@@ -7,6 +7,7 @@ import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.GET
+import retrofit2.http.Headers
 import java.util.concurrent.TimeUnit
 
 data class GithubReleaseDto(
@@ -24,6 +25,8 @@ data class GithubReleaseAssetDto(
 )
 
 interface GithubReleaseApi {
+    // GitHub:s API kräver en User-Agent-header och svarar annars 403 Forbidden.
+    @Headers("User-Agent: StockFlip-Android")
     @GET("repos/lindau/StockFlip/releases/latest")
     suspend fun getLatestRelease(): GithubReleaseDto
 }
