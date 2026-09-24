@@ -372,11 +372,16 @@ Om flera engångslarm är triggade samtidigt kan du återaktivera dem alla på e
 - **Triggad-badge (amber/gul):** Visar datumet då bevakningen utlöstes. Visas alltid så länge bevakningen är i triggat läge.
 - **Ny-märke (lila/primärfärg):** Visar att det är en utlösning du *inte sett* sedan den inträffade. Försvinner automatiskt när du öppnar aktiedetaljvyn för den berörda aktien.
 
-### Mikrofon-ikon: omnämnd i poddavsnitt
+### Poddomnämnanden
 
-På aktiekortet i **Mina case → Aktier** kan en liten mikrofon-ikon visas till vänster om texten som anger antal bevakningar. Den betyder att bolaget nyligen nämnts i ett poddavsnitt som analyserats i den fristående tjänsten podcast-pipeline.
+Den här funktionen kräver att telefonen är ansluten till samma Tailscale-nätverk som podcast-pipeline-instansen, en fristående tjänst som analyserar poddavsnitt. Är instansen inte nåbar fungerar resten av appen som vanligt, bara utan poddfunktionerna nedan.
 
-Den här funktionen kräver att telefonen är ansluten till samma Tailscale-nätverk som podcast-pipeline-instansen. Är instansen inte nåbar visas kortet precis som vanligt, bara utan mikrofon-ikonen.
+**Mikrofon-ikon på aktiekortet:** På aktiekortet i **Mina case → Aktier** kan en liten mikrofon-ikon visas till vänster om texten som anger antal bevakningar. Den betyder att bolaget nyligen nämnts i ett poddavsnitt.
+
+**Sektionen "Poddomnämnanden" på aktiedetaljen:**
+- En egen sektion längst ned på aktiens detaljvy visar mer detaljer, med en **på/av-växel** i sektionsrubriken (av som standard).
+- När den är på listas omnämnandena med podd, datum, ett kort sammandrag/citat och eventuell rekommendation. Finns fler än ett omnämnande visas bara det senaste, med texten "Visar 1 av X omnämnanden · tryck för att visa X till" — tryck på rubriken eller texten för att fälla ut resten. Utfällda rader visar även eventuella risker.
+- Finns inga omnämnanden ännu visas en **Synka nu**-knapp som kör en synk direkt i förgrunden och visar antingen träffar eller en tydlig felmeddelandetext, istället för att bara vänta på nästa bakgrundskörning.
 
 ---
 
@@ -405,8 +410,8 @@ Utan notisbehörighet kan appen inte meddela dig när en bevakning utlöses — 
 StockFlip distribueras inte via Play Store, så appen håller själv koll på om det finns en nyare version att hämta.
 
 - **Sök efter uppdateringar** finns i menyn högst upp (bredvid Tema/Exportera/Importera/Hjälp/Version) och kontrollerar direkt om en nyare version finns.
-- I bakgrunden kontrolleras samma sak automatiskt ungefär en gång per dygn (kräver nätverksanslutning). Hittas ingen ny version, eller misslyckas kontrollen, händer inget synligt.
-- Hittas en ny version i bakgrunden får du en notis. Trycker du på den öppnas samma bekräftelsedialog som vid en manuell kontroll.
+- Kontrollen görs även tyst varje gång du startar appen, och därtill i bakgrunden ungefär en gång per dygn (kräver nätverksanslutning). Hittas ingen ny version, eller misslyckas kontrollen, händer inget synligt.
+- Hittas en ny version vid appstart visas bekräftelsedialogen direkt. Hittas den i stället i bakgrunden får du en notis, och trycker du på den öppnas samma bekräftelsedialog.
 - Dialogen har tre val:
   - **Hämta och installera** — laddar ner filen och startar installationen.
   - **Avbryt** — gör inget just nu; du kan söka igen senare.

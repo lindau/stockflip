@@ -184,6 +184,7 @@ class MainActivity : AppCompatActivity() {
         initializeUpdates()
         requestPermissions()
         loadInitialData()
+        checkForUpdateOnStartup()
         handleDeepLinkIntent(intent)
     }
 
@@ -527,6 +528,23 @@ class MainActivity : AppCompatActivity() {
             }
             .setNegativeButton(getString(R.string.dialog_button_cancel), null)
             .show()
+    }
+
+    /**
+     * Tyst uppdateringskontroll vid varje kallstart (onCreate körs inte om vid rotation,
+     * se android:configChanges för MainActivity i manifestet, och launchMode="singleTop"
+     * gör att en omöppning av redan körande app inte heller triggar en ny körning här).
+     * Kompletterar den periodiska 24h-kontrollen (AppUpdateScheduler) -- ingen toast vid
+     * "redan senaste version" eller nätverksfel, precis som bakgrundskontrollen.
+     */
+    private fun checkForUpdateOnStartup() {
+        lifecycleScope.launch {
+            val result = AppUpdateChecker().checkForUpdateRespectingSkip()
+            AppUpdateSettings.setLastCheckTimestampMillis(System.currentTimeMillis())
+            if (result is UpdateCheckResult.UpdateAvailable) {
+                showUpdateConfirmationDialog(result.release)
+            }
+        }
     }
 
     private fun checkForUpdateManually() {

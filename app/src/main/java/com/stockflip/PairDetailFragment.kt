@@ -110,6 +110,13 @@ class PairDetailFragment : Fragment() {
         refreshDetail()
     }
 
+    override fun onPause() {
+        super.onPause()
+        // Säkerhetsnät: tvinga alltid fram en färsk omladdning av översikten när
+        // aktieparsidan lämnas, se motsvarande kommentar i StockDetailFragment.
+        syncOverviewInBackground()
+    }
+
     private fun observeState() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {

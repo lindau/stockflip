@@ -138,6 +138,16 @@ class StockDetailFragment : Fragment() {
         refreshDetail()
     }
 
+    override fun onPause() {
+        super.onPause()
+        // Säkerhetsnät: tvinga alltid fram en färsk omladdning av översikten när
+        // aktiesidan lämnas, oavsett vilken åtgärd (t.ex. återaktivering) som
+        // orsakat en ändring och oavsett om dess egen bakgrundssynk redan hann
+        // slutföras. Billigt (en lokal Room-fråga) och garanterar att översikten
+        // aldrig visar stale "utlöst"-status för aktien man just lämnade.
+        syncOverviewInBackground()
+    }
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
