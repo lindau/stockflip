@@ -377,10 +377,9 @@ class GroupedWatchItemAdapter(
         val summarySource = alertsSummaryItems.ifEmpty { items }
         val groupedList = mutableListOf<GroupedListItem>()
 
-        if (items.isNotEmpty()) {
-            groupedList.add(
-                buildAlertsSummaryItem(summarySource, today)
-            )
+        val alertsSummary = buildAlertsSummaryItem(summarySource, today)
+        if (alertsSummary.triggeredCount > 0) {
+            groupedList.add(alertsSummary)
         }
 
         sortAlertsForClarity(items).forEach { uiState ->
