@@ -53,6 +53,23 @@ internal sealed class WatchListEmptyState {
     data class LoadFailed(val message: String) : WatchListEmptyState()
 }
 
+/** Vad översiktens tomvy ska visa. Aktiepar visas inte i översikten utan i fliken Par. */
+internal sealed class OverviewEmptyState {
+    object Hidden : OverviewEmptyState()
+    object NoWatches : OverviewEmptyState()
+
+    /** Det finns bevakningar, men bara aktiepar — hänvisa till fliken Par i stället för "inga bevakningar". */
+    object OnlyPairs : OverviewEmptyState()
+    data class LoadFailed(val message: String) : OverviewEmptyState()
+}
+
+internal fun overviewEmptyState(items: List<WatchItemUiState>, loadError: String?): OverviewEmptyState = when {
+    items.any { it.item.watchType !is WatchType.PricePair } -> OverviewEmptyState.Hidden
+    loadError != null -> OverviewEmptyState.LoadFailed(loadError)
+    items.isNotEmpty() -> OverviewEmptyState.OnlyPairs
+    else -> OverviewEmptyState.NoWatches
+}
+
 /**
  * @param loadError felmeddelande från en misslyckad laddning när ingen data finns, annars null.
  *   Ett fel ska ligga kvar även om användaren byter filter, tills en laddning lyckas.

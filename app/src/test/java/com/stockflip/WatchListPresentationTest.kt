@@ -105,4 +105,20 @@ class WatchListPresentationTest {
     fun `no rows without error shows no-items state`() {
         assertEquals(WatchListEmptyState.NoItems, watchListEmptyState(visibleItemCount = 0, loadError = null))
     }
+
+    @Test
+    fun `overview hides empty state when there are non-pair watches`() {
+        assertEquals(OverviewEmptyState.Hidden, overviewEmptyState(listOf(priceTarget, pair), loadError = null))
+    }
+
+    @Test
+    fun `overview with only pairs points to the Par tab instead of saying there are no watches`() {
+        assertEquals(OverviewEmptyState.OnlyPairs, overviewEmptyState(listOf(pair), loadError = null))
+    }
+
+    @Test
+    fun `overview without data shows load error before the no-watches text`() {
+        assertEquals(OverviewEmptyState.LoadFailed("fel"), overviewEmptyState(emptyList(), loadError = "fel"))
+        assertEquals(OverviewEmptyState.NoWatches, overviewEmptyState(emptyList(), loadError = null))
+    }
 }

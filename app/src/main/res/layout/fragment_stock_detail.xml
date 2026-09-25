@@ -436,7 +436,7 @@
                 android:id="@+id/noAlertsText"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Inga bevakningar för denna aktie/krypto"
+                android:text="@string/stock_detail_no_alerts"
                 android:textAppearance="?attr/textAppearanceBodyMedium"
                 android:textColor="?attr/colorOnSurfaceVariant"
                 android:gravity="center"

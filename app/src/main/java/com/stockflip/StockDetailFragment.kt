@@ -67,6 +67,8 @@ class StockDetailFragment : Fragment() {
     private var latestChartData: IntradayChartData? = null
     private var latestChartPeriod: ChartPeriod = ChartPeriod.DAY
     private var latestAlerts: List<WatchItemUiState> = emptyList()
+    // Fel när bevakningarna inte kunde läsas in och inga finns att visa — ligger kvar tills en laddning lyckas.
+    private var alertsLoadError: String? = null
     private var latestMetricHistory: Map<WatchType.MetricType, MetricHistorySummary> = emptyMap()
     private var latestInsiderTransactions: List<InsiderTransactionEntity> = emptyList()
     private var latestPodcastObservations: List<PodcastObservationEntity> = emptyList()
@@ -403,8 +405,9 @@ class StockDetailFragment : Fragment() {
                     }
                     is UiState.Success -> {
                         latestAlerts = state.data
+                        alertsLoadError = null
                         alertAdapter.submitList(state.data)
-                        binding.noAlertsText.isVisible = state.data.isEmpty()
+                        renderAlertsEmptyState()
                         binding.alertsRecyclerView.isVisible = state.data.isNotEmpty()
                         binding.allAlertsEnabledSwitch.isVisible = state.data.isNotEmpty()
                         binding.allAlertsEnabledSwitch.setOnCheckedChangeListener(null)
@@ -417,7 +420,14 @@ class StockDetailFragment : Fragment() {
                         renderTriggerBanner()
                     }
                     is UiState.Error -> {
-                        Toast.makeText(requireContext(), state.message, Toast.LENGTH_SHORT).show()
+                        if (latestAlerts.isEmpty()) {
+                            // Visa felet i sektionen i stället för en tom rubrik och en kort Toast.
+                            alertsLoadError = state.message
+                            renderAlertsEmptyState()
+                        } else {
+                            // Senast kända bevakningar ligger kvar.
+                            Snackbar.make(binding.root, R.string.alerts_refresh_failed, Snackbar.LENGTH_LONG).show()
+                        }
                     }
                 }
             }
@@ -448,7 +458,13 @@ class StockDetailFragment : Fragment() {
                             renderClarityStockPanel()
                         }
                         is UiState.Error -> {
-                            latestChartData = null
+                            // Visa felet i grafytan i stället för "Laddar graf", som aldrig skulle ta slut.
+                            latestChartData = IntradayChartData(
+                                timestamps = emptyList(),
+                                prices = emptyList(),
+                                previousClose = null,
+                                emptyReason = state.message
+                            )
                             renderClarityStockPanel()
                         }
                     }
@@ -1342,6 +1358,20 @@ class StockDetailFragment : Fragment() {
                 startActivity(webIntent)
             } catch (e: Exception) {
                 Toast.makeText(requireContext(), "Kunde inte öppna länken", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    private fun renderAlertsEmptyState() {
+        when (val emptyState = watchListEmptyState(latestAlerts.size, alertsLoadError)) {
+            WatchListEmptyState.Hidden -> binding.noAlertsText.isVisible = false
+            WatchListEmptyState.NoItems -> {
+                binding.noAlertsText.setText(R.string.stock_detail_no_alerts)
+                binding.noAlertsText.isVisible = true
+            }
+            is WatchListEmptyState.LoadFailed -> {
+                binding.noAlertsText.text = getString(R.string.stock_detail_alerts_load_failed, emptyState.message)
+                binding.noAlertsText.isVisible = true
             }
         }
     }

@@ -618,7 +618,8 @@ class StockDetailViewModel(
     }
 
     fun selectPeriod(period: ChartPeriod) {
-        if (_selectedPeriod.value == period) return
+        // Samma period igen är en no-op — utom efter ett fel, då fungerar trycket som "försök igen".
+        if (_selectedPeriod.value == period && _chartState.value !is UiState.Error) return
         chartLoadingJob?.cancel()
         _chartState.value = UiState.Loading
         _selectedPeriod.value = period
@@ -636,18 +637,12 @@ class StockDetailViewModel(
                 delay(2_000L)
                 data = fetchChartData(period)
             }
+            // null betyder att hämtningen misslyckades (för lite data kommer som emptyReason).
+            // Visa det som ett fel, inte som "ingen data", så att användaren kan försöka igen.
             _chartState.value = if (data != null) {
                 UiState.Success(data)
             } else {
-                UiState.Success(
-                    IntradayChartData(
-                        timestamps = emptyList(),
-                        prices = emptyList(),
-                        previousClose = null,
-                        lastTradeTimestamp = null,
-                        emptyReason = "Ingen intradagsdata tillgänglig"
-                    )
-                )
+                UiState.Error(CHART_LOAD_FAILED_MESSAGE)
             }
         }
     }
@@ -670,6 +665,10 @@ class StockDetailViewModel(
         loadAlerts()
     }
 }
+
+
+internal const val CHART_LOAD_FAILED_MESSAGE: String =
+    "Kunde inte hämta grafen. Tryck på perioden eller dra nedåt för att försöka igen."
 
 /**
  * Data class för aktiedetaljdata.

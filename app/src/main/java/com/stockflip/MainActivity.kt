@@ -24,6 +24,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.content.edit
 import androidx.core.view.isVisible
+import com.google.android.material.snackbar.Snackbar
 import androidx.core.widget.doAfterTextChanged
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -141,6 +142,8 @@ class MainActivity : AppCompatActivity() {
     private var currentMainTab: MainTab = MainTab.STOCKS
     private var overviewMode: OverviewMode = OverviewMode.CASES
     private var lastWatchItems: List<WatchItemUiState> = emptyList()
+    // Fel från en misslyckad laddning utan data — visas i översiktens tomvy tills en laddning lyckas.
+    private var overviewLoadError: String? = null
     private var lastNotedTickers: Set<String> = emptySet()
     private var lastMentionedTickers: Set<String> = emptySet()
     private var detailSyncJob: Job? = null
@@ -973,7 +976,10 @@ class MainActivity : AppCompatActivity() {
     internal fun handleWatchItemUiState(state: UiState<List<WatchItemUiState>>) {
         when (state) {
             is UiState.Loading -> showLoading()
-            is UiState.Success -> showWatchItemSuccess(state.data)
+            is UiState.Success -> {
+                overviewLoadError = null
+                showWatchItemSuccess(state.data)
+            }
             is UiState.Error -> showError(state.message)
         }
     }
@@ -997,26 +1003,44 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
-        val filteredData = data.filter { it.item.watchType !is WatchType.PricePair }
-        Log.d(TAG, "Filtered watch items for STOCKS tab: ${filteredData.size}")
-
         binding.swipeRefreshLayout.isRefreshing = false
         Log.d(TAG, "Refresh indicator hidden")
 
         renderStocksOverview(data)
+        renderOverviewEmptyState(overviewEmptyState(data, overviewLoadError))
+    }
 
-        val showEmpty = filteredData.isEmpty()
-        binding.emptyStateContainer.visibility = if (showEmpty) View.VISIBLE else View.GONE
-        if (showEmpty) {
-            binding.emptyStateTitle.text = getString(R.string.stocks_empty_title)
-            binding.emptyStateSubtitle.text = getString(R.string.stocks_empty_subtitle)
+    private fun renderOverviewEmptyState(emptyState: OverviewEmptyState) {
+        binding.emptyStateContainer.isVisible = emptyState !is OverviewEmptyState.Hidden
+        binding.emptyStateRetryButton.isVisible = emptyState is OverviewEmptyState.LoadFailed
+        when (emptyState) {
+            OverviewEmptyState.Hidden -> Unit
+            OverviewEmptyState.NoWatches -> {
+                binding.emptyStateTitle.setText(R.string.stocks_empty_title)
+                binding.emptyStateSubtitle.setText(R.string.stocks_empty_subtitle)
+            }
+            OverviewEmptyState.OnlyPairs -> {
+                binding.emptyStateTitle.setText(R.string.stocks_only_pairs_title)
+                binding.emptyStateSubtitle.setText(R.string.stocks_only_pairs_subtitle)
+            }
+            is OverviewEmptyState.LoadFailed -> {
+                binding.emptyStateTitle.setText(R.string.watch_items_load_failed_title)
+                binding.emptyStateSubtitle.text = emptyState.message
+            }
         }
     }
 
     private fun showError(message: String) {
         Log.e(TAG, "Error state shown to user")
         binding.swipeRefreshLayout.isRefreshing = false
-        Toast.makeText(this, message, Toast.LENGTH_LONG).show()
+        // Par och Bevakningar visar felet själva (felvy eller Snackbar) — visa det inte två gånger.
+        if (currentMainTab != MainTab.STOCKS) return
+        if (lastWatchItems.isEmpty()) {
+            overviewLoadError = message
+            showWatchItemSuccess(lastWatchItems)
+        } else {
+            Snackbar.make(binding.root, R.string.alerts_refresh_failed, Snackbar.LENGTH_LONG).show()
+        }
     }
 
     private fun setupOverviewModeToggle() {
@@ -1499,6 +1523,12 @@ class MainActivity : AppCompatActivity() {
     private fun setupSwipeRefresh() {
         binding.swipeRefreshLayout.setOnRefreshListener {
             refreshPrices()
+        }
+        binding.emptyStateRetryButton.setOnClickListener {
+            lifecycleScope.launch {
+                // showLoading = true: spinnern visas under försöket och ett nytt fel ytas som Error.
+                viewModel.refreshWatchItems(showLoading = true)
+            }
         }
     }
 

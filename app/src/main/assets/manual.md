@@ -82,7 +82,7 @@ Appen har tre flikar längst ned:
 
 I nuvarande appversion fungerar flikarna så här:
 
-- **Översikt:** visar sektioner som `Nytt och triggade`, `Nära att triggas`, `Aktiva bevakningar` och `Inaktiva`. Härifrån läser du läget, men nya aktier läggs inte till här.
+- **Översikt:** aktiepar visas inte här utan i fliken **Par**. Översikten visar sektioner som `Nytt och triggade`, `Nära att triggas`, `Aktiva bevakningar` och `Inaktiva`. Härifrån läser du läget, men nya aktier läggs inte till här.
 - **Par:** tryck på `+` för att skapa ett aktiepar.
 - **Bevakningar:** tryck på `+` för att lägga till en ny aktie, ett index eller en kryptovaluta. Öppna sedan aktiens detaljsida och välj vilken typ av bevakning du vill skapa.
 
@@ -448,7 +448,7 @@ StockFlip distribueras inte via Play Store, så appen håller själv koll på om
 - Appen lyckades inte hämta nya kurser för bevakningen, till exempel på grund av dålig uppkoppling. Kortet visar då de senast kända värdena och vilken tid de hämtades. Raden försvinner av sig själv när nästa uppdatering lyckas, eller när du drar nedåt för att uppdatera.
 
 **Vad händer om en vy inte kan laddas?**
-- Om aktie- eller aktiepardetaljen, eller listorna i **Par** och **Bevakningar**, inte kan laddas första gången visas ett felmeddelande med knappen **Försök igen**. Om vyn redan visar data och en uppdatering misslyckas ligger de senast kända värdena kvar, och ett kort meddelande visas längst ned.
+- Om **Översikt**, aktie- eller aktiepardetaljen, eller listorna i **Par** och **Bevakningar**, inte kan laddas första gången visas ett felmeddelande med knappen **Försök igen**. Kan grafen på aktiedetaljen inte hämtas står det i grafytan — tryck på den valda perioden (eller dra nedåt) för att försöka igen. Kan bevakningarna på aktiedetaljen inte läsas in visas det i avsnittet Bevakningar. Om vyn redan visar data och en uppdatering misslyckas ligger de senast kända värdena kvar, och ett kort meddelande visas längst ned.
 
 **Varför stängs inte dialogen när jag trycker Skapa eller Uppdatera?**
 - Om ett värde saknas eller är ogiltigt, om en likadan bevakning redan finns, eller om bevakningen inte kunde sparas, ligger dialogen kvar och felet visas direkt under fältet. Det du har skrivit finns kvar, så att du kan rätta och försöka igen. Tal kan skrivas med komma eller punkt, och med eller utan mellanslag mellan tusental (t.ex. `1 234,50`).

@@ -9,6 +9,8 @@
 
     <string name="stocks_empty_title">Ingen översikt ännu</string>
     <string name="stocks_empty_subtitle">Gå till fliken Bevakningar och tryck + för att lägga till din första bevakning</string>
+    <string name="stocks_only_pairs_title">Bara aktiepar än så länge</string>
+    <string name="stocks_only_pairs_subtitle">Dina aktiepar finns i fliken Par. Lägg till en bevakning på en aktie i fliken Bevakningar för att fylla översikten.</string>
     <string name="overview_mode_cases">Bevakningar</string>
     <string name="overview_mode_stocks">Aktier</string>
     <string name="pairs_empty_title">Inga aktiepar ännu</string>
@@ -24,6 +26,8 @@
     <string name="alerts_refresh_failed">Kunde inte uppdatera – visar senast kända värden</string>
     <string name="stock_detail_load_failed">Kunde inte hämta kursdata. Kontrollera anslutningen och försök igen.</string>
     <string name="retry">Försök igen</string>
+    <string name="stock_detail_no_alerts">Inga bevakningar för denna aktie/krypto</string>
+    <string name="stock_detail_alerts_load_failed">%1$s. Dra nedåt för att försöka igen.</string>
     <string name="watch_items_load_failed_title">Kunde inte visa bevakningar</string>
 
     <string name="tab_stocks">Översikt</string>

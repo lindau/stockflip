@@ -119,6 +119,16 @@
                 android:textAppearance="?attr/textAppearanceBodySmall"
                 android:textColor="?attr/colorOnSurfaceVariant" />
 
+            <!-- Visas bara när första laddningen misslyckats. -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/emptyStateRetryButton"
+                style="@style/Widget.Material3.Button.TonalButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:text="@string/retry"
+                android:visibility="gone" />
+
         </LinearLayout>
 
         <!-- Tunn, icke-blockerande linje som indikerar bakgrundsuppdatering (ersätter den runda spinnern). -->

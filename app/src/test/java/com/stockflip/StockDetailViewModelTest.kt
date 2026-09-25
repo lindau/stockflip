@@ -305,6 +305,63 @@ class StockDetailViewModelTest {
     )
 
     @Test
+    fun `chart fetch failure after retry is an Error, not an empty Success`() = runTest {
+        // Inga grafdata → getIntradayChart returnerar null (misslyckad hämtning) två gånger.
+        val viewModel = createViewModel(FakeMarketDataService(pricesBySymbol = mapOf("VOLV-B.ST" to 300.0)))
+        runCurrent()
+        advanceTimeBy(2_100L)
+        runCurrent()
+
+        assertEquals(UiState.Error(CHART_LOAD_FAILED_MESSAGE), viewModel.chartState.value)
+    }
+
+    @Test
+    fun `tapping the selected period after a chart error retries the load`() = runTest {
+        val chartByPeriod = mutableMapOf<ChartPeriod, IntradayChartData?>()
+        val viewModel = createViewModel(
+            FakeMarketDataService(pricesBySymbol = mapOf("VOLV-B.ST" to 300.0), chartDataByPeriod = chartByPeriod)
+        )
+        runCurrent()
+        advanceTimeBy(2_100L)
+        runCurrent()
+        assertTrue(viewModel.chartState.value is UiState.Error)
+
+        val dayData = IntradayChartData(listOf(1L, 2L), listOf(300.0, 301.0), previousClose = 299.0)
+        chartByPeriod[ChartPeriod.DAY] = dayData
+        viewModel.selectPeriod(viewModel.selectedPeriod.value)
+        runCurrent()
+
+        assertEquals(UiState.Success(dayData), viewModel.chartState.value)
+    }
+
+    @Test
+    fun `tapping the selected period while the chart is fine does not reload`() = runTest {
+        val dayData = IntradayChartData(listOf(1L, 2L), listOf(300.0, 301.0), previousClose = 299.0)
+        val viewModel = createViewModel(
+            FakeMarketDataService(pricesBySymbol = mapOf("VOLV-B.ST" to 300.0), chartDataByPeriod = mapOf(ChartPeriod.DAY to dayData))
+        )
+        runCurrent()
+
+        viewModel.selectPeriod(viewModel.selectedPeriod.value)
+
+        assertEquals(UiState.Success(dayData), viewModel.chartState.value)
+    }
+
+    @Test
+    fun `manual alerts refresh emits Error when the database read fails`() = runTest {
+        val dao = object : WatchItemDao by InMemoryWatchItemDao(emptyList()) {
+            override suspend fun getAllWatchItems(): List<WatchItem> = throw IllegalStateException("db closed")
+        }
+        val viewModel = detailViewModel(dao)
+        runCurrent()
+
+        viewModel.loadAlerts()
+        runCurrent()
+
+        assertEquals(UiState.Error("Kunde inte läsa in bevakningarna"), viewModel.alertsState.value)
+    }
+
+    @Test
     fun `first load without snapshot emits Error`() = runTest {
         val viewModel = createViewModel(FakeMarketDataService())
         runCurrent()
