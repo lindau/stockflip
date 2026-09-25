@@ -41,3 +41,6 @@
 - `Översikt` hänvisar till fliken `Par` när du bara har aktiepar, i stället för att säga att du saknar bevakningar
 - Grafen på aktiedetaljen visar ett tydligt fel när den inte kan hämtas; tryck på den valda perioden för att försöka igen
 - Bevakningsavsnittet på aktiedetaljen visar ett felmeddelande om bevakningarna inte kan läsas in, i stället för att stå tomt
+- Svep åt vänster i `Bevakningar` pausar en aktiv bevakning (paus-ikon) och aktiverar en pausad (play-ikon) — det ser inte längre ut som en radering. Utlösta bevakningar aktiveras som förut med `Återaktivera`
+- Periodväljaren i grafen har större tryckytor och läses upp tydligt med skärmläsare (t.ex. "1 dag", vald period markeras)
+- `+`-knappen beskrivs rätt per flik för skärmläsare och visar sin funktion vid långtryck
