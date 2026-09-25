@@ -4,11 +4,15 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.stockflip.repository.TriggerHistoryRepository
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlin.math.abs
@@ -37,6 +41,11 @@ class PairDetailViewModel(
 
     private val _pairState = MutableStateFlow<UiState<PairDetailData>>(UiState.Loading)
     val pairState: StateFlow<UiState<PairDetailData>> = _pairState.asStateFlow()
+    private var pairJob: Job? = null
+
+    // Engångshändelse: en uppdatering misslyckades men senast kända data visas fortfarande.
+    private val _refreshFailed = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+    val refreshFailed: SharedFlow<Unit> = _refreshFailed.asSharedFlow()
 
     private val _chartState = MutableStateFlow<UiState<PairChartData>>(UiState.Loading)
     val chartState: StateFlow<UiState<PairChartData>> = _chartState.asStateFlow()
@@ -84,10 +93,20 @@ class PairDetailViewModel(
         )
     }
 
-    fun deletePair() {
-        viewModelScope.launch {
-            val current = (_pairState.value as? UiState.Success)?.data?.watchItem ?: return@launch
+    /**
+     * Tar bort aktieparet. Returnerar true först när borttagningen faktiskt har genomförts,
+     * så att anroparen inte visar ett lyckat-meddelande för en misslyckad åtgärd.
+     */
+    suspend fun deletePair(): Boolean {
+        val current = (_pairState.value as? UiState.Success)?.data?.watchItem ?: return false
+        return try {
             watchItemDao.deleteWatchItem(current)
+            true
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Log.e(TAG, "Error deleting pair: ${e.message}", e)
+            false
         }
     }
 
@@ -122,16 +141,26 @@ class PairDetailViewModel(
     }
 
     private fun loadPair() {
-        viewModelScope.launch {
+        // Avbryt föregående laddning så att ett äldre svar inte skriver över ett nyare.
+        pairJob?.cancel()
+        pairJob = viewModelScope.launch {
             try {
-                _pairState.value = UiState.Loading
+                // Blinka inte laddningsindikatorn om vi redan visar data.
+                if (_pairState.value !is UiState.Success) {
+                    _pairState.value = UiState.Loading
+                }
                 val item = watchItemDao.getWatchItemById(watchItemId)
                 if (item == null || item.watchType !is WatchType.PricePair) {
-                    _pairState.value = UiState.Error("Ogiltigt aktiepar")
+                    _pairState.value = UiState.Error("Aktieparet finns inte längre.")
                     return@launch
                 }
-                val symbolA = item.ticker1 ?: return@launch
-                val symbolB = item.ticker2 ?: return@launch
+                val symbolA = item.ticker1
+                val symbolB = item.ticker2
+                if (symbolA.isNullOrBlank() || symbolB.isNullOrBlank()) {
+                    Log.w(TAG, "Missing pair symbols for watch item $watchItemId")
+                    _pairState.value = UiState.Error("Aktieparet saknar en av aktierna.")
+                    return@launch
+                }
 
                 // Hämta båda aktiernas data parallellt i stället för sex sekventiella anrop.
                 val (stockA, stockB, spread) = coroutineScope {
@@ -163,6 +192,13 @@ class PairDetailViewModel(
                     Triple(a, b, spreadValue)
                 }
 
+                // Utan något pris finns inget meningsfullt att visa — behandla som misslyckad hämtning.
+                if (stockA.lastPrice == null && stockB.lastPrice == null) {
+                    Log.w(TAG, "No prices available for pair $watchItemId")
+                    onPairLoadFailed()
+                    return@launch
+                }
+
                 _pairState.value = UiState.Success(
                     PairDetailData(
                         watchItem = item,
@@ -171,10 +207,23 @@ class PairDetailViewModel(
                         spread = spread
                     )
                 )
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 Log.e(TAG, "Error loading pair: ${e.message}", e)
-                _pairState.value = UiState.Error("Kunde inte ladda aktiepar")
+                onPairLoadFailed()
             }
+        }
+    }
+
+    /**
+     * Finns redan data behålls den och en engångshändelse signaleras; annars visas feltillstånd.
+     */
+    private fun onPairLoadFailed() {
+        if (_pairState.value is UiState.Success) {
+            _refreshFailed.tryEmit(Unit)
+        } else {
+            _pairState.value = UiState.Error(LOAD_FAILED_MESSAGE)
         }
     }
 
@@ -398,5 +447,6 @@ class PairDetailViewModel(
 
     companion object {
         private const val TAG = "PairDetailViewModel"
+        const val LOAD_FAILED_MESSAGE = "Kunde inte hämta kursdata. Kontrollera anslutningen och försök igen."
     }
 }

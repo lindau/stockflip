@@ -16,6 +16,8 @@ import com.stockflip.databinding.FragmentPairDetailBinding
 import com.stockflip.repository.TriggerHistoryRepository
 import com.stockflip.ui.components.cards.ClarityPairDetailPanel
 import com.stockflip.ui.theme.StockFlipTheme
+import com.google.android.material.snackbar.Snackbar
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 
@@ -78,28 +80,40 @@ class PairDetailFragment : Fragment() {
         binding.triggerReactivateButton.setOnClickListener {
             viewLifecycleOwner.lifecycleScope.launch {
                 try {
+                    // null betyder att aktieparet inte var inläst — då har inget återaktiverats.
                     val result = viewModel.reactivateAndReturnResult()
+                    if (result == null) {
+                        Toast.makeText(requireContext(), R.string.pair_reactivate_failed, Toast.LENGTH_LONG).show()
+                        return@launch
+                    }
                     triggerBannerDismissed = true
                     binding.triggerBannerCard.isVisible = false
                     syncOverviewInBackground()
-                    Toast.makeText(
-                        requireContext(),
-                        result?.toUserMessage() ?: "Bevakning återaktiverad",
-                        Toast.LENGTH_LONG
-                    ).show()
+                    Toast.makeText(requireContext(), result.toUserMessage(), Toast.LENGTH_LONG).show()
+                } catch (e: CancellationException) {
+                    throw e
                 } catch (e: Exception) {
-                    Toast.makeText(requireContext(), e.message ?: "Kunde inte återaktivera bevakning", Toast.LENGTH_LONG).show()
+                    Toast.makeText(requireContext(), R.string.pair_reactivate_failed, Toast.LENGTH_LONG).show()
                 }
             }
         }
         binding.triggerDeleteButton.setOnClickListener {
-            viewModel.deletePair()
-            triggerBannerDismissed = true
-            binding.triggerBannerCard.isVisible = false
-            syncOverviewInBackground()
-            Toast.makeText(requireContext(), "Bevakning borttagen", Toast.LENGTH_SHORT).show()
-            @Suppress("DEPRECATION")
-            requireActivity().onBackPressed()
+            viewLifecycleOwner.lifecycleScope.launch {
+                // Bekräfta och lämna vyn först när borttagningen faktiskt lyckats.
+                if (!viewModel.deletePair()) {
+                    Toast.makeText(requireContext(), R.string.pair_delete_failed, Toast.LENGTH_LONG).show()
+                    return@launch
+                }
+                triggerBannerDismissed = true
+                binding.triggerBannerCard.isVisible = false
+                syncOverviewInBackground()
+                Toast.makeText(requireContext(), R.string.pair_deleted, Toast.LENGTH_SHORT).show()
+                @Suppress("DEPRECATION")
+                requireActivity().onBackPressed()
+            }
+        }
+        binding.pairRetryButton.setOnClickListener {
+            viewModel.refresh()
         }
 
         observeState()
@@ -123,10 +137,13 @@ class PairDetailFragment : Fragment() {
             viewModel.pairState.collect { state ->
                 when (state) {
                     is UiState.Loading -> {
+                        binding.pairErrorContainer.isVisible = false
                         binding.loadingIndicator.isVisible = true
                     }
                     is UiState.Success -> {
+                        binding.pairErrorContainer.isVisible = false
                         binding.loadingIndicator.isVisible = false
+                        binding.pairClarityPanel.isVisible = true
                         latestPairData = state.data
                         try {
                             renderClarityPairPanel()
@@ -137,11 +154,24 @@ class PairDetailFragment : Fragment() {
                         }
                     }
                     is UiState.Error -> {
+                        // ViewModel emitterar Error bara när ingen data kan visas
+                        // (misslyckad första laddning eller ogiltigt/borttaget aktiepar).
                         binding.loadingIndicator.isVisible = false
-                        Toast.makeText(requireContext(), state.message, Toast.LENGTH_LONG).show()
+                        binding.pairClarityPanel.isVisible = false
+                        binding.triggerBannerCard.isVisible = false
+                        binding.pairErrorText.text = state.message
+                        binding.pairErrorContainer.isVisible = true
                     }
                 }
             }
+            }
+        }
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.refreshFailed.collect {
+                    Snackbar.make(binding.root, R.string.alerts_refresh_failed, Snackbar.LENGTH_LONG).show()
+                }
             }
         }
 

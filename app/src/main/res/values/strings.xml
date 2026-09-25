@@ -48,7 +48,10 @@
     <string name="add_stock_search_hint">Sök aktie eller krypto…</string>
     <string name="add_stock_empty">Skriv minst två tecken för att söka efter aktier eller krypto.</string>
     <string name="add_stock_no_results">Det finns inga träffar för din sökning.</string>
-    <string name="add_stock_error">Det finns inga träffar för din sökning.</string>
+    <string name="add_stock_error">Sökningen misslyckades. Kontrollera anslutningen och försök igen.</string>
+    <string name="pair_deleted">Bevakning borttagen</string>
+    <string name="pair_delete_failed">Kunde inte ta bort aktieparet</string>
+    <string name="pair_reactivate_failed">Kunde inte återaktivera bevakningen</string>
 
     <!-- Redigera bevakning - prisintervall -->
     <string name="dialog_edit_price_range_title">Redigera prisintervall-bevakning</string>
