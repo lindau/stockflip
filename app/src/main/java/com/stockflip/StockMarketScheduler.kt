@@ -35,6 +35,7 @@ object StockMarketScheduler {
         val upperSymbol = symbol?.uppercase() ?: return null
         return when {
             StockSearchResult.isCryptoSymbol(upperSymbol) -> "CRYPTO"
+            StockSearchResult.isIndexSymbol(upperSymbol) -> StockSearchResult.indexExchange(upperSymbol)
             upperSymbol.endsWith(".ST") || upperSymbol.endsWith(".STO") -> "STO"
             upperSymbol.endsWith(".OL") || upperSymbol.endsWith(".OSE") -> "OSE"
             upperSymbol.endsWith(".L") -> "LSE"
@@ -52,7 +53,9 @@ object StockMarketScheduler {
         instant: Instant = Instant.now()
     ): Boolean {
         if (symbol != null && StockSearchResult.isCryptoSymbol(symbol)) return true
-        return isMarketOpenForExchange(exchange ?: inferExchangeFromSymbol(symbol, currency), instant)
+        // Kända index mappas på symbol: Yahoo anger t.ex. ^OMXS30 med börskod NIM (Nasdaq)
+        val indexExchange = symbol?.let(StockSearchResult::indexExchange)
+        return isMarketOpenForExchange(indexExchange ?: exchange ?: inferExchangeFromSymbol(symbol, currency), instant)
     }
 
     fun isMarketOpenForExchange(exchange: String?, instant: Instant = Instant.now()): Boolean {
@@ -82,7 +85,7 @@ object StockMarketScheduler {
     ): Boolean {
         if (symbolsToExchange.isEmpty()) return true
         return symbolsToExchange.any { (symbol, exchange) ->
-            val resolvedExchange = exchange ?: inferExchangeFromSymbol(symbol)
+            val resolvedExchange = StockSearchResult.indexExchange(symbol) ?: exchange ?: inferExchangeFromSymbol(symbol)
             when {
                 StockSearchResult.isCryptoSymbol(symbol) -> true
                 resolvedExchange == null -> true // fail-open på okänd börs
@@ -121,16 +124,21 @@ object StockMarketScheduler {
             exchangeUpper == "NYQ" ||
             exchangeUpper == "NYM" ||
             exchangeUpper == "AMEX" ||
+            // Yahoos börskoder för amerikanska index (^GSPC, ^DJI, ^VIX). NIM utelämnas: används även för ^OMXS30.
+            exchangeUpper == "SNP" ||
+            exchangeUpper == "DJI" ||
+            exchangeUpper == "WCB" ||
+            exchangeUpper == "CXI" ||
             exchangeUpper.contains("AMERICAN", ignoreCase = true) -> {
                 // USA börser: 09:30 - 16:00 ET
                 isOpenInZone(instant, ZoneId.of("America/New_York"), LocalTime.of(9, 30), LocalTime.of(16, 0), graceMinutes)
             }
             // Storbritannien (LSE)
-            exchangeUpper == "LSE" || exchangeUpper.contains("LONDON", ignoreCase = true) -> {
+            exchangeUpper == "LSE" || exchangeUpper == "FGI" || exchangeUpper.contains("LONDON", ignoreCase = true) -> {
                 isOpenInZone(instant, ZoneId.of("Europe/London"), LocalTime.of(8, 0), LocalTime.of(16, 30), graceMinutes)
             }
             // Tyskland (XETR, XFRA)
-            exchangeUpper == "XETR" || exchangeUpper == "XFRA" || exchangeUpper.contains("XETRA", ignoreCase = true) -> {
+            exchangeUpper == "XETR" || exchangeUpper == "XFRA" || exchangeUpper == "GER" || exchangeUpper.contains("XETRA", ignoreCase = true) -> {
                 isOpenInZone(instant, ZoneId.of("Europe/Berlin"), LocalTime.of(9, 0), LocalTime.of(17, 30), graceMinutes)
             }
             // Japan (TSE)

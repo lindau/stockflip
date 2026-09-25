@@ -83,6 +83,16 @@ object CountryFlagHelper {
         }
 
         return when {
+            // Index (t.ex. "^OMXS30", "^GSPC")
+            StockSearchResult.isIndexSymbol(mainSymbol) -> when (StockSearchResult.indexExchange(mainSymbol)) {
+                "STO" -> "SE"
+                "NASDAQ" -> "US"
+                "LSE" -> "GB"
+                "XETR" -> "DE"
+                "TSE" -> "JP"
+                "OSE" -> "NO"
+                else -> null
+            }
             // Sverige
             mainSymbol.endsWith(".ST") || mainSymbol.endsWith(".STO") -> "SE"
             // Norge

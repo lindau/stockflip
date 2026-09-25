@@ -65,7 +65,8 @@ class StockRepository(
             val sortedResults = results.sortedWith(
                 compareByDescending<StockSearchResult> {
                     when {
-                        it.symbol == upperQuery -> 3                                              // Exakt match, t.ex. AAPL → AAPL
+                        it.symbol == upperQuery ||
+                        it.symbol == "^$upperQuery" -> 3                                          // Exakt match, t.ex. AAPL → AAPL, OMXS30 → ^OMXS30
                         it.symbol == "$upperQuery.ST" ||
                         it.symbol.removeSuffix(".ST") == upperQuery ||
                         it.symbol.removeSuffix(".ST").replace("-", "") == upperQuery -> 2          // Svensk variant, t.ex. ERIC-B.ST

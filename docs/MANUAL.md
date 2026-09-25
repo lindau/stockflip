@@ -68,6 +68,8 @@ Kurslarm skickar bara notiser medan aktiens marknad är öppen, samt upp till 30
 | Oslo (OSE) | 09:00–16:25 |
 | Krypto | Alltid öppet |
 
+Index följer sin hemmabörs öppettider, t.ex. `^OMXS30` Stockholm och `^GSPC` (S&P 500) USA.
+
 ---
 
 ## Navigering i appen
@@ -82,7 +84,7 @@ I nuvarande appversion fungerar flikarna så här:
 
 - **Översikt:** visar sektioner som `Nytt och triggade`, `Nära att triggas`, `Aktiva case` och `Inaktiva`. Härifrån läser du läget, men nya aktier läggs inte till här.
 - **Par:** tryck på `+` för att skapa ett aktiepar.
-- **Mina case:** tryck på `+` för att lägga till en ny aktie eller kryptovaluta. Öppna sedan aktiens detaljsida och välj vilken typ av bevakning du vill skapa.
+- **Mina case:** tryck på `+` för att lägga till en ny aktie, ett index eller en kryptovaluta. Öppna sedan aktiens detaljsida och välj vilken typ av bevakning du vill skapa.
 
 ---
 
@@ -450,6 +452,9 @@ StockFlip distribueras inte via Play Store, så appen håller själv koll på om
 
 **Vilka aktier kan jag bevaka?**
 - Alla aktier som finns på Yahoo Finance: svenska (OMX), amerikanska (NASDAQ/NYSE), krypto och mer. Svenska aktier söks med tickersuffix `.ST` (t.ex. `VOLV-B.ST`).
+
+**Kan jag bevaka index?**
+- Ja. Sök på t.ex. "OMX", "S&P" eller "Nasdaq". Index har `^` framför symbolen (`^OMXS30`, `^GSPC`, `^IXIC`). Målpris, dagsrörelse, drawdown, aktiepar och kombinerade larm fungerar som för aktier. Nyckeltal och insideraffärer finns inte för index, så de knapparna visas inte.
 
 **Varifrån kommer bolagsloggorna?**
 - Bolagsloggor tillhandahålls av [Logo.dev](https://www.logo.dev), kryptologotyper av [CoinCap](https://coincap.io).

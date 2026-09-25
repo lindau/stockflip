@@ -516,16 +516,75 @@ object YahooFinanceService : MarketDataService {
     }
 
     @JvmStatic
+    suspend fun searchIndices(query: String): List<StockSearchResult> = withContext(Dispatchers.IO) {
+        try {
+            if (query.length < 2) return@withContext emptyList()
+
+            val encodedQuery = URLEncoder.encode(query, "UTF-8")
+            val url = "$SEARCH_URL?q=$encodedQuery" +
+                "&quotesCount=20" +
+                "&lang=en" +
+                "&region=SE" +
+                "&enableFuzzyQuery=false" +
+                "&type=index" +
+                "&newsCount=0" +
+                "&enableEnhancedTrivialQuery=false" +
+                "&fields=symbol,shortname,exchange,quoteType,longname,typeDisp,market"
+
+            val request = okhttp3.Request.Builder()
+                .url(url)
+                .addHeader("User-Agent", "Mozilla/5.0")
+                .build()
+
+            val response = client.newCall(request).execute()
+            if (!response.isSuccessful) {
+                Log.e(TAG, "API Error: ${response.code} - ${response.message}")
+                return@withContext emptyList()
+            }
+            val responseBody = response.body?.string() ?: return@withContext emptyList()
+            parseIndexSearchResults(responseBody)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error searching indices: ${e.message}", e)
+            emptyList()
+        }
+    }
+
+    internal fun parseIndexSearchResults(responseBody: String): List<StockSearchResult> {
+        val quotes = JSONObject(responseBody).optJSONArray("quotes") ?: return emptyList()
+        val results = mutableListOf<StockSearchResult>()
+        for (i in 0 until quotes.length()) {
+            val quote = quotes.getJSONObject(i)
+            if (!quote.has("symbol")) continue
+            val symbol = quote.getString("symbol")
+            val quoteType = quote.optString("quoteType", "")
+            if (quoteType != "INDEX" || !StockSearchResult.isIndexSymbol(symbol)) continue
+            val name = quote.optString("shortname").ifEmpty { quote.optString("longname").ifEmpty { symbol } }
+            results.add(
+                StockSearchResult(
+                    symbol = symbol,
+                    name = name,
+                    isSwedish = symbol.uppercase().startsWith("^OMX"),
+                    isIndex = true
+                )
+            )
+        }
+        Log.d(TAG, "Found ${results.size} index search results")
+        return results
+    }
+
+    @JvmStatic
     suspend fun searchStocks(query: String, includeCrypto: Boolean = true): List<StockSearchResult> = withContext(Dispatchers.IO) {
         try {
             if (query.length < 2) return@withContext emptyList()
 
-            // Sök aktier och krypto parallellt i stället för sekventiellt.
+            // Sök aktier, index och krypto parallellt i stället för sekventiellt.
             val allResults = coroutineScope {
                 val equityDeferred = async { searchEquities(query) }
+                val indexDeferred = async { searchIndices(query) }
                 val cryptoDeferred = if (includeCrypto) async { searchCrypto(query) } else null
                 val results = mutableListOf<StockSearchResult>()
                 results.addAll(equityDeferred.await())
+                results.addAll(indexDeferred.await())
                 cryptoDeferred?.let { results.addAll(it.await()) }
                 results
             }

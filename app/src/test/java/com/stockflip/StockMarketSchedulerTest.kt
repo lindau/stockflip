@@ -78,4 +78,37 @@ class StockMarketSchedulerTest {
     fun `isAnyRelevantMarketOpen allows when there are no symbols`() {
         assertTrue(StockMarketScheduler.isAnyRelevantMarketOpen(emptyMap(), stoNight2330))
     }
+
+    @Test
+    fun `index symbols follow their home exchange hours`() {
+        // 20:00 CEST: Stockholm stängd, USA öppen
+        assertFalse(StockMarketScheduler.isMarketOpenForSymbol("^OMXS30", instant = usOpen2000Cest))
+        assertTrue(StockMarketScheduler.isMarketOpenForSymbol("^GSPC", instant = usOpen2000Cest))
+        assertTrue(StockMarketScheduler.isMarketOpenForSymbol("^OMXS30", instant = stoWeekday1100))
+        assertFalse(StockMarketScheduler.isMarketOpenForSymbol("^OMXS30", instant = stoSaturday1100))
+    }
+
+    @Test
+    fun `known index symbol overrides Yahoo exchange code`() {
+        // Yahoo rapporterar ^OMXS30 med exchangeName NIM
+        assertFalse(StockMarketScheduler.isMarketOpenForSymbol("^OMXS30", "NIM", instant = usOpen2000Cest))
+        assertFalse(StockMarketScheduler.isAnyRelevantMarketOpen(mapOf("^OMXS30" to "NIM"), stoNight2330))
+    }
+
+    @Test
+    fun `Yahoo index exchange codes map to US hours`() {
+        listOf("SNP", "DJI", "WCB", "CXI").forEach { code ->
+            assertTrue(code, StockMarketScheduler.isMarketOpenForExchange(code, usOpen2000Cest))
+            assertFalse(code, StockMarketScheduler.isMarketOpenForExchange(code, stoWeekday1100))
+        }
+    }
+
+    @Test
+    fun `isIndexSymbol recognises caret prefix only`() {
+        assertTrue(StockSearchResult.isIndexSymbol("^OMX"))
+        assertFalse(StockSearchResult.isIndexSymbol("VOLV-B.ST"))
+        assertTrue(StockSearchResult.isNonEquitySymbol("^GSPC"))
+        assertTrue(StockSearchResult.isNonEquitySymbol("BTC-USD"))
+        assertFalse(StockSearchResult.isNonEquitySymbol("AAPL"))
+    }
 }

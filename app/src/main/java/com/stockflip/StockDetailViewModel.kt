@@ -140,14 +140,14 @@ class StockDetailViewModel(
                     }
                 }
 
-                if (!StockSearchResult.isCryptoSymbol(symbol)) {
+                if (!StockSearchResult.isNonEquitySymbol(symbol)) {
                     launch { loadMetricHistory() }
                 } else {
                     _metricHistoryState.value = emptyMap()
                 }
 
                 // Hämta nyckeltal asynkront och uppdatera state när de anländer
-                if (!StockSearchResult.isCryptoSymbol(symbol)) {
+                if (!StockSearchResult.isNonEquitySymbol(symbol)) {
                     launch {
                         try {
                             val metrics = yahooFinanceService.getAllKeyMetrics(symbol)
@@ -169,7 +169,7 @@ class StockDetailViewModel(
                 }
 
                 // Hämta nästa rapportdatum asynkront
-                if (!StockSearchResult.isCryptoSymbol(symbol)) {
+                if (!StockSearchResult.isNonEquitySymbol(symbol)) {
                     launch {
                         try {
                             val earnings = yahooFinanceService.getNextEarningsReport(symbol)

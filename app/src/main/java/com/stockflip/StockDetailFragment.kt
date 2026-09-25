@@ -493,10 +493,10 @@ class StockDetailFragment : Fragment() {
     }
 
     private fun displayStockData(data: StockDetailData) {
-        // Dölj nyckeltal-knappen om det är en kryptovaluta
-        val isCrypto = StockSearchResult.isCryptoSymbol(data.symbol)
+        // Dölj nyckeltal-knappen för krypto och index (saknar bolagsdata)
+        val isNonEquity = StockSearchResult.isNonEquitySymbol(data.symbol)
 
-        binding.createKeyMetricsButton.visibility = if (isCrypto) android.view.View.GONE else android.view.View.VISIBLE
+        binding.createKeyMetricsButton.visibility = if (isNonEquity) android.view.View.GONE else android.view.View.VISIBLE
         binding.createInsiderBuyButton.visibility = if (canUseSecInsiderData(data)) {
             android.view.View.VISIBLE
         } else {
@@ -1251,7 +1251,7 @@ class StockDetailFragment : Fragment() {
     }
 
     private fun canUseSecInsiderData(data: StockDetailData): Boolean {
-        return !StockSearchResult.isCryptoSymbol(data.symbol) &&
+        return !StockSearchResult.isNonEquitySymbol(data.symbol) &&
             (
                 (data.currency.equals("USD", ignoreCase = true) && !data.symbol.contains(".")) ||
                     data.symbol.endsWith(".ST", ignoreCase = true) ||

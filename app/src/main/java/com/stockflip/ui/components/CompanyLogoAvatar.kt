@@ -54,7 +54,8 @@ fun CompanyLogoAvatar(
         CountryFlagHelper.getCountryCodeFromSymbol(it)?.let(CountryFlagHelper::getFlagEmoji)
     }
     var loadFailed by remember(symbol) { mutableStateOf(false) }
-    val showCompanyLogo = !isCrypto && !isPair && symbol != null && !loadFailed
+    val isIndex = symbol != null && StockSearchResult.isIndexSymbol(symbol)
+    val showCompanyLogo = !isCrypto && !isIndex && !isPair && symbol != null && !loadFailed
     val showCryptoLogo = isCrypto && !isPair && cryptoIconUrl != null && !loadFailed
 
     Box(
