@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
@@ -46,6 +47,7 @@ import com.stockflip.hasPendingNextTradingDayGuard
 import com.stockflip.isTriggeredForDisplay
 import com.stockflip.pairSpreadDirectionLabel
 import com.stockflip.triggerConditionText
+import com.stockflip.ui.components.CompanyLogoAvatar
 import com.stockflip.ui.components.StatusStripe
 import com.stockflip.ui.theme.GroupPosition
 import com.stockflip.ui.theme.JetBrainsMono
@@ -275,10 +277,19 @@ private fun PairClarityListContent(
 
     Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.Top,
     ) {
-        Column(modifier = Modifier.weight(1f)) {
+        PairLogoStack(
+            ticker1 = item.ticker1,
+            ticker2 = item.ticker2,
+            modifier = Modifier.align(Alignment.CenterVertically),
+        )
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .align(Alignment.CenterVertically),
+        ) {
             Text(
                 text = pairName,
                 style = MaterialTheme.typography.titleMedium.copy(
@@ -365,6 +376,23 @@ private fun PairClarityListContent(
                 modifier = Modifier.weight(1f),
             )
         }
+    }
+}
+
+/** Två överlappande bolagsloggor som visar parets båda aktier som en enhet. */
+@Composable
+private fun PairLogoStack(
+    ticker1: String?,
+    ticker2: String?,
+    modifier: Modifier = Modifier,
+) {
+    Box(modifier = modifier.size(width = 54.dp, height = 44.dp)) {
+        CompanyLogoAvatar(symbol = ticker1, size = 34.dp)
+        CompanyLogoAvatar(
+            symbol = ticker2,
+            size = 34.dp,
+            modifier = Modifier.align(Alignment.BottomEnd),
+        )
     }
 }
 
@@ -479,8 +507,9 @@ private fun StockPriceRow(
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween,
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
+        CompanyLogoAvatar(symbol = ticker, size = 28.dp)
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = companyName ?: ticker ?: "—",
