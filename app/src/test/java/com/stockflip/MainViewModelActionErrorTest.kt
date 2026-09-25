@@ -94,7 +94,7 @@ class MainViewModelActionErrorTest {
         val collector = collectActionErrors(viewModel, errors)
 
         dao.failWrites = true
-        viewModel.deleteWatchItem(existingItem)
+        assertFalse("Misslyckad borttagning ska returnera false", viewModel.deleteWatchItem(existingItem))
 
         assertListUnchanged(viewModel)
         assertEquals(listOf("Kunde inte ta bort bevakningen"), errors)
@@ -110,10 +110,11 @@ class MainViewModelActionErrorTest {
         val collector = collectActionErrors(viewModel, errors)
 
         dao.failWrites = true
-        viewModel.addWatchItem(existingItem.copy(id = 2))
-        viewModel.toggleWatchItemActive(existingItem, false)
-        viewModel.updateWatchItem(existingItem)
-        viewModel.deleteStockBySymbol("VOLV-B.ST")
+        // false gör att anroparna inte visar ett lyckat-meddelande ovanpå felmeddelandet.
+        assertFalse(viewModel.addWatchItem(existingItem.copy(id = 2)))
+        assertFalse(viewModel.toggleWatchItemActive(existingItem, false))
+        assertFalse(viewModel.updateWatchItem(existingItem))
+        assertFalse(viewModel.deleteStockBySymbol("VOLV-B.ST"))
 
         assertListUnchanged(viewModel)
         assertEquals(
@@ -157,7 +158,7 @@ class MainViewModelActionErrorTest {
         val errors = mutableListOf<String>()
         val collector = collectActionErrors(viewModel, errors)
 
-        viewModel.deleteWatchItem(existingItem)
+        assertTrue("Lyckad borttagning ska returnera true", viewModel.deleteWatchItem(existingItem))
 
         val state = viewModel.watchItemUiState.value
         assertTrue(state is UiState.Success)

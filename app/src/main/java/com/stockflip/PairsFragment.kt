@@ -99,8 +99,9 @@ class PairsFragment : Fragment() {
             onDeleteClick = { watchItem ->
                 viewLifecycleOwner.lifecycleScope.launch {
                     try {
-                        viewModel.deleteWatchItem(watchItem)
-                        Toast.makeText(requireContext(), R.string.alert_deleted, Toast.LENGTH_SHORT).show()
+                        if (viewModel.deleteWatchItem(watchItem)) {
+                            Toast.makeText(requireContext(), R.string.alert_deleted, Toast.LENGTH_SHORT).show()
+                        }
                     } catch (e: Exception) {
                         Toast.makeText(requireContext(), e.message ?: "Kunde inte ta bort aktiepar", Toast.LENGTH_LONG).show()
                     }

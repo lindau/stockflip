@@ -237,7 +237,8 @@ class AlertsFragment : Fragment() {
                 pendingDeleteSnackbar?.dismiss()
                 viewLifecycleOwner.lifecycleScope.launch {
                     try {
-                        viewModel.toggleWatchItemActive(watchItem, false)
+                        // Vid fel visar MainActivity felet via actionError — ingen ångra-snackbar då.
+                        if (!viewModel.toggleWatchItemActive(watchItem, false)) return@launch
                         val snackbar = Snackbar.make(binding.root, R.string.alert_deactivated, Snackbar.LENGTH_LONG)
                         snackbar.setAction(R.string.alert_undo) {
                             viewLifecycleOwner.lifecycleScope.launch {
@@ -468,10 +469,11 @@ class AlertsFragment : Fragment() {
         if (items.isEmpty()) return
         viewLifecycleOwner.lifecycleScope.launch {
             try {
-                items.forEach { watchItem ->
+                // Avbryt vid första fel och behåll markeringen så att användaren kan försöka igen.
+                val allSucceeded = items.all { watchItem ->
                     viewModel.toggleWatchItemActive(watchItem, isActive)
                 }
-                exitSelectionMode()
+                if (allSucceeded) exitSelectionMode()
             } catch (e: Exception) {
                 Toast.makeText(requireContext(), e.message ?: "Kunde inte uppdatera case", Toast.LENGTH_LONG).show()
             }
@@ -487,11 +489,14 @@ class AlertsFragment : Fragment() {
             .setPositiveButton("Ta bort") { _, _ ->
                 viewLifecycleOwner.lifecycleScope.launch {
                     try {
-                        items.forEach { watchItem ->
+                        // Avbryt vid första fel och behåll markeringen så att användaren kan försöka igen.
+                        val allSucceeded = items.all { watchItem ->
                             viewModel.deleteWatchItem(watchItem)
                         }
-                        exitSelectionMode()
-                        Toast.makeText(requireContext(), "Case borttagna", Toast.LENGTH_SHORT).show()
+                        if (allSucceeded) {
+                            exitSelectionMode()
+                            Toast.makeText(requireContext(), "Case borttagna", Toast.LENGTH_SHORT).show()
+                        }
                     } catch (e: Exception) {
                         Toast.makeText(requireContext(), e.message ?: "Kunde inte ta bort case", Toast.LENGTH_LONG).show()
                     }
@@ -508,8 +513,9 @@ class AlertsFragment : Fragment() {
             .setPositiveButton(R.string.alert_delete_positive) { _, _ ->
                 viewLifecycleOwner.lifecycleScope.launch {
                     try {
-                        viewModel.deleteWatchItem(watchItem)
-                        Toast.makeText(requireContext(), R.string.alert_deleted, Toast.LENGTH_SHORT).show()
+                        if (viewModel.deleteWatchItem(watchItem)) {
+                            Toast.makeText(requireContext(), R.string.alert_deleted, Toast.LENGTH_SHORT).show()
+                        }
                     } catch (e: Exception) {
                         Toast.makeText(requireContext(), e.message ?: "Kunde inte ta bort bevakning", Toast.LENGTH_LONG).show()
                     }

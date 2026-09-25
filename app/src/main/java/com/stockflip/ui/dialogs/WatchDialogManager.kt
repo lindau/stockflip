@@ -120,6 +120,8 @@ class WatchDialogManager(
             onUpdateWatchItem = { updatedItem ->
                 viewModel.updateWatchItem(updatedItem)
                 onWatchChanged()
+                // StockDetailViewModel.updateWatchItem körs asynkront och rapporterar inte fel.
+                true
             },
             onDeleteRequested = { watchItem ->
                 showDeleteConfirmation(watchItem)

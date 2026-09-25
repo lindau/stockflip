@@ -308,47 +308,57 @@ class MainViewModel(
         }
     }
 
-    suspend fun addWatchItem(watchItem: WatchItem) {
-        try {
+    // Åtgärderna nedan returnerar true om de lyckades. Vid fel skickas ett meddelande via
+    // actionError och false returneras, så att anroparen inte visar ett lyckat-meddelande.
+    suspend fun addWatchItem(watchItem: WatchItem): Boolean {
+        return try {
             Log.d(TAG, "Adding watch item")
             watchItemDao.insertWatchItem(watchItem)
             syncWatchItemsAfterMutation()
+            true
         } catch (e: Exception) {
             Log.e(TAG, "Error adding watch item: ${e.message}")
             _actionError.tryEmit("Kunde inte lägga till bevakningen")
+            false
         }
     }
 
-    suspend fun deleteStockBySymbol(symbol: String) {
-        try {
+    suspend fun deleteStockBySymbol(symbol: String): Boolean {
+        return try {
             Log.d(TAG, "Deleting all watches for symbol")
             watchItemDao.deleteBySymbol(symbol)
             syncWatchItemsAfterMutation()
+            true
         } catch (e: Exception) {
             Log.e(TAG, "Error deleting watches for symbol: ${e.message}")
             _actionError.tryEmit("Kunde inte ta bort bevakningarna")
+            false
         }
     }
 
-    suspend fun deleteWatchItem(watchItem: WatchItem) {
-        try {
+    suspend fun deleteWatchItem(watchItem: WatchItem): Boolean {
+        return try {
             Log.d(TAG, "Deleting watch item")
             watchItemDao.deleteWatchItem(watchItem)
             syncWatchItemsAfterMutation()
+            true
         } catch (e: Exception) {
             Log.e(TAG, "Error deleting watch item: ${e.message}")
             _actionError.tryEmit("Kunde inte ta bort bevakningen")
+            false
         }
     }
 
-    suspend fun toggleWatchItemActive(watchItem: WatchItem, isActive: Boolean) {
-        try {
+    suspend fun toggleWatchItemActive(watchItem: WatchItem, isActive: Boolean): Boolean {
+        return try {
             Log.d(TAG, "Toggling watch item active state")
             watchItemDao.update(watchItem.setActive(isActive))
             syncWatchItemsAfterMutation()
+            true
         } catch (e: Exception) {
             Log.e(TAG, "Error toggling watch item active state: ${e.message}")
             _actionError.tryEmit("Kunde inte uppdatera bevakningen")
+            false
         }
     }
 
@@ -373,8 +383,8 @@ class MainViewModel(
         }
     }
 
-    suspend fun updateWatchItem(watchItem: WatchItem) {
-        try {
+    suspend fun updateWatchItem(watchItem: WatchItem): Boolean {
+        return try {
             Log.d(TAG, "Updating watch item")
             val keepLastTriggeredDate = shouldGuardAgainstImmediateRetrigger(watchItem)
             watchItemDao.update(
@@ -384,9 +394,11 @@ class MainViewModel(
                 )
             )
             syncWatchItemsAfterMutation()
+            true
         } catch (e: Exception) {
             Log.e(TAG, "Error updating watch item: ${e.message}")
             _actionError.tryEmit("Kunde inte uppdatera bevakningen")
+            false
         }
     }
 

@@ -38,7 +38,8 @@ class WatchItemEditor(
     private val allowSymbolEditing: Boolean,
     private val createStockAdapter: () -> ArrayAdapter<StockSearchResult>,
     private val setupStockSearch: (MaterialAutoCompleteTextView, ArrayAdapter<StockSearchResult>, StockSearchViewModel, Boolean) -> Unit,
-    private val onUpdateWatchItem: suspend (WatchItem) -> Unit,
+    // Returnerar true om uppdateringen lyckades; vid false har anroparen redan visat felet.
+    private val onUpdateWatchItem: suspend (WatchItem) -> Boolean,
     private val onDeleteRequested: (WatchItem) -> Unit,
     private val onBeforeDialog: (() -> Unit)? = null,
     private val onDialogDismissed: (() -> Unit)? = null,
@@ -492,8 +493,9 @@ class WatchItemEditor(
     private fun runUpdate(updatedItem: WatchItem, successMessage: String, errorMessage: String) {
         scope.launch {
             try {
-                onUpdateWatchItem(updatedItem)
-                Toast.makeText(context, successMessage, Toast.LENGTH_SHORT).show()
+                if (onUpdateWatchItem(updatedItem)) {
+                    Toast.makeText(context, successMessage, Toast.LENGTH_SHORT).show()
+                }
             } catch (e: Exception) {
                 val suffix = e.message?.takeIf { it.isNotBlank() }?.let { ": $it" }.orEmpty()
                 Toast.makeText(context, errorMessage + suffix, Toast.LENGTH_LONG).show()

@@ -154,9 +154,12 @@ class MainActivity : AppCompatActivity() {
             onUpdateWatchItem = { updatedItem ->
                 binding.progressBar.visibility = View.VISIBLE
                 try {
-                    viewModel.updateWatchItem(updatedItem)
-                    refreshVisibleDetailFragmentAfterWatchItemChange()
-                    updateLastUpdateTime()
+                    viewModel.updateWatchItem(updatedItem).also { succeeded ->
+                        if (succeeded) {
+                            refreshVisibleDetailFragmentAfterWatchItemChange()
+                            updateLastUpdateTime()
+                        }
+                    }
                 } finally {
                     binding.progressBar.visibility = View.GONE
                 }
@@ -1128,8 +1131,9 @@ class MainActivity : AppCompatActivity() {
             .setPositiveButton("Ta bort") { _, _ ->
                 lifecycleScope.launch {
                     try {
-                        viewModel.deleteStockBySymbol(symbol)
-                        Toast.makeText(this@MainActivity, "$symbol borttagen", Toast.LENGTH_SHORT).show()
+                        if (viewModel.deleteStockBySymbol(symbol)) {
+                            Toast.makeText(this@MainActivity, "$symbol borttagen", Toast.LENGTH_SHORT).show()
+                        }
                     } catch (e: Exception) {
                         Toast.makeText(this@MainActivity, "Kunde inte ta bort: ${e.message}", Toast.LENGTH_LONG).show()
                     }
@@ -1147,8 +1151,9 @@ class MainActivity : AppCompatActivity() {
             .setPositiveButton("Ta bort") { _, _ ->
                 lifecycleScope.launch {
                     try {
-                        viewModel.deleteWatchItem(watchItem)
-                        Toast.makeText(this@MainActivity, "Bevakning borttagen", Toast.LENGTH_SHORT).show()
+                        if (viewModel.deleteWatchItem(watchItem)) {
+                            Toast.makeText(this@MainActivity, "Bevakning borttagen", Toast.LENGTH_SHORT).show()
+                        }
                     } catch (e: Exception) {
                         Toast.makeText(this@MainActivity, "Kunde inte ta bort: ${e.message}", Toast.LENGTH_LONG).show()
                     }
@@ -1349,9 +1354,11 @@ class MainActivity : AppCompatActivity() {
                                 companyName2 = selectedStock2!!.name
                             )
                             
-                            viewModel.addWatchItem(watchItem)
+                            val added = viewModel.addWatchItem(watchItem)
                             binding.progressBar.visibility = View.GONE
-                            Toast.makeText(this@MainActivity, "Aktiepar tillagt: ${watchItem.armedConditionDescription()}", Toast.LENGTH_LONG).show()
+                            if (added) {
+                                Toast.makeText(this@MainActivity, "Aktiepar tillagt: ${watchItem.armedConditionDescription()}", Toast.LENGTH_LONG).show()
+                            }
                         } catch (e: Exception) {
                             binding.progressBar.visibility = View.GONE
                             Toast.makeText(this@MainActivity, "Kunde inte lägga till aktiepar: ${e.message}", Toast.LENGTH_LONG).show()
@@ -1544,8 +1551,9 @@ class MainActivity : AppCompatActivity() {
             .setPositiveButton("Ta bort") { _, _ ->
                 lifecycleScope.launch {
                     try {
-                        viewModel.deleteWatchItem(item)
-                        Toast.makeText(this@MainActivity, "Bevakning borttagen", Toast.LENGTH_SHORT).show()
+                        if (viewModel.deleteWatchItem(item)) {
+                            Toast.makeText(this@MainActivity, "Bevakning borttagen", Toast.LENGTH_SHORT).show()
+                        }
                     } catch (e: Exception) {
                         Toast.makeText(this@MainActivity, "Kunde inte ta bort bevakning: ${e.message}", Toast.LENGTH_LONG).show()
                     }
