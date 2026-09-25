@@ -32,3 +32,12 @@
 - `Ta bort` och `Återaktivera` i pair-detaljen bekräftar bara när åtgärden faktiskt lyckats
 - Misslyckad sökning visar nu ett felmeddelande i stället för "inga träffar", och gamla träffar töms
 - Inget `Bevakning borttagen`-meddelande visas längre när borttagningen i själva verket misslyckades
+- Svep bort ett aktiepar raderar det direkt, och `Ångra` lägger tillbaka det. Tidigare kunde raderingen gå förlorad (eller appen krascha) om du bytte flik direkt efter svepet
+- `Översikt`, `Par` och `Bevakningar` visar ett felmeddelande med `Försök igen` om listan inte kan laddas, och ett filterbyte döljer inte längre felet
+- Skapa- och redigeringsdialogerna stängs inte längre vid ogiltigt värde eller dubblett: felet visas under fältet och det du skrivit finns kvar. `Skapad` visas bara när bevakningen faktiskt sparats
+- Förifyllda värden och snabbval över 1 000 (t.ex. `1 234,50`) godtas nu i dialogerna
+- Felmeddelanden visas alltid på begriplig svenska, även vid misslyckad import av backup
+- Appen säger genomgående `bevakning` i stället för `case`, och den dubblerade rubriken i `Bevakningar` är borttagen
+- `Översikt` hänvisar till fliken `Par` när du bara har aktiepar, i stället för att säga att du saknar bevakningar
+- Grafen på aktiedetaljen visar ett tydligt fel när den inte kan hämtas; tryck på den valda perioden för att försöka igen
+- Bevakningsavsnittet på aktiedetaljen visar ett felmeddelande om bevakningarna inte kan läsas in, i stället för att stå tomt
