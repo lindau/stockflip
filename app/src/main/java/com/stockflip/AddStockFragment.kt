@@ -4,7 +4,6 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
@@ -113,9 +112,10 @@ class AddStockFragment : Fragment() {
 
                         is SearchState.Error -> {
                             binding.searchProgressBar.visibility = View.GONE
+                            // Töm gamla träffar så att de inte ser ut att höra till den misslyckade sökningen.
+                            adapter.submitList(emptyList())
                             binding.emptyText.visibility = View.VISIBLE
                             binding.emptyText.text = getString(R.string.add_stock_error)
-                            Toast.makeText(requireContext(), getString(R.string.add_stock_error), Toast.LENGTH_SHORT).show()
                         }
                     }
                 }
