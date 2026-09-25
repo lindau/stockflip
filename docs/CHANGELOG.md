@@ -28,4 +28,7 @@
 - Aktiedetaljen visar en felvy med `Försök igen` om den inte kan laddas, och behåller senast kända värden om en uppdatering misslyckas
 - En misslyckad åtgärd (t.ex. ta bort eller inaktivera) tömmer inte längre listan, och felmeddelandena är på svenska
 - Korten visar `Kunde inte uppdateras` med tid för senast kända värden när en kursuppdatering misslyckas
+- Pair-detaljen visar en felvy med `Försök igen` om den inte kan laddas, behåller senast kända värden om en uppdatering misslyckas och fastnar inte längre i laddningsläget
+- `Ta bort` och `Återaktivera` i pair-detaljen bekräftar bara när åtgärden faktiskt lyckats
+- Misslyckad sökning visar nu ett felmeddelande i stället för "inga träffar", och gamla träffar töms
 - Inget `Bevakning borttagen`-meddelande visas längre när borttagningen i själva verket misslyckades
