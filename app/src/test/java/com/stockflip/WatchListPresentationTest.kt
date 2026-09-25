@@ -121,4 +121,24 @@ class WatchListPresentationTest {
         assertEquals(OverviewEmptyState.LoadFailed("fel"), overviewEmptyState(emptyList(), loadError = "fel"))
         assertEquals(OverviewEmptyState.NoWatches, overviewEmptyState(emptyList(), loadError = null))
     }
+
+    @Test
+    fun `left swipe pauses active watches and never deletes`() {
+        assertEquals(AlertSwipeAction.PAUSE, alertSwipeActionFor(priceTarget.item))
+        assertFalse(AlertSwipeAction.PAUSE.activeAfterSwipe)
+    }
+
+    @Test
+    fun `left swipe activates a paused watch instead of showing a no-op paused message`() {
+        assertEquals(AlertSwipeAction.ACTIVATE, alertSwipeActionFor(paused.item))
+        assertTrue(AlertSwipeAction.ACTIVATE.activeAfterSwipe)
+    }
+
+    @Test
+    fun `triggered paused watch has no left swipe - it must be reactivated via its button`() {
+        val triggeredPaused = triggered.item.copy(isActive = false)
+        assertEquals(null, alertSwipeActionFor(triggeredPaused))
+        // Utlöst men fortfarande aktiv kan pausas som vanligt.
+        assertEquals(AlertSwipeAction.PAUSE, alertSwipeActionFor(triggered.item))
+    }
 }

@@ -12,19 +12,32 @@ import com.stockflip.R
 
 /**
  * Reusable ItemTouchHelper callback for swipe gestures.
- * Left swipe: draws a red background with a trash icon (delete).
+ * Left swipe: draws the background/icon given by [leftSwipeStyle] — red + trash for delete (default),
+ * or a neutral pause/play look when the swipe only pauses or activates, so it doesn't signal deletion.
  * Right swipe (optional): draws a blue background with a stock icon (navigate to detail).
  */
 class SwipeToDeleteCallback(
     context: Context,
     private val onSwiped: (position: Int) -> Unit,
     private val canSwipe: (position: Int) -> Boolean = { true },
-    private val onSwipedRight: ((position: Int) -> Unit)? = null
+    private val onSwipedRight: ((position: Int) -> Unit)? = null,
+    private val leftSwipeStyle: (position: Int) -> LeftSwipeStyle = { LeftSwipeStyle.DELETE },
+    private val canSwipeLeft: (position: Int) -> Boolean = { true }
 ) : ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT or ItemTouchHelper.RIGHT) {
+
+    enum class LeftSwipeStyle { DELETE, PAUSE, ACTIVATE }
 
     private val deleteBackground = ColorDrawable(
         MaterialColors.getColor(context, com.google.android.material.R.attr.colorError, Color.RED)
     )
+    private val pauseBackground = ColorDrawable(
+        MaterialColors.getColor(context, com.google.android.material.R.attr.colorSecondary, Color.DKGRAY)
+    )
+    private val activateBackground = ColorDrawable(
+        MaterialColors.getColor(context, com.google.android.material.R.attr.colorTertiary, Color.DKGRAY)
+    )
+    private val pauseIcon = ContextCompat.getDrawable(context, R.drawable.ic_pause)
+    private val activateIcon = ContextCompat.getDrawable(context, R.drawable.ic_play)
     private val navigateBackground = ColorDrawable(
         MaterialColors.getColor(context, com.google.android.material.R.attr.colorPrimary, Color.BLUE)
     )
@@ -46,8 +59,9 @@ class SwipeToDeleteCallback(
     }
 
     override fun getSwipeDirs(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder): Int {
-        if (!canSwipe(viewHolder.adapterPosition)) return 0
-        var dirs = ItemTouchHelper.LEFT
+        val position = viewHolder.adapterPosition
+        if (!canSwipe(position)) return 0
+        var dirs = if (canSwipeLeft(position)) ItemTouchHelper.LEFT else 0
         if (onSwipedRight != null) dirs = dirs or ItemTouchHelper.RIGHT
         return dirs
     }
@@ -67,16 +81,21 @@ class SwipeToDeleteCallback(
         val iconMarginV = (itemView.height - iconSizePx) / 2
 
         if (dX < 0) {
-            // Left swipe — delete (red background covering full item height, trash icon on right)
-            deleteBackground.setBounds(
+            // Left swipe — background covering full item height, icon on right
+            val (background, leftIcon) = when (leftSwipeStyle(viewHolder.adapterPosition)) {
+                LeftSwipeStyle.DELETE -> deleteBackground to deleteIcon
+                LeftSwipeStyle.PAUSE -> pauseBackground to pauseIcon
+                LeftSwipeStyle.ACTIVATE -> activateBackground to activateIcon
+            }
+            background.setBounds(
                 itemView.right + dX.toInt(),
                 itemView.top,
                 itemView.right,
                 itemView.bottom
             )
-            deleteBackground.draw(c)
+            background.draw(c)
 
-            deleteIcon?.let { icon ->
+            leftIcon?.let { icon ->
                 val iconMarginH = iconSizePx + (8 * itemView.context.resources.displayMetrics.density).toInt()
                 val iconTop = itemView.top + iconMarginV
                 val iconLeft = itemView.right - iconMarginH

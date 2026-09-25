@@ -218,6 +218,18 @@ class AlertsFragment : Fragment() {
                 if (selectionMode) return@SwipeToDeleteCallback false
                 groupedAdapter.currentList.getOrNull(position) is GroupedListItem.WatchItemWrapper
             },
+            // Högersvep (öppna detalj) fungerar alltid; vänstersvep bara när det finns en paus/aktivera-åtgärd.
+            canSwipeLeft = { position ->
+                val item = (groupedAdapter.currentList.getOrNull(position) as? GroupedListItem.WatchItemWrapper)?.item
+                item != null && alertSwipeActionFor(item) != null
+            },
+            leftSwipeStyle = { position ->
+                val item = (groupedAdapter.currentList.getOrNull(position) as? GroupedListItem.WatchItemWrapper)?.item
+                when (item?.let { alertSwipeActionFor(it) }) {
+                    AlertSwipeAction.ACTIVATE -> SwipeToDeleteCallback.LeftSwipeStyle.ACTIVATE
+                    else -> SwipeToDeleteCallback.LeftSwipeStyle.PAUSE
+                }
+            },
             onSwiped = { position ->
                 val listItem = groupedAdapter.currentList.getOrNull(position) as? GroupedListItem.WatchItemWrapper
                     ?: run {
@@ -227,26 +239,29 @@ class AlertsFragment : Fragment() {
                 // Återställ ItemTouchHelper-state direkt — DiffUtil animerar bort raden när Room uppdaterar
                 groupedAdapter.notifyItemChanged(position)
                 val watchItem = listItem.item
+                // Svepet pausar en aktiv bevakning och aktiverar en pausad — det raderar aldrig.
+                val action = alertSwipeActionFor(watchItem) ?: return@SwipeToDeleteCallback
                 // Dismiss any pending snackbar from a previous swipe before showing the new one
                 pendingDeleteSnackbar?.dismiss()
                 viewLifecycleOwner.lifecycleScope.launch {
                     try {
                         // Vid fel visar MainActivity felet via actionError — ingen ångra-snackbar då.
-                        if (!viewModel.toggleWatchItemActive(watchItem, false)) return@launch
-                        val snackbar = Snackbar.make(binding.root, R.string.alert_deactivated, Snackbar.LENGTH_LONG)
+                        if (!viewModel.toggleWatchItemActive(watchItem, action.activeAfterSwipe)) return@launch
+                        val message = if (action == AlertSwipeAction.PAUSE) R.string.alert_deactivated else R.string.alert_activated
+                        val snackbar = Snackbar.make(binding.root, message, Snackbar.LENGTH_LONG)
                         snackbar.setAction(R.string.alert_undo) {
                             viewLifecycleOwner.lifecycleScope.launch {
                                 try {
-                                    viewModel.toggleWatchItemActive(watchItem, true)
+                                    viewModel.toggleWatchItemActive(watchItem, !action.activeAfterSwipe)
                                 } catch (e: Exception) {
-                                    showMessage("Kunde inte återaktivera bevakning")
+                                    showMessage("Kunde inte ångra")
                                 }
                             }
                         }
                         snackbar.show()
                         pendingDeleteSnackbar = snackbar
                     } catch (e: Exception) {
-                        showMessage("Kunde inte inaktivera bevakning")
+                        showMessage("Kunde inte uppdatera bevakningen")
                     }
                 }
             },

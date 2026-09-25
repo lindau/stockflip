@@ -365,7 +365,7 @@ Om flera engångslarm är triggade samtidigt kan du återaktivera dem alla på e
 
 ### Ta bort en bevakning
 
-**Alternativ 1 — Swipe:** Svep kortet åt vänster. I **Bevakningar** inaktiveras bevakningen (den finns kvar och kan aktiveras igen). I fliken **Par** tas aktieparet bort direkt. I båda fallen visas ett meddelande längst ned med **Ångra**, som återställer bevakningen.
+**Alternativ 1 — Swipe:** Svep kortet åt vänster. I **Bevakningar** pausas en aktiv bevakning (paus-ikon) och en pausad aktiveras igen (play-ikon) — inget tas bort. En utlöst bevakning aktiveras i stället med knappen **Återaktivera**. I fliken **Par** tas aktieparet bort direkt (röd papperskorg). I alla fallen visas ett meddelande längst ned med **Ångra**. Svep åt höger öppnar detaljvyn.
 
 **Alternativ 2 — Via dialog:** Tryck på kortet → tryck **Ta bort** längst ned i dialogen.
 

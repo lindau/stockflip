@@ -3,7 +3,7 @@ package com.stockflip.ui.components.cards
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,12 +16,16 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -36,6 +40,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.stockflip.ChartPeriod
+import com.stockflip.accessibilityLabel
 import com.stockflip.CountryFlagHelper
 import com.stockflip.CurrencyHelper
 import com.stockflip.IntradayChartData
@@ -296,9 +301,13 @@ private fun ClarityPeriodSelector(
                 text = period.label,
                 modifier = Modifier
                     .weight(1f)
+                    // Tryckyta minst 48 dp (Material); den synliga pillen behåller sin storlek.
+                    .minimumInteractiveComponentSize()
                     .clip(RoundedCornerShape(8.dp))
                     .background(if (selected) colorScheme.onSurface else Color.Transparent)
-                    .clickable { onPeriodSelected(period) }
+                    // Tab-roll + selected så att skärmläsare säger vilken period som är vald.
+                    .selectable(selected = selected, role = Role.Tab) { onPeriodSelected(period) }
+                    .semantics { contentDescription = period.accessibilityLabel() }
                     .padding(vertical = 7.dp),
                 style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
                 color = if (selected) colorScheme.surface else colorScheme.onSurfaceVariant,

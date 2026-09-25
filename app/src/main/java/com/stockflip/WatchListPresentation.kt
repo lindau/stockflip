@@ -33,6 +33,22 @@ internal enum class AlertsFilter(
     }
 }
 
+/** Vad ett vänstersvep i Bevakningar gör: pausar en aktiv bevakning, aktiverar en pausad. */
+internal enum class AlertSwipeAction(val activeAfterSwipe: Boolean) {
+    PAUSE(activeAfterSwipe = false),
+    ACTIVATE(activeAfterSwipe = true)
+}
+
+/**
+ * null = inget vänstersvep. En utlöst bevakning ska återaktiveras via "Återaktivera"
+ * (räknar om riktning och sätter trigger-spärr), inte bara slås på med svepet.
+ */
+internal fun alertSwipeActionFor(item: WatchItem): AlertSwipeAction? = when {
+    item.isActive -> AlertSwipeAction.PAUSE
+    item.isManuallyReactivatable -> null
+    else -> AlertSwipeAction.ACTIVATE
+}
+
 internal data class AlertsHeaderSummary(val triggeredToday: Int, val active: Int)
 
 internal fun alertsHeaderSummary(items: List<WatchItemUiState>, today: String): AlertsHeaderSummary =

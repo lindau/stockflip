@@ -148,7 +148,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_margin="16dp"
-        android:contentDescription="Add stock pair"
+        android:contentDescription="@string/add_button_stock"
         android:src="@drawable/ic_fab_add"
         app:maxImageSize="28dp"
         app:backgroundTint="@color/pine_primary_dark"

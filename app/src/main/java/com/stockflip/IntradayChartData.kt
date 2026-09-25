@@ -41,3 +41,14 @@ enum class ChartPeriod(val label: String, val range: String, val interval: Strin
     YEAR("1Å", "1y", "1wk"),
     FIVE_YEARS("5Å", "5y", "1mo")
 }
+
+/** Uppläsningstext för skärmläsare — "1D"/"1Å" läses annars upp bokstav för bokstav. */
+fun ChartPeriod.accessibilityLabel(): String = when (this) {
+    ChartPeriod.DAY -> "1 dag"
+    ChartPeriod.WEEK -> "1 vecka"
+    ChartPeriod.MONTH -> "1 månad"
+    ChartPeriod.THREE_MONTHS -> "3 månader"
+    ChartPeriod.SIX_MONTHS -> "6 månader"
+    ChartPeriod.YEAR -> "1 år"
+    ChartPeriod.FIVE_YEARS -> "5 år"
+}

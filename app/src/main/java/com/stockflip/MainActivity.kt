@@ -23,6 +23,8 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.content.edit
+import androidx.annotation.StringRes
+import androidx.appcompat.widget.TooltipCompat
 import androidx.core.view.isVisible
 import com.google.android.material.snackbar.Snackbar
 import androidx.core.widget.doAfterTextChanged
@@ -869,6 +871,7 @@ class MainActivity : AppCompatActivity() {
         binding.topAppBar.title = getString(R.string.tab_pairs)
         binding.topAppBar.navigationIcon = null
         binding.addPairButton.visibility = View.VISIBLE
+        describeAddButton(R.string.add_button_pair)
         binding.overviewModeScroll.visibility = View.GONE
     }
 
@@ -876,7 +879,18 @@ class MainActivity : AppCompatActivity() {
         binding.topAppBar.title = getString(R.string.tab_alerts)
         binding.topAppBar.navigationIcon = null
         binding.addPairButton.visibility = View.VISIBLE
+        describeAddButton(R.string.add_button_stock)
         binding.overviewModeScroll.visibility = View.GONE
+    }
+
+    /**
+     * +-knappen gör olika saker per flik (aktiepar i Par, sök aktie i Bevakningar). Beskrivningen
+     * följer fliken så att TalkBack läser rätt, och långtryck visar samma text som tooltip.
+     */
+    private fun describeAddButton(@StringRes labelRes: Int) {
+        val label = getString(labelRes)
+        binding.addPairButton.contentDescription = label
+        TooltipCompat.setTooltipText(binding.addPairButton, label)
     }
 
     private fun initializeUpdates() {
