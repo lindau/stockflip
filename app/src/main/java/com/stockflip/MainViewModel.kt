@@ -113,6 +113,9 @@ class MainViewModel(
         _watchItemsRefreshing.value = true
         try {
             Log.d(TAG, "=== START refreshWatchItems() ===")
+            // Senast kända värden per bevakning — visas (markerade som inaktuella) om hämtningen misslyckas.
+            // Läses innan Loading sätts, annars går de förlorade.
+            val previousLive = currentLiveById()
             if (showLoading) {
                 _watchItemUiState.value = UiState.Loading
                 Log.d(TAG, "Set UI state to Loading")
@@ -140,7 +143,7 @@ class MainViewModel(
                                     WatchItemUiState(item, LiveWatchData(currentPrice1 = price1, currentPrice2 = price2, lastUpdatedAt = now))
                                 } else {
                                     Log.w(TAG, "Could not get prices for pair watch item")
-                                    WatchItemUiState(item, LiveWatchData(updateFailed = true))
+                                    WatchItemUiState(item, previousLive[item.id].asUpdateFailed())
                                 }
                             } else {
                                 WatchItemUiState(item)
@@ -156,7 +159,7 @@ class MainViewModel(
                                     WatchItemUiState(item, LiveWatchData(currentPrice = price, currentDailyChangePercent = changePercent, lastUpdatedAt = now))
                                 } else {
                                     Log.w(TAG, "Could not get price for price target watch item")
-                                    WatchItemUiState(item, LiveWatchData(updateFailed = true))
+                                    WatchItemUiState(item, previousLive[item.id].asUpdateFailed())
                                 }
                             } else {
                                 WatchItemUiState(item)
@@ -184,11 +187,11 @@ class MainViewModel(
                                         WatchItemUiState(item, LiveWatchData(currentPrice = price, currentDailyChangePercent = changePercent, lastUpdatedAt = now))
                                     } else {
                                         Log.w(TAG, "Could not get metric value or price for key metrics watch item")
-                                        WatchItemUiState(item, LiveWatchData(updateFailed = true))
+                                        WatchItemUiState(item, previousLive[item.id].asUpdateFailed())
                                     }
                                 } catch (e: Exception) {
                                     Log.e(TAG, "Exception while fetching key metric: ${e.message}", e)
-                                    WatchItemUiState(item, LiveWatchData(updateFailed = true))
+                                    WatchItemUiState(item, previousLive[item.id].asUpdateFailed())
                                 }
                             } else {
                                 Log.w(TAG, "Ticker is null for key metrics watch item")
@@ -217,7 +220,7 @@ class MainViewModel(
                                     ))
                                 } else {
                                     Log.w(TAG, "Could not get drawdown high or price for watch item")
-                                    WatchItemUiState(item, LiveWatchData(updateFailed = true))
+                                    WatchItemUiState(item, previousLive[item.id].asUpdateFailed())
                                 }
                             } else {
                                 WatchItemUiState(item)
@@ -231,7 +234,7 @@ class MainViewModel(
                                 if (price != null) {
                                     WatchItemUiState(item, LiveWatchData(currentPrice = price, currentDailyChangePercent = changePercent, lastUpdatedAt = now))
                                 } else {
-                                    WatchItemUiState(item, LiveWatchData(updateFailed = true))
+                                    WatchItemUiState(item, previousLive[item.id].asUpdateFailed())
                                 }
                             } else {
                                 WatchItemUiState(item)
@@ -245,7 +248,7 @@ class MainViewModel(
                                 if (price != null) {
                                     WatchItemUiState(item, LiveWatchData(currentPrice = price, currentDailyChangePercent = changePercent, lastUpdatedAt = now))
                                 } else {
-                                    WatchItemUiState(item, LiveWatchData(updateFailed = true))
+                                    WatchItemUiState(item, previousLive[item.id].asUpdateFailed())
                                 }
                             } else {
                                 WatchItemUiState(item)
@@ -263,7 +266,7 @@ class MainViewModel(
                                     WatchItemUiState(item, LiveWatchData(currentPrice = price, currentDailyChangePercent = changePercent, lastUpdatedAt = now))
                                 } else {
                                     Log.w(TAG, "Could not get price for combined alert")
-                                    WatchItemUiState(item, LiveWatchData(updateFailed = true))
+                                    WatchItemUiState(item, previousLive[item.id].asUpdateFailed())
                                 }
                             } else {
                                 Log.w(TAG, "Combined alert has no ticker set")
@@ -273,7 +276,7 @@ class MainViewModel(
                     }
                 } catch (e: Exception) {
                     Log.e(TAG, "Error fetching prices for watch item ${item.id}: ${e.message}")
-                    WatchItemUiState(item, LiveWatchData(updateFailed = true))
+                    WatchItemUiState(item, previousLive[item.id].asUpdateFailed())
                 }
                 } // semaphore.withPermit
                 } // async
@@ -415,6 +418,12 @@ class MainViewModel(
 
         return StockMarketScheduler.isMarketOpenForSymbol(ticker, exchange)
     }
+
+    private fun currentLiveById(): Map<Int, LiveWatchData> =
+        (_watchItemUiState.value as? UiState.Success<List<WatchItemUiState>>)
+            ?.data
+            ?.associate { it.item.id to it.live }
+            .orEmpty()
 
     /**
      * Utvärderar larmets villkor mot senaste live-data i UI-tillståndet.

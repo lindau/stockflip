@@ -26,6 +26,9 @@ import com.stockflip.ui.components.cards.MetricAlertCard
 import com.stockflip.ui.components.cards.PairCard
 import com.stockflip.ui.components.cards.PairCardPresentation
 import com.stockflip.ui.components.cards.PriceRangeCard
+import com.stockflip.ui.components.cards.UpdateFailedNotice
+import com.stockflip.ui.components.cards.updateFailedLabel
+import androidx.compose.runtime.remember
 import com.stockflip.CurrencyHelper
 import com.stockflip.ui.components.cards.PriceTargetCard
 
@@ -230,6 +233,10 @@ fun ComposeWatchItemCard(
                 )
             }
         }
+        UpdateFailedNotice(
+            label = remember(live.updateFailed, live.lastUpdatedAt) { updateFailedLabel(live) },
+            modifier = Modifier.padding(start = 12.dp, top = 4.dp),
+        )
         } // CompositionLocalProvider
     }
 }

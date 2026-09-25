@@ -7,6 +7,9 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.CloudOff
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.SwitchDefaults
@@ -18,6 +21,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import com.stockflip.LiveWatchData
 import com.stockflip.WatchItem
 import com.stockflip.ui.theme.LocalOnTriggeredBadge
 import com.stockflip.ui.theme.LocalTriggeredBadge
@@ -146,6 +150,48 @@ internal fun InlineAlertBadge(watchItem: WatchItem) {
     when {
         watchItem.isTriggered -> TriggeredBadge(watchItem.lastTriggeredDate)
         LocalNearTriggerLabel.current != null -> NearTriggerBadge()
+    }
+}
+
+/**
+ * Text för indikatorn om att senaste prisuppdateringen misslyckades, eller null om den lyckades.
+ * Om tidigare värden finns anges när de hämtades, så att användaren ser hur gamla de är.
+ */
+internal fun updateFailedLabel(
+    live: LiveWatchData,
+    formatTime: (Long) -> String = { SimpleDateFormat("HH:mm", Locale("sv", "SE")).format(Date(it)) },
+): String? {
+    if (!live.updateFailed) return null
+    return if (live.lastUpdatedAt > 0L) {
+        "Kunde inte uppdateras · visar värden från ${formatTime(live.lastUpdatedAt)}"
+    } else {
+        "Kunde inte uppdateras"
+    }
+}
+
+/**
+ * Diskret rad som visas när senaste prisuppdateringen misslyckades ([label] från
+ * [updateFailedLabel]). Visas inte alls när [label] är null.
+ */
+@Composable
+internal fun UpdateFailedNotice(label: String?, modifier: Modifier = Modifier) {
+    if (label == null) return
+    Row(
+        modifier = modifier,
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(
+            imageVector = Icons.Outlined.CloudOff,
+            contentDescription = null,
+            modifier = Modifier.size(14.dp),
+            tint = MaterialTheme.colorScheme.error,
+        )
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.error,
+        )
     }
 }
 

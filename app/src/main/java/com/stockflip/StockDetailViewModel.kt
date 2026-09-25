@@ -337,6 +337,11 @@ class StockDetailViewModel(
      */
     private suspend fun fetchPricesForItems(items: List<WatchItem>): List<WatchItemUiState> {
         val now = System.currentTimeMillis()
+        // Senast kända värden per bevakning — visas (markerade som inaktuella) om hämtningen misslyckas.
+        val previousLive = (_alertsState.value as? UiState.Success<List<WatchItemUiState>>)
+            ?.data
+            ?.associate { it.item.id to it.live }
+            .orEmpty()
         return items.map { item ->
             when (item.watchType) {
                 is WatchType.PricePair -> {
@@ -345,7 +350,7 @@ class StockDetailViewModel(
                         val price2 = yahooFinanceService.getStockPrice(item.ticker2)
                         if (price1 != null && price2 != null)
                             WatchItemUiState(item, LiveWatchData(currentPrice1 = price1, currentPrice2 = price2, lastUpdatedAt = now))
-                        else WatchItemUiState(item, LiveWatchData(updateFailed = true))
+                        else WatchItemUiState(item, previousLive[item.id].asUpdateFailed())
                     } else WatchItemUiState(item)
                 }
                 is WatchType.PriceTarget,
@@ -356,7 +361,7 @@ class StockDetailViewModel(
                     val changePercent = yahooFinanceService.getDailyChangePercent(ticker)
                     if (price != null)
                         WatchItemUiState(item, LiveWatchData(currentPrice = price, currentDailyChangePercent = changePercent, lastUpdatedAt = now))
-                    else WatchItemUiState(item, LiveWatchData(updateFailed = true))
+                    else WatchItemUiState(item, previousLive[item.id].asUpdateFailed())
                 }
                 is WatchType.ATHBased -> {
                     val ticker = item.ticker ?: symbol
@@ -382,7 +387,7 @@ class StockDetailViewModel(
                             )
                         }
                         price != null -> WatchItemUiState(item, LiveWatchData(currentPrice = price, currentDailyChangePercent = changePercent, lastUpdatedAt = now))
-                        else -> WatchItemUiState(item, LiveWatchData(updateFailed = true))
+                        else -> WatchItemUiState(item, previousLive[item.id].asUpdateFailed())
                     }
                 }
                 is WatchType.KeyMetrics -> {
@@ -396,7 +401,7 @@ class StockDetailViewModel(
                             currentMetricValue = metricValue, metricValueAtCreation = metricValue,
                             currentPrice = price ?: 0.0, currentDailyChangePercent = changePercent, lastUpdatedAt = now))
                         price != null -> WatchItemUiState(item, LiveWatchData(currentPrice = price, currentDailyChangePercent = changePercent, lastUpdatedAt = now))
-                        else -> WatchItemUiState(item, LiveWatchData(updateFailed = true))
+                        else -> WatchItemUiState(item, previousLive[item.id].asUpdateFailed())
                     }
                 }
                 is WatchType.InsiderBuy -> WatchItemUiState(item)

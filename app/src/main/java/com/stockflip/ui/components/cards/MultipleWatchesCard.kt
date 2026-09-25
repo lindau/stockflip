@@ -66,6 +66,7 @@ fun MultipleWatchesCard(
     dailyChangePercent: Double? = null,
     hasNote: Boolean = false,
     hasPodcastMention: Boolean = false,
+    updateFailedLabel: String? = null,
     priceFormat: (Double) -> String,
     presentation: MultipleWatchesPresentation = MultipleWatchesPresentation.Default,
     modifier: Modifier = Modifier,
@@ -96,6 +97,7 @@ fun MultipleWatchesCard(
                 dailyChangePercent = dailyChangePercent,
                 hasNote = hasNote,
                 hasPodcastMention = hasPodcastMention,
+                updateFailedLabel = updateFailedLabel,
             )
             return@Card
         }
@@ -113,6 +115,7 @@ fun MultipleWatchesCard(
                 dailyChangePercent = dailyChangePercent,
                 currency = currency,
             )
+            UpdateFailedNotice(label = updateFailedLabel, modifier = Modifier.padding(top = 4.dp))
             Spacer(modifier = Modifier.height(6.dp))
 
             Row(
@@ -167,6 +170,7 @@ private fun MultipleWatchesClarityContent(
     dailyChangePercent: Double?,
     hasNote: Boolean = false,
     hasPodcastMention: Boolean = false,
+    updateFailedLabel: String? = null,
 ) {
     val currency = CurrencyHelper.getCurrencyFromSymbol(symbol)
     val changeColor = when {
@@ -244,6 +248,8 @@ private fun MultipleWatchesClarityContent(
                 )
             }
         }
+
+        UpdateFailedNotice(label = updateFailedLabel, modifier = Modifier.padding(top = 8.dp))
 
         Row(
             modifier = Modifier

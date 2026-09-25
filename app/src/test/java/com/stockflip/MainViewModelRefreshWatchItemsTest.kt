@@ -76,6 +76,48 @@ class MainViewModelRefreshWatchItemsTest {
     }
 
     @Test
+    fun `failed refresh keeps last known price and marks it stale until next success`() = runBlocking {
+        val watchItems: List<WatchItem> = listOf(
+            WatchItem(
+                id = 1,
+                watchType = WatchType.PriceTarget(targetPrice = 250.0, direction = WatchType.PriceDirection.ABOVE),
+                ticker = "VOLV-B.ST",
+                companyName = "Volvo B"
+            )
+        )
+        val prices: MutableMap<String, Double> = mutableMapOf("VOLV-B.ST" to 300.0)
+        val viewModel = MainViewModel(
+            InMemoryStockPairDao(emptyList()),
+            InMemoryWatchItemDao(watchItems),
+            FakeMarketDataService(pricesBySymbol = prices),
+            InMemoryStockNoteDao(),
+            InMemoryPodcastObservationDao()
+        )
+        fun live(): LiveWatchData =
+            (viewModel.watchItemUiState.value as UiState.Success<List<WatchItemUiState>>).data.single().live
+
+        viewModel.refreshWatchItems()
+        val firstUpdate = live()
+        assertFalse(firstUpdate.updateFailed)
+
+        // Både manuell (showLoading = true) och tyst auto-refresh ska behålla senast kända pris.
+        prices.remove("VOLV-B.ST")
+        for (showLoading in listOf(true, false)) {
+            viewModel.refreshWatchItems(showLoading = showLoading)
+            val failed = live()
+            assertTrue(failed.updateFailed)
+            assertEquals(300.0, failed.currentPrice, 0.0001)
+            assertEquals(firstUpdate.lastUpdatedAt, failed.lastUpdatedAt)
+        }
+
+        prices["VOLV-B.ST"] = 310.0
+        viewModel.refreshWatchItems()
+        val recovered = live()
+        assertFalse(recovered.updateFailed)
+        assertEquals(310.0, recovered.currentPrice, 0.0001)
+    }
+
+    @Test
     fun `loadWatchItems force show stale data emits success for key metrics`() = runBlocking {
         val watchItems: List<WatchItem> = listOf(
             WatchItem(

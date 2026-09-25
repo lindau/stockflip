@@ -22,6 +22,7 @@ import com.stockflip.ui.components.cards.MultipleWatchesCard
 import com.stockflip.ui.components.cards.MultipleWatchesPresentation
 import com.stockflip.ui.components.cards.OverviewSummaryCard
 import com.stockflip.ui.components.cards.PairCardPresentation
+import com.stockflip.ui.components.cards.updateFailedLabel
 import com.stockflip.ui.theme.GroupPosition
 import com.stockflip.ui.theme.NP
 import com.stockflip.ui.theme.StockFlipTheme
@@ -64,9 +65,21 @@ sealed class GroupedListItem {
         val watchItems: List<WatchItem>,
         val hasNote: Boolean = false,
         val hasPodcastMention: Boolean = false,
+        val updateFailedLabel: String? = null,
     ) : GroupedListItem()
 
     data class GroupSeparator(val id: Int) : GroupedListItem()
+}
+
+/**
+ * Väljer vilken bevaknings live-data aktiekortet ska visa pris från. En lyckad uppdatering
+ * föredras; annars senast kända pris, som då är markerat som inaktuellt.
+ */
+internal fun stockCardLive(groupItems: List<WatchItemUiState>): LiveWatchData {
+    return groupItems.firstOrNull { it.live.currentPrice > 0.0 && !it.live.updateFailed }?.live
+        ?: groupItems.firstOrNull { it.live.currentPrice > 0.0 }?.live
+        ?: groupItems.firstOrNull { it.live.updateFailed }?.live
+        ?: groupItems.first().live
 }
 
 internal fun buildOverviewSummaryItem(
@@ -428,7 +441,7 @@ class GroupedWatchItemAdapter(
 
         groups.forEach { (symbol, groupItems) ->
             val representative = groupItems.first()
-            val live = groupItems.firstOrNull { it.live.currentPrice > 0.0 }?.live ?: representative.live
+            val live = stockCardLive(groupItems)
             groupedList.add(
                 GroupedListItem.MultipleWatchesWrapper(
                     symbol = symbol,
@@ -440,6 +453,7 @@ class GroupedWatchItemAdapter(
                     watchItems = groupItems.map { it.item },
                     hasNote = notedTickers.contains(symbol),
                     hasPodcastMention = mentionedTickers.contains(symbol.uppercase()),
+                    updateFailedLabel = updateFailedLabel(live),
                 )
             )
         }
@@ -837,6 +851,7 @@ class GroupedWatchItemAdapter(
                         dailyChangePercent = wrapper.dailyChangePercent,
                         hasNote = wrapper.hasNote,
                         hasPodcastMention = wrapper.hasPodcastMention,
+                        updateFailedLabel = wrapper.updateFailedLabel,
                         priceFormat = { value -> CurrencyHelper.formatDecimal(value) },
                         presentation = MultipleWatchesPresentation.Clarity,
                         modifier = Modifier

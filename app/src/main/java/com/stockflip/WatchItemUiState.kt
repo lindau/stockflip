@@ -21,6 +21,13 @@ data class LiveWatchData(
 )
 
 /**
+ * Live-data efter en misslyckad uppdatering: behåller senast kända värden (inklusive
+ * lastUpdatedAt) och markerar dem som inaktuella så att korten kan visa det.
+ */
+fun LiveWatchData?.asUpdateFailed(): LiveWatchData =
+    (this ?: LiveWatchData()).copy(updateFailed = true)
+
+/**
  * Combines a persisted WatchItem entity with its transient live market data.
  * Data class equality covers both item and live — no manual DiffCallback comparisons needed.
  */

@@ -444,6 +444,9 @@ StockFlip distribueras inte via Play Store, så appen håller själv koll på om
 **Varför inaktiverades min bevakning automatiskt?**
 - Målpris och Drawdown inaktiveras automatiskt när de utlöses. Det är avsiktligt för att undvika upprepade notiser för samma händelse.
 
+**Vad betyder "Kunde inte uppdateras" på ett kort?**
+- Appen lyckades inte hämta nya kurser för bevakningen, till exempel på grund av dålig uppkoppling. Kortet visar då de senast kända värdena och vilken tid de hämtades. Raden försvinner av sig själv när nästa uppdatering lyckas, eller när du drar nedåt för att uppdatera.
+
 **Kan jag ha flera bevakningar på samma aktie?**
 - Ja, du kan ha hur många bevakningar du vill på samma aktie, av olika eller samma typ.
 
