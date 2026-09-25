@@ -365,7 +365,7 @@ Om flera engångslarm är triggade samtidigt kan du återaktivera dem alla på e
 
 ### Ta bort en bevakning
 
-**Alternativ 1 — Swipe:** Svep kortet åt vänster. En bekräftelsedialog visas med möjlighet att ångra.
+**Alternativ 1 — Swipe:** Svep kortet åt vänster. I **Mina case** inaktiveras bevakningen (den finns kvar och kan aktiveras igen). I fliken **Par** tas aktieparet bort direkt. I båda fallen visas ett meddelande längst ned med **Ångra**, som återställer bevakningen.
 
 **Alternativ 2 — Via dialog:** Tryck på kortet → tryck **Ta bort** längst ned i dialogen.
 
@@ -447,8 +447,8 @@ StockFlip distribueras inte via Play Store, så appen håller själv koll på om
 **Vad betyder "Kunde inte uppdateras" på ett kort?**
 - Appen lyckades inte hämta nya kurser för bevakningen, till exempel på grund av dålig uppkoppling. Kortet visar då de senast kända värdena och vilken tid de hämtades. Raden försvinner av sig själv när nästa uppdatering lyckas, eller när du drar nedåt för att uppdatera.
 
-**Vad händer om en detaljvy inte kan laddas?**
-- Om aktie- eller aktiepardetaljen inte kan hämta kurser första gången visas ett felmeddelande med knappen **Försök igen**. Om vyn redan visar data och en uppdatering misslyckas ligger de senast kända värdena kvar, och ett kort meddelande visas längst ned.
+**Vad händer om en vy inte kan laddas?**
+- Om aktie- eller aktiepardetaljen, eller listorna i **Par** och **Mina case**, inte kan laddas första gången visas ett felmeddelande med knappen **Försök igen**. Om vyn redan visar data och en uppdatering misslyckas ligger de senast kända värdena kvar, och ett kort meddelande visas längst ned.
 
 **Kan jag ha flera bevakningar på samma aktie?**
 - Ja, du kan ha hur många bevakningar du vill på samma aktie, av olika eller samma typ.

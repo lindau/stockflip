@@ -31,6 +31,17 @@
     <string name="tab_alerts">Bevakningar</string>
     <string name="rules_title">Bevakningar</string>
     <string name="rules_subtitle">0 utlösta idag · 0 aktiva</string>
+    <string name="rules_subtitle_format">%1$d utlösta idag · %2$d aktiva</string>
+    <string name="alerts_empty_active_title">Inga aktiva case</string>
+    <string name="alerts_empty_active_subtitle">Aktivera ett case eller skapa ett nytt för att se det här.</string>
+    <string name="alerts_empty_triggered_title">Inga triggade case</string>
+    <string name="alerts_empty_triggered_subtitle">Här visas case som nyligen har utlöst.</string>
+    <string name="alerts_empty_price_title">Inga priscase</string>
+    <string name="alerts_empty_price_subtitle">Skapa prismål, drawdown eller dagsrörelse för att få en prislista här.</string>
+    <string name="alerts_empty_metrics_title">Inga nyckeltalscase</string>
+    <string name="alerts_empty_metrics_subtitle">Skapa ett P/E-, P/S- eller yield-larm för att fylla den här vyn.</string>
+    <string name="alerts_empty_pairs_title">Inga parcase</string>
+    <string name="alerts_empty_pairs_subtitle">Skapa ett aktiepar för att bevaka när spreaden når din nivå, oavsett riktning.</string>
     <string name="filter_all">Alla</string>
     <string name="filter_active">Aktiva</string>
     <string name="filter_triggered">Triggade</string>

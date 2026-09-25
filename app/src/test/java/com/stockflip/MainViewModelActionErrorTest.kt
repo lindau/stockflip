@@ -166,4 +166,54 @@ class MainViewModelActionErrorTest {
         assertTrue(errors.isEmpty())
         collector.cancel()
     }
+
+    @Test
+    fun `undo after swipe delete restores the same pair with its id`() = runBlocking {
+        // Svep i Par-fliken raderar direkt; "Ångra" lägger tillbaka samma objekt via addWatchItem.
+        val pair = WatchItem(
+            id = 7,
+            watchType = WatchType.PricePair(priceDifference = 5.0, notifyWhenEqual = false),
+            ticker1 = "VOLV-A.ST",
+            ticker2 = "VOLV-B.ST",
+            companyName1 = "Volvo A",
+            companyName2 = "Volvo B"
+        )
+        val dao = FailingWatchItemDao(InMemoryWatchItemDao(listOf(existingItem, pair)))
+        val viewModel = createViewModel(dao)
+        viewModel.loadWatchItems(forceShowStaleData = true)
+        val errors = mutableListOf<String>()
+        val collector = collectActionErrors(viewModel, errors)
+
+        assertTrue(viewModel.deleteWatchItem(pair))
+        assertFalse(successIds(viewModel).contains(pair.id))
+
+        assertTrue(viewModel.addWatchItem(pair))
+        val restored = (viewModel.watchItemUiState.value as UiState.Success).data.single { it.item.id == pair.id }.item
+        assertEquals(pair, restored)
+        assertTrue(errors.isEmpty())
+        collector.cancel()
+    }
+
+    @Test
+    fun `failed undo after delete emits action error and keeps pair removed`() = runBlocking {
+        val dao = FailingWatchItemDao(InMemoryWatchItemDao(listOf(existingItem)))
+        val viewModel = createViewModel(dao)
+        viewModel.loadWatchItems(forceShowStaleData = true)
+        val errors = mutableListOf<String>()
+        val collector = collectActionErrors(viewModel, errors)
+
+        assertTrue(viewModel.deleteWatchItem(existingItem))
+        dao.failWrites = true
+        assertFalse("Misslyckad återställning ska returnera false", viewModel.addWatchItem(existingItem))
+
+        assertFalse(successIds(viewModel).contains(existingItem.id))
+        assertEquals(listOf("Kunde inte lägga till bevakningen"), errors)
+        collector.cancel()
+    }
+
+    private fun successIds(viewModel: MainViewModel): List<Int> {
+        val state = viewModel.watchItemUiState.value
+        assertTrue("Listtillståndet ska vara Success, var $state", state is UiState.Success)
+        return (state as UiState.Success).data.map { it.item.id }
+    }
 }

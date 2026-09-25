@@ -26,15 +26,6 @@ import kotlinx.coroutines.launch
 
 class AlertsFragment : Fragment() {
 
-    private enum class AlertsFilter {
-        ALL,
-        ACTIVE,
-        TRIGGERED,
-        PRICE,
-        METRICS,
-        PAIRS,
-    }
-
     private var _binding: FragmentAlertsBinding? = null
     private val binding get() = _binding!!
 
@@ -59,6 +50,8 @@ class AlertsFragment : Fragment() {
     private var pendingDeleteSnackbar: Snackbar? = null
     private var currentFilter: AlertsFilter = AlertsFilter.ALL
     private var latestItems: List<WatchItemUiState> = emptyList()
+    // Fel från en misslyckad laddning utan data — ligger kvar vid filterbyte tills en laddning lyckas.
+    private var loadError: String? = null
     private val selectedRuleIds: MutableSet<Int> = mutableSetOf()
     private var selectionMode: Boolean = false
     private var reactivateAllTargets: List<WatchItem> = emptyList()
@@ -83,6 +76,7 @@ class AlertsFragment : Fragment() {
         setupBatchActions()
         setupReactivateAll()
         setupRecyclerView()
+        setupEmptyStateRetry()
         setupObservers()
 
         // Fragmentet skapas om vid varje flikbyte och lyssnar bara passivt på det delade flödet.
@@ -281,6 +275,15 @@ class AlertsFragment : Fragment() {
         ItemTouchHelper(swipeCallback).attachToRecyclerView(binding.alertsRecyclerView)
     }
 
+    private fun setupEmptyStateRetry() {
+        binding.emptyStateRetryButton.setOnClickListener {
+            viewLifecycleOwner.lifecycleScope.launch {
+                // showLoading = true: skelettet visas under försöket och ett nytt fel ytas som Error.
+                viewModel.refreshWatchItems(showLoading = true)
+            }
+        }
+    }
+
     private fun setupObservers() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -296,15 +299,15 @@ class AlertsFragment : Fragment() {
                         }
                         is UiState.Success -> {
                             binding.skeletonLoadingView.visibility = View.GONE
+                            loadError = null
                             latestItems = state.data
                             renderFilteredList()
                         }
                         is UiState.Error -> {
                             binding.skeletonLoadingView.visibility = View.GONE
                             if (latestItems.isEmpty()) {
-                                binding.emptyStateContainer.visibility = View.VISIBLE
-                                binding.emptyStateTitle.setText(R.string.watch_items_load_failed_title)
-                                binding.emptyStateText.text = state.message
+                                loadError = state.message
+                                renderFilteredList()
                             } else {
                                 Snackbar.make(binding.root, R.string.alerts_refresh_failed, Snackbar.LENGTH_LONG).show()
                             }
@@ -328,22 +331,7 @@ class AlertsFragment : Fragment() {
     }
 
     private fun renderFilteredList() {
-        val filteredItems = latestItems.filter { uiState ->
-            when (currentFilter) {
-                AlertsFilter.ALL -> true
-                AlertsFilter.ACTIVE -> uiState.item.isActive
-                AlertsFilter.TRIGGERED -> uiState.isTriggeredForDisplay()
-                AlertsFilter.PRICE -> when (uiState.item.watchType) {
-                    is WatchType.PriceTarget,
-                    is WatchType.ATHBased,
-                    is WatchType.DailyMove,
-                    is WatchType.PriceRange -> true
-                    else -> false
-                }
-                AlertsFilter.METRICS -> uiState.item.watchType is WatchType.KeyMetrics
-                AlertsFilter.PAIRS -> uiState.item.watchType is WatchType.PricePair
-            }
-        }
+        val filteredItems = latestItems.filter { currentFilter.matches(it) }
 
         val visibleIds = filteredItems.map { it.item.id }.toSet()
         selectedRuleIds.retainAll(visibleIds)
@@ -362,36 +350,28 @@ class AlertsFragment : Fragment() {
             emptyList()
         }
         updateReactivateAllState(eligibleForBulkReactivation)
-        val showEmpty = filteredItems.isEmpty()
-        binding.emptyStateContainer.visibility = if (showEmpty) View.VISIBLE else View.GONE
-        if (showEmpty) {
-            binding.emptyStateTitle.text = when (currentFilter) {
-                AlertsFilter.ALL -> getString(R.string.alerts_empty_title)
-                AlertsFilter.ACTIVE -> "Inga aktiva case"
-                AlertsFilter.TRIGGERED -> "Inga triggade case"
-                AlertsFilter.PRICE -> "Inga priscase"
-                AlertsFilter.METRICS -> "Inga nyckeltalscase"
-                AlertsFilter.PAIRS -> "Inga parcase"
+        renderEmptyState(watchListEmptyState(filteredItems.size, loadError))
+    }
+
+    private fun renderEmptyState(emptyState: WatchListEmptyState) {
+        binding.emptyStateContainer.isVisible = emptyState !is WatchListEmptyState.Hidden
+        binding.emptyStateRetryButton.isVisible = emptyState is WatchListEmptyState.LoadFailed
+        when (emptyState) {
+            WatchListEmptyState.Hidden -> Unit
+            WatchListEmptyState.NoItems -> {
+                binding.emptyStateTitle.setText(currentFilter.emptyTitleRes)
+                binding.emptyStateText.setText(currentFilter.emptySubtitleRes)
             }
-            binding.emptyStateText.text = when (currentFilter) {
-                AlertsFilter.ALL -> getString(R.string.alerts_empty_subtitle)
-                AlertsFilter.ACTIVE -> "Aktivera ett case eller skapa ett nytt för att se det här."
-                AlertsFilter.TRIGGERED -> "Här visas case som nyligen har utlöst."
-                AlertsFilter.PRICE -> "Skapa prismål, drawdown eller dagsrörelse för att få en prislista här."
-                AlertsFilter.METRICS -> "Skapa ett P/E-, P/S- eller yield-larm för att fylla den här vyn."
-                AlertsFilter.PAIRS -> "Skapa ett aktiepar för att bevaka när spreaden når din nivå, oavsett riktning."
+            is WatchListEmptyState.LoadFailed -> {
+                binding.emptyStateTitle.setText(R.string.watch_items_load_failed_title)
+                binding.emptyStateText.text = emptyState.message
             }
         }
     }
 
     private fun updateHeaderState() {
-        val today = WatchItem.getTodayDateString()
-        val triggeredTodayCount = latestItems.count {
-            it.isTriggeredTodayForDisplay(today)
-        }
-        val activeCount = latestItems.count { it.item.isActive }
-        binding.rulesTitle.text = "Bevakningar"
-        binding.rulesSubtitle.text = "$triggeredTodayCount utlösta idag · $activeCount aktiva"
+        val summary = alertsHeaderSummary(latestItems, WatchItem.getTodayDateString())
+        binding.rulesSubtitle.text = getString(R.string.rules_subtitle_format, summary.triggeredToday, summary.active)
     }
 
     private fun enterSelectionMode(firstItem: WatchItem) {

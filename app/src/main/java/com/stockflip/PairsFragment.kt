@@ -49,6 +49,8 @@ class PairsFragment : Fragment() {
     private lateinit var groupedAdapter: GroupedWatchItemAdapter
     private var pendingDeleteSnackbar: Snackbar? = null
     private var latestPairs: List<WatchItemUiState> = emptyList()
+    // Fel från en misslyckad laddning utan data — ligger kvar tills en laddning lyckas.
+    private var loadError: String? = null
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -67,6 +69,7 @@ class PairsFragment : Fragment() {
             }
         }
         setupRecyclerView()
+        setupEmptyStateRetry()
         setupObservers()
 
         // Fragmentet skapas om vid varje flikbyte — trigga en tyst refresh så listan alltid fylls.
@@ -148,26 +151,32 @@ class PairsFragment : Fragment() {
                         groupedAdapter.notifyItemChanged(position)
                         return@SwipeToDeleteCallback
                     }
+                // Återställ ItemTouchHelper-state direkt — DiffUtil animerar bort raden när Room uppdaterar
                 groupedAdapter.notifyItemChanged(position)
                 val itemToDelete = listItem.item
                 pendingDeleteSnackbar?.dismiss()
-                val snackbar = Snackbar.make(binding.root, R.string.alert_deleted, Snackbar.LENGTH_LONG)
-                snackbar.setAction(R.string.alert_undo) { /* Behåll — item tas inte bort */ }
-                snackbar.addCallback(object : Snackbar.Callback() {
-                    override fun onDismissed(transientBottomBar: Snackbar?, event: Int) {
-                        if (event != DISMISS_EVENT_ACTION) {
+                // Radera direkt i stället för när snackbaren stängs: en fördröjd radering knuten till
+                // vyns livscykel gick förlorad (eller kraschade) om användaren lämnade fliken inom ångra-fönstret.
+                viewLifecycleOwner.lifecycleScope.launch {
+                    try {
+                        // Vid fel visar MainActivity felet via actionError — ingen ångra-snackbar då.
+                        if (!viewModel.deleteWatchItem(itemToDelete)) return@launch
+                        val snackbar = Snackbar.make(binding.root, R.string.alert_deleted, Snackbar.LENGTH_LONG)
+                        snackbar.setAction(R.string.alert_undo) {
                             viewLifecycleOwner.lifecycleScope.launch {
                                 try {
-                                    viewModel.deleteWatchItem(itemToDelete)
+                                    viewModel.addWatchItem(itemToDelete)
                                 } catch (e: Exception) {
-                                    Toast.makeText(requireContext(), e.message ?: "Kunde inte ta bort aktiepar", Toast.LENGTH_LONG).show()
+                                    Toast.makeText(requireContext(), e.message ?: "Kunde inte återställa aktiepar", Toast.LENGTH_LONG).show()
                                 }
                             }
                         }
+                        snackbar.show()
+                        pendingDeleteSnackbar = snackbar
+                    } catch (e: Exception) {
+                        Toast.makeText(requireContext(), e.message ?: "Kunde inte ta bort aktiepar", Toast.LENGTH_LONG).show()
                     }
-                })
-                snackbar.show()
-                pendingDeleteSnackbar = snackbar
+                }
             },
             onSwipedRight = { position ->
                 val listItem = groupedAdapter.currentList.getOrNull(position) as? GroupedListItem.WatchItemWrapper
@@ -180,6 +189,15 @@ class PairsFragment : Fragment() {
             }
         )
         ItemTouchHelper(swipeCallback).attachToRecyclerView(binding.pairsRecyclerView)
+    }
+
+    private fun setupEmptyStateRetry() {
+        binding.emptyStateRetryButton.setOnClickListener {
+            viewLifecycleOwner.lifecycleScope.launch {
+                // showLoading = true: skelettet visas under försöket och ett nytt fel ytas som Error.
+                viewModel.refreshWatchItems(showLoading = true)
+            }
+        }
     }
 
     private fun setupObservers() {
@@ -196,19 +214,17 @@ class PairsFragment : Fragment() {
                         is UiState.Success -> {
                             binding.skeletonLoadingView.visibility = View.GONE
                             val pairs = state.data.filter { it.item.watchType is WatchType.PricePair }
+                            loadError = null
                             latestPairs = pairs
                             groupedAdapter.submitGroupedList(pairs)
-                            binding.emptyStateTitle.setText(R.string.pairs_empty_title)
-                            binding.emptyStateText.setText(R.string.pairs_empty_subtitle)
-                            binding.emptyStateContainer.visibility = if (pairs.isEmpty()) View.VISIBLE else View.GONE
+                            renderEmptyState()
                         }
                         is UiState.Error -> {
                             binding.skeletonLoadingView.visibility = View.GONE
                             if (latestPairs.isEmpty()) {
                                 // Visa felet istället för "Inga aktiepar ännu", som vore missvisande.
-                                binding.emptyStateTitle.setText(R.string.watch_items_load_failed_title)
-                                binding.emptyStateText.text = state.message
-                                binding.emptyStateContainer.visibility = View.VISIBLE
+                                loadError = state.message
+                                renderEmptyState()
                             } else {
                                 Snackbar.make(binding.root, R.string.alerts_refresh_failed, Snackbar.LENGTH_LONG).show()
                             }
@@ -223,6 +239,23 @@ class PairsFragment : Fragment() {
                     // Tunn linje istället för den runda spinnern — listan ligger kvar och är läsbar.
                     binding.backgroundRefreshIndicator.isVisible = refreshing
                 }
+            }
+        }
+    }
+
+    private fun renderEmptyState() {
+        val emptyState = watchListEmptyState(latestPairs.size, loadError)
+        binding.emptyStateContainer.isVisible = emptyState !is WatchListEmptyState.Hidden
+        binding.emptyStateRetryButton.isVisible = emptyState is WatchListEmptyState.LoadFailed
+        when (emptyState) {
+            WatchListEmptyState.Hidden -> Unit
+            WatchListEmptyState.NoItems -> {
+                binding.emptyStateTitle.setText(R.string.pairs_empty_title)
+                binding.emptyStateText.setText(R.string.pairs_empty_subtitle)
+            }
+            is WatchListEmptyState.LoadFailed -> {
+                binding.emptyStateTitle.setText(R.string.watch_items_load_failed_title)
+                binding.emptyStateText.text = emptyState.message
             }
         }
     }
