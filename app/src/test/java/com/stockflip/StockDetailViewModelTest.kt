@@ -17,6 +17,7 @@ import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import java.io.IOException
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -225,12 +226,62 @@ class StockDetailViewModelTest {
             com.stockflip.repository.MetricHistoryRepository(InMemoryMetricHistoryDao())
         )
         // Ingen advanceUntilIdle() — se motivering i föregående test.
-        viewModel.updateWatchItem(triggeredItem)
+        assertTrue(viewModel.updateWatchItem(triggeredItem))
 
         val updated = watchItemDao.getWatchItemById(1)!!
         assertTrue(updated.isActive)
         assertEquals(false, updated.isTriggered)
         assertEquals(today, updated.lastTriggeredDate)
+    }
+
+    // --- Skapa/uppdatera rapporterar resultat så att dialogen bara bekräftar när det sparats ---
+
+    /** Delegerar till InMemoryWatchItemDao men kastar vid skrivningar. */
+    private class FailingWritesWatchItemDao(delegate: WatchItemDao) : WatchItemDao by delegate {
+        override suspend fun insertWatchItem(item: WatchItem) = throw IllegalStateException("disk full")
+        override suspend fun update(item: WatchItem) = throw IllegalStateException("disk full")
+    }
+
+    private fun detailViewModel(dao: WatchItemDao, symbol: String = "VOLV-B.ST") = StockDetailViewModel(
+        dao, FakeMarketDataService(pricesBySymbol = mapOf(symbol to 300.0)), symbol,
+        TriggerHistoryRepository(InMemoryTriggerHistoryDao()), InMemoryStockNoteDao(),
+        com.stockflip.repository.MetricHistoryRepository(InMemoryMetricHistoryDao())
+    )
+
+    @Test
+    fun `createAlert returns true and stores the watch`() = runTest {
+        val dao = InMemoryWatchItemDao(emptyList())
+        val viewModel = detailViewModel(dao)
+        // Ingen advanceUntilIdle() — se CLAUDE.md.
+        val created = viewModel.createAlert(WatchType.PriceTarget(250.0, WatchType.PriceDirection.BELOW), "Volvo B")
+
+        assertTrue(created)
+        val stored = dao.getWatchItemsBySymbol("VOLV-B.ST")
+        assertEquals(1, stored.size)
+        assertEquals(WatchType.PriceTarget(250.0, WatchType.PriceDirection.BELOW), stored.single().watchType)
+    }
+
+    @Test
+    fun `createAlert returns false when the save fails`() = runTest {
+        val dao = FailingWritesWatchItemDao(InMemoryWatchItemDao(emptyList()))
+        val viewModel = detailViewModel(dao)
+
+        assertFalse(viewModel.createAlert(WatchType.DailyMove(3.0, WatchType.DailyMoveDirection.BOTH), "Volvo B"))
+        assertTrue(dao.getWatchItemsBySymbol("VOLV-B.ST").isEmpty())
+    }
+
+    @Test
+    fun `updateWatchItem returns false when the save fails`() = runTest {
+        val item = WatchItem(
+            id = 1,
+            watchType = WatchType.DailyMove(5.0, WatchType.DailyMoveDirection.UP),
+            ticker = "VOLV-B.ST"
+        )
+        val dao = FailingWritesWatchItemDao(InMemoryWatchItemDao(listOf(item)))
+        val viewModel = detailViewModel(dao)
+
+        assertFalse(viewModel.updateWatchItem(item.copy(watchType = WatchType.DailyMove(7.0, WatchType.DailyMoveDirection.UP))))
+        assertEquals(WatchType.DailyMove(5.0, WatchType.DailyMoveDirection.UP), dao.getWatchItemById(1)!!.watchType)
     }
 
     // --- Laddning, fel och omförsök för aktiedata ---

@@ -9,6 +9,7 @@ import com.stockflip.StockPair
 import com.stockflip.WatchItem
 import com.stockflip.WatchTypeConverter
 import org.json.JSONArray
+import org.json.JSONException
 import org.json.JSONObject
 import java.io.File
 import java.nio.charset.StandardCharsets
@@ -16,7 +17,21 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+/** Fel i backupfilens innehåll, med ett meddelande som kan visas för användaren. */
+class BackupFormatException(message: String) : IllegalArgumentException(message)
+
 object BackupManager {
+    /**
+     * Svensk, begriplig förklaring till en misslyckad import — aldrig råa parser- eller databasfel.
+     */
+    fun importErrorMessage(e: Throwable): String = when (e) {
+        is BackupFormatException -> e.message ?: GENERIC_IMPORT_ERROR
+        is JSONException -> "Filen är inte en giltig StockFlip-backup."
+        else -> GENERIC_IMPORT_ERROR
+    }
+
+    private const val GENERIC_IMPORT_ERROR: String = "Ett oväntat fel uppstod. Försök igen."
+
 
     private const val SUPPORTED_VERSION = 1
     private const val SIGNATURE_VERSION = 1
@@ -71,7 +86,7 @@ object BackupManager {
         verifySignature(root)
         val version = root.getInt("version")
         if (version != SUPPORTED_VERSION) {
-            throw IllegalArgumentException("Okänd backup-version: $version")
+            throw BackupFormatException("Backupen kommer från en version av StockFlip som inte stöds (version $version).")
         }
 
         val converter = WatchTypeConverter()

@@ -5,7 +5,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Toast
+import androidx.annotation.StringRes
 import androidx.fragment.app.Fragment
 import androidx.core.view.isVisible
 import androidx.fragment.app.activityViewModels
@@ -85,7 +85,7 @@ class PairsFragment : Fragment() {
                     try {
                         viewModel.toggleWatchItemActive(watchItem, !watchItem.isActive)
                     } catch (e: Exception) {
-                        Toast.makeText(requireContext(), e.message ?: "Kunde inte uppdatera bevakning", Toast.LENGTH_LONG).show()
+                        showMessage("Kunde inte uppdatera bevakning")
                     }
                 }
             },
@@ -93,9 +93,9 @@ class PairsFragment : Fragment() {
                 viewLifecycleOwner.lifecycleScope.launch {
                     try {
                         val result = viewModel.reactivateWatchItem(watchItem)
-                        Toast.makeText(requireContext(), result.toUserMessage(), Toast.LENGTH_LONG).show()
+                        showMessage(result.toUserMessage())
                     } catch (e: Exception) {
-                        Toast.makeText(requireContext(), e.message ?: "Kunde inte återaktivera bevakning", Toast.LENGTH_LONG).show()
+                        showMessage("Kunde inte återaktivera bevakning")
                     }
                 }
             },
@@ -103,10 +103,10 @@ class PairsFragment : Fragment() {
                 viewLifecycleOwner.lifecycleScope.launch {
                     try {
                         if (viewModel.deleteWatchItem(watchItem)) {
-                            Toast.makeText(requireContext(), R.string.alert_deleted, Toast.LENGTH_SHORT).show()
+                            showMessage(R.string.alert_deleted)
                         }
                     } catch (e: Exception) {
-                        Toast.makeText(requireContext(), e.message ?: "Kunde inte ta bort aktiepar", Toast.LENGTH_LONG).show()
+                        showMessage("Kunde inte ta bort aktiepar")
                     }
                 }
             },
@@ -167,14 +167,14 @@ class PairsFragment : Fragment() {
                                 try {
                                     viewModel.addWatchItem(itemToDelete)
                                 } catch (e: Exception) {
-                                    Toast.makeText(requireContext(), e.message ?: "Kunde inte återställa aktiepar", Toast.LENGTH_LONG).show()
+                                    showMessage("Kunde inte återställa aktiepar")
                                 }
                             }
                         }
                         snackbar.show()
                         pendingDeleteSnackbar = snackbar
                     } catch (e: Exception) {
-                        Toast.makeText(requireContext(), e.message ?: "Kunde inte ta bort aktiepar", Toast.LENGTH_LONG).show()
+                        showMessage("Kunde inte ta bort aktiepar")
                     }
                 }
             },
@@ -259,6 +259,14 @@ class PairsFragment : Fragment() {
             }
         }
     }
+
+    /** Återkoppling i listan visas som Snackbar, samma som svep-meddelandena. */
+    private fun showMessage(message: String) {
+        val root = _binding?.root ?: return
+        Snackbar.make(root, message, Snackbar.LENGTH_LONG).show()
+    }
+
+    private fun showMessage(@StringRes messageRes: Int) = showMessage(getString(messageRes))
 
     override fun onDestroyView() {
         pendingDeleteSnackbar?.dismiss()

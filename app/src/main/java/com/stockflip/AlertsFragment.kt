@@ -5,7 +5,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Toast
+import androidx.annotation.StringRes
 import androidx.fragment.app.Fragment
 import androidx.core.view.isVisible
 import androidx.fragment.app.activityViewModels
@@ -146,7 +146,7 @@ class AlertsFragment : Fragment() {
                     try {
                         viewModel.toggleWatchItemActive(watchItem, !watchItem.isActive)
                     } catch (e: Exception) {
-                        Toast.makeText(requireContext(), e.message ?: "Kunde inte uppdatera bevakning", Toast.LENGTH_LONG).show()
+                        showMessage("Kunde inte uppdatera bevakning")
                     }
                 }
             },
@@ -154,9 +154,9 @@ class AlertsFragment : Fragment() {
                 viewLifecycleOwner.lifecycleScope.launch {
                     try {
                         val result = viewModel.reactivateWatchItem(watchItem)
-                        Toast.makeText(requireContext(), result.toUserMessage(), Toast.LENGTH_LONG).show()
+                        showMessage(result.toUserMessage())
                     } catch (e: Exception) {
-                        Toast.makeText(requireContext(), e.message ?: "Kunde inte återaktivera bevakning", Toast.LENGTH_LONG).show()
+                        showMessage("Kunde inte återaktivera bevakning")
                     }
                 }
             },
@@ -239,14 +239,14 @@ class AlertsFragment : Fragment() {
                                 try {
                                     viewModel.toggleWatchItemActive(watchItem, true)
                                 } catch (e: Exception) {
-                                    Toast.makeText(requireContext(), e.message ?: "Kunde inte återaktivera bevakning", Toast.LENGTH_LONG).show()
+                                    showMessage("Kunde inte återaktivera bevakning")
                                 }
                             }
                         }
                         snackbar.show()
                         pendingDeleteSnackbar = snackbar
                     } catch (e: Exception) {
-                        Toast.makeText(requireContext(), e.message ?: "Kunde inte inaktivera bevakning", Toast.LENGTH_LONG).show()
+                        showMessage("Kunde inte inaktivera bevakning")
                     }
                 }
             },
@@ -431,9 +431,9 @@ class AlertsFragment : Fragment() {
                 } else {
                     "${items.size} bevakningar återaktiverade"
                 }
-                Toast.makeText(requireContext(), message, Toast.LENGTH_LONG).show()
+                showMessage(message)
             } catch (e: Exception) {
-                Toast.makeText(requireContext(), e.message ?: "Kunde inte återaktivera alla bevakningar", Toast.LENGTH_LONG).show()
+                showMessage("Kunde inte återaktivera alla bevakningar")
             }
         }
     }
@@ -455,7 +455,7 @@ class AlertsFragment : Fragment() {
                 }
                 if (allSucceeded) exitSelectionMode()
             } catch (e: Exception) {
-                Toast.makeText(requireContext(), e.message ?: "Kunde inte uppdatera case", Toast.LENGTH_LONG).show()
+                showMessage("Kunde inte uppdatera bevakningarna")
             }
         }
     }
@@ -464,8 +464,8 @@ class AlertsFragment : Fragment() {
         val items = selectedItems()
         if (items.isEmpty()) return
         MaterialAlertDialogBuilder(requireContext())
-            .setTitle("Ta bort case")
-            .setMessage("Ta bort ${items.size} valda case?")
+            .setTitle("Ta bort bevakningar")
+            .setMessage("Ta bort ${items.size} valda bevakningar?")
             .setPositiveButton("Ta bort") { _, _ ->
                 viewLifecycleOwner.lifecycleScope.launch {
                     try {
@@ -475,10 +475,10 @@ class AlertsFragment : Fragment() {
                         }
                         if (allSucceeded) {
                             exitSelectionMode()
-                            Toast.makeText(requireContext(), "Case borttagna", Toast.LENGTH_SHORT).show()
+                            showMessage("Bevakningarna borttagna")
                         }
                     } catch (e: Exception) {
-                        Toast.makeText(requireContext(), e.message ?: "Kunde inte ta bort case", Toast.LENGTH_LONG).show()
+                        showMessage("Kunde inte ta bort bevakningarna")
                     }
                 }
             }
@@ -494,16 +494,24 @@ class AlertsFragment : Fragment() {
                 viewLifecycleOwner.lifecycleScope.launch {
                     try {
                         if (viewModel.deleteWatchItem(watchItem)) {
-                            Toast.makeText(requireContext(), R.string.alert_deleted, Toast.LENGTH_SHORT).show()
+                            showMessage(R.string.alert_deleted)
                         }
                     } catch (e: Exception) {
-                        Toast.makeText(requireContext(), e.message ?: "Kunde inte ta bort bevakning", Toast.LENGTH_LONG).show()
+                        showMessage("Kunde inte ta bort bevakning")
                     }
                 }
             }
             .setNegativeButton(R.string.alert_delete_negative, null)
             .show()
     }
+
+    /** Återkoppling i listan visas som Snackbar, samma som svep-meddelandena. */
+    private fun showMessage(message: String) {
+        val root = _binding?.root ?: return
+        Snackbar.make(root, message, Snackbar.LENGTH_LONG).show()
+    }
+
+    private fun showMessage(@StringRes messageRes: Int) = showMessage(getString(messageRes))
 
     override fun onDestroyView() {
         pendingDeleteSnackbar?.dismiss()

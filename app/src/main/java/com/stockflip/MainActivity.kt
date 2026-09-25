@@ -47,6 +47,10 @@ import com.stockflip.backup.BackupManager
 import com.stockflip.ui.builders.ConditionBuilderAdapter
 import com.stockflip.ui.dialogs.WatchItemEditor
 import com.stockflip.ui.dialogs.focusInput
+import com.stockflip.ui.dialogs.SAVE_FAILED_MESSAGE
+import com.stockflip.ui.dialogs.parsePairSpread
+import com.stockflip.ui.dialogs.setPositiveActionKeepingOpen
+import com.stockflip.ui.dialogs.showFieldError
 import com.stockflip.repository.SearchState
 import com.stockflip.repository.StockRepository
 import com.stockflip.viewmodel.StockSearchViewModel
@@ -498,7 +502,7 @@ class MainActivity : AppCompatActivity() {
         } catch (e: Exception) {
             Toast.makeText(
                 this,
-                getString(R.string.import_error, e.message ?: "Okänt fel"),
+                getString(R.string.import_error, BackupManager.importErrorMessage(e)),
                 Toast.LENGTH_LONG
             ).show()
             return
@@ -1135,7 +1139,7 @@ class MainActivity : AppCompatActivity() {
                             Toast.makeText(this@MainActivity, "$symbol borttagen", Toast.LENGTH_SHORT).show()
                         }
                     } catch (e: Exception) {
-                        Toast.makeText(this@MainActivity, "Kunde inte ta bort: ${e.message}", Toast.LENGTH_LONG).show()
+                        Toast.makeText(this@MainActivity, "Kunde inte ta bort. Försök igen.", Toast.LENGTH_LONG).show()
                     }
                 }
             }
@@ -1155,7 +1159,7 @@ class MainActivity : AppCompatActivity() {
                             Toast.makeText(this@MainActivity, "Bevakning borttagen", Toast.LENGTH_SHORT).show()
                         }
                     } catch (e: Exception) {
-                        Toast.makeText(this@MainActivity, "Kunde inte ta bort: ${e.message}", Toast.LENGTH_LONG).show()
+                        Toast.makeText(this@MainActivity, "Kunde inte ta bort. Försök igen.", Toast.LENGTH_LONG).show()
                     }
                 }
             }
@@ -1336,42 +1340,46 @@ class MainActivity : AppCompatActivity() {
         MaterialAlertDialogBuilder(this)
             .setTitle("Lägg till aktiepar")
             .setView(dialogView)
-            .setPositiveButton("Lägg till") { _, _ ->
-                val priceDifferenceStr = priceDifferenceInput.text.toString()
-                val notifyWhenEqual = notifyWhenEqualCheckbox.isChecked
-
-                if (selectedStock1 != null && selectedStock2 != null) {
-                    val priceDifference = priceDifferenceStr.parseDecimal() ?: 0.0
-                    lifecycleScope.launch {
-                        try {
-                            binding.progressBar.visibility = View.VISIBLE
-                            
-                            val watchItem = WatchItem(
-                                watchType = WatchType.PricePair(priceDifference, notifyWhenEqual),
-                                ticker1 = selectedStock1!!.symbol,
-                                ticker2 = selectedStock2!!.symbol,
-                                companyName1 = selectedStock1!!.name,
-                                companyName2 = selectedStock2!!.name
-                            )
-                            
-                            val added = viewModel.addWatchItem(watchItem)
-                            binding.progressBar.visibility = View.GONE
-                            if (added) {
-                                Toast.makeText(this@MainActivity, "Aktiepar tillagt: ${watchItem.armedConditionDescription()}", Toast.LENGTH_LONG).show()
-                            }
-                        } catch (e: Exception) {
-                            binding.progressBar.visibility = View.GONE
-                            Toast.makeText(this@MainActivity, "Kunde inte lägga till aktiepar: ${e.message}", Toast.LENGTH_LONG).show()
-                        }
-                    }
-                } else {
-                    Toast.makeText(this, "Välj båda aktier", Toast.LENGTH_SHORT).show()
-                }
-            }
+            .setPositiveButton("Lägg till", null)
             .setNegativeButton("Avbryt", null)
             .show().also { dialog ->
                 dialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE)
                 focusInput(ticker1Input, selectAll = false)
+                // Dialogen stängs bara när paret sparats; fel visas vid fältet och inmatningen behålls.
+                dialog.setPositiveActionKeepingOpen(lifecycleScope) {
+                    val stock1 = selectedStock1
+                    val stock2 = selectedStock2
+                    if (stock1 == null) {
+                        ticker1Input.showFieldError("Välj första aktien i listan")
+                        return@setPositiveActionKeepingOpen false
+                    }
+                    if (stock2 == null) {
+                        ticker2Input.showFieldError("Välj andra aktien i listan")
+                        return@setPositiveActionKeepingOpen false
+                    }
+                    val priceDifference = parsePairSpread(priceDifferenceInput.text?.toString())
+                    if (priceDifference == null) {
+                        priceDifferenceInput.showFieldError("Ange en giltig prisskillnad")
+                        return@setPositiveActionKeepingOpen false
+                    }
+                    val watchItem = WatchItem(
+                        watchType = WatchType.PricePair(priceDifference, notifyWhenEqualCheckbox.isChecked),
+                        ticker1 = stock1.symbol,
+                        ticker2 = stock2.symbol,
+                        companyName1 = stock1.name,
+                        companyName2 = stock2.name
+                    )
+                    binding.progressBar.visibility = View.VISIBLE
+                    // addWatchItem fångar felen själv och returnerar false.
+                    val added = viewModel.addWatchItem(watchItem)
+                    binding.progressBar.visibility = View.GONE
+                    if (added) {
+                        Toast.makeText(this@MainActivity, "Aktiepar tillagt: ${watchItem.armedConditionDescription()}", Toast.LENGTH_LONG).show()
+                    } else {
+                        priceDifferenceInput.showFieldError(SAVE_FAILED_MESSAGE)
+                    }
+                    added
+                }
             }
     }
 
@@ -1502,7 +1510,7 @@ class MainActivity : AppCompatActivity() {
                 viewModel.refreshWatchItems(showLoading = false)
                 updateLastUpdateTime()
             } catch (e: Exception) {
-                Toast.makeText(this@MainActivity, "Failed to refresh: ${e.message}", Toast.LENGTH_LONG).show()
+                Toast.makeText(this@MainActivity, R.string.alerts_refresh_failed, Toast.LENGTH_LONG).show()
             } finally {
                 binding.swipeRefreshLayout.isRefreshing = false
             }
@@ -1555,7 +1563,7 @@ class MainActivity : AppCompatActivity() {
                             Toast.makeText(this@MainActivity, "Bevakning borttagen", Toast.LENGTH_SHORT).show()
                         }
                     } catch (e: Exception) {
-                        Toast.makeText(this@MainActivity, "Kunde inte ta bort bevakning: ${e.message}", Toast.LENGTH_LONG).show()
+                        Toast.makeText(this@MainActivity, "Kunde inte ta bort bevakningen. Försök igen.", Toast.LENGTH_LONG).show()
                     }
                 }
             }

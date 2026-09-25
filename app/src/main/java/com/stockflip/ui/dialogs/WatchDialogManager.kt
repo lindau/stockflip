@@ -5,6 +5,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
 import android.widget.ArrayAdapter
+import android.widget.EditText
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
@@ -32,10 +33,10 @@ import com.stockflip.UiState
 import com.stockflip.WatchItem
 import com.stockflip.WatchType
 import com.stockflip.armedConditionDescription
-import com.stockflip.parseDecimal
 import com.stockflip.repository.SearchState
 import com.stockflip.ui.builders.ConditionBuilderAdapter
 import com.stockflip.viewmodel.StockSearchViewModel
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -118,10 +119,9 @@ class WatchDialogManager(
                 setupStockSearch(input, adapter, searchViewModel, includeCrypto)
             },
             onUpdateWatchItem = { updatedItem ->
-                viewModel.updateWatchItem(updatedItem)
-                onWatchChanged()
-                // StockDetailViewModel.updateWatchItem körs asynkront och rapporterar inte fel.
-                true
+                viewModel.updateWatchItem(updatedItem).also { succeeded ->
+                    if (succeeded) onWatchChanged()
+                }
             },
             onDeleteRequested = { watchItem ->
                 showDeleteConfirmation(watchItem)
@@ -203,40 +203,33 @@ class WatchDialogManager(
         MaterialAlertDialogBuilder(context)
             .setTitle("Skapa målpris-bevakning")
             .setView(dialogView)
-            .setPositiveButton("Skapa") { _, _ ->
-                val targetPriceStr = targetPriceInput.text.toString()
-                if (targetPriceStr.isNotEmpty()) {
-                    val targetPrice = targetPriceStr.parseDecimal()
-                    if (targetPrice != null && targetPrice > 0) {
-                        val latestPrice = currentStockData()?.lastPrice ?: 0.0
-                        val direction = if (latestPrice > 0.0 && latestPrice >= targetPrice)
-                            WatchType.PriceDirection.BELOW else WatchType.PriceDirection.ABOVE
-                        val watchType = WatchType.PriceTarget(targetPrice, direction)
-                        lifecycleScope.launch {
-                            if (viewModel.isDuplicateWatch(watchType)) {
-                                Toast.makeText(context, "En bevakning med dessa inställningar finns redan", Toast.LENGTH_SHORT).show()
-                            } else {
-                                viewModel.createAlert(watchType, currentCompanyName())
-                                onWatchChanged()
-                                val preview = WatchItem(
-                                    watchType = watchType,
-                                    ticker = symbol,
-                                    companyName = currentCompanyName()
-                                )
-                                Toast.makeText(context, "Skapad: ${preview.armedConditionDescription(currentCurrency())}", Toast.LENGTH_LONG).show()
-                            }
-                        }
-                    } else {
-                        Toast.makeText(context, "Ange ett giltigt målpris", Toast.LENGTH_SHORT).show()
-                    }
-                } else {
-                    Toast.makeText(context, "Ange ett målpris", Toast.LENGTH_SHORT).show()
-                }
-            }
+            .setPositiveButton("Skapa", null)
             .setNegativeButton("Avbryt", null)
             .show().also { dialog ->
                 dialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE)
                 focusInput(targetPriceInput, selectAll = false)
+                dialog.setPositiveActionKeepingOpen(lifecycleScope) {
+                    val targetPrice = when (val input = validatePositiveDecimal(
+                        targetPriceInput.text?.toString(), "Ange ett målpris", "Ange ett giltigt målpris"
+                    )) {
+                        is DecimalInput.Valid -> input.value
+                        is DecimalInput.Invalid -> {
+                            targetPriceInput.showFieldError(input.message)
+                            return@setPositiveActionKeepingOpen false
+                        }
+                    }
+                    val latestPrice = currentStockData()?.lastPrice ?: 0.0
+                    val direction = if (latestPrice > 0.0 && latestPrice >= targetPrice)
+                        WatchType.PriceDirection.BELOW else WatchType.PriceDirection.ABOVE
+                    val watchType = WatchType.PriceTarget(targetPrice, direction)
+                    val preview = WatchItem(watchType = watchType, ticker = symbol, companyName = currentCompanyName())
+                    saveNewWatch(
+                        watchType,
+                        errorField = targetPriceInput,
+                        successMessage = "Skapad: ${preview.armedConditionDescription(currentCurrency())}",
+                        toastDuration = Toast.LENGTH_LONG
+                    )
+                }
             }
     }
 
@@ -371,38 +364,36 @@ class WatchDialogManager(
         MaterialAlertDialogBuilder(context)
             .setTitle("Skapa drawdown-bevakning")
             .setView(dialogView)
-            .setPositiveButton("Skapa") { _, _ ->
-                val dropTypeStr = dropTypeInput.text.toString()
-                val dropValueStr = dropValueInput.text.toString()
-                if (dropTypeStr.isNotEmpty() && dropValueStr.isNotEmpty()) {
-                    val dropType = when (dropTypeStr) {
-                        "Procent" -> WatchType.DropType.PERCENTAGE
-                        else -> WatchType.DropType.ABSOLUTE
-                    }
-                    val reference = selectedReference()
-                    val dropValue = dropValueStr.parseDecimal()
-                    if (dropValue != null && dropValue > 0) {
-                        val watchType = WatchType.ATHBased(dropType, dropValue, reference)
-                        lifecycleScope.launch {
-                            if (viewModel.isDuplicateWatch(watchType)) {
-                                Toast.makeText(context, "En bevakning med dessa inställningar finns redan", Toast.LENGTH_SHORT).show()
-                            } else {
-                                viewModel.createAlert(watchType, currentCompanyName())
-                                onWatchChanged()
-                                Toast.makeText(context, "Drawdown-bevakning skapad", Toast.LENGTH_SHORT).show()
-                            }
-                        }
-                    } else {
-                        Toast.makeText(context, "Ange ett giltigt värde", Toast.LENGTH_SHORT).show()
-                    }
-                } else {
-                    Toast.makeText(context, "Fyll i alla fält", Toast.LENGTH_SHORT).show()
-                }
-            }
+            .setPositiveButton("Skapa", null)
             .setNegativeButton("Avbryt", null)
             .show().also { dialog ->
                 dialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE)
                 focusInput(dropValueInput, selectAll = false)
+                dialog.setPositiveActionKeepingOpen(lifecycleScope) {
+                    val dropTypeStr = dropTypeInput.text.toString()
+                    if (dropTypeStr.isEmpty()) {
+                        dropTypeInput.showFieldError("Välj procent eller belopp")
+                        return@setPositiveActionKeepingOpen false
+                    }
+                    val dropType = when (dropTypeStr) {
+                        "Procent" -> WatchType.DropType.PERCENTAGE
+                        else -> WatchType.DropType.ABSOLUTE
+                    }
+                    val dropValue = when (val input = validatePositiveDecimal(
+                        dropValueInput.text?.toString(), "Ange hur stort fallet ska vara", "Ange ett giltigt värde större än 0"
+                    )) {
+                        is DecimalInput.Valid -> input.value
+                        is DecimalInput.Invalid -> {
+                            dropValueInput.showFieldError(input.message)
+                            return@setPositiveActionKeepingOpen false
+                        }
+                    }
+                    saveNewWatch(
+                        WatchType.ATHBased(dropType, dropValue, selectedReference()),
+                        errorField = dropValueInput,
+                        successMessage = "Drawdown-bevakning skapad"
+                    )
+                }
             }
     }
 
@@ -452,39 +443,32 @@ class WatchDialogManager(
         MaterialAlertDialogBuilder(context)
             .setTitle("Skapa dagsrörelse-bevakning")
             .setView(dialogView)
-            .setPositiveButton("Skapa") { _, _ ->
-                val thresholdStr = thresholdInput.text.toString()
-                val directionStr = directionInput.text.toString()
-                if (thresholdStr.isNotEmpty() && directionStr.isNotEmpty()) {
-                    val threshold = thresholdStr.parseDecimal()
-                    val direction = when (directionStr) {
-                        "Upp" -> WatchType.DailyMoveDirection.UP
-                        "Ned" -> WatchType.DailyMoveDirection.DOWN
-                        "Båda" -> WatchType.DailyMoveDirection.BOTH
-                        else -> WatchType.DailyMoveDirection.BOTH
-                    }
-                    if (threshold != null && threshold > 0) {
-                        val watchType = WatchType.DailyMove(threshold, direction)
-                        lifecycleScope.launch {
-                            if (viewModel.isDuplicateWatch(watchType)) {
-                                Toast.makeText(context, "En bevakning med dessa inställningar finns redan", Toast.LENGTH_SHORT).show()
-                            } else {
-                                viewModel.createAlert(watchType, currentCompanyName())
-                                onWatchChanged()
-                                Toast.makeText(context, "Dagsrörelse-bevakning skapad", Toast.LENGTH_SHORT).show()
-                            }
-                        }
-                    } else {
-                        Toast.makeText(context, "Ange ett giltigt tröskelvärde", Toast.LENGTH_SHORT).show()
-                    }
-                } else {
-                    Toast.makeText(context, "Fyll i alla fält", Toast.LENGTH_SHORT).show()
-                }
-            }
+            .setPositiveButton("Skapa", null)
             .setNegativeButton("Avbryt", null)
             .show().also { dialog ->
                 dialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE)
                 focusInput(thresholdInput, selectAll = false)
+                dialog.setPositiveActionKeepingOpen(lifecycleScope) {
+                    val threshold = when (val input = validatePositiveDecimal(
+                        thresholdInput.text?.toString(), "Ange ett tröskelvärde", "Ange ett giltigt tröskelvärde"
+                    )) {
+                        is DecimalInput.Valid -> input.value
+                        is DecimalInput.Invalid -> {
+                            thresholdInput.showFieldError(input.message)
+                            return@setPositiveActionKeepingOpen false
+                        }
+                    }
+                    val direction = when (directionInput.text.toString()) {
+                        "Upp" -> WatchType.DailyMoveDirection.UP
+                        "Ned" -> WatchType.DailyMoveDirection.DOWN
+                        else -> WatchType.DailyMoveDirection.BOTH
+                    }
+                    saveNewWatch(
+                        WatchType.DailyMove(threshold, direction),
+                        errorField = thresholdInput,
+                        successMessage = "Dagsrörelse-bevakning skapad"
+                    )
+                }
             }
     }
 
@@ -629,47 +613,7 @@ class WatchDialogManager(
         MaterialAlertDialogBuilder(context)
             .setTitle("Skapa nyckeltalsbevakning")
             .setView(dialogView)
-            .setPositiveButton("Skapa") { _, _ ->
-                val metricTypeStr = metricTypeInput.text.toString()
-                val targetValueStr = targetValueInput.text.toString()
-                if (metricTypeStr.isNotEmpty() && targetValueStr.isNotEmpty()) {
-                    val metricType = when (metricTypeStr) {
-	                        "P/E-tal" -> WatchType.MetricType.PE_RATIO
-	                        "P/S-tal" -> WatchType.MetricType.PS_RATIO
-	                        "Utdelningsprocent" -> WatchType.MetricType.DIVIDEND_YIELD
-	                        "Vinst/aktie" -> WatchType.MetricType.EARNINGS_PER_SHARE
-	                        else -> null
-                    }
-                    val targetValue = targetValueStr.parseDecimal()
-                    if (metricType != null && targetValue != null && targetValue > 0) {
-                        val currentValue = when (metricType) {
-	                            WatchType.MetricType.PE_RATIO -> (viewModel.stockDataState.value as? UiState.Success<StockDetailData>)?.data?.peRatio
-	                            WatchType.MetricType.PS_RATIO -> (viewModel.stockDataState.value as? UiState.Success<StockDetailData>)?.data?.psRatio
-	                            WatchType.MetricType.DIVIDEND_YIELD -> (viewModel.stockDataState.value as? UiState.Success<StockDetailData>)?.data?.dividendYield
-	                            WatchType.MetricType.EARNINGS_PER_SHARE -> (viewModel.stockDataState.value as? UiState.Success<StockDetailData>)?.data?.earningsPerShare
-	                        } ?: 0.0
-                        val direction = if (currentValue > 0.0 && currentValue >= targetValue) {
-                            WatchType.PriceDirection.BELOW
-                        } else {
-                            WatchType.PriceDirection.ABOVE
-                        }
-                        val watchType = WatchType.KeyMetrics(metricType, targetValue, direction)
-                        lifecycleScope.launch {
-                            if (viewModel.isDuplicateWatch(watchType)) {
-                                Toast.makeText(context, "En bevakning med dessa inställningar finns redan", Toast.LENGTH_SHORT).show()
-                            } else {
-                                viewModel.createAlert(watchType, currentCompanyName())
-                                onWatchChanged()
-                                Toast.makeText(context, "Nyckeltalsbevakning skapad", Toast.LENGTH_SHORT).show()
-                            }
-                        }
-                    } else {
-                        Toast.makeText(context, "Ange giltiga värden för alla fält", Toast.LENGTH_SHORT).show()
-                    }
-                } else {
-                    Toast.makeText(context, "Fyll i alla fält", Toast.LENGTH_SHORT).show()
-                }
-            }
+            .setPositiveButton("Skapa", null)
             .setNegativeButton("Avbryt", null)
             .show().also { dialog ->
                 dialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE)
@@ -678,6 +622,45 @@ class WatchDialogManager(
                     metricTypeInput.post { metricTypeInput.showDropDown() }
                 } else {
                     focusInput(targetValueInput, selectAll = false)
+                }
+                dialog.setPositiveActionKeepingOpen(lifecycleScope) {
+                    val metricType = when (metricTypeInput.text.toString()) {
+                        "P/E-tal" -> WatchType.MetricType.PE_RATIO
+                        "P/S-tal" -> WatchType.MetricType.PS_RATIO
+                        "Utdelningsprocent" -> WatchType.MetricType.DIVIDEND_YIELD
+                        "Vinst/aktie" -> WatchType.MetricType.EARNINGS_PER_SHARE
+                        else -> null
+                    }
+                    if (metricType == null) {
+                        metricTypeInput.showFieldError("Välj ett nyckeltal")
+                        return@setPositiveActionKeepingOpen false
+                    }
+                    val targetValue = when (val input = validatePositiveDecimal(
+                        targetValueInput.text?.toString(), "Ange ett målvärde", "Ange ett giltigt målvärde"
+                    )) {
+                        is DecimalInput.Valid -> input.value
+                        is DecimalInput.Invalid -> {
+                            targetValueInput.showFieldError(input.message)
+                            return@setPositiveActionKeepingOpen false
+                        }
+                    }
+                    val data = currentStockData()
+                    val currentValue = when (metricType) {
+                        WatchType.MetricType.PE_RATIO -> data?.peRatio
+                        WatchType.MetricType.PS_RATIO -> data?.psRatio
+                        WatchType.MetricType.DIVIDEND_YIELD -> data?.dividendYield
+                        WatchType.MetricType.EARNINGS_PER_SHARE -> data?.earningsPerShare
+                    } ?: 0.0
+                    val direction = if (currentValue > 0.0 && currentValue >= targetValue) {
+                        WatchType.PriceDirection.BELOW
+                    } else {
+                        WatchType.PriceDirection.ABOVE
+                    }
+                    saveNewWatch(
+                        WatchType.KeyMetrics(metricType, targetValue, direction),
+                        errorField = targetValueInput,
+                        successMessage = "Nyckeltalsbevakning skapad"
+                    )
                 }
             }
     }
@@ -691,15 +674,47 @@ class WatchDialogManager(
                 lifecycleScope.launch {
                     if (viewModel.isDuplicateWatch(watchType)) {
                         Toast.makeText(context, "En bevakning för insideraffärer finns redan", Toast.LENGTH_SHORT).show()
-                    } else {
-                        viewModel.createAlert(watchType, currentCompanyName())
+                    } else if (viewModel.createAlert(watchType, currentCompanyName())) {
                         onWatchChanged()
                         Toast.makeText(context, "Bevakning för insideraffärer skapad", Toast.LENGTH_SHORT).show()
+                    } else {
+                        Toast.makeText(context, SAVE_FAILED_MESSAGE, Toast.LENGTH_LONG).show()
                     }
                 }
             }
             .setNegativeButton("Avbryt", null)
             .show()
+    }
+
+    /**
+     * Kontrollerar dubblett och sparar. Vid fel visas meddelandet vid [errorField] och
+     * false returneras så att dialogen ligger kvar; "skapad" bekräftas bara när det sparats.
+     */
+    private suspend fun saveNewWatch(
+        watchType: WatchType,
+        errorField: EditText,
+        successMessage: String,
+        toastDuration: Int = Toast.LENGTH_SHORT
+    ): Boolean {
+        val isDuplicate = try {
+            viewModel.isDuplicateWatch(watchType)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            errorField.showFieldError(SAVE_FAILED_MESSAGE)
+            return false
+        }
+        if (isDuplicate) {
+            errorField.showFieldError(DUPLICATE_WATCH_MESSAGE)
+            return false
+        }
+        if (!viewModel.createAlert(watchType, currentCompanyName())) {
+            errorField.showFieldError(SAVE_FAILED_MESSAGE)
+            return false
+        }
+        onWatchChanged()
+        Toast.makeText(context, successMessage, toastDuration).show()
+        return true
     }
 
     // -------------------------------------------------------------------------

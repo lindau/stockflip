@@ -484,7 +484,7 @@ class MainViewModel(
             data.stockPairs.forEach { stockPairDao.insertStockPair(it) }
             ImportResult.Success(data.watchItems.size, data.stockPairs.size)
         } catch (e: Exception) {
-            ImportResult.Error(e.message ?: "Okänt fel")
+            ImportResult.Error(BackupManager.importErrorMessage(e))
         }
     }
 

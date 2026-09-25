@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Tagg på EditText som markerar att felet vid fältet redan rensas vid ändring. -->
+    <item name="field_error_watcher" type="id" />
+</resources>

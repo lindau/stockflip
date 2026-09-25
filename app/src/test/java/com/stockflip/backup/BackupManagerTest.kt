@@ -72,4 +72,26 @@ class BackupManagerTest {
             }
         """.trimIndent()
     }
+
+    @Test
+    fun `import error message never exposes raw parser errors`() {
+        val parseError = runCatching { BackupManager.importFromJson("inte json") }.exceptionOrNull()!!
+        assertEquals("Filen är inte en giltig StockFlip-backup.", BackupManager.importErrorMessage(parseError))
+        assertEquals(
+            "Ett oväntat fel uppstod. Försök igen.",
+            BackupManager.importErrorMessage(IllegalStateException("SQLiteFullException: database or disk is full"))
+        )
+    }
+
+    @Test
+    fun `import error message explains unsupported backup version in Swedish`() {
+        val versionError = runCatching {
+            BackupManager.importFromJson("""{"version": 999, "watchItems": [], "stockPairs": []}""")
+        }.exceptionOrNull()!!
+        assertTrue(versionError is BackupFormatException)
+        assertEquals(
+            "Backupen kommer från en version av StockFlip som inte stöds (version 999).",
+            BackupManager.importErrorMessage(versionError)
+        )
+    }
 }

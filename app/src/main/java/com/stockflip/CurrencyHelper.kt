@@ -129,5 +129,8 @@ object CurrencyHelper {
  * Tolkar en sträng som ett decimaltal med stöd för både punkt och komma som decimalskiljare.
  * Krävs eftersom Android-tangentbordet på svenska enheter skriver "," men
  * Kotlin's toDoubleOrNull() bara accepterar ".".
+ * Blanksteg tas bort, eftersom formatDecimal() grupperar tusental med (hårt) mellanslag,
+ * t.ex. "1 234,50" — annars underkänns förifyllda värden över 1 000.
  */
-fun String.parseDecimal(): Double? = replace(",", ".").toDoubleOrNull()
+fun String.parseDecimal(): Double? =
+    filterNot { Character.isSpaceChar(it) || it.isWhitespace() }.replace(",", ".").toDoubleOrNull()

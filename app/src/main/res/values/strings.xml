@@ -4,12 +4,12 @@
     <string name="last_updated">Last updated: %1$s</string>
     <string name="icon_description">Icon</string>
 
-    <string name="alerts_empty_title">Inga case ännu</string>
-    <string name="alerts_empty_subtitle">Lägg till en aktie och börja bygga upp dina case</string>
+    <string name="alerts_empty_title">Inga bevakningar ännu</string>
+    <string name="alerts_empty_subtitle">Lägg till en aktie och skapa din första bevakning</string>
 
     <string name="stocks_empty_title">Ingen översikt ännu</string>
     <string name="stocks_empty_subtitle">Gå till fliken Bevakningar och tryck + för att lägga till din första bevakning</string>
-    <string name="overview_mode_cases">Case</string>
+    <string name="overview_mode_cases">Bevakningar</string>
     <string name="overview_mode_stocks">Aktier</string>
     <string name="pairs_empty_title">Inga aktiepar ännu</string>
     <string name="pairs_empty_subtitle">Tryck + för att lägga till ett aktiepar</string>
@@ -29,18 +29,17 @@
     <string name="tab_stocks">Översikt</string>
     <string name="tab_pairs">Par</string>
     <string name="tab_alerts">Bevakningar</string>
-    <string name="rules_title">Bevakningar</string>
     <string name="rules_subtitle">0 utlösta idag · 0 aktiva</string>
     <string name="rules_subtitle_format">%1$d utlösta idag · %2$d aktiva</string>
-    <string name="alerts_empty_active_title">Inga aktiva case</string>
-    <string name="alerts_empty_active_subtitle">Aktivera ett case eller skapa ett nytt för att se det här.</string>
-    <string name="alerts_empty_triggered_title">Inga triggade case</string>
-    <string name="alerts_empty_triggered_subtitle">Här visas case som nyligen har utlöst.</string>
-    <string name="alerts_empty_price_title">Inga priscase</string>
+    <string name="alerts_empty_active_title">Inga aktiva bevakningar</string>
+    <string name="alerts_empty_active_subtitle">Aktivera en bevakning eller skapa en ny för att se den här.</string>
+    <string name="alerts_empty_triggered_title">Inga triggade bevakningar</string>
+    <string name="alerts_empty_triggered_subtitle">Här visas bevakningar som nyligen har utlösts.</string>
+    <string name="alerts_empty_price_title">Inga prisbevakningar</string>
     <string name="alerts_empty_price_subtitle">Skapa prismål, drawdown eller dagsrörelse för att få en prislista här.</string>
-    <string name="alerts_empty_metrics_title">Inga nyckeltalscase</string>
+    <string name="alerts_empty_metrics_title">Inga nyckeltalsbevakningar</string>
     <string name="alerts_empty_metrics_subtitle">Skapa ett P/E-, P/S- eller yield-larm för att fylla den här vyn.</string>
-    <string name="alerts_empty_pairs_title">Inga parcase</string>
+    <string name="alerts_empty_pairs_title">Inga parbevakningar</string>
     <string name="alerts_empty_pairs_subtitle">Skapa ett aktiepar för att bevaka när spreaden når din nivå, oavsett riktning.</string>
     <string name="filter_all">Alla</string>
     <string name="filter_active">Aktiva</string>
@@ -52,7 +51,7 @@
     <string name="batch_pause">Pausa</string>
     <string name="batch_delete">Ta bort</string>
     <string name="batch_cancel">Avsluta</string>
-    <string name="batch_selected_count">%1$d case valda</string>
+    <string name="batch_selected_count">%1$d valda</string>
     <string name="batch_reactivate_all">Återaktivera alla</string>
 
     <string name="title_add_stock">Lägg till aktie eller krypto</string>

@@ -271,7 +271,7 @@ class StockDetailViewModel(
                     Log.d(TAG, "Reactive update: ${updatedAlerts.size} alerts for $symbol")
                 } catch (e: Exception) {
                     Log.e(TAG, "Error updating alerts: ${e.message}", e)
-                    _alertsState.value = UiState.Error("Kunde inte ladda alerts: ${e.message}")
+                    _alertsState.value = UiState.Error("Kunde inte läsa in bevakningarna")
                 }
             }
         }
@@ -424,7 +424,7 @@ class StockDetailViewModel(
                 Log.d(TAG, "Manual refresh: ${updatedAlerts.size} alerts for $symbol")
             } catch (e: Exception) {
                 Log.e(TAG, "Error loading alerts: ${e.message}", e)
-                _alertsState.value = UiState.Error("Kunde inte ladda alerts: ${e.message}")
+                _alertsState.value = UiState.Error("Kunde inte läsa in bevakningarna")
             }
         }
     }
@@ -446,24 +446,27 @@ class StockDetailViewModel(
 
     /**
      * Skapar en ny alert för aktien.
+     * Returnerar true om den sparades, så att dialogen bara bekräftar "Skapad" när det stämmer.
      */
-    fun createAlert(watchType: WatchType, companyName: String) {
-        viewModelScope.launch {
-            try {
-                val watchItem = WatchItem(
-                    watchType = watchType,
-                    ticker = symbol,
-                    companyName = companyName,
-                    isActive = true,
-                    isTriggered = false,
-                    lastTriggeredDate = null
-                )
-                
-                watchItemDao.insertWatchItem(watchItem)
-                Log.d(TAG, "Created alert for $symbol")
-            } catch (e: Exception) {
-                Log.e(TAG, "Error creating alert: ${e.message}", e)
-            }
+    suspend fun createAlert(watchType: WatchType, companyName: String): Boolean {
+        return try {
+            val watchItem = WatchItem(
+                watchType = watchType,
+                ticker = symbol,
+                companyName = companyName,
+                isActive = true,
+                isTriggered = false,
+                lastTriggeredDate = null
+            )
+
+            watchItemDao.insertWatchItem(watchItem)
+            Log.d(TAG, "Created alert for $symbol")
+            true
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Log.e(TAG, "Error creating alert: ${e.message}", e)
+            false
         }
     }
 
@@ -593,22 +596,24 @@ class StockDetailViewModel(
     }
 
     /**
-     * Uppdaterar en befintlig alert.
+     * Uppdaterar en befintlig alert. Returnerar true om uppdateringen sparades.
      */
-    fun updateWatchItem(watchItem: WatchItem) {
-        viewModelScope.launch {
-            try {
-                val keepLastTriggeredDate = shouldGuardAgainstImmediateRetrigger(watchItem)
-                watchItemDao.update(
-                    watchItem.reactivate(
-                        currentPrice = currentPriceForReactivation(watchItem),
-                        keepLastTriggeredDate = keepLastTriggeredDate
-                    )
+    suspend fun updateWatchItem(watchItem: WatchItem): Boolean {
+        return try {
+            val keepLastTriggeredDate = shouldGuardAgainstImmediateRetrigger(watchItem)
+            watchItemDao.update(
+                watchItem.reactivate(
+                    currentPrice = currentPriceForReactivation(watchItem),
+                    keepLastTriggeredDate = keepLastTriggeredDate
                 )
-                Log.d(TAG, "Updated alert ${watchItem.id}")
-            } catch (e: Exception) {
-                Log.e(TAG, "Error updating alert: ${e.message}", e)
-            }
+            )
+            Log.d(TAG, "Updated alert ${watchItem.id}")
+            true
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Log.e(TAG, "Error updating alert: ${e.message}", e)
+            false
         }
     }
 

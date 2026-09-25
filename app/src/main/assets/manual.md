@@ -78,13 +78,13 @@ Appen har tre flikar längst ned:
 
 - **Översikt** — ett läsläge som prioriterar vad som kräver din uppmärksamhet nu
 - **Par** — enbart aktiepar-bevakningar
-- **Mina case** — här lägger du till aktier och skapar, redigerar, pausar eller tar bort bevakningar
+- **Bevakningar** — här lägger du till aktier och skapar, redigerar, pausar eller tar bort bevakningar
 
 I nuvarande appversion fungerar flikarna så här:
 
-- **Översikt:** visar sektioner som `Nytt och triggade`, `Nära att triggas`, `Aktiva case` och `Inaktiva`. Härifrån läser du läget, men nya aktier läggs inte till här.
+- **Översikt:** visar sektioner som `Nytt och triggade`, `Nära att triggas`, `Aktiva bevakningar` och `Inaktiva`. Härifrån läser du läget, men nya aktier läggs inte till här.
 - **Par:** tryck på `+` för att skapa ett aktiepar.
-- **Mina case:** tryck på `+` för att lägga till en ny aktie, ett index eller en kryptovaluta. Öppna sedan aktiens detaljsida och välj vilken typ av bevakning du vill skapa.
+- **Bevakningar:** tryck på `+` för att lägga till en ny aktie, ett index eller en kryptovaluta. Öppna sedan aktiens detaljsida och välj vilken typ av bevakning du vill skapa.
 
 ---
 
@@ -269,7 +269,7 @@ I nuvarande appversion fungerar flikarna så här:
 
 Situation: Du vill köpa Volvo B om den faller till 220 kr (nuvarande pris: 260 kr).
 
-1. Gå till **Mina case** och tryck på `+`.
+1. Gå till **Bevakningar** och tryck på `+`.
 2. Sök efter "VOLV-B" och öppna aktiedetaljvyn.
 3. Tryck **Målpris**.
 4. Ange `220` som målpris.
@@ -283,7 +283,7 @@ Situation: Du vill köpa Volvo B om den faller till 220 kr (nuvarande pris: 260 
 
 Situation: Du vill veta om Ericsson rör sig mer än 4 % en dag, oavsett håll.
 
-1. Gå till **Mina case**, öppna aktiedetaljvyn för ERIC-B.
+1. Gå till **Bevakningar**, öppna aktiedetaljvyn för ERIC-B.
 2. Tryck **Dagsrörelse**.
 3. Ange `4` %.
 4. Välj **Båda håll**.
@@ -295,7 +295,7 @@ Situation: Du vill veta om Ericsson rör sig mer än 4 % en dag, oavsett håll.
 
 Situation: Du vill veta om Investor AB:s P/E-tal stiger över 25 (tecken på högt pris).
 
-1. Gå till **Mina case**, öppna aktiedetaljvyn för INVE-B.
+1. Gå till **Bevakningar**, öppna aktiedetaljvyn för INVE-B.
 2. Tryck **Nyckeltal**.
 3. Välj **P/E-tal**.
 4. Ange `25`.
@@ -334,9 +334,9 @@ Tryck på **reglaget** på bevakningskortet för att stänga av eller slå på e
 
 Vill du snabbt stänga av eller slå på *alla* bevakningar för en aktie utan att öppna varje bevakning för sig, använd reglaget bredvid rubriken "Bevakningar" på aktiens detaljvy.
 
-### Masshantering i Mina case
+### Masshantering i Bevakningar
 
-I fliken **Mina case** kan du långtrycka på en regel för att gå in i markeringsläge. Där kan du välja flera regler samtidigt och:
+I fliken **Bevakningar** kan du långtrycka på en bevakning för att gå in i markeringsläge. Där kan du välja flera bevakningar samtidigt och:
 
 - **Aktivera**
 - **Pausa**
@@ -355,7 +355,7 @@ Bevakningen är nu aktiv igen. För målpris räknar appen om riktningen från a
 Om villkoret fortfarande är uppfyllt när du återaktiverar (kursen ligger till exempel kvar över målpriset, eller aktien är kvar i drawdown), eller om den berörda börsen har stängt, behåller appen dagens trigger-spärr. Bevakningen visas som aktiv igen, men kan inte skicka en ny notis för samma utlösning förrän nästa handelsdag — då utvärderas den på nytt. Detta hindrar att bevakningen utlöses igen direkt av det aktuella värdet.
 I listor visas detta som **Nästa handelsdag**, och återaktiveringsmeddelandet säger att bevakningen kan trigga först nästa handelsdag.
 
-Om flera engångslarm är triggade samtidigt kan du återaktivera dem alla på en gång: välj filtret **Triggade** i **Mina case** och tryck **Återaktivera alla**.
+Om flera engångslarm är triggade samtidigt kan du återaktivera dem alla på en gång: välj filtret **Triggade** i **Bevakningar** och tryck **Återaktivera alla**.
 
 ### Redigera en bevakning
 
@@ -365,7 +365,7 @@ Om flera engångslarm är triggade samtidigt kan du återaktivera dem alla på e
 
 ### Ta bort en bevakning
 
-**Alternativ 1 — Swipe:** Svep kortet åt vänster. I **Mina case** inaktiveras bevakningen (den finns kvar och kan aktiveras igen). I fliken **Par** tas aktieparet bort direkt. I båda fallen visas ett meddelande längst ned med **Ångra**, som återställer bevakningen.
+**Alternativ 1 — Swipe:** Svep kortet åt vänster. I **Bevakningar** inaktiveras bevakningen (den finns kvar och kan aktiveras igen). I fliken **Par** tas aktieparet bort direkt. I båda fallen visas ett meddelande längst ned med **Ångra**, som återställer bevakningen.
 
 **Alternativ 2 — Via dialog:** Tryck på kortet → tryck **Ta bort** längst ned i dialogen.
 
@@ -378,7 +378,7 @@ Om flera engångslarm är triggade samtidigt kan du återaktivera dem alla på e
 
 Den här funktionen kräver att telefonen är ansluten till samma Tailscale-nätverk som podcast-pipeline-instansen, en fristående tjänst som analyserar poddavsnitt. Är instansen inte nåbar fungerar resten av appen som vanligt, bara utan poddfunktionerna nedan.
 
-**Mikrofon-ikon på aktiekortet:** På aktiekortet i **Mina case → Aktier** kan en liten mikrofon-ikon visas till vänster om texten som anger antal bevakningar. Den betyder att bolaget nyligen nämnts i ett poddavsnitt.
+**Mikrofon-ikon på aktiekortet:** På aktiekortet i **Översikt → Aktier** kan en liten mikrofon-ikon visas till vänster om texten som anger antal bevakningar. Den betyder att bolaget nyligen nämnts i ett poddavsnitt.
 
 **Sektionen "Poddomnämnanden" på aktiedetaljen:**
 - En egen sektion längst ned på aktiens detaljvy visar mer detaljer, med en **på/av-växel** i sektionsrubriken (av som standard).
@@ -448,7 +448,10 @@ StockFlip distribueras inte via Play Store, så appen håller själv koll på om
 - Appen lyckades inte hämta nya kurser för bevakningen, till exempel på grund av dålig uppkoppling. Kortet visar då de senast kända värdena och vilken tid de hämtades. Raden försvinner av sig själv när nästa uppdatering lyckas, eller när du drar nedåt för att uppdatera.
 
 **Vad händer om en vy inte kan laddas?**
-- Om aktie- eller aktiepardetaljen, eller listorna i **Par** och **Mina case**, inte kan laddas första gången visas ett felmeddelande med knappen **Försök igen**. Om vyn redan visar data och en uppdatering misslyckas ligger de senast kända värdena kvar, och ett kort meddelande visas längst ned.
+- Om aktie- eller aktiepardetaljen, eller listorna i **Par** och **Bevakningar**, inte kan laddas första gången visas ett felmeddelande med knappen **Försök igen**. Om vyn redan visar data och en uppdatering misslyckas ligger de senast kända värdena kvar, och ett kort meddelande visas längst ned.
+
+**Varför stängs inte dialogen när jag trycker Skapa eller Uppdatera?**
+- Om ett värde saknas eller är ogiltigt, om en likadan bevakning redan finns, eller om bevakningen inte kunde sparas, ligger dialogen kvar och felet visas direkt under fältet. Det du har skrivit finns kvar, så att du kan rätta och försöka igen. Tal kan skrivas med komma eller punkt, och med eller utan mellanslag mellan tusental (t.ex. `1 234,50`).
 
 **Kan jag ha flera bevakningar på samma aktie?**
 - Ja, du kan ha hur många bevakningar du vill på samma aktie, av olika eller samma typ.

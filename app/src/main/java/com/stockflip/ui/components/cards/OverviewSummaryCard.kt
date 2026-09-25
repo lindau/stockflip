@@ -63,7 +63,7 @@ fun OverviewSummaryCard(
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 Text(
-                    text = if (activeCount > 0) "Marknadsläge" else "Inga aktiva case ännu",
+                    text = if (activeCount > 0) "Marknadsläge" else "Inga aktiva bevakningar ännu",
                     style = MaterialTheme.typography.titleMedium,
                     color = colorScheme.onPrimaryContainer,
                 )

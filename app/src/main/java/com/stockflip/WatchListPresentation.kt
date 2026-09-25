@@ -49,7 +49,7 @@ internal sealed class WatchListEmptyState {
     /** Inga rader att visa (eventuellt p.g.a. filtret). */
     object NoItems : WatchListEmptyState()
 
-    /** Första laddningen misslyckades — visa felet med "Försök igen", aldrig "inga case". */
+    /** Första laddningen misslyckades — visa felet med "Försök igen", aldrig "inga bevakningar". */
     data class LoadFailed(val message: String) : WatchListEmptyState()
 }
 

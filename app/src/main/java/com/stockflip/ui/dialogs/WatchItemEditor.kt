@@ -6,6 +6,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
 import android.widget.ArrayAdapter
+import android.widget.EditText
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
@@ -27,6 +28,7 @@ import com.stockflip.WatchType
 import com.stockflip.parseDecimal
 import com.stockflip.ui.builders.ConditionBuilderAdapter
 import com.stockflip.viewmodel.StockSearchViewModel
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
@@ -89,32 +91,37 @@ class WatchItemEditor(
             .setTitle("Redigera aktiepar")
             .setView(dialogView)
             .setOnDismissListener { onDialogDismissed?.invoke() }
-            .setPositiveButton("Uppdatera") { _, _ ->
-                val ticker1Str = ticker1Input.text.toString().trim()
-                val ticker2Str = ticker2Input.text.toString().trim()
-                val priceDifferenceStr = priceDifferenceInput.text.toString()
-                val notifyWhenEqual = notifyWhenEqualCheckbox.isChecked
-                val finalTicker1 = selectedStock1?.symbol ?: ticker1Str
-                val finalTicker2 = selectedStock2?.symbol ?: ticker2Str
-                if (finalTicker1.isNotEmpty() && finalTicker2.isNotEmpty()) {
-                    val priceDifference = priceDifferenceStr.parseDecimal() ?: 0.0
-                    val updatedItem = item.copy(
-                        watchType = WatchType.PricePair(priceDifference, notifyWhenEqual),
-                        ticker1 = finalTicker1,
-                        ticker2 = finalTicker2,
-                        companyName1 = selectedStock1?.name ?: item.companyName1,
-                        companyName2 = selectedStock2?.name ?: item.companyName2
-                    )
-                    runUpdate(updatedItem, "Aktiepar uppdaterat", "Kunde inte uppdatera aktiepar")
-                } else {
-                    Toast.makeText(context, "Välj båda aktier", Toast.LENGTH_SHORT).show()
-                }
-            }
+            .setPositiveButton("Uppdatera", null)
             .setNeutralButton("Ta bort") { _, _ -> onDeleteRequested(item) }
             .setNegativeButton("Avbryt", null)
             .show().also { dialog ->
                 dialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE)
                 focusInput(priceDifferenceInput)
+                dialog.setPositiveActionKeepingOpen(scope) {
+                    val finalTicker1 = selectedStock1?.symbol ?: ticker1Input.text.toString().trim()
+                    val finalTicker2 = selectedStock2?.symbol ?: ticker2Input.text.toString().trim()
+                    if (finalTicker1.isEmpty()) {
+                        ticker1Input.showFieldError("Välj första aktien")
+                        return@setPositiveActionKeepingOpen false
+                    }
+                    if (finalTicker2.isEmpty()) {
+                        ticker2Input.showFieldError("Välj andra aktien")
+                        return@setPositiveActionKeepingOpen false
+                    }
+                    val priceDifference = parsePairSpread(priceDifferenceInput.text?.toString())
+                    if (priceDifference == null) {
+                        priceDifferenceInput.showFieldError("Ange en giltig prisskillnad")
+                        return@setPositiveActionKeepingOpen false
+                    }
+                    val updatedItem = item.copy(
+                        watchType = WatchType.PricePair(priceDifference, notifyWhenEqualCheckbox.isChecked),
+                        ticker1 = finalTicker1,
+                        ticker2 = finalTicker2,
+                        companyName1 = selectedStock1?.name ?: item.companyName1,
+                        companyName2 = selectedStock2?.name ?: item.companyName2
+                    )
+                    saveUpdate(updatedItem, "Aktiepar uppdaterat", priceDifferenceInput)
+                }
             }
     }
 
@@ -145,29 +152,37 @@ class WatchItemEditor(
             .setTitle("Redigera prisbevakning")
             .setView(dialogView)
             .setOnDismissListener { onDialogDismissed?.invoke() }
-            .setPositiveButton("Uppdatera") { _, _ ->
-                val finalTicker = selectedStock?.symbol ?: tickerInput.text.toString().trim()
-                val targetPrice = targetPriceInput.text.toString().parseDecimal()
-                if (finalTicker.isNotEmpty() && targetPrice != null && targetPrice > 0) {
-                    val existingDirection = priceTarget.direction
-                    val direction = currentPriceFor(item)?.let { price ->
-                        if (price >= targetPrice) WatchType.PriceDirection.BELOW else WatchType.PriceDirection.ABOVE
-                    } ?: existingDirection
-                    val updatedItem = item.copy(
-                        watchType = WatchType.PriceTarget(targetPrice, direction),
-                        ticker = finalTicker,
-                        companyName = selectedStock?.name ?: item.companyName
-                    )
-                    runUpdate(updatedItem, "Prisbevakning uppdaterad", "Kunde inte uppdatera prisbevakning")
-                } else {
-                    Toast.makeText(context, "Ange ett giltigt målpris", Toast.LENGTH_SHORT).show()
-                }
-            }
+            .setPositiveButton("Uppdatera", null)
             .setNeutralButton("Ta bort") { _, _ -> onDeleteRequested(item) }
             .setNegativeButton("Avbryt", null)
             .show().also { dialog ->
                 dialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE)
                 focusInput(targetPriceInput)
+                dialog.setPositiveActionKeepingOpen(scope) {
+                    val finalTicker = selectedStock?.symbol ?: tickerInput.text.toString().trim()
+                    if (finalTicker.isEmpty()) {
+                        tickerInput.showFieldError("Välj en aktie")
+                        return@setPositiveActionKeepingOpen false
+                    }
+                    val targetPrice = when (val input = validatePositiveDecimal(
+                        targetPriceInput.text?.toString(), "Ange ett målpris", "Ange ett giltigt målpris"
+                    )) {
+                        is DecimalInput.Valid -> input.value
+                        is DecimalInput.Invalid -> {
+                            targetPriceInput.showFieldError(input.message)
+                            return@setPositiveActionKeepingOpen false
+                        }
+                    }
+                    val direction = currentPriceFor(item)?.let { price ->
+                        if (price >= targetPrice) WatchType.PriceDirection.BELOW else WatchType.PriceDirection.ABOVE
+                    } ?: priceTarget.direction
+                    val updatedItem = item.copy(
+                        watchType = WatchType.PriceTarget(targetPrice, direction),
+                        ticker = finalTicker,
+                        companyName = selectedStock?.name ?: item.companyName
+                    )
+                    saveUpdate(updatedItem, "Prisbevakning uppdaterad", targetPriceInput)
+                }
             }
     }
 
@@ -211,36 +226,48 @@ class WatchItemEditor(
             .setTitle("Redigera nyckeltalsbevakning")
             .setView(dialogView)
             .setOnDismissListener { onDialogDismissed?.invoke() }
-            .setPositiveButton("Uppdatera") { _, _ ->
-                val finalTicker = selectedStock?.symbol ?: tickerInput.text.toString().trim()
-                val targetValue = targetValueInput.text.toString().parseDecimal()
-                val metricType = when (metricTypeInput.text.toString()) {
-	                    "P/E-tal" -> WatchType.MetricType.PE_RATIO
-	                    "P/S-tal" -> WatchType.MetricType.PS_RATIO
-	                    "Utdelningsprocent" -> WatchType.MetricType.DIVIDEND_YIELD
-	                    "Vinst/aktie" -> WatchType.MetricType.EARNINGS_PER_SHARE
-	                    else -> null
-                }
-                if (finalTicker.isNotEmpty() && metricType != null && targetValue != null && targetValue > 0) {
-                    val existingDirection = keyMetrics.direction
-                    val direction = currentMetricValueFor(item)?.let { value ->
-                        if (value >= targetValue) WatchType.PriceDirection.BELOW else WatchType.PriceDirection.ABOVE
-                    } ?: existingDirection
-                    val updatedItem = item.copy(
-                        watchType = WatchType.KeyMetrics(metricType, targetValue, direction),
-                        ticker = finalTicker,
-                        companyName = selectedStock?.name ?: item.companyName
-                    )
-                    runUpdate(updatedItem, "Nyckeltalsbevakning uppdaterad", "Kunde inte uppdatera nyckeltalsbevakning")
-                } else {
-                    Toast.makeText(context, "Ange giltiga värden för alla fält", Toast.LENGTH_SHORT).show()
-                }
-            }
+            .setPositiveButton("Uppdatera", null)
             .setNeutralButton("Ta bort") { _, _ -> onDeleteRequested(item) }
             .setNegativeButton("Avbryt", null)
             .show().also { dialog ->
                 dialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE)
                 focusInput(targetValueInput)
+                dialog.setPositiveActionKeepingOpen(scope) {
+                    val finalTicker = selectedStock?.symbol ?: tickerInput.text.toString().trim()
+                    if (finalTicker.isEmpty()) {
+                        tickerInput.showFieldError("Välj en aktie")
+                        return@setPositiveActionKeepingOpen false
+                    }
+                    val metricType = when (metricTypeInput.text.toString()) {
+                        "P/E-tal" -> WatchType.MetricType.PE_RATIO
+                        "P/S-tal" -> WatchType.MetricType.PS_RATIO
+                        "Utdelningsprocent" -> WatchType.MetricType.DIVIDEND_YIELD
+                        "Vinst/aktie" -> WatchType.MetricType.EARNINGS_PER_SHARE
+                        else -> null
+                    }
+                    if (metricType == null) {
+                        metricTypeInput.showFieldError("Välj ett nyckeltal")
+                        return@setPositiveActionKeepingOpen false
+                    }
+                    val targetValue = when (val input = validatePositiveDecimal(
+                        targetValueInput.text?.toString(), "Ange ett målvärde", "Ange ett giltigt målvärde"
+                    )) {
+                        is DecimalInput.Valid -> input.value
+                        is DecimalInput.Invalid -> {
+                            targetValueInput.showFieldError(input.message)
+                            return@setPositiveActionKeepingOpen false
+                        }
+                    }
+                    val direction = currentMetricValueFor(item)?.let { value ->
+                        if (value >= targetValue) WatchType.PriceDirection.BELOW else WatchType.PriceDirection.ABOVE
+                    } ?: keyMetrics.direction
+                    val updatedItem = item.copy(
+                        watchType = WatchType.KeyMetrics(metricType, targetValue, direction),
+                        ticker = finalTicker,
+                        companyName = selectedStock?.name ?: item.companyName
+                    )
+                    saveUpdate(updatedItem, "Nyckeltalsbevakning uppdaterad", targetValueInput)
+                }
             }
     }
 
@@ -300,29 +327,38 @@ class WatchItemEditor(
             .setTitle("Redigera drawdown-bevakning")
             .setView(dialogView)
             .setOnDismissListener { onDialogDismissed?.invoke() }
-            .setPositiveButton("Uppdatera") { _, _ ->
-                val finalTicker = selectedStock?.symbol ?: tickerInput.text.toString().trim()
-                val dropType = when (dropTypeInput.text.toString()) {
-                    "Procent" -> WatchType.DropType.PERCENTAGE
-                    else -> WatchType.DropType.ABSOLUTE
-                }
-                val dropValue = dropValueInput.text.toString().parseDecimal()
-                if (finalTicker.isNotEmpty() && dropValue != null && dropValue > 0) {
-                    val updatedItem = item.copy(
-                        watchType = WatchType.ATHBased(dropType, dropValue, selectedReference()),
-                        ticker = finalTicker,
-                        companyName = selectedStock?.name ?: item.companyName
-                    )
-                    runUpdate(updatedItem, "Bevakning uppdaterad", "Kunde inte uppdatera drawdown-bevakning")
-                } else {
-                    Toast.makeText(context, "Ange ett giltigt värde", Toast.LENGTH_SHORT).show()
-                }
-            }
+            .setPositiveButton("Uppdatera", null)
             .setNeutralButton("Ta bort") { _, _ -> onDeleteRequested(item) }
             .setNegativeButton("Avbryt", null)
             .show().also { dialog ->
                 dialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE)
                 focusInput(dropValueInput)
+                dialog.setPositiveActionKeepingOpen(scope) {
+                    val finalTicker = selectedStock?.symbol ?: tickerInput.text.toString().trim()
+                    if (finalTicker.isEmpty()) {
+                        tickerInput.showFieldError("Välj en aktie")
+                        return@setPositiveActionKeepingOpen false
+                    }
+                    val dropType = when (dropTypeInput.text.toString()) {
+                        "Procent" -> WatchType.DropType.PERCENTAGE
+                        else -> WatchType.DropType.ABSOLUTE
+                    }
+                    val dropValue = when (val input = validatePositiveDecimal(
+                        dropValueInput.text?.toString(), "Ange hur stort fallet ska vara", "Ange ett giltigt värde större än 0"
+                    )) {
+                        is DecimalInput.Valid -> input.value
+                        is DecimalInput.Invalid -> {
+                            dropValueInput.showFieldError(input.message)
+                            return@setPositiveActionKeepingOpen false
+                        }
+                    }
+                    val updatedItem = item.copy(
+                        watchType = WatchType.ATHBased(dropType, dropValue, selectedReference()),
+                        ticker = finalTicker,
+                        companyName = selectedStock?.name ?: item.companyName
+                    )
+                    saveUpdate(updatedItem, "Bevakning uppdaterad", dropValueInput)
+                }
             }
     }
 
@@ -333,7 +369,7 @@ class WatchItemEditor(
             currency = currentCurrencyFor(item),
             onUpdate = { minPrice, maxPrice ->
                 val updatedItem = item.copy(watchType = WatchType.PriceRange(minPrice, maxPrice))
-                runUpdate(updatedItem, context.getString(R.string.toast_price_range_updated), context.getString(R.string.toast_watch_update_failed, ""))
+                scope.launch { saveUpdate(updatedItem, context.getString(R.string.toast_price_range_updated), errorField = null) }
             },
             onDelete = { onDeleteRequested(item) },
             onDismiss = onDialogDismissed
@@ -368,25 +404,30 @@ class WatchItemEditor(
             .setTitle("Redigera dagsrörelse-bevakning")
             .setView(dialogView)
             .setOnDismissListener { onDialogDismissed?.invoke() }
-            .setPositiveButton("Uppdatera") { _, _ ->
-                val threshold = thresholdInput.text.toString().parseDecimal()
-                val direction = when (directionInput.text.toString()) {
-                    "Upp" -> WatchType.DailyMoveDirection.UP
-                    "Ned" -> WatchType.DailyMoveDirection.DOWN
-                    else -> WatchType.DailyMoveDirection.BOTH
-                }
-                if (threshold != null && threshold > 0) {
-                    val updatedItem = item.copy(watchType = WatchType.DailyMove(threshold, direction))
-                    runUpdate(updatedItem, "Dagsrörelse-bevakning uppdaterad", "Kunde inte uppdatera dagsrörelse-bevakning")
-                } else {
-                    Toast.makeText(context, "Ange ett giltigt tröskelvärde", Toast.LENGTH_SHORT).show()
-                }
-            }
+            .setPositiveButton("Uppdatera", null)
             .setNeutralButton("Ta bort") { _, _ -> onDeleteRequested(item) }
             .setNegativeButton("Avbryt", null)
             .show().also { dialog ->
                 dialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE)
                 focusInput(thresholdInput)
+                dialog.setPositiveActionKeepingOpen(scope) {
+                    val threshold = when (val input = validatePositiveDecimal(
+                        thresholdInput.text?.toString(), "Ange ett tröskelvärde", "Ange ett giltigt tröskelvärde"
+                    )) {
+                        is DecimalInput.Valid -> input.value
+                        is DecimalInput.Invalid -> {
+                            thresholdInput.showFieldError(input.message)
+                            return@setPositiveActionKeepingOpen false
+                        }
+                    }
+                    val direction = when (directionInput.text.toString()) {
+                        "Upp" -> WatchType.DailyMoveDirection.UP
+                        "Ned" -> WatchType.DailyMoveDirection.DOWN
+                        else -> WatchType.DailyMoveDirection.BOTH
+                    }
+                    val updatedItem = item.copy(watchType = WatchType.DailyMove(threshold, direction))
+                    saveUpdate(updatedItem, "Dagsrörelse-bevakning uppdaterad", thresholdInput)
+                }
             }
     }
 
@@ -453,54 +494,63 @@ class WatchItemEditor(
             .setTitle("Redigera kombinerat larm")
             .setView(dialogView)
             .setOnDismissListener { onDialogDismissed?.invoke() }
-            .setPositiveButton("Spara") { _, _ ->
-                val newSymbol = symbolInput.text.toString().trim()
-                val newConditions = conditionAdapter.getConditions()
-                if (newSymbol.isEmpty()) {
-                    Toast.makeText(context, "Välj en aktie", Toast.LENGTH_SHORT).show()
-                    return@setPositiveButton
-                }
-                if (newConditions.isEmpty()) {
-                    Toast.makeText(context, "Lägg till minst ett villkor", Toast.LENGTH_SHORT).show()
-                    return@setPositiveButton
-                }
-
-                val validConditions = newConditions.filter {
-                    it.value.isNotEmpty() && it.value.parseDecimal() != null
-                }
-                if (validConditions.size != newConditions.size) {
-                    Toast.makeText(context, "Alla villkor måste ha giltigt värde", Toast.LENGTH_SHORT).show()
-                    return@setPositiveButton
-                }
-
-                val newExpression = buildAlertExpression(newSymbol, validConditions)
-                if (newExpression == null) {
-                    Toast.makeText(context, "Kunde inte skapa uttryck", Toast.LENGTH_SHORT).show()
-                    return@setPositiveButton
-                }
-
-                val updatedItem = watchItem.copy(
-                    watchType = WatchType.Combined(newExpression),
-                    ticker = newSymbol
-                )
-                runUpdate(updatedItem, "Kombinerat larm uppdaterat", "Kunde inte uppdatera kombinerat larm")
-            }
+            .setPositiveButton("Spara", null)
             .setNeutralButton("Ta bort") { _, _ -> onDeleteRequested(watchItem) }
             .setNegativeButton("Avbryt", null)
-            .show()
+            .show().also { dialog ->
+                dialog.setPositiveActionKeepingOpen(scope) {
+                    val newSymbol = symbolInput.text.toString().trim()
+                    val newConditions = conditionAdapter.getConditions()
+                    if (newSymbol.isEmpty()) {
+                        symbolInput.showFieldError("Välj en aktie")
+                        return@setPositiveActionKeepingOpen false
+                    }
+                    // Villkoren ligger i en lista utan eget fält att markera — Toast, men dialogen ligger kvar.
+                    if (newConditions.isEmpty()) {
+                        Toast.makeText(context, "Lägg till minst ett villkor", Toast.LENGTH_SHORT).show()
+                        return@setPositiveActionKeepingOpen false
+                    }
+                    val validConditions = newConditions.filter {
+                        it.value.isNotEmpty() && it.value.parseDecimal() != null
+                    }
+                    if (validConditions.size != newConditions.size) {
+                        Toast.makeText(context, "Alla villkor måste ha giltigt värde", Toast.LENGTH_SHORT).show()
+                        return@setPositiveActionKeepingOpen false
+                    }
+                    val newExpression = buildAlertExpression(newSymbol, validConditions)
+                    if (newExpression == null) {
+                        Toast.makeText(context, "Kunde inte skapa uttryck", Toast.LENGTH_SHORT).show()
+                        return@setPositiveActionKeepingOpen false
+                    }
+                    val updatedItem = watchItem.copy(
+                        watchType = WatchType.Combined(newExpression),
+                        ticker = newSymbol
+                    )
+                    saveUpdate(updatedItem, "Kombinerat larm uppdaterat", symbolInput)
+                }
+            }
     }
 
-    private fun runUpdate(updatedItem: WatchItem, successMessage: String, errorMessage: String) {
-        scope.launch {
-            try {
-                if (onUpdateWatchItem(updatedItem)) {
-                    Toast.makeText(context, successMessage, Toast.LENGTH_SHORT).show()
-                }
-            } catch (e: Exception) {
-                val suffix = e.message?.takeIf { it.isNotBlank() }?.let { ": $it" }.orEmpty()
-                Toast.makeText(context, errorMessage + suffix, Toast.LENGTH_LONG).show()
-            }
+    /**
+     * Sparar och bekräftar bara vid lyckat resultat. Vid fel visas ett svenskt meddelande vid
+     * [errorField] (dialogen ligger kvar) — aldrig undantagets tekniska text.
+     */
+    private suspend fun saveUpdate(updatedItem: WatchItem, successMessage: String, errorField: EditText?): Boolean {
+        val succeeded = try {
+            onUpdateWatchItem(updatedItem)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            false
         }
+        if (succeeded) {
+            Toast.makeText(context, successMessage, Toast.LENGTH_SHORT).show()
+        } else if (errorField != null) {
+            errorField.showFieldError(SAVE_FAILED_MESSAGE)
+        } else {
+            Toast.makeText(context, SAVE_FAILED_MESSAGE, Toast.LENGTH_LONG).show()
+        }
+        return succeeded
     }
 
     private fun decomposeExpression(expression: AlertExpression): Pair<String, List<ConditionBuilderAdapter.ConditionData>>? {

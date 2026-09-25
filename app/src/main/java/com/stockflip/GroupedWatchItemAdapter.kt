@@ -526,7 +526,7 @@ class GroupedWatchItemAdapter(
             header = "Nära att triggas",
             items = closeItems.map { it.second.uiState }
         )
-        addOverviewSection(groupedList, "Aktiva case", activeItems)
+        addOverviewSection(groupedList, "Aktiva bevakningar", activeItems)
         addOverviewSection(groupedList, "Inaktiva", inactiveItems)
 
         Log.d(TAG, "Built overview list with ${groupedList.size} items")
