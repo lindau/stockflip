@@ -44,3 +44,8 @@
 - Svep åt vänster i `Bevakningar` pausar en aktiv bevakning (paus-ikon) och aktiverar en pausad (play-ikon) — det ser inte längre ut som en radering. Utlösta bevakningar aktiveras som förut med `Återaktivera`
 - Periodväljaren i grafen har större tryckytor och läses upp tydligt med skärmläsare (t.ex. "1 dag", vald period markeras)
 - `+`-knappen beskrivs rätt per flik för skärmläsare och visar sin funktion vid långtryck
+- Snabbare kursuppdatering: flera bevakningar på samma aktie delar på ett nätverksanrop, och en långsam aktie håller inte längre tillbaka nya kurser för resten av listan
+- Grafen sparas en stund per period, så byte tillbaka till en period eller ett återbesök på en aktie visar grafen direkt
+- Nyckeltal hämtas högst var 15:e minut i stället för vid varje uppdatering
+- Snabbare flikbyten, och valt filter i `Bevakningar` ligger kvar när du byter flik
+- Aktiedetaljen visar senast kända kurs direkt när du öppnar den från en lista, i stället för `Laddar`
