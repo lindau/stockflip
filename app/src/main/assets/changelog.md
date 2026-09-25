@@ -25,3 +25,7 @@
 - Prestandaomgång: färre nätverksanrop per aktie, mindre onödig omritning av listor vid bakgrundsuppdateringar och snabbare appstart (ingen förändring i funktionalitet)
 - Index kan nu bevakas (t.ex. `^OMXS30`, `^GSPC`): sök på "OMX" eller "S&P". Målpris, dagsrörelse, drawdown, par och kombinerade larm stöds, och larmen följer indexets hemmabörs öppettider
 - Pair-detaljen visar aktierna under varandra och har inte längre aktienamnen dubblerade i rubriken
+- Aktiedetaljen visar en felvy med `Försök igen` om den inte kan laddas, och behåller senast kända värden om en uppdatering misslyckas
+- En misslyckad åtgärd (t.ex. ta bort eller inaktivera) tömmer inte längre listan, och felmeddelandena är på svenska
+- Korten visar `Kunde inte uppdateras` med tid för senast kända värden när en kursuppdatering misslyckas
+- Inget `Bevakning borttagen`-meddelande visas längre när borttagningen i själva verket misslyckades
