@@ -15,7 +15,9 @@ class FakeMarketDataService(
     private val exchangeBySymbol: Map<String, String> = emptyMap(),
     private val companyNameBySymbol: Map<String, String> = emptyMap(),
     private val allTimeHighBySymbol: Map<String, Double> = emptyMap(),
-    private val chartDataByPeriod: Map<ChartPeriod, IntradayChartData?> = emptyMap()
+    private val chartDataByPeriod: Map<ChartPeriod, IntradayChartData?> = emptyMap(),
+    // Ersätter standardbeteendet för getStockDetailSnapshot, t.ex. för att simulera fel eller fördröjning.
+    private val snapshotProvider: (suspend (String) -> StockDetailSnapshot?)? = null
 ) : MarketDataService {
     override suspend fun getStockPrice(symbol: String): Double? = pricesBySymbol[symbol]
 
@@ -49,6 +51,7 @@ class FakeMarketDataService(
     override suspend fun getNextEarningsReport(symbol: String): NextEarningsInfo? = null
 
     override suspend fun getStockDetailSnapshot(symbol: String): StockDetailSnapshot? {
+        snapshotProvider?.let { return it(symbol) }
         val lastPrice: Double? = pricesBySymbol[symbol] ?: return null
         return StockDetailSnapshot(
             lastPrice = lastPrice,

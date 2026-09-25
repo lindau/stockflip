@@ -8,8 +8,14 @@ import com.stockflip.testutil.InMemoryTriggerHistoryDao
 import com.stockflip.testutil.InMemoryWatchItemDao
 import com.stockflip.testutil.MainDispatcherRule
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
+import java.io.IOException
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -225,5 +231,103 @@ class StockDetailViewModelTest {
         assertTrue(updated.isActive)
         assertEquals(false, updated.isTriggered)
         assertEquals(today, updated.lastTriggeredDate)
+    }
+
+    // --- Laddning, fel och omförsök för aktiedata ---
+    // Ingen advanceUntilIdle() i dessa tester (se CLAUDE.md); advanceTimeBy/runCurrent är begränsade.
+
+    private fun snapshot(price: Double): StockDetailSnapshot = StockDetailSnapshot(
+        lastPrice = price,
+        previousClose = null,
+        dailyChangePercent = null,
+        week52High = null,
+        week52Low = null,
+        currency = "SEK",
+        exchangeName = "STO",
+        companyName = "Volvo B"
+    )
+
+    private fun createViewModel(service: MarketDataService, symbol: String = "VOLV-B.ST") = StockDetailViewModel(
+        InMemoryWatchItemDao(emptyList()), service, symbol,
+        TriggerHistoryRepository(InMemoryTriggerHistoryDao()), InMemoryStockNoteDao(),
+        com.stockflip.repository.MetricHistoryRepository(InMemoryMetricHistoryDao())
+    )
+
+    @Test
+    fun `first load without snapshot emits Error`() = runTest {
+        val viewModel = createViewModel(FakeMarketDataService())
+        runCurrent()
+
+        assertTrue(viewModel.stockDataState.value is UiState.Error)
+    }
+
+    @Test
+    fun `failed refresh keeps previous data and signals refreshFailed`() = runTest {
+        var fail = false
+        val service = FakeMarketDataService(snapshotProvider = {
+            if (fail) throw IOException("offline") else snapshot(300.0)
+        })
+        val viewModel = createViewModel(service)
+        runCurrent()
+        val events = mutableListOf<Unit>()
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+            viewModel.refreshFailed.collect { events.add(it) }
+        }
+
+        fail = true
+        viewModel.loadStockData()
+        runCurrent()
+
+        val state = viewModel.stockDataState.value
+        assertTrue(state is UiState.Success)
+        assertEquals(300.0, (state as UiState.Success).data.lastPrice!!, 0.0001)
+        assertEquals(1, events.size)
+    }
+
+    @Test
+    fun `retry after failed first load emits Success`() = runTest {
+        var fail = true
+        val service = FakeMarketDataService(snapshotProvider = {
+            if (fail) null else snapshot(310.0)
+        })
+        val viewModel = createViewModel(service)
+        runCurrent()
+        assertTrue(viewModel.stockDataState.value is UiState.Error)
+
+        fail = false
+        viewModel.refresh()
+        runCurrent()
+
+        val state = viewModel.stockDataState.value
+        assertTrue(state is UiState.Success)
+        assertEquals(310.0, (state as UiState.Success).data.lastPrice!!, 0.0001)
+    }
+
+    @Test
+    fun `stale slow load cannot overwrite newer successful load`() = runTest {
+        var calls = 0
+        val service = FakeMarketDataService(snapshotProvider = {
+            calls++
+            if (calls == 1) {
+                // Första (äldre) anropet är långsamt och misslyckas.
+                delay(1_000L)
+                throw IOException("timeout")
+            }
+            snapshot(320.0)
+        })
+        val viewModel = createViewModel(service) // init startar anrop 1
+        val events = mutableListOf<Unit>()
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+            viewModel.refreshFailed.collect { events.add(it) }
+        }
+
+        viewModel.loadStockData() // anrop 2, ska avbryta anrop 1
+        advanceTimeBy(2_000L)
+        runCurrent()
+
+        val state = viewModel.stockDataState.value
+        assertTrue(state is UiState.Success)
+        assertEquals(320.0, (state as UiState.Success).data.lastPrice!!, 0.0001)
+        assertTrue(events.isEmpty())
     }
 }

@@ -6,11 +6,15 @@ import com.stockflip.repository.MetricHistoryRepository
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.stockflip.repository.TriggerHistoryRepository
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -34,6 +38,11 @@ class StockDetailViewModel(
 
     private val _stockDataState = MutableStateFlow<UiState<StockDetailData>>(UiState.Loading)
     val stockDataState: StateFlow<UiState<StockDetailData>> = _stockDataState.asStateFlow()
+    private var stockDataJob: Job? = null
+
+    // Engångshändelse: en uppdatering misslyckades men senast kända data visas fortfarande.
+    private val _refreshFailed = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+    val refreshFailed: SharedFlow<Unit> = _refreshFailed.asSharedFlow()
 
     private val _alertsState = MutableStateFlow<UiState<List<WatchItemUiState>>>(UiState.Loading)
     val alertsState: StateFlow<UiState<List<WatchItemUiState>>> = _alertsState.asStateFlow()
@@ -80,13 +89,18 @@ class StockDetailViewModel(
      * Dagsförändring beräknas endast när både lastPrice och previousClose finns i samma svar.
      */
     fun loadStockData() {
-        viewModelScope.launch {
+        // Avbryt föregående laddning så att ett äldre svar inte skriver över ett nyare.
+        stockDataJob?.cancel()
+        stockDataJob = viewModelScope.launch {
             try {
-                _stockDataState.value = UiState.Loading
+                // Blinka inte laddningsindikatorn om vi redan visar data.
+                if (_stockDataState.value !is UiState.Success) {
+                    _stockDataState.value = UiState.Loading
+                }
                 val snapshot: StockDetailSnapshot? = yahooFinanceService.getStockDetailSnapshot(symbol)
                 if (snapshot == null) {
-                    _stockDataState.value = UiState.Error("Kunde inte ladda aktiedata för $symbol")
                     Log.e(TAG, "getStockDetailSnapshot returned null for $symbol")
+                    onStockDataLoadFailed()
                     return@launch
                 }
                 val lastPrice: Double? = snapshot.lastPrice
@@ -182,10 +196,23 @@ class StockDetailViewModel(
                         }
                     }
                 }
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 Log.e(TAG, "Error loading stock data: ${e.message}", e)
-                _stockDataState.value = UiState.Error("Kunde inte ladda aktiedata: ${e.message}")
+                onStockDataLoadFailed()
             }
+        }
+    }
+
+    /**
+     * Finns redan data behålls den och en engångshändelse signaleras; annars visas feltillstånd.
+     */
+    private fun onStockDataLoadFailed() {
+        if (_stockDataState.value is UiState.Success) {
+            _refreshFailed.tryEmit(Unit)
+        } else {
+            _stockDataState.value = UiState.Error("Kunde inte ladda aktiedata för $symbol")
         }
     }
 

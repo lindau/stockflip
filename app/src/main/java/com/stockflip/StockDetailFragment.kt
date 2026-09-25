@@ -30,6 +30,7 @@ import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.color.MaterialColors
 import com.google.android.material.divider.MaterialDivider
+import com.google.android.material.snackbar.Snackbar
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.combine
 import java.text.SimpleDateFormat
@@ -316,6 +317,9 @@ class StockDetailFragment : Fragment() {
         binding.swipeRefreshLayout.setOnRefreshListener {
             viewModel.refresh()
         }
+        binding.stockDataRetryButton.setOnClickListener {
+            viewModel.refresh()
+        }
     }
 
     private fun setupQuickActions() {
@@ -358,9 +362,11 @@ class StockDetailFragment : Fragment() {
             viewModel.stockDataState.collect { state ->
                 when (state) {
                     is UiState.Loading -> {
+                        binding.stockDataErrorContainer.isVisible = false
                         binding.loadingIndicator.isVisible = true
                     }
                     is UiState.Success -> {
+                        binding.stockDataErrorContainer.isVisible = false
                         binding.loadingIndicator.isVisible = false
                         binding.swipeRefreshLayout.isRefreshing = false
                         latestStockData = state.data
@@ -369,12 +375,22 @@ class StockDetailFragment : Fragment() {
                         renderDecisionSupport()
                     }
                     is UiState.Error -> {
+                        // ViewModel emitterar bara Error när ingen tidigare data finns.
                         binding.loadingIndicator.isVisible = false
                         binding.swipeRefreshLayout.isRefreshing = false
-                        Toast.makeText(requireContext(), state.message, Toast.LENGTH_LONG).show()
+                        binding.stockDataErrorContainer.isVisible = true
                     }
                 }
             }
+            }
+        }
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.refreshFailed.collect {
+                    binding.swipeRefreshLayout.isRefreshing = false
+                    Snackbar.make(binding.root, R.string.alerts_refresh_failed, Snackbar.LENGTH_LONG).show()
+                }
             }
         }
 
