@@ -8,9 +8,12 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
@@ -33,6 +36,11 @@ class MainViewModel(
     // till skillnad från UiState.Loading som ersätter hela skärmen.
     private val _watchItemsRefreshing = MutableStateFlow(false)
     val watchItemsRefreshing: StateFlow<Boolean> = _watchItemsRefreshing.asStateFlow()
+
+    // Engångshändelse för misslyckade användaråtgärder (lägg till/ta bort/uppdatera).
+    // Hålls separat från watchItemUiState så att ett enskilt fel inte ersätter listan.
+    private val _actionError = MutableSharedFlow<String>(extraBufferCapacity = 1)
+    val actionError: SharedFlow<String> = _actionError.asSharedFlow()
 
     val notedTickers: StateFlow<Set<String>> = stockNoteDao.getAllTickersFlow()
         .map { it.toSet() }
@@ -90,7 +98,7 @@ class MainViewModel(
             }
         } catch (e: Exception) {
             Log.e(TAG, "Error loading watch items: ${e.message}")
-            _watchItemUiState.value = UiState.Error("Failed to load watch items: ${e.message}")
+            _watchItemUiState.value = UiState.Error("Kunde inte läsa in bevakningarna")
         }
     }
 
@@ -287,7 +295,7 @@ class MainViewModel(
         } catch (e: Exception) {
             Log.e(TAG, "=== END refreshWatchItems() - ERROR: ${e.message} ===", e)
             if (showLoading) {
-                _watchItemUiState.value = UiState.Error("Failed to refresh watch items: ${e.message}")
+                _watchItemUiState.value = UiState.Error("Kunde inte uppdatera bevakningarna")
             }
             Log.d(TAG, "Set UI state to Error")
         } finally {
@@ -304,7 +312,7 @@ class MainViewModel(
             syncWatchItemsAfterMutation()
         } catch (e: Exception) {
             Log.e(TAG, "Error adding watch item: ${e.message}")
-            _watchItemUiState.value = UiState.Error("Failed to add watch item: ${e.message}")
+            _actionError.tryEmit("Kunde inte lägga till bevakningen")
         }
     }
 
@@ -315,7 +323,7 @@ class MainViewModel(
             syncWatchItemsAfterMutation()
         } catch (e: Exception) {
             Log.e(TAG, "Error deleting watches for symbol: ${e.message}")
-            _watchItemUiState.value = UiState.Error("Failed to delete watches: ${e.message}")
+            _actionError.tryEmit("Kunde inte ta bort bevakningarna")
         }
     }
 
@@ -326,7 +334,7 @@ class MainViewModel(
             syncWatchItemsAfterMutation()
         } catch (e: Exception) {
             Log.e(TAG, "Error deleting watch item: ${e.message}")
-            _watchItemUiState.value = UiState.Error("Failed to delete watch item: ${e.message}")
+            _actionError.tryEmit("Kunde inte ta bort bevakningen")
         }
     }
 
@@ -337,7 +345,7 @@ class MainViewModel(
             syncWatchItemsAfterMutation()
         } catch (e: Exception) {
             Log.e(TAG, "Error toggling watch item active state: ${e.message}")
-            _watchItemUiState.value = UiState.Error("Failed to update watch item: ${e.message}")
+            _actionError.tryEmit("Kunde inte uppdatera bevakningen")
         }
     }
 
@@ -357,7 +365,7 @@ class MainViewModel(
             )
         } catch (e: Exception) {
             Log.e(TAG, "Error reactivating watch item: ${e.message}")
-            _watchItemUiState.value = UiState.Error("Failed to update watch item: ${e.message}")
+            // Anroparen visar felet själv; listtillståndet lämnas orört.
             throw e
         }
     }
@@ -375,7 +383,7 @@ class MainViewModel(
             syncWatchItemsAfterMutation()
         } catch (e: Exception) {
             Log.e(TAG, "Error updating watch item: ${e.message}")
-            _watchItemUiState.value = UiState.Error("Failed to update watch item: ${e.message}")
+            _actionError.tryEmit("Kunde inte uppdatera bevakningen")
         }
     }
 

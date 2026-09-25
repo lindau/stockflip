@@ -939,6 +939,14 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
+        // Fel från användaråtgärder (lägg till/ta bort/uppdatera) i alla flikar som delar MainViewModel.
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.actionError.collect { message ->
+                    Toast.makeText(this@MainActivity, message, Toast.LENGTH_LONG).show()
+                }
+            }
+        }
         // Background refresh indicator for the Stocks overview (Alerts/Pairs drive their own).
         // Tunn linje istället för den runda spinnern — listan ligger kvar och är läsbar.
         lifecycleScope.launch {

@@ -197,11 +197,16 @@ class PairsFragment : Fragment() {
                             val pairs = state.data.filter { it.item.watchType is WatchType.PricePair }
                             latestPairs = pairs
                             groupedAdapter.submitGroupedList(pairs)
+                            binding.emptyStateTitle.setText(R.string.pairs_empty_title)
+                            binding.emptyStateText.setText(R.string.pairs_empty_subtitle)
                             binding.emptyStateContainer.visibility = if (pairs.isEmpty()) View.VISIBLE else View.GONE
                         }
                         is UiState.Error -> {
                             binding.skeletonLoadingView.visibility = View.GONE
                             if (latestPairs.isEmpty()) {
+                                // Visa felet istället för "Inga aktiepar ännu", som vore missvisande.
+                                binding.emptyStateTitle.setText(R.string.watch_items_load_failed_title)
+                                binding.emptyStateText.text = state.message
                                 binding.emptyStateContainer.visibility = View.VISIBLE
                             } else {
                                 Snackbar.make(binding.root, R.string.alerts_refresh_failed, Snackbar.LENGTH_LONG).show()

@@ -302,6 +302,7 @@ class AlertsFragment : Fragment() {
                             binding.skeletonLoadingView.visibility = View.GONE
                             if (latestItems.isEmpty()) {
                                 binding.emptyStateContainer.visibility = View.VISIBLE
+                                binding.emptyStateTitle.setText(R.string.watch_items_load_failed_title)
                                 binding.emptyStateText.text = state.message
                             } else {
                                 Snackbar.make(binding.root, R.string.alerts_refresh_failed, Snackbar.LENGTH_LONG).show()
