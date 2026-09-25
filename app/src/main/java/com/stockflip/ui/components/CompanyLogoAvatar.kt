@@ -46,7 +46,7 @@ fun CompanyLogoAvatar(
     val isCrypto = symbol != null && StockSearchResult.isCryptoSymbol(symbol)
     val isPair = symbol?.contains("÷") == true
     val cryptoIconUrl = if (isCrypto) {
-        symbol?.let(::cryptoIconCode)?.let { "https://assets.coincap.io/assets/icons/$it@2x.png" }
+        cryptoIconCode(symbol)?.let { "https://assets.coincap.io/assets/icons/$it@2x.png" }
     } else {
         null
     }

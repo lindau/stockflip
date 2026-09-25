@@ -1054,7 +1054,7 @@ class StockDetailFragment : Fragment() {
         val showSection = earnings != null && earnings.reportDateMillis > 0L
         binding.nextReportLabel.isVisible = showSection
         binding.nextReportCard.isVisible = showSection
-        if (!showSection || earnings == null) return
+        if (!showSection) return
 
         val today = Calendar.getInstance().apply {
             set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0)
