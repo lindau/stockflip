@@ -49,6 +49,10 @@ class AlertsFragment : Fragment() {
     private lateinit var groupedAdapter: GroupedWatchItemAdapter
     private var pendingDeleteSnackbar: Snackbar? = null
     private var currentFilter: AlertsFilter = AlertsFilter.ALL
+        set(value) {
+            field = value
+            viewModel.selectedAlertsFilter = value
+        }
     private var latestItems: List<WatchItemUiState> = emptyList()
     // Fel från en misslyckad laddning utan data — ligger kvar vid filterbyte tills en laddning lyckas.
     private var loadError: String? = null
@@ -76,6 +80,8 @@ class AlertsFragment : Fragment() {
         setupBatchActions()
         setupReactivateAll()
         setupRecyclerView()
+        // Återställ filtret från förra besöket i fliken (efter att listan satts upp, eftersom den ritas om).
+        selectFilter(viewModel.selectedAlertsFilter)
         setupEmptyStateRetry()
         setupObservers()
 

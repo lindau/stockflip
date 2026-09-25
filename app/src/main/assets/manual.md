@@ -85,7 +85,7 @@ I nuvarande appversion fungerar flikarna så här:
 
 - **Översikt:** aktiepar visas inte här utan i fliken **Par**. Översikten visar sektioner som `Nytt och triggade`, `Nära att triggas`, `Aktiva bevakningar` och `Inaktiva`. Härifrån läser du läget, men nya aktier läggs inte till här.
 - **Par:** tryck på `+` för att skapa ett aktiepar.
-- **Bevakningar:** tryck på `+` för att lägga till en ny aktie, ett index eller en kryptovaluta. Öppna sedan aktiens detaljsida och välj vilken typ av bevakning du vill skapa.
+- **Bevakningar:** tryck på `+` för att lägga till en ny aktie, ett index eller en kryptovaluta. Öppna sedan aktiens detaljsida och välj vilken typ av bevakning du vill skapa. Filtret du valt (t.ex. **Triggade**) ligger kvar när du byter flik och kommer tillbaka.
 
 ---
 

@@ -293,7 +293,7 @@ class MainActivity : AppCompatActivity() {
                     binding.swipeRefreshLayout.animate().cancel()
                     binding.swipeRefreshLayout.animate()
                         .translationX(0f)
-                        .setDuration(280)
+                        .setDuration(200)
                         .setInterpolator(android.view.animation.DecelerateInterpolator())
                         .start()
                     binding.swipeRefreshLayout.visibility = View.VISIBLE
@@ -358,7 +358,7 @@ class MainActivity : AppCompatActivity() {
                         binding.swipeRefreshLayout.animate().cancel()
                         binding.swipeRefreshLayout.animate()
                             .translationX(0f)
-                            .setDuration(280)
+                            .setDuration(200)
                             .setInterpolator(android.view.animation.DecelerateInterpolator())
                             .start()
                     }
@@ -374,22 +374,14 @@ class MainActivity : AppCompatActivity() {
                     val screenWidth = resources.displayMetrics.widthPixels.toFloat()
                     when (previousTab) {
                         MainTab.STOCKS -> {
-                            // Samma animation som STOCKS→ALERTS: swipeRefreshLayout 30% ut, PairsFragment glider in från höger
-                            binding.swipeRefreshLayout.animate().cancel()
-                            binding.swipeRefreshLayout.animate()
-                                .translationX(-screenWidth * 0.3f)
-                                .setDuration(150)
-                                .setInterpolator(android.view.animation.AccelerateInterpolator())
-                                .withEndAction {
-                                    binding.swipeRefreshLayout.visibility = View.GONE
-                                    binding.swipeRefreshLayout.translationX = 0f
-                                    supportFragmentManager.beginTransaction()
-                                        .setCustomAnimations(R.anim.slide_in_right, 0, R.anim.slide_in_left, R.anim.slide_out_right)
-                                        .replace(R.id.fragmentContainer, PairsFragment())
-                                        .addToBackStack("pairs")
-                                        .commit()
-                                }
-                                .start()
+                            // PairsFragment startas direkt (inte efter översiktens utgående animation),
+                            // så att flikbytet inte väntar 150 ms innan nästa vy börjar byggas.
+                            supportFragmentManager.beginTransaction()
+                                .setCustomAnimations(R.anim.slide_in_right, 0, R.anim.slide_in_left, R.anim.slide_out_right)
+                                .replace(R.id.fragmentContainer, PairsFragment())
+                                .addToBackStack("pairs")
+                                .commit()
+                            slideOutOverview(screenWidth)
                         }
                         MainTab.ALERTS -> {
                             // ALERTS→PAIRS: poppa AlertsFragment, PairsFragment visas med popEnter-animation
@@ -416,28 +408,33 @@ class MainActivity : AppCompatActivity() {
                             .addToBackStack("alerts")
                             .commit()
                     } else {
-                        // Från STOCKS: swipeRefreshLayout 30% ut, AlertsFragment glider in från höger
-                        binding.swipeRefreshLayout.animate().cancel()
-                        binding.swipeRefreshLayout.animate()
-                            .translationX(-screenWidth * 0.3f)
-                            .setDuration(150)
-                            .setInterpolator(android.view.animation.AccelerateInterpolator())
-                            .withEndAction {
-                                binding.swipeRefreshLayout.visibility = View.GONE
-                                binding.swipeRefreshLayout.translationX = 0f
-                                supportFragmentManager.beginTransaction()
-                                    .setCustomAnimations(R.anim.slide_in_right, 0, R.anim.slide_in_left, R.anim.slide_out_right)
-                                    .replace(R.id.fragmentContainer, AlertsFragment())
-                                    .addToBackStack("alerts")
-                                    .commit()
-                            }
-                            .start()
+                        // Från STOCKS: AlertsFragment startas direkt och glider in medan översikten glider ut.
+                        supportFragmentManager.beginTransaction()
+                            .setCustomAnimations(R.anim.slide_in_right, 0, R.anim.slide_in_left, R.anim.slide_out_right)
+                            .replace(R.id.fragmentContainer, AlertsFragment())
+                            .addToBackStack("alerts")
+                            .commit()
+                        slideOutOverview(screenWidth)
                     }
                     true
                 }
                 else -> false
             }
         }
+    }
+
+    /** Översikten glider 30 % ut och döljs — parallellt med att nästa flik glider in. */
+    private fun slideOutOverview(screenWidth: Float) {
+        binding.swipeRefreshLayout.animate().cancel()
+        binding.swipeRefreshLayout.animate()
+            .translationX(-screenWidth * 0.3f)
+            .setDuration(150)
+            .setInterpolator(android.view.animation.AccelerateInterpolator())
+            .withEndAction {
+                binding.swipeRefreshLayout.visibility = View.GONE
+                binding.swipeRefreshLayout.translationX = 0f
+            }
+            .start()
     }
 
     private fun setupToolbar() {
@@ -1246,7 +1243,9 @@ class MainActivity : AppCompatActivity() {
             triggerTitle = triggerTitle,
             triggerMessage = triggerMessage,
             openedFromNotification = openedFromNotification,
-            highlightInsiderTransactionId = highlightInsiderTransactionId
+            highlightInsiderTransactionId = highlightInsiderTransactionId,
+            // Visa listans senast kända kurs direkt i stället för "Laddar".
+            initialQuote = viewModel.lastKnownQuote(symbol, companyName)
         )
         
         supportFragmentManager.beginTransaction()

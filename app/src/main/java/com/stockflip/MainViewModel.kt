@@ -4,8 +4,6 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.stockflip.backup.BackupManager
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -18,7 +16,9 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.sync.withPermit
 
 class MainViewModel(
@@ -34,6 +34,12 @@ class MainViewModel(
 
     // True medan live-priser hämtas i bakgrunden. Driver en icke-blockerande spinner i UI:t,
     // till skillnad från UiState.Loading som ersätter hela skärmen.
+    /**
+     * Valt filter i Bevakningar. Fragmentet skapas om vid varje flikbyte, så filtret sparas här
+     * för att användaren ska komma tillbaka till samma vy i stället för "Alla".
+     */
+    internal var selectedAlertsFilter: AlertsFilter = AlertsFilter.ALL
+
     private val _watchItemsRefreshing = MutableStateFlow(false)
     val watchItemsRefreshing: StateFlow<Boolean> = _watchItemsRefreshing.asStateFlow()
 
@@ -124,164 +130,33 @@ class MainViewModel(
             val items = watchItemDao.getAllWatchItems()
             Log.d(TAG, "Found ${items.size} watch items to refresh")
 
-            // Parallellisera med max 4 samtida anrop för att undvika rate limiting
+            // Parallellisera med max 4 samtida anrop för att undvika rate limiting.
+            // Resultaten visas i omgångar allteftersom de blir klara (högst var 250:e ms), så att
+            // en långsam eller hängande aktie (timeout upp till 2×15 s) inte håller tillbaka
+            // nya kurser för alla andra. Ej klara bevakningar behåller senast kända värden.
             val semaphore = Semaphore(4)
-            val updatedItems = coroutineScope {
-            items.map { item ->
-                async {
-                semaphore.withPermit {
-                val now = System.currentTimeMillis()
-                try {
-                    when (item.watchType) {
-                        is WatchType.PricePair -> {
-                            if (item.ticker1 != null && item.ticker2 != null) {
-                                Log.d(TAG, "Fetching prices for pair watch item")
-                                val price1 = yahooFinanceService.getStockPrice(item.ticker1)
-                                val price2 = yahooFinanceService.getStockPrice(item.ticker2)
-                                if (price1 != null && price2 != null) {
-                                    Log.d(TAG, "Fetched prices for pair watch item")
-                                    WatchItemUiState(item, LiveWatchData(currentPrice1 = price1, currentPrice2 = price2, lastUpdatedAt = now))
-                                } else {
-                                    Log.w(TAG, "Could not get prices for pair watch item")
-                                    WatchItemUiState(item, previousLive[item.id].asUpdateFailed())
-                                }
-                            } else {
-                                WatchItemUiState(item)
-                            }
-                        }
-                        is WatchType.PriceTarget -> {
-                            if (item.ticker != null) {
-                                Log.d(TAG, "Fetching price and daily change for price target watch item")
-                                val price = yahooFinanceService.getStockPrice(item.ticker)
-                                val changePercent = yahooFinanceService.getDailyChangePercent(item.ticker)
-                                if (price != null) {
-                                    Log.d(TAG, "Fetched price for price target watch item")
-                                    WatchItemUiState(item, LiveWatchData(currentPrice = price, currentDailyChangePercent = changePercent, lastUpdatedAt = now))
-                                } else {
-                                    Log.w(TAG, "Could not get price for price target watch item")
-                                    WatchItemUiState(item, previousLive[item.id].asUpdateFailed())
-                                }
-                            } else {
-                                WatchItemUiState(item)
-                            }
-                        }
-                        is WatchType.KeyMetrics -> {
-                            if (item.ticker != null) {
-                                val keyMetrics = item.watchType
-                                Log.d(TAG, "Fetching key metric and price for key metrics watch item")
-                                try {
-                                    val metricValue = yahooFinanceService.getKeyMetric(item.ticker, keyMetrics.metricType)
-                                    val price = yahooFinanceService.getStockPrice(item.ticker)
-                                    val changePercent = yahooFinanceService.getDailyChangePercent(item.ticker)
-                                    Log.d(TAG, "Key metric request completed")
-                                    if (metricValue != null) {
-                                        Log.d(TAG, "Fetched key metric value for key metrics watch item")
-                                        WatchItemUiState(item, LiveWatchData(
-                                            currentMetricValue = metricValue,
-                                            metricValueAtCreation = metricValue,
-                                            currentPrice = price ?: 0.0,
-                                            currentDailyChangePercent = changePercent,
-                                            lastUpdatedAt = now
-                                        ))
-                                    } else if (price != null) {
-                                        WatchItemUiState(item, LiveWatchData(currentPrice = price, currentDailyChangePercent = changePercent, lastUpdatedAt = now))
-                                    } else {
-                                        Log.w(TAG, "Could not get metric value or price for key metrics watch item")
-                                        WatchItemUiState(item, previousLive[item.id].asUpdateFailed())
-                                    }
-                                } catch (e: Exception) {
-                                    Log.e(TAG, "Exception while fetching key metric: ${e.message}", e)
-                                    WatchItemUiState(item, previousLive[item.id].asUpdateFailed())
-                                }
-                            } else {
-                                Log.w(TAG, "Ticker is null for key metrics watch item")
-                                WatchItemUiState(item)
-                            }
-                        }
-                        is WatchType.ATHBased -> {
-                            if (item.ticker != null) {
-                                Log.d(TAG, "Fetching drawdown high, price and daily change for watch item")
-                                val high = when (item.watchType.reference) {
-                                    WatchType.HighReference.FIFTY_TWO_WEEK_HIGH -> yahooFinanceService.getATH(item.ticker)
-                                    WatchType.HighReference.ALL_TIME_HIGH -> yahooFinanceService.getAllTimeHigh(item.ticker)
-                                }
-                                val price = yahooFinanceService.getStockPrice(item.ticker)
-                                val changePercent = yahooFinanceService.getDailyChangePercent(item.ticker)
-                                if (high != null && price != null && high > 0.0) {
-                                    Log.d(TAG, "Fetched drawdown data for watch item")
-                                    val effectiveHigh = if (price > high) price else high
-                                    WatchItemUiState(item, LiveWatchData(
-                                        currentATH = effectiveHigh,
-                                        currentPrice = price,
-                                        currentDropPercentage = ((effectiveHigh - price) / effectiveHigh) * 100,
-                                        currentDropAbsolute = effectiveHigh - price,
-                                        currentDailyChangePercent = changePercent,
-                                        lastUpdatedAt = now
-                                    ))
-                                } else {
-                                    Log.w(TAG, "Could not get drawdown high or price for watch item")
-                                    WatchItemUiState(item, previousLive[item.id].asUpdateFailed())
-                                }
-                            } else {
-                                WatchItemUiState(item)
-                            }
-                        }
-                        is WatchType.PriceRange -> {
-                            if (item.ticker != null) {
-                                Log.d(TAG, "Fetching price and daily change for range watch item")
-                                val price = yahooFinanceService.getStockPrice(item.ticker)
-                                val changePercent = yahooFinanceService.getDailyChangePercent(item.ticker)
-                                if (price != null) {
-                                    WatchItemUiState(item, LiveWatchData(currentPrice = price, currentDailyChangePercent = changePercent, lastUpdatedAt = now))
-                                } else {
-                                    WatchItemUiState(item, previousLive[item.id].asUpdateFailed())
-                                }
-                            } else {
-                                WatchItemUiState(item)
-                            }
-                        }
-                        is WatchType.DailyMove -> {
-                            if (item.ticker != null) {
-                                Log.d(TAG, "Fetching price and daily change for daily move watch item")
-                                val price = yahooFinanceService.getStockPrice(item.ticker)
-                                val changePercent = yahooFinanceService.getDailyChangePercent(item.ticker)
-                                if (price != null) {
-                                    WatchItemUiState(item, LiveWatchData(currentPrice = price, currentDailyChangePercent = changePercent, lastUpdatedAt = now))
-                                } else {
-                                    WatchItemUiState(item, previousLive[item.id].asUpdateFailed())
-                                }
-                            } else {
-                                WatchItemUiState(item)
-                            }
-                        }
-                        is WatchType.InsiderBuy -> {
-                            WatchItemUiState(item, LiveWatchData(lastUpdatedAt = now))
-                        }
-                        is WatchType.Combined -> {
-                            if (item.ticker != null) {
-                                Log.d(TAG, "Fetching price and daily change for combined alert")
-                                val price = yahooFinanceService.getStockPrice(item.ticker)
-                                val changePercent = yahooFinanceService.getDailyChangePercent(item.ticker)
-                                if (price != null) {
-                                    WatchItemUiState(item, LiveWatchData(currentPrice = price, currentDailyChangePercent = changePercent, lastUpdatedAt = now))
-                                } else {
-                                    Log.w(TAG, "Could not get price for combined alert")
-                                    WatchItemUiState(item, previousLive[item.id].asUpdateFailed())
-                                }
-                            } else {
-                                Log.w(TAG, "Combined alert has no ticker set")
-                                WatchItemUiState(item)
+            val results = arrayOfNulls<WatchItemUiState>(items.size)
+            val emitLock = Mutex()
+            var lastPartialEmitAt = 0L
+            coroutineScope {
+                items.forEachIndexed { index, item ->
+                    launch {
+                        val result = semaphore.withPermit { fetchLiveState(item, previousLive) }
+                        emitLock.withLock {
+                            results[index] = result
+                            val now = System.currentTimeMillis()
+                            val pendingCount = results.count { it == null }
+                            if (pendingCount > 0 && now - lastPartialEmitAt >= PARTIAL_EMIT_INTERVAL_MS) {
+                                lastPartialEmitAt = now
+                                _watchItemUiState.value = UiState.Success(
+                                    mergeWithPrevious(items, results, previousLive)
+                                )
                             }
                         }
                     }
-                } catch (e: Exception) {
-                    Log.e(TAG, "Error fetching prices for watch item ${item.id}: ${e.message}")
-                    WatchItemUiState(item, previousLive[item.id].asUpdateFailed())
                 }
-                } // semaphore.withPermit
-                } // async
-            }.awaitAll()
-            } // coroutineScope
+            }
+            val updatedItems = results.map { it!! }
 
             Log.d(TAG, "Refresh complete, built ${updatedItems.size} WatchItemUiState objects")
 
@@ -431,6 +306,185 @@ class MainViewModel(
         return StockMarketScheduler.isMarketOpenForSymbol(ticker, exchange)
     }
 
+    /** Hämtar live-data för en bevakning; vid fel behålls senast kända värden markerade som inaktuella. */
+    private suspend fun fetchLiveState(item: WatchItem, previousLive: Map<Int, LiveWatchData>): WatchItemUiState {
+        val now = System.currentTimeMillis()
+        return try {
+            when (item.watchType) {
+                is WatchType.PricePair -> {
+                    if (item.ticker1 != null && item.ticker2 != null) {
+                        Log.d(TAG, "Fetching prices for pair watch item")
+                        val price1 = yahooFinanceService.getStockPrice(item.ticker1)
+                        val price2 = yahooFinanceService.getStockPrice(item.ticker2)
+                        if (price1 != null && price2 != null) {
+                            Log.d(TAG, "Fetched prices for pair watch item")
+                            WatchItemUiState(item, LiveWatchData(currentPrice1 = price1, currentPrice2 = price2, lastUpdatedAt = now))
+                        } else {
+                            Log.w(TAG, "Could not get prices for pair watch item")
+                            WatchItemUiState(item, previousLive[item.id].asUpdateFailed())
+                        }
+                    } else {
+                        WatchItemUiState(item)
+                    }
+                }
+                is WatchType.PriceTarget -> {
+                    if (item.ticker != null) {
+                        Log.d(TAG, "Fetching price and daily change for price target watch item")
+                        val price = yahooFinanceService.getStockPrice(item.ticker)
+                        val changePercent = yahooFinanceService.getDailyChangePercent(item.ticker)
+                        if (price != null) {
+                            Log.d(TAG, "Fetched price for price target watch item")
+                            WatchItemUiState(item, LiveWatchData(currentPrice = price, currentDailyChangePercent = changePercent, lastUpdatedAt = now))
+                        } else {
+                            Log.w(TAG, "Could not get price for price target watch item")
+                            WatchItemUiState(item, previousLive[item.id].asUpdateFailed())
+                        }
+                    } else {
+                        WatchItemUiState(item)
+                    }
+                }
+                is WatchType.KeyMetrics -> {
+                    if (item.ticker != null) {
+                        val keyMetrics = item.watchType
+                        Log.d(TAG, "Fetching key metric and price for key metrics watch item")
+                        try {
+                            val metricValue = yahooFinanceService.getKeyMetric(item.ticker, keyMetrics.metricType)
+                            val price = yahooFinanceService.getStockPrice(item.ticker)
+                            val changePercent = yahooFinanceService.getDailyChangePercent(item.ticker)
+                            Log.d(TAG, "Key metric request completed")
+                            if (metricValue != null) {
+                                Log.d(TAG, "Fetched key metric value for key metrics watch item")
+                                WatchItemUiState(item, LiveWatchData(
+                                    currentMetricValue = metricValue,
+                                    metricValueAtCreation = metricValue,
+                                    currentPrice = price ?: 0.0,
+                                    currentDailyChangePercent = changePercent,
+                                    lastUpdatedAt = now
+                                ))
+                            } else if (price != null) {
+                                WatchItemUiState(item, LiveWatchData(currentPrice = price, currentDailyChangePercent = changePercent, lastUpdatedAt = now))
+                            } else {
+                                Log.w(TAG, "Could not get metric value or price for key metrics watch item")
+                                WatchItemUiState(item, previousLive[item.id].asUpdateFailed())
+                            }
+                        } catch (e: Exception) {
+                            Log.e(TAG, "Exception while fetching key metric: ${e.message}", e)
+                            WatchItemUiState(item, previousLive[item.id].asUpdateFailed())
+                        }
+                    } else {
+                        Log.w(TAG, "Ticker is null for key metrics watch item")
+                        WatchItemUiState(item)
+                    }
+                }
+                is WatchType.ATHBased -> {
+                    if (item.ticker != null) {
+                        Log.d(TAG, "Fetching drawdown high, price and daily change for watch item")
+                        val high = when (item.watchType.reference) {
+                            WatchType.HighReference.FIFTY_TWO_WEEK_HIGH -> yahooFinanceService.getATH(item.ticker)
+                            WatchType.HighReference.ALL_TIME_HIGH -> yahooFinanceService.getAllTimeHigh(item.ticker)
+                        }
+                        val price = yahooFinanceService.getStockPrice(item.ticker)
+                        val changePercent = yahooFinanceService.getDailyChangePercent(item.ticker)
+                        if (high != null && price != null && high > 0.0) {
+                            Log.d(TAG, "Fetched drawdown data for watch item")
+                            val effectiveHigh = if (price > high) price else high
+                            WatchItemUiState(item, LiveWatchData(
+                                currentATH = effectiveHigh,
+                                currentPrice = price,
+                                currentDropPercentage = ((effectiveHigh - price) / effectiveHigh) * 100,
+                                currentDropAbsolute = effectiveHigh - price,
+                                currentDailyChangePercent = changePercent,
+                                lastUpdatedAt = now
+                            ))
+                        } else {
+                            Log.w(TAG, "Could not get drawdown high or price for watch item")
+                            WatchItemUiState(item, previousLive[item.id].asUpdateFailed())
+                        }
+                    } else {
+                        WatchItemUiState(item)
+                    }
+                }
+                is WatchType.PriceRange -> {
+                    if (item.ticker != null) {
+                        Log.d(TAG, "Fetching price and daily change for range watch item")
+                        val price = yahooFinanceService.getStockPrice(item.ticker)
+                        val changePercent = yahooFinanceService.getDailyChangePercent(item.ticker)
+                        if (price != null) {
+                            WatchItemUiState(item, LiveWatchData(currentPrice = price, currentDailyChangePercent = changePercent, lastUpdatedAt = now))
+                        } else {
+                            WatchItemUiState(item, previousLive[item.id].asUpdateFailed())
+                        }
+                    } else {
+                        WatchItemUiState(item)
+                    }
+                }
+                is WatchType.DailyMove -> {
+                    if (item.ticker != null) {
+                        Log.d(TAG, "Fetching price and daily change for daily move watch item")
+                        val price = yahooFinanceService.getStockPrice(item.ticker)
+                        val changePercent = yahooFinanceService.getDailyChangePercent(item.ticker)
+                        if (price != null) {
+                            WatchItemUiState(item, LiveWatchData(currentPrice = price, currentDailyChangePercent = changePercent, lastUpdatedAt = now))
+                        } else {
+                            WatchItemUiState(item, previousLive[item.id].asUpdateFailed())
+                        }
+                    } else {
+                        WatchItemUiState(item)
+                    }
+                }
+                is WatchType.InsiderBuy -> {
+                    WatchItemUiState(item, LiveWatchData(lastUpdatedAt = now))
+                }
+                is WatchType.Combined -> {
+                    if (item.ticker != null) {
+                        Log.d(TAG, "Fetching price and daily change for combined alert")
+                        val price = yahooFinanceService.getStockPrice(item.ticker)
+                        val changePercent = yahooFinanceService.getDailyChangePercent(item.ticker)
+                        if (price != null) {
+                            WatchItemUiState(item, LiveWatchData(currentPrice = price, currentDailyChangePercent = changePercent, lastUpdatedAt = now))
+                        } else {
+                            Log.w(TAG, "Could not get price for combined alert")
+                            WatchItemUiState(item, previousLive[item.id].asUpdateFailed())
+                        }
+                    } else {
+                        Log.w(TAG, "Combined alert has no ticker set")
+                        WatchItemUiState(item)
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error fetching prices for watch item ${item.id}: ${e.message}")
+            WatchItemUiState(item, previousLive[item.id].asUpdateFailed())
+        }
+    }
+
+    /** Delresultat: klara bevakningar får nya värden, övriga behåller senast kända (i ursprunglig ordning). */
+    private fun mergeWithPrevious(
+        items: List<WatchItem>,
+        results: Array<WatchItemUiState?>,
+        previousLive: Map<Int, LiveWatchData>
+    ): List<WatchItemUiState> = items.mapIndexed { index, item ->
+        results[index] ?: WatchItemUiState(item, previousLive[item.id] ?: LiveWatchData())
+    }
+
+    /**
+     * Senast kända färska kurs för [symbol] ur listans live-data, så att aktiedetaljen kan visa den
+     * direkt. null om ingen bevakning på aktien har en lyckad kurs.
+     */
+    fun lastKnownQuote(symbol: String, companyName: String? = null): InitialQuote? {
+        val items = (_watchItemUiState.value as? UiState.Success<List<WatchItemUiState>>)?.data ?: return null
+        val match = items
+            .filter { it.item.ticker == symbol && it.live.currentPrice > 0.0 && !it.live.updateFailed }
+            .maxByOrNull { it.live.lastUpdatedAt }
+            ?: return null
+        return InitialQuote(
+            price = match.live.currentPrice,
+            dailyChangePercent = match.live.currentDailyChangePercent,
+            companyName = companyName ?: match.item.companyName,
+            updatedAt = match.live.lastUpdatedAt
+        )
+    }
+
     private fun currentLiveById(): Map<Int, LiveWatchData> =
         (_watchItemUiState.value as? UiState.Success<List<WatchItemUiState>>)
             ?.data
@@ -502,5 +556,6 @@ class MainViewModel(
 
     companion object {
         private const val TAG = "MainViewModel"
+        private const val PARTIAL_EMIT_INTERVAL_MS = 250L
     }
 } 

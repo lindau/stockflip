@@ -362,6 +362,45 @@ class StockDetailViewModelTest {
     }
 
     @Test
+    fun `initial quote from the list is shown before stock data has loaded and then replaced`() = runTest {
+        val snapshotGate = kotlinx.coroutines.CompletableDeferred<Unit>()
+        val service = FakeMarketDataService(
+            pricesBySymbol = mapOf("VOLV-B.ST" to 300.0),
+            snapshotProvider = { snapshotGate.await(); snapshot(305.0) }
+        )
+        val viewModel = StockDetailViewModel(
+            InMemoryWatchItemDao(emptyList()), service, "VOLV-B.ST",
+            TriggerHistoryRepository(InMemoryTriggerHistoryDao()), InMemoryStockNoteDao(),
+            com.stockflip.repository.MetricHistoryRepository(InMemoryMetricHistoryDao()),
+            initialQuote = InitialQuote(price = 299.5, dailyChangePercent = 1.2, companyName = "Volvo B", updatedAt = 42L)
+        )
+        runCurrent()
+
+        // Innan aktiedata kommit: listans kurs visas direkt i stället för Loading.
+        val preliminary = (viewModel.stockDataState.value as UiState.Success).data
+        assertEquals(299.5, preliminary.lastPrice!!, 0.0)
+        assertEquals(1.2, preliminary.dailyChangePercent!!, 0.0)
+        assertEquals("Volvo B", preliminary.companyName)
+        assertEquals("SEK", preliminary.currency)
+
+        snapshotGate.complete(Unit)
+        runCurrent()
+
+        assertEquals(305.0, (viewModel.stockDataState.value as UiState.Success).data.lastPrice!!, 0.0)
+    }
+
+    @Test
+    fun `without initial quote the first state is Loading as before`() = runTest {
+        val snapshotGate = kotlinx.coroutines.CompletableDeferred<Unit>()
+        val viewModel = createViewModel(FakeMarketDataService(snapshotProvider = { snapshotGate.await(); snapshot(305.0) }))
+        runCurrent()
+
+        assertEquals(UiState.Loading, viewModel.stockDataState.value)
+        snapshotGate.complete(Unit)
+        runCurrent()
+    }
+
+    @Test
     fun `first load without snapshot emits Error`() = runTest {
         val viewModel = createViewModel(FakeMarketDataService())
         runCurrent()

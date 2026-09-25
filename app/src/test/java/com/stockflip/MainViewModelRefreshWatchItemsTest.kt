@@ -7,7 +7,11 @@ import com.stockflip.testutil.InMemoryStockPairDao
 import com.stockflip.testutil.InMemoryWatchItemDao
 import com.stockflip.testutil.MainDispatcherRule
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -444,5 +448,85 @@ class MainViewModelRefreshWatchItemsTest {
               ]
             }
         """.trimIndent()
+    }
+
+    @Test
+    fun `slow symbol does not hold back fresh prices for other watches`() = runBlocking {
+        val fast = WatchItem(
+            id = 1,
+            watchType = WatchType.PriceTarget(targetPrice = 250.0, direction = WatchType.PriceDirection.ABOVE),
+            ticker = "FAST"
+        )
+        val slow = WatchItem(
+            id = 2,
+            watchType = WatchType.PriceTarget(targetPrice = 250.0, direction = WatchType.PriceDirection.ABOVE),
+            ticker = "SLOW"
+        )
+        val slowGate = CompletableDeferred<Unit>()
+        val service = FakeMarketDataService(priceProvider = { symbol ->
+            if (symbol == "SLOW") {
+                slowGate.await()
+                50.0
+            } else {
+                100.0
+            }
+        })
+        val viewModel = MainViewModel(
+            InMemoryStockPairDao(emptyList()), InMemoryWatchItemDao(listOf(fast, slow)), service,
+            InMemoryStockNoteDao(), InMemoryPodcastObservationDao()
+        )
+        viewModel.loadWatchItems(forceShowStaleData = true)
+
+        val refresh = launch(Dispatchers.Default) { viewModel.refreshWatchItems(showLoading = false) }
+
+        // Delresultat: FAST har ny kurs medan SLOW fortfarande väntar.
+        val partial = withTimeout(5_000) {
+            viewModel.watchItemUiState.first { state ->
+                state is UiState.Success && state.data.first { it.item.id == 1 }.live.currentPrice == 100.0
+            }
+        } as UiState.Success
+        assertEquals(0.0, partial.data.first { it.item.id == 2 }.live.currentPrice, 0.0)
+        assertEquals("Ordningen ska vara oförändrad", listOf(1, 2), partial.data.map { it.item.id })
+        assertTrue("Uppdateringen pågår fortfarande", viewModel.watchItemsRefreshing.value)
+
+        slowGate.complete(Unit)
+        refresh.join()
+
+        val final = viewModel.watchItemUiState.value as UiState.Success
+        assertEquals(100.0, final.data.first { it.item.id == 1 }.live.currentPrice, 0.0)
+        assertEquals(50.0, final.data.first { it.item.id == 2 }.live.currentPrice, 0.0)
+        assertFalse(viewModel.watchItemsRefreshing.value)
+    }
+
+    @Test
+    fun `lastKnownQuote returns the freshest successful price for the symbol`() = runBlocking {
+        val items = listOf(
+            WatchItem(id = 1, watchType = WatchType.PriceTarget(250.0, WatchType.PriceDirection.ABOVE), ticker = "VOLV-B.ST", companyName = "Volvo B"),
+            WatchItem(id = 2, watchType = WatchType.DailyMove(3.0, WatchType.DailyMoveDirection.BOTH), ticker = "ASSA-B.ST")
+        )
+        val viewModel = MainViewModel(
+            InMemoryStockPairDao(emptyList()), InMemoryWatchItemDao(items),
+            FakeMarketDataService(pricesBySymbol = mapOf("VOLV-B.ST" to 300.0)),
+            InMemoryStockNoteDao(), InMemoryPodcastObservationDao()
+        )
+        viewModel.refreshWatchItems(showLoading = false)
+
+        val quote = viewModel.lastKnownQuote("VOLV-B.ST")!!
+        assertEquals(300.0, quote.price, 0.0)
+        assertEquals("Volvo B", quote.companyName)
+        // ASSA-B.ST saknar kurs (misslyckad hämtning) → ingen preliminär kurs.
+        assertEquals(null, viewModel.lastKnownQuote("ASSA-B.ST"))
+        assertEquals(null, viewModel.lastKnownQuote("OKÄND"))
+    }
+
+    @Test
+    fun `selected alerts filter survives fragment recreation via the shared view model`() = runBlocking {
+        val viewModel = MainViewModel(
+            InMemoryStockPairDao(emptyList()), InMemoryWatchItemDao(emptyList()), FakeMarketDataService(),
+            InMemoryStockNoteDao(), InMemoryPodcastObservationDao()
+        )
+        assertEquals(AlertsFilter.ALL, viewModel.selectedAlertsFilter)
+        viewModel.selectedAlertsFilter = AlertsFilter.TRIGGERED
+        assertEquals(AlertsFilter.TRIGGERED, viewModel.selectedAlertsFilter)
     }
 }

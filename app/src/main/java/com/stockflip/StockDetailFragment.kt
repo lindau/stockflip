@@ -97,6 +97,9 @@ class StockDetailFragment : Fragment() {
         private const val ARG_TRIGGER_MESSAGE = "trigger_message"
         private const val ARG_OPENED_FROM_NOTIFICATION = "opened_from_notification"
         private const val ARG_HIGHLIGHT_INSIDER_TRANSACTION_ID = "highlight_insider_transaction_id"
+        private const val ARG_INITIAL_PRICE = "initial_price"
+        private const val ARG_INITIAL_CHANGE = "initial_change"
+        private const val ARG_INITIAL_UPDATED_AT = "initial_updated_at"
         private const val VERY_CLOSE_THRESHOLD = 0.05
         private const val COLLAPSED_INSIDER_TRANSACTION_COUNT = 1
         private const val COLLAPSED_PODCAST_OBSERVATION_COUNT = 1
@@ -111,7 +114,8 @@ class StockDetailFragment : Fragment() {
             triggerTitle: String? = null,
             triggerMessage: String? = null,
             openedFromNotification: Boolean = false,
-            highlightInsiderTransactionId: String? = null
+            highlightInsiderTransactionId: String? = null,
+            initialQuote: InitialQuote? = null
         ): StockDetailFragment {
             return StockDetailFragment().apply {
                 arguments = Bundle().apply {
@@ -122,6 +126,11 @@ class StockDetailFragment : Fragment() {
                     putString(ARG_TRIGGER_MESSAGE, triggerMessage)
                     putBoolean(ARG_OPENED_FROM_NOTIFICATION, openedFromNotification)
                     putString(ARG_HIGHLIGHT_INSIDER_TRANSACTION_ID, highlightInsiderTransactionId)
+                    initialQuote?.let {
+                        putDouble(ARG_INITIAL_PRICE, it.price)
+                        it.dailyChangePercent?.let { change -> putDouble(ARG_INITIAL_CHANGE, change) }
+                        putLong(ARG_INITIAL_UPDATED_AT, it.updatedAt)
+                    }
                 }
             }
         }
@@ -187,7 +196,8 @@ class StockDetailFragment : Fragment() {
                         database.stockNoteDao(),
                         MetricHistoryRepository(database.metricHistoryDao()),
                         database.insiderTransactionDao(),
-                        podcastObservationDao
+                        podcastObservationDao,
+                        initialQuoteFromArguments()
                     ) as T
                 }
                 throw IllegalArgumentException("Unknown ViewModel class")
@@ -1360,6 +1370,17 @@ class StockDetailFragment : Fragment() {
                 Toast.makeText(requireContext(), "Kunde inte öppna länken", Toast.LENGTH_SHORT).show()
             }
         }
+    }
+
+    private fun initialQuoteFromArguments(): InitialQuote? {
+        val args = arguments ?: return null
+        if (!args.containsKey(ARG_INITIAL_PRICE)) return null
+        return InitialQuote(
+            price = args.getDouble(ARG_INITIAL_PRICE),
+            dailyChangePercent = if (args.containsKey(ARG_INITIAL_CHANGE)) args.getDouble(ARG_INITIAL_CHANGE) else null,
+            companyName = args.getString(ARG_COMPANY_NAME),
+            updatedAt = args.getLong(ARG_INITIAL_UPDATED_AT)
+        )
     }
 
     private fun renderAlertsEmptyState() {

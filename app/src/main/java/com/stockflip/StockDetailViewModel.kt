@@ -31,7 +31,9 @@ class StockDetailViewModel(
     private val stockNoteDao: StockNoteDao,
     private val metricHistoryRepository: MetricHistoryRepository,
     private val insiderTransactionDao: InsiderTransactionDao? = null,
-    private val podcastObservationDao: PodcastObservationDao? = null
+    private val podcastObservationDao: PodcastObservationDao? = null,
+    // Senast kända kurs från listan — visas direkt i stället för "Laddar" tills aktiedata hämtats.
+    private val initialQuote: InitialQuote? = null
 ) : ViewModel() {
 
     private val TAG = "StockDetailViewModel"
@@ -77,6 +79,7 @@ class StockDetailViewModel(
     }
 
     init {
+        initialQuote?.let { _stockDataState.value = UiState.Success(it.toPreliminaryData(symbol)) }
         loadStockData()
         loadChartData()
         loadInsiderTransactions()
@@ -669,6 +672,30 @@ class StockDetailViewModel(
 
 internal const val CHART_LOAD_FAILED_MESSAGE: String =
     "Kunde inte hämta grafen. Tryck på perioden eller dra nedåt för att försöka igen."
+
+/**
+ * Senast kända kurs för en aktie (från listornas live-data), som aktiedetaljen kan visa direkt.
+ * Ersätts av riktig aktiedata när den hämtats; misslyckas hämtningen ligger den kvar som senast känd.
+ */
+data class InitialQuote(
+    val price: Double,
+    val dailyChangePercent: Double?,
+    val companyName: String?,
+    val updatedAt: Long
+)
+
+internal fun InitialQuote.toPreliminaryData(symbol: String): StockDetailData = StockDetailData(
+    symbol = symbol,
+    companyName = companyName ?: symbol,
+    lastPrice = price,
+    previousClose = null,
+    week52High = null,
+    week52Low = null,
+    currency = CurrencyHelper.getCurrencyFromSymbol(symbol),
+    dailyChangePercent = dailyChangePercent,
+    drawdownPercent = null,
+    lastUpdatedAt = updatedAt
+)
 
 /**
  * Data class för aktiedetaljdata.
