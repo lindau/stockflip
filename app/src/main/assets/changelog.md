@@ -23,3 +23,5 @@
 - Versionsraden öppnar nu den här ändringsloggen
 - Aktiekortet visar nu en mikrofon-ikon när bolaget nämnts i ett poddavsnitt (kräver Tailscale-anslutning till podcast-pipeline)
 - Prestandaomgång: färre nätverksanrop per aktie, mindre onödig omritning av listor vid bakgrundsuppdateringar och snabbare appstart (ingen förändring i funktionalitet)
+- Index kan nu bevakas (t.ex. `^OMXS30`, `^GSPC`): sök på "OMX" eller "S&P". Målpris, dagsrörelse, drawdown, par och kombinerade larm stöds, och larmen följer indexets hemmabörs öppettider
+- Pair-detaljen visar aktierna under varandra och har inte längre aktienamnen dubblerade i rubriken

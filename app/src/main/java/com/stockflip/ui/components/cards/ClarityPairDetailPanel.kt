@@ -119,30 +119,17 @@ private fun ClarityPairHeroCard(data: PairDetailData) {
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = "AKTIEPAR",
-                        style = MaterialTheme.typography.labelSmall.copy(
-                            fontSize = 11.sp,
-                            lineHeight = 14.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            letterSpacing = 0.5.sp,
-                        ),
-                        color = LocalTextTertiary.current,
-                    )
-                    Text(
-                        text = pairTitle(data),
-                        modifier = Modifier.padding(top = 5.dp),
-                        style = MaterialTheme.typography.headlineSmall.copy(
-                            fontSize = 24.sp,
-                            lineHeight = 30.sp,
-                            fontWeight = FontWeight.Bold,
-                        ),
-                        color = colorScheme.onSurface,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                }
+                Text(
+                    text = "AKTIEPAR",
+                    modifier = Modifier.weight(1f),
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontSize = 11.sp,
+                        lineHeight = 14.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        letterSpacing = 0.5.sp,
+                    ),
+                    color = LocalTextTertiary.current,
+                )
                 ClarityPairBadge(
                     text = when {
                         data.watchItem.isTriggered -> "Utlöst"
@@ -154,19 +141,19 @@ private fun ClarityPairHeroCard(data: PairDetailData) {
                 )
             }
 
-            Row(
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 18.dp),
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    .padding(top = 14.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 ClarityPairStockCell(
                     stock = data.stockA,
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier.fillMaxWidth(),
                 )
                 ClarityPairStockCell(
                     stock = data.stockB,
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier.fillMaxWidth(),
                 )
             }
 
@@ -246,16 +233,15 @@ private fun ClarityPairStockCell(
     }
     val flag = flagForSymbol(stock.symbol)
 
-    Column(
+    Row(
         modifier = modifier
             .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.42f), RoundedCornerShape(16.dp))
             .padding(14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            CompanyLogoAvatar(symbol = stock.symbol, size = 28.dp)
+        CompanyLogoAvatar(symbol = stock.symbol, size = 32.dp)
+        Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = listOfNotNull(flag, stock.companyName ?: stock.symbol).joinToString(" "),
                 style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
@@ -263,42 +249,42 @@ private fun ClarityPairStockCell(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
+            Text(
+                text = stock.symbol,
+                modifier = Modifier.padding(top = 2.dp),
+                style = MaterialTheme.typography.labelSmall.copy(
+                    fontSize = 11.sp,
+                    lineHeight = 14.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    letterSpacing = 0.4.sp,
+                ),
+                color = LocalTextTertiary.current,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
         }
-        Text(
-            text = stock.symbol,
-            modifier = Modifier.padding(top = 2.dp),
-            style = MaterialTheme.typography.labelSmall.copy(
-                fontSize = 11.sp,
-                lineHeight = 14.sp,
-                fontWeight = FontWeight.SemiBold,
-                letterSpacing = 0.4.sp,
-            ),
-            color = LocalTextTertiary.current,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
-        Text(
-            text = stock.lastPrice?.let { CurrencyHelper.formatPrice(it, stock.currency ?: "SEK") } ?: "—",
-            modifier = Modifier.padding(top = 10.dp),
-            style = NordikNumericStyle.copy(
-                fontSize = 20.sp,
-                lineHeight = 24.sp,
-                fontWeight = FontWeight.Bold,
-            ),
-            color = MaterialTheme.colorScheme.onSurface,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
-        Text(
-            text = change?.let { signedPercent(it) } ?: "— %",
-            modifier = Modifier
-                .padding(top = 6.dp)
-                .background(changeColor.copy(alpha = 0.13f), RoundedCornerShape(7.dp))
-                .padding(horizontal = 8.dp, vertical = 3.dp),
-            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
-            color = changeColor,
-            maxLines = 1,
-        )
+        Column(horizontalAlignment = Alignment.End) {
+            Text(
+                text = stock.lastPrice?.let { CurrencyHelper.formatPrice(it, stock.currency ?: "SEK") } ?: "—",
+                style = NordikNumericStyle.copy(
+                    fontSize = 20.sp,
+                    lineHeight = 24.sp,
+                    fontWeight = FontWeight.Bold,
+                ),
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 1,
+            )
+            Text(
+                text = change?.let { signedPercent(it) } ?: "— %",
+                modifier = Modifier
+                    .padding(top = 4.dp)
+                    .background(changeColor.copy(alpha = 0.13f), RoundedCornerShape(7.dp))
+                    .padding(horizontal = 8.dp, vertical = 3.dp),
+                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
+                color = changeColor,
+                maxLines = 1,
+            )
+        }
     }
 }
 
@@ -484,12 +470,6 @@ private fun ClarityPairSignalLine(
             center = Offset(size.width, size.height * values.last()),
         )
     }
-}
-
-private fun pairTitle(data: PairDetailData): String {
-    val left = data.stockA.companyName ?: data.stockA.symbol
-    val right = data.stockB.companyName ?: data.stockB.symbol
-    return "$left ÷ $right"
 }
 
 private fun distanceText(currentSpread: Double?, targetSpread: Double?): String {

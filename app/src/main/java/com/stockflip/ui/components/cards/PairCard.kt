@@ -35,6 +35,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.stockflip.CurrencyHelper
@@ -46,6 +47,7 @@ import com.stockflip.hasPendingNextTradingDayGuard
 import com.stockflip.isTriggeredForDisplay
 import com.stockflip.pairSpreadDirectionLabel
 import com.stockflip.triggerConditionText
+import com.stockflip.ui.components.CompanyLogoAvatar
 import com.stockflip.ui.components.StatusStripe
 import com.stockflip.ui.theme.GroupPosition
 import com.stockflip.ui.theme.JetBrainsMono
@@ -167,6 +169,8 @@ fun PairCard(
                         item = item,
                         live = live,
                         pricePair = pricePair,
+                        currency1 = currency1,
+                        currency2 = currency2,
                         priceFormat = priceFormat,
                         conditionText = conditionText,
                         currentSpread = currentSpread,
@@ -254,6 +258,8 @@ private fun PairClarityListContent(
     item: WatchItem,
     live: LiveWatchData,
     pricePair: WatchType.PricePair,
+    currency1: String,
+    currency2: String,
     priceFormat: (Double) -> String,
     conditionText: String,
     currentSpread: Double?,
@@ -271,52 +277,26 @@ private fun PairClarityListContent(
             targetSpread = pricePair.priceDifference,
         )
     }
-    val pairName = "${item.companyName1 ?: item.ticker1 ?: "—"} ÷ ${item.companyName2 ?: item.ticker2 ?: "—"}"
+    PairClarityStockRow(
+        symbol = item.ticker1,
+        companyName = item.companyName1,
+        price = if (live.currentPrice1 > 0.0) CurrencyHelper.formatPrice(live.currentPrice1, currency1) else "—",
+    )
+    Spacer(modifier = Modifier.height(10.dp))
+    PairClarityStockRow(
+        symbol = item.ticker2,
+        companyName = item.companyName2,
+        price = if (live.currentPrice2 > 0.0) CurrencyHelper.formatPrice(live.currentPrice2, currency2) else "—",
+    )
+
+    HorizontalDivider(
+        modifier = Modifier.padding(top = 14.dp, bottom = 12.dp),
+        thickness = 0.5.dp,
+        color = MaterialTheme.colorScheme.outlineVariant,
+    )
 
     Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.Top,
-    ) {
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = pairName,
-                style = MaterialTheme.typography.titleMedium.copy(
-                    fontSize = 17.sp,
-                    lineHeight = 22.sp,
-                    fontWeight = FontWeight.SemiBold,
-                ),
-                color = MaterialTheme.colorScheme.onSurface,
-            )
-        }
-        Column(
-            horizontalAlignment = Alignment.End,
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            PairClarityBadge(
-                text = when {
-                    isWaitingForNextTradingDay -> "Nästa handelsdag"
-                    isTriggered -> "Utlöst"
-                    else -> conditionText
-                },
-                color = signalColor,
-            )
-            if (onToggleActive != null) {
-                Switch(
-                    checked = item.isActive,
-                    onCheckedChange = { onToggleActive() },
-                    colors = watchItemSwitchColors(),
-                    thumbContent = { watchItemSwitchThumb() },
-                    modifier = Modifier.scale(0.72f),
-                )
-            }
-        }
-    }
-
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(top = 14.dp),
         horizontalArrangement = Arrangement.spacedBy(14.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -345,26 +325,69 @@ private fun PairClarityListContent(
                 .weight(1f)
                 .height(34.dp),
         )
-    }
-
-    if (live.currentPrice1 > 0.0 || live.currentPrice2 > 0.0) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 14.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        Column(
+            horizontalAlignment = Alignment.End,
+            verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
-            PairClarityPriceMeta(
-                label = item.ticker1 ?: "—",
-                value = if (live.currentPrice1 > 0.0) CurrencyHelper.formatDecimal(live.currentPrice1) else "—",
-                modifier = Modifier.weight(1f),
+            PairClarityBadge(
+                text = when {
+                    isWaitingForNextTradingDay -> "Nästa handelsdag"
+                    isTriggered -> "Utlöst"
+                    else -> conditionText
+                },
+                color = signalColor,
             )
-            PairClarityPriceMeta(
-                label = item.ticker2 ?: "—",
-                value = if (live.currentPrice2 > 0.0) CurrencyHelper.formatDecimal(live.currentPrice2) else "—",
-                modifier = Modifier.weight(1f),
-            )
+            if (onToggleActive != null) {
+                Switch(
+                    checked = item.isActive,
+                    onCheckedChange = { onToggleActive() },
+                    colors = watchItemSwitchColors(),
+                    thumbContent = { watchItemSwitchThumb() },
+                    modifier = Modifier.scale(0.72f),
+                )
+            }
         }
+    }
+}
+
+@Composable
+private fun PairClarityStockRow(
+    symbol: String?,
+    companyName: String?,
+    price: String,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        CompanyLogoAvatar(symbol = symbol, size = 28.dp)
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = companyName ?: symbol ?: "—",
+                style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            if (symbol != null && companyName != null) {
+                Text(
+                    text = symbol,
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontFamily = JetBrainsMono,
+                        fontWeight = FontWeight.SemiBold,
+                    ),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.62f),
+                    maxLines = 1,
+                )
+            }
+        }
+        Text(
+            text = price,
+            style = NordikNumericStyle,
+            color = MaterialTheme.colorScheme.onSurface,
+            maxLines = 1,
+        )
     }
 }
 
@@ -382,36 +405,6 @@ private fun PairClarityBadge(
             text = text,
             style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
             color = color,
-        )
-    }
-}
-
-@Composable
-private fun PairClarityPriceMeta(
-    label: String,
-    value: String,
-    modifier: Modifier = Modifier,
-) {
-    Row(
-        modifier = modifier,
-        horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.Start),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelSmall.copy(
-                fontFamily = JetBrainsMono,
-                fontWeight = FontWeight.SemiBold,
-            ),
-            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.62f),
-        )
-        Text(
-            text = value,
-            style = MaterialTheme.typography.labelSmall.copy(
-                fontFamily = JetBrainsMono,
-                fontWeight = FontWeight.SemiBold,
-            ),
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
 }
