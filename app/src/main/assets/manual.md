@@ -51,6 +51,7 @@ StockFlip hämtar aktuella kurser automatiskt:
 
 - **Under börsens öppetider:** en gång per minut
 - **Utanför börsens öppetider:** var 60:e minut
+- **Nyckeltal** (P/E, P/S, utdelning, vinst/aktie) hämtas högst var 15:e minut, eftersom de sällan ändras under dagen
 
 Notiser skickas direkt när ett villkor uppfylls. Trycker du på notisen öppnas appen och du hamnar direkt på aktiedetaljvyn för den berörda aktien.
 

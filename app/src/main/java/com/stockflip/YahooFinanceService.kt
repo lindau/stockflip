@@ -123,6 +123,7 @@ object YahooFinanceService : MarketDataService {
     private var lastFailureTime = 0L
     private const val FAILURE_COOLDOWN_MS = 60000L // 1 minute cooldown after failures
     private const val ALL_TIME_HIGH_CACHE_TTL_MS = 24L * 60L * 60L * 1000L
+    private const val KEY_METRICS_CACHE_TTL_MS = 15L * 60L * 1000L
     private data class CachedAllTimeHigh(val value: Double, val timestamp: Long)
     private val allTimeHighCache = mutableMapOf<String, CachedAllTimeHigh>()
 
@@ -301,7 +302,14 @@ object YahooFinanceService : MarketDataService {
         return chartMarketDataService.getIntradayChart(symbol, period)
     }
 
-    override suspend fun getAllKeyMetrics(symbol: String): KeyMetrics? = withContext(Dispatchers.IO) {
+    // Nyckeltal ändras i praktiken högst dagligen men hämtas via det tyngre quoteSummary-anropet
+    // (crumb). Utan cache gjordes det om för varje nyckeltalsbevakning vid varje listuppdatering.
+    private val keyMetricsCache = SingleFlightCache<String, KeyMetrics>()
+
+    override suspend fun getAllKeyMetrics(symbol: String): KeyMetrics? =
+        keyMetricsCache.getOrLoad(symbol, KEY_METRICS_CACHE_TTL_MS) { fetchAllKeyMetrics(symbol) }
+
+    private suspend fun fetchAllKeyMetrics(symbol: String): KeyMetrics? = withContext(Dispatchers.IO) {
         try {
             if (consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {
                 val timeSinceLastFailure = System.currentTimeMillis() - lastFailureTime

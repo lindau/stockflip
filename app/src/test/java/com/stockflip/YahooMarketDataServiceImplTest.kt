@@ -6,9 +6,15 @@ import okhttp3.mockwebserver.MockWebServer
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Before
 import org.junit.Test
 import retrofit2.Retrofit
+import java.util.concurrent.TimeUnit
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import retrofit2.converter.gson.GsonConverterFactory
 
 class YahooMarketDataServiceImplTest {
@@ -179,6 +185,49 @@ class YahooMarketDataServiceImplTest {
         assertEquals("/v8/finance/chart/VOLV-B.ST?range=max&interval=1mo", request.path)
     }
 
+    @Test
+    fun `concurrent price requests for the same symbol share one network call`() = kotlinx.coroutines.runBlocking {
+        // Svaret fördröjs så att alla fem anropen hinner starta innan det första är klart.
+        mockWebServer.enqueue(
+            okResponse(readResource("yahoo/chart_VOLV-B.ST.json")).setBodyDelay(300, TimeUnit.MILLISECONDS)
+        )
+
+        val prices = coroutineScope {
+            (1..5).map { async(Dispatchers.IO) { service.getStockPrice("VOLV-B.ST") } }.awaitAll()
+        }
+
+        assertEquals(List(5) { 300.12 }, prices)
+        assertEquals(1, mockWebServer.requestCount)
+    }
+
+    @Test
+    fun `failed quote fetch is not cached so the next call retries`() = kotlinx.coroutines.runBlocking {
+        mockWebServer.enqueue(MockResponse().setResponseCode(500))
+        mockWebServer.enqueue(okResponse(readResource("yahoo/chart_VOLV-B.ST.json")))
+
+        assertNull(service.getStockPrice("VOLV-B.ST"))
+        assertEquals(300.12, service.getStockPrice("VOLV-B.ST")!!, 0.0001)
+        assertEquals(2, mockWebServer.requestCount)
+    }
+
+    @Test
+    fun `chart is cached per symbol and period and expires after its ttl`() = kotlinx.coroutines.runBlocking {
+        var now = 1_000_000L
+        val cachedService = YahooMarketDataServiceImpl(api, clock = { now })
+        repeat(3) { mockWebServer.enqueue(okResponse(CHART_JSON)) }
+
+        assertNotNull(cachedService.getIntradayChart("VOLV-B.ST", ChartPeriod.YEAR))
+        assertNotNull(cachedService.getIntradayChart("VOLV-B.ST", ChartPeriod.YEAR))
+        assertEquals("Samma period ska komma från cachen", 1, mockWebServer.requestCount)
+
+        assertNotNull(cachedService.getIntradayChart("VOLV-B.ST", ChartPeriod.MONTH))
+        assertEquals("Annan period hämtas separat", 2, mockWebServer.requestCount)
+
+        now += 16 * 60_000L // efter 15 min livslängd för YEAR
+        assertNotNull(cachedService.getIntradayChart("VOLV-B.ST", ChartPeriod.YEAR))
+        assertEquals(3, mockWebServer.requestCount)
+    }
+
     private fun okResponse(body: String): MockResponse {
         return MockResponse()
             .setResponseCode(200)
@@ -190,5 +239,12 @@ class YahooMarketDataServiceImplTest {
         val inputStream = javaClass.classLoader?.getResourceAsStream(path)
             ?: throw IllegalStateException("Missing test resource: $path")
         return inputStream.bufferedReader(Charsets.UTF_8).use { it.readText() }
+    }
+
+    private companion object {
+        val CHART_JSON: String = """
+            {"chart":{"result":[{"meta":{"regularMarketPrice":3.0,"chartPreviousClose":1.0},
+            "timestamp":[1,2,3],"indicators":{"quote":[{"close":[1.0,2.0,3.0]}]}}],"error":null}}
+        """.trimIndent()
     }
 }

@@ -11,7 +11,8 @@ import kotlinx.coroutines.withContext
  * a Retrofit client configured with MockWebServer.
  */
 class YahooMarketDataServiceImpl(
-    private val api: YahooFinanceApi
+    private val api: YahooFinanceApi,
+    private val clock: () -> Long = System::currentTimeMillis
 ) {
     // De flesta metoderna nedan svarar på frågor som alla besvaras av samma
     // v8/finance/chart/{symbol}-anrop (pris, valuta, börs, föregående stängning,
@@ -19,22 +20,17 @@ class YahooMarketDataServiceImpl(
     // symbol och en kort TTL-cache gör att flera accessorer för samma symbol inom
     // cache-fönstret återanvänder samma svar i stället för att var och en gör sitt
     // eget anrop.
-    private data class CachedMeta(val meta: Meta, val timestamp: Long)
-    private val quoteMetaCache = mutableMapOf<String, CachedMeta>()
+    // Single-flight: samtidiga frågor för samma symbol (t.ex. flera bevakningar på samma
+    // aktie vid listuppdatering, eller aktiedata + bevakningar när aktiedetaljen öppnas)
+    // delar på ett pågående anrop i stället för att göra varsitt.
+    private val quoteMetaCache = SingleFlightCache<String, Meta>(clock)
 
-    private suspend fun quoteMeta(symbol: String): Meta? {
-        val now = System.currentTimeMillis()
-        synchronized(quoteMetaCache) {
-            quoteMetaCache[symbol]?.let { cached ->
-                if (now - cached.timestamp < QUOTE_META_TTL_MS) return cached.meta
-            }
-        }
-        val meta = fetchMeta(symbol) ?: return null
-        synchronized(quoteMetaCache) {
-            quoteMetaCache[symbol] = CachedMeta(meta, now)
-        }
-        return meta
-    }
+    private suspend fun quoteMeta(symbol: String): Meta? =
+        quoteMetaCache.getOrLoad(symbol, QUOTE_META_TTL_MS) { fetchMeta(symbol) }
+
+    // Grafdata per symbol och period — byte tillbaka till en period eller återbesök på en aktie
+    // visar grafen direkt i stället för att hämta om den.
+    private val chartCache = SingleFlightCache<Pair<String, ChartPeriod>, IntradayChartData>(clock)
 
     private suspend fun fetchMeta(symbol: String): Meta? {
         return try {
@@ -188,7 +184,10 @@ class YahooMarketDataServiceImpl(
         )
     }
 
-    suspend fun getIntradayChart(symbol: String, period: ChartPeriod = ChartPeriod.DAY): IntradayChartData? = withContext(Dispatchers.IO) {
+    suspend fun getIntradayChart(symbol: String, period: ChartPeriod = ChartPeriod.DAY): IntradayChartData? =
+        chartCache.getOrLoad(symbol to period, chartTtlMs(period)) { fetchIntradayChart(symbol, period) }
+
+    private suspend fun fetchIntradayChart(symbol: String, period: ChartPeriod): IntradayChartData? = withContext(Dispatchers.IO) {
         try {
             Log.d(TAG, "Fetching intraday chart")
             val response: YahooFinanceResponse = api.getIntradayChart(symbol, period.range, period.interval)
@@ -267,6 +266,13 @@ class YahooMarketDataServiceImpl(
     private companion object {
         private const val TAG: String = "YahooMarketDataService"
         private const val QUOTE_META_TTL_MS = 20_000L // 20 sekunder
+
+        /** Dagsgrafen ändras hela tiden under handel; längre perioder ändras långsamt. */
+        fun chartTtlMs(period: ChartPeriod): Long = when (period) {
+            ChartPeriod.DAY -> 30_000L
+            ChartPeriod.WEEK -> 2 * 60_000L
+            else -> 15 * 60_000L
+        }
     }
 
     private fun intervalToSeconds(interval: String): Long = when (interval) {
