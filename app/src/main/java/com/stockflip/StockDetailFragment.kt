@@ -84,6 +84,7 @@ class StockDetailFragment : Fragment() {
     // Fullskärmsläge för grafen — endast tillgängligt/synligt i landskapsläge.
     private var isChartFullscreen = false
     private var fullscreenBackCallback: androidx.activity.OnBackPressedCallback? = null
+    private var logoRefreshToken = 0
 
     private fun syncOverviewInBackground() {
         (activity as? MainActivity)?.syncWatchItemsAfterDetailChange()
@@ -335,6 +336,7 @@ class StockDetailFragment : Fragment() {
 
     private fun setupSwipeRefresh() {
         binding.swipeRefreshLayout.setOnRefreshListener {
+            logoRefreshToken++
             viewModel.refresh()
         }
         binding.stockDataRetryButton.setOnClickListener {
@@ -578,6 +580,7 @@ class StockDetailFragment : Fragment() {
                     isLandscape = isLandscapeOrientation(),
                     onFullscreenToggle = { setChartFullscreen(true) },
                     smaLevels = smaLevelsForChart(),
+                    logoRefreshToken = logoRefreshToken,
                 )
             }
         }

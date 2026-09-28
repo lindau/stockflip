@@ -86,6 +86,7 @@ fun ClarityStockDetailPanel(
     isLandscape: Boolean = false,
     onFullscreenToggle: (() -> Unit)? = null,
     smaLevels: List<SmaChartLevel> = emptyList(),
+    logoRefreshToken: Int = 0,
 ) {
     Column(
         modifier = modifier.fillMaxWidth(),
@@ -99,6 +100,7 @@ fun ClarityStockDetailPanel(
             isLandscape = isLandscape,
             onFullscreenToggle = onFullscreenToggle,
             smaLevels = smaLevels,
+            logoRefreshToken = logoRefreshToken,
         )
         ClarityStockStatsGrid(data = data)
         ClarityWeekRangeCard(data = data)
@@ -114,6 +116,7 @@ private fun ClarityStockHeroCard(
     isLandscape: Boolean = false,
     onFullscreenToggle: (() -> Unit)? = null,
     smaLevels: List<SmaChartLevel> = emptyList(),
+    logoRefreshToken: Int = 0,
 ) {
     val colorScheme = MaterialTheme.colorScheme
     val periodChange = calculatePeriodChange(
@@ -143,7 +146,7 @@ private fun ClarityStockHeroCard(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalAlignment = Alignment.Top,
             ) {
-                CompanyLogoAvatar(symbol = data.symbol, size = 48.dp)
+                CompanyLogoAvatar(symbol = data.symbol, size = 48.dp, refreshToken = logoRefreshToken)
 
                 Column(modifier = Modifier.weight(1f)) {
                     Row(

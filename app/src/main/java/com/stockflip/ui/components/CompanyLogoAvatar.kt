@@ -17,9 +17,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import coil.request.CachePolicy
+import coil.request.ImageRequest
 import com.stockflip.BuildConfig
 import com.stockflip.CountryFlagHelper
 import com.stockflip.StockSearchResult
@@ -42,6 +45,7 @@ fun CompanyLogoAvatar(
     symbol: String?,
     modifier: Modifier = Modifier,
     size: Dp = 44.dp,
+    refreshToken: Int = 0,
 ) {
     val isCrypto = symbol != null && StockSearchResult.isCryptoSymbol(symbol)
     val isPair = symbol?.contains("÷") == true
@@ -53,10 +57,11 @@ fun CompanyLogoAvatar(
     val flag = symbol?.let {
         CountryFlagHelper.getCountryCodeFromSymbol(it)?.let(CountryFlagHelper::getFlagEmoji)
     }
-    var loadFailed by remember(symbol) { mutableStateOf(false) }
+    var loadFailed by remember(symbol, refreshToken) { mutableStateOf(false) }
     val isIndex = symbol != null && StockSearchResult.isIndexSymbol(symbol)
     val showCompanyLogo = !isCrypto && !isIndex && !isPair && symbol != null && !loadFailed
     val showCryptoLogo = isCrypto && !isPair && cryptoIconUrl != null && !loadFailed
+    val context = LocalContext.current
 
     Box(
         modifier = modifier
@@ -75,8 +80,18 @@ fun CompanyLogoAvatar(
                 onError = { loadFailed = true },
             )
         } else if (showCompanyLogo) {
+            val logoUrl = "https://img.logo.dev/ticker/$symbol?token=${BuildConfig.LOGO_DEV_TOKEN}&size=128"
+            val logoModel = if (refreshToken > 0) {
+                ImageRequest.Builder(context)
+                    .data(logoUrl)
+                    .memoryCachePolicy(CachePolicy.DISABLED)
+                    .diskCachePolicy(CachePolicy.WRITE_ONLY)
+                    .build()
+            } else {
+                logoUrl
+            }
             AsyncImage(
-                model = "https://img.logo.dev/ticker/$symbol?token=${BuildConfig.LOGO_DEV_TOKEN}&size=128",
+                model = logoModel,
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.size(size),
