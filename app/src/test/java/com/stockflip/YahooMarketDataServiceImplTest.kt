@@ -242,6 +242,68 @@ class YahooMarketDataServiceImplTest {
     }
 
     @Test
+    fun `getSmaSeries returns one rolling average per day, not a single flat value`() = kotlinx.coroutines.runBlocking {
+        mockWebServer.enqueue(okResponse("""
+            {
+              "chart": {
+                "result": [
+                  {
+                    "meta": { "regularMarketPrice": 700.0 },
+                    "timestamp": [1, 2, 3, 4, 5, 6, 7],
+                    "indicators": {
+                      "quote": [
+                        {
+                          "close": [100.0, 200.0, 300.0, 400.0, 500.0, 600.0, 700.0]
+                        }
+                      ]
+                    }
+                  }
+                ],
+                "error": null
+              }
+            }
+        """.trimIndent()))
+
+        val series = service.getSmaSeries("VOLV-B.ST", period = 3, chartPeriod = ChartPeriod.MONTH)
+
+        assertNotNull(series)
+        assertEquals(
+            listOf(
+                SmaPoint(3, 200.0),
+                SmaPoint(4, 300.0),
+                SmaPoint(5, 400.0),
+                SmaPoint(6, 500.0),
+                SmaPoint(7, 600.0),
+            ),
+            series
+        )
+    }
+
+    @Test
+    fun `getSmaSeries returns null when fewer closes are available than the requested period`() = kotlinx.coroutines.runBlocking {
+        mockWebServer.enqueue(okResponse("""
+            {
+              "chart": {
+                "result": [
+                  {
+                    "meta": { "regularMarketPrice": 500.0 },
+                    "timestamp": [1, 2],
+                    "indicators": {
+                      "quote": [ { "close": [100.0, 200.0] } ]
+                    }
+                  }
+                ],
+                "error": null
+              }
+            }
+        """.trimIndent()))
+
+        val series = service.getSmaSeries("VOLV-B.ST", period = 50, chartPeriod = ChartPeriod.MONTH)
+
+        assertNull(series)
+    }
+
+    @Test
     fun `concurrent price requests for the same symbol share one network call`() = kotlinx.coroutines.runBlocking {
         // Svaret fördröjs så att alla fem anropen hinner starta innan det första är klart.
         mockWebServer.enqueue(

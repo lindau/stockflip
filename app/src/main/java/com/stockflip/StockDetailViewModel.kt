@@ -467,6 +467,10 @@ class StockDetailViewModel(
      */
     suspend fun getSma(period: Int): Double? = yahooFinanceService.getSma(symbol, period)
 
+    /** Historisk SMA(period)-serie för kursgrafen, se [MarketDataService.getSmaSeries]. */
+    suspend fun getSmaSeries(period: Int, chartPeriod: ChartPeriod): List<SmaPoint>? =
+        yahooFinanceService.getSmaSeries(symbol, period, chartPeriod)
+
     /**
      * Returnerar true om en aktiv bevakning med exakt samma inställningar redan finns.
      * Combined-bevakningar kontrolleras aldrig.

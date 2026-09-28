@@ -63,6 +63,7 @@ import com.stockflip.CountryFlagHelper
 import com.stockflip.CurrencyHelper
 import com.stockflip.IntradayChartData
 import com.stockflip.SmaChartLevel
+import com.stockflip.SmaPoint
 import com.stockflip.StockDetailData
 import com.stockflip.ui.components.CompanyLogoAvatar
 import com.stockflip.ui.theme.LocalCardBorder
@@ -287,6 +288,7 @@ private fun ClaritySparkChart(
     smaLevels: List<SmaChartLevel> = emptyList(),
 ) {
     val prices = chartData?.prices.orEmpty()
+    val timestamps = chartData?.timestamps.orEmpty()
     if (prices.size < 2) {
         Box(
             modifier = modifier,
@@ -343,7 +345,7 @@ private fun ClaritySparkChart(
     ) {
         // Priceskalan utökas för att alltid rymma SMA-nivåerna — annars klipps linjen tyst
         // utanför canvasen när priset ligger långt från det bevakade medelvärdet.
-        val smaValues = smaLevels.map { it.value }
+        val smaValues = smaLevels.flatMap { level -> level.points.map { it.value } }
         val minPrice = minOf(prices.min(), smaValues.minOrNull() ?: prices.min())
         val maxPrice = maxOf(prices.max(), smaValues.maxOrNull() ?: prices.max())
         val range = (maxPrice - minPrice).coerceAtLeast(0.001)
@@ -378,26 +380,53 @@ private fun ClaritySparkChart(
             center = Offset(xFor(prices.lastIndex), yFor(prices.last())),
         )
 
+        // SMA är ett dagsstängningsbaserat mått: varje graf-punkt tilldelas den senaste kända
+        // SMA-punkten vid eller före sin egen tidsstämpel ("carry forward"), så linjen rör sig
+        // dag för dag i takt med priset i stället för att ritas som en enda vågrät linje.
         smaLevels.forEachIndexed { index, level ->
             val smaColor = smaLineColors[index % smaLineColors.size]
-            val smaY = yFor(level.value)
-            drawLine(
+            val alignedValues = alignSmaToChart(timestamps, level.points)
+
+            val smaPath = Path()
+            var started = false
+            var lastPoint: Offset? = null
+            alignedValues.forEachIndexed { i, value ->
+                if (value == null) return@forEachIndexed
+                val point = Offset(xFor(i), yFor(value))
+                if (!started) {
+                    smaPath.moveTo(point.x, point.y)
+                    started = true
+                } else {
+                    smaPath.lineTo(point.x, point.y)
+                }
+                lastPoint = point
+            }
+            if (!started) return@forEachIndexed
+
+            drawPath(
+                path = smaPath,
                 color = smaColor.copy(alpha = 0.85f),
-                start = Offset(0f, smaY),
-                end = Offset(size.width, smaY),
-                strokeWidth = 1.5.dp.toPx(),
-                pathEffect = PathEffect.dashPathEffect(floatArrayOf(8.dp.toPx(), 6.dp.toPx()), 0f),
+                style = Stroke(
+                    width = 1.5.dp.toPx(),
+                    cap = StrokeCap.Round,
+                    join = StrokeJoin.Round,
+                    pathEffect = PathEffect.dashPathEffect(floatArrayOf(8.dp.toPx(), 6.dp.toPx()), 0f),
+                ),
             )
+
             val label = "SMA${level.period}"
             val labelStyle = TextStyle(fontSize = 9.sp, color = smaColor, fontWeight = FontWeight.Bold)
             val labelMeasured = textMeasurer.measure(label, labelStyle)
-            val labelTop = (smaY - labelMeasured.size.height - 2.dp.toPx())
+            val anchor = lastPoint ?: Offset(0f, topPadding)
+            val labelLeft = (anchor.x - labelMeasured.size.width - 6.dp.toPx())
+                .coerceIn(0f, size.width - labelMeasured.size.width)
+            val labelTop = (anchor.y - labelMeasured.size.height - 2.dp.toPx())
                 .coerceIn(0f, size.height - labelMeasured.size.height)
             drawText(
                 textMeasurer = textMeasurer,
                 text = label,
                 style = labelStyle,
-                topLeft = Offset(4.dp.toPx(), labelTop),
+                topLeft = Offset(labelLeft, labelTop),
             )
         }
 
@@ -468,6 +497,28 @@ private fun ClaritySparkChart(
             )
         }
     }
+}
+
+/**
+ * Slår ihop en SMA-serie (en punkt per dagsstängning) med kursgrafens egna tidsstämplar:
+ * för varje graf-punkt väljs den senaste SMA-punkten vid eller före den tidsstämpeln
+ * ("carry forward"), null tills den första SMA-punkten är tillgänglig. Båda listorna
+ * antas vara kronologiskt sorterade, precis som Yahoo-svaren de kommer ifrån.
+ */
+private fun alignSmaToChart(chartTimestamps: List<Long>, smaPoints: List<SmaPoint>): List<Double?> {
+    if (chartTimestamps.isEmpty() || smaPoints.isEmpty()) return List(chartTimestamps.size) { null }
+    val aligned = arrayOfNulls<Double>(chartTimestamps.size)
+    var smaIndex = 0
+    var lastValue: Double? = null
+    for (i in chartTimestamps.indices) {
+        val ts = chartTimestamps[i]
+        while (smaIndex < smaPoints.size && smaPoints[smaIndex].timestamp <= ts) {
+            lastValue = smaPoints[smaIndex].value
+            smaIndex++
+        }
+        aligned[i] = lastValue
+    }
+    return aligned.toList()
 }
 
 /**

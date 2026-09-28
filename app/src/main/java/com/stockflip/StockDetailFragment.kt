@@ -34,6 +34,9 @@ import com.google.android.material.button.MaterialButton
 import com.google.android.material.color.MaterialColors
 import com.google.android.material.divider.MaterialDivider
 import com.google.android.material.snackbar.Snackbar
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.combine
 import java.text.SimpleDateFormat
@@ -71,6 +74,11 @@ class StockDetailFragment : Fragment() {
     private var latestChartData: IntradayChartData? = null
     private var latestChartPeriod: ChartPeriod = ChartPeriod.DAY
     private var latestAlerts: List<WatchItemUiState> = emptyList()
+    private var latestSmaLevels: List<SmaChartLevel> = emptyList()
+    // Avbryts och startas om vid varje ny hämtning så en gammal hämtning (t.ex. för föregående
+    // graf-period) inte skriver över resultatet av en nyare — samma mönster som för Job-hantering
+    // i övriga ViewModels (se CLAUDE.md).
+    private var smaChartJob: Job? = null
     // Fel när bevakningarna inte kunde läsas in och inga finns att visa — ligger kvar tills en laddning lyckas.
     private var alertsLoadError: String? = null
     private var latestMetricHistory: Map<WatchType.MetricType, MetricHistorySummary> = emptyMap()
@@ -447,6 +455,7 @@ class StockDetailFragment : Fragment() {
                         renderInsiderTransactions()
                         renderTriggerBanner()
                         // SMA-nivåerna ovanpå grafen kommer från live-bevakningsdata, inte chartState.
+                        refreshSmaChartLevels()
                         renderClarityStockPanel()
                     }
                     is UiState.Error -> {
@@ -476,6 +485,7 @@ class StockDetailFragment : Fragment() {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
             combine(viewModel.chartState, viewModel.selectedPeriod) { state, period -> state to period }
                 .collect { (state, period) ->
+                    val periodChanged = latestChartPeriod != period
                     latestChartPeriod = period
                     binding.intradayChartView.isVisible = false
                     when (state) {
@@ -485,6 +495,9 @@ class StockDetailFragment : Fragment() {
                         }
                         is UiState.Success -> {
                             latestChartData = state.data
+                            // SMA-seriens tidsspann beror på graf-perioden, så en bytt period
+                            // måste hämta om serien — samma period kan återanvända den redan hämtade.
+                            if (periodChanged) refreshSmaChartLevels()
                             renderClarityStockPanel()
                         }
                         is UiState.Error -> {
@@ -579,7 +592,7 @@ class StockDetailFragment : Fragment() {
                     onPeriodSelected = { viewModel.selectPeriod(it) },
                     isLandscape = isLandscapeOrientation(),
                     onFullscreenToggle = { setChartFullscreen(true) },
-                    smaLevels = smaLevelsForChart(),
+                    smaLevels = latestSmaLevels,
                     logoRefreshToken = logoRefreshToken,
                 )
             }
@@ -599,31 +612,52 @@ class StockDetailFragment : Fragment() {
                     selectedPeriod = latestChartPeriod,
                     onPeriodSelected = { viewModel.selectPeriod(it) },
                     onClose = { setChartFullscreen(false) },
-                    smaLevels = smaLevelsForChart(),
+                    smaLevels = latestSmaLevels,
                 )
             }
         }
     }
 
-    /**
-     * SMA-nivåer att rita ovanpå kursgrafen — ett värde per unikt period från aktivens
-     * Pris-vs-SMA/SMA-korsning-bevakningar på den här aktien (deras redan hämtade live-värden).
-     */
-    private fun smaLevelsForChart(): List<SmaChartLevel> {
-        val levels = mutableMapOf<Int, Double>()
+    /** Unika SMA-perioder som förekommer i aktivens Pris-vs-SMA/SMA-korsning-bevakningar. */
+    private fun smaPeriodsFromAlerts(): List<Int> {
+        val periods = sortedSetOf<Int>()
         latestAlerts.forEach { state ->
             when (val watchType = state.item.watchType) {
-                is WatchType.PriceVsSma -> {
-                    if (state.live.currentSmaShort > 0.0) levels[watchType.period] = state.live.currentSmaShort
-                }
+                is WatchType.PriceVsSma -> periods.add(watchType.period)
                 is WatchType.SmaCrossover -> {
-                    if (state.live.currentSmaShort > 0.0) levels[watchType.shortPeriod] = state.live.currentSmaShort
-                    if (state.live.currentSmaLong > 0.0) levels[watchType.longPeriod] = state.live.currentSmaLong
+                    periods.add(watchType.shortPeriod)
+                    periods.add(watchType.longPeriod)
                 }
                 else -> Unit
             }
         }
-        return levels.entries.sortedBy { it.key }.map { SmaChartLevel(period = it.key, value = it.value) }
+        return periods.toList()
+    }
+
+    /**
+     * Hämtar de historiska SMA-serierna att rita ovanpå kursgrafen — en serie per unikt period
+     * från aktivens Pris-vs-SMA/SMA-korsning-bevakningar, tidsspannet avgörs av [latestChartPeriod].
+     * Avbryter en pågående hämtning innan en ny startas (se [smaChartJob]).
+     */
+    private fun refreshSmaChartLevels() {
+        val periods = smaPeriodsFromAlerts()
+        if (periods.isEmpty()) {
+            smaChartJob?.cancel()
+            latestSmaLevels = emptyList()
+            renderClarityStockPanel()
+            return
+        }
+        smaChartJob?.cancel()
+        val chartPeriod = latestChartPeriod
+        smaChartJob = viewLifecycleOwner.lifecycleScope.launch {
+            val results = periods.map { period ->
+                async { period to viewModel.getSmaSeries(period, chartPeriod) }
+            }.awaitAll()
+            latestSmaLevels = results
+                .mapNotNull { (period, points) -> points?.takeIf { it.isNotEmpty() }?.let { SmaChartLevel(period, it) } }
+                .sortedBy { it.period }
+            renderClarityStockPanel()
+        }
     }
 
     private fun isLandscapeOrientation(): Boolean {

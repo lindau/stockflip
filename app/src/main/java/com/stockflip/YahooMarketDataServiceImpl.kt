@@ -36,6 +36,10 @@ class YahooMarketDataServiceImpl(
     // 1-minutersuppdatering under handelstid — en längre TTL undviker onödiga anrop.
     private val smaCache = SingleFlightCache<Pair<String, Int>, Double>(clock)
 
+    // Historisk SMA-serie för grafen — nyckeln inkluderar vald graf-period eftersom hur långt
+    // tillbaka i tiden serien behöver sträcka sig beror på det.
+    private val smaSeriesCache = SingleFlightCache<Triple<String, Int, ChartPeriod>, List<SmaPoint>>(clock)
+
     private suspend fun fetchMeta(symbol: String): Meta? {
         return try {
             Log.d(TAG, "Fetching quote data")
@@ -266,34 +270,71 @@ class YahooMarketDataServiceImpl(
         closes.takeLast(period).average()
     }
 
-    /** Hämtar dagsstängningar, senaste först utelämnat (kronologisk ordning), minst [minBars] om tillgängligt. */
-    private suspend fun fetchDailyCloses(symbol: String, minBars: Int): List<Double>? = withContext(Dispatchers.IO) {
-        try {
-            val range = when {
-                minBars <= 60 -> "3mo"
-                minBars <= 120 -> "6mo"
-                minBars <= 250 -> "1y"
-                minBars <= 500 -> "2y"
-                else -> "5y"
-            }
-            Log.d(TAG, "Fetching daily closes for SMA")
-            val response: YahooFinanceResponse = api.getIntradayChart(symbol, range = range, interval = "1d")
-            if (response.chart?.error != null) {
-                Log.e(TAG, "Yahoo API error while fetching daily closes: ${response.chart.error.description}")
-                return@withContext null
-            }
-            val result: Result = response.chart?.result?.firstOrNull() ?: return@withContext null
-            val timestamps = result.timestamp
-            val closes = result.indicators?.quote?.firstOrNull()?.close
-            if (timestamps == null || closes == null) return@withContext null
-            timestamps.zip(closes)
-                .mapNotNull { (_, price) -> price?.takeIf { !it.isNaN() && it > 0.0 } }
-                .takeIf { it.isNotEmpty() }
-        } catch (e: Exception) {
-            Log.e(TAG, "Error fetching daily closes: ${e.message}", e)
-            null
+    /**
+     * Historisk SMA(period)-serie att rita ovanpå kursgrafen för [chartPeriod] — en punkt per
+     * dagsstängning, inte bara det senaste värdet, så linjen kan följa prisets rörelse i stället
+     * för att ritas som en rak vågrät linje (jfr. Yahoo Finance).
+     */
+    suspend fun getSmaSeries(symbol: String, period: Int, chartPeriod: ChartPeriod): List<SmaPoint>? =
+        smaSeriesCache.getOrLoad(Triple(symbol, period, chartPeriod), SMA_TTL_MS) {
+            computeSmaSeries(symbol, period, chartPeriod)
         }
+
+    private suspend fun computeSmaSeries(symbol: String, period: Int, chartPeriod: ChartPeriod): List<SmaPoint>? =
+        withContext(Dispatchers.IO) {
+            val neededBars = visibleTradingDaysFor(chartPeriod) + period
+            val closes = fetchDailyClosesWithTimestamps(symbol, neededBars) ?: return@withContext null
+            if (closes.size < period) return@withContext null
+            (period - 1 until closes.size).map { i ->
+                val window = closes.subList(i - period + 1, i + 1)
+                SmaPoint(timestamp = closes[i].first, value = window.sumOf { it.second } / period)
+            }
+        }
+
+    /** Antal handelsdagar en graf-period ungefär visar — avgör hur långt tillbaka SMA-serien behöver hämtas. */
+    private fun visibleTradingDaysFor(chartPeriod: ChartPeriod): Int = when (chartPeriod) {
+        ChartPeriod.DAY -> 3
+        ChartPeriod.WEEK -> 6
+        ChartPeriod.MONTH -> 23
+        ChartPeriod.THREE_MONTHS -> 66
+        ChartPeriod.SIX_MONTHS -> 132
+        ChartPeriod.YEAR -> 253
+        ChartPeriod.FIVE_YEARS -> 1260
     }
+
+    /** Hämtar dagsstängningar, senaste först utelämnat (kronologisk ordning), minst [minBars] om tillgängligt. */
+    private suspend fun fetchDailyCloses(symbol: String, minBars: Int): List<Double>? =
+        fetchDailyClosesWithTimestamps(symbol, minBars)?.map { it.second }
+
+    /** Som [fetchDailyCloses] men behåller stängningstidpunkten — krävs för att bygga en tidsserie. */
+    private suspend fun fetchDailyClosesWithTimestamps(symbol: String, minBars: Int): List<Pair<Long, Double>>? =
+        withContext(Dispatchers.IO) {
+            try {
+                val range = when {
+                    minBars <= 60 -> "3mo"
+                    minBars <= 120 -> "6mo"
+                    minBars <= 250 -> "1y"
+                    minBars <= 500 -> "2y"
+                    else -> "5y"
+                }
+                Log.d(TAG, "Fetching daily closes for SMA")
+                val response: YahooFinanceResponse = api.getIntradayChart(symbol, range = range, interval = "1d")
+                if (response.chart?.error != null) {
+                    Log.e(TAG, "Yahoo API error while fetching daily closes: ${response.chart.error.description}")
+                    return@withContext null
+                }
+                val result: Result = response.chart?.result?.firstOrNull() ?: return@withContext null
+                val timestamps = result.timestamp
+                val closes = result.indicators?.quote?.firstOrNull()?.close
+                if (timestamps == null || closes == null) return@withContext null
+                timestamps.zip(closes)
+                    .mapNotNull { (ts, price) -> price?.takeIf { !it.isNaN() && it > 0.0 }?.let { ts to it } }
+                    .takeIf { it.isNotEmpty() }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error fetching daily closes: ${e.message}", e)
+                null
+            }
+        }
 
     suspend fun getNextEarningsReport(symbol: String): NextEarningsInfo? = withContext(Dispatchers.IO) {
         try {

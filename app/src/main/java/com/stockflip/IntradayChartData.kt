@@ -12,10 +12,20 @@ data class IntradayChartData(
     val emptyReason: String? = null
 )
 
-/** Ett SMA-referensvärde att rita som en horisontell linje ovanpå kursgrafen, t.ex. från en aktiv bevakning. */
+/** En daglig SMA-datapunkt: [timestamp] är dagsstängningens epoch-sekunder, [value] medelvärdet. */
+data class SmaPoint(
+    val timestamp: Long,
+    val value: Double
+)
+
+/**
+ * En SMA-serie att rita ovanpå kursgrafen, t.ex. från en aktiv bevakning. [points] är den
+ * historiska SMA-utvecklingen (en punkt per dagsstängning) — inte bara det senaste värdet —
+ * så linjen kan följa aktiekursens rörelse i stället för att ritas som en rak vågrät linje.
+ */
 data class SmaChartLevel(
     val period: Int,
-    val value: Double
+    val points: List<SmaPoint>
 )
 
 data class PairChartSeries(

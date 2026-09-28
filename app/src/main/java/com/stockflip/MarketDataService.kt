@@ -59,4 +59,5 @@ interface MarketDataService {
     suspend fun getIntradayChart(symbol: String, period: ChartPeriod = ChartPeriod.DAY): IntradayChartData?
     suspend fun getNextEarningsReport(symbol: String): NextEarningsInfo?
     suspend fun getSma(symbol: String, period: Int): Double?
+    suspend fun getSmaSeries(symbol: String, period: Int, chartPeriod: ChartPeriod): List<SmaPoint>?
 }
