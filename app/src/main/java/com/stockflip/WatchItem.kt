@@ -76,7 +76,9 @@ data class WatchItem(
      * Övriga larmtyper (DailyMove, KeyMetrics, PriceRange, PricePair, Combined) är
      * återkommande: de kan trigga igen nästa handelsdag utan manuellt ingrepp, men
      * isTriggered förblir true i UI:t tills alerten återaktiveras manuellt eller ett
-     * nytt datum passeras.
+     * nytt datum passeras. Återaktiveras de manuellt medan marknaden är öppen och
+     * villkoret inte längre är uppfyllt kan de dock trigga redan samma dag igen, se
+     * shouldGuardAgainstImmediateRetrigger i ReactivationGuard.kt.
      */
     val isOneTimeAlarm: Boolean
         get() = watchType is WatchType.PriceTarget || watchType is WatchType.ATHBased
@@ -135,22 +137,13 @@ data class WatchItem(
     }
 
     /**
-     * True för larmtyper vars reactivate() gör en strukturell justering (idag: PriceTargets
-     * riktningsomvändning) som gör att hasLiveTriggerCondition() inte kan läsa true igen på
-     * exakt samma villkor direkt efter återaktivering. Endast dessa typer är säkra att köra
-     * genom ReactivationGuard.kt:s villkors-/marknadstidsbaserade tidigare-återväpning; övriga
-     * typer måste alltid behålla lastTriggeredDate om de triggade idag, annars kan en flimrande
-     * live-avläsning (t.ex. dagsrörelse) göra att larmet "återuppstår" som utlöst i UI:t och
-     * trigga en ny notis samma dag. Håll i synk med when-grenarna i reactivate().
-     */
-    val hasStructuralReactivationAdjustment: Boolean
-        get() = watchType is WatchType.PriceTarget
-
-    /**
      * Återaktiverar alerten (tar bort triggad-status).
      *
-     * @param keepLastTriggeredDate Behåller datumspärren för dagens trigger, exempelvis
-     * efter börsstängning så samma handelsdag inte kan trigga igen.
+     * @param keepLastTriggeredDate Behåller datumspärren för dagens trigger. Anroparen avgör
+     * detta via [shouldGuardAgainstImmediateRetrigger] i ReactivationGuard.kt: spärren behålls
+     * om villkoret fortfarande är uppfyllt (eller inte går att avgöra) vid återaktiveringen,
+     * eller om marknaden är stängd — annars släpps den så att larmet kan trigga igen redan
+     * vid nästa prissynk samma dag.
      * @return Ny WatchItem med isTriggered = false och isActive = true
      */
     fun reactivate(

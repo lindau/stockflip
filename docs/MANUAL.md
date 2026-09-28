@@ -344,19 +344,22 @@ I fliken **Bevakningar** kan du långtrycka på en bevakning för att gå in i m
 - **Ta bort**
 - **Avsluta markeringsläge**
 
-### Återaktivera ett engångslarm
+### Återaktivera en triggad bevakning
 
-Engångslarm (Målpris och Drawdown) inaktiveras automatiskt efter utlösning.
+Engångslarm (Målpris och Drawdown) inaktiveras automatiskt efter utlösning och kräver alltid manuell återaktivering. Återkommande larm (Dagsrörelse, Nyckeltal, Aktiepar, Prisintervall, Kombinerat) återaktiveras normalt automatiskt nästa handelsdag, men du kan även återaktivera dem manuellt tidigare — till exempel för att slippa se "Triggad"-märket resten av dagen.
 
 - Hitta bevakningen i listan — den visar "Triggad [datum]".
 - Tryck **Återaktivera** direkt på kortet.
 
 Bevakningen är nu aktiv igen. För målpris räknar appen om riktningen från aktuell kurs: om kursen ligger över målpriset bevakas nästa passage ned under nivån, och om kursen ligger under målpriset bevakas nästa passage upp över nivån.
 
-Om villkoret fortfarande är uppfyllt när du återaktiverar (kursen ligger till exempel kvar över målpriset, eller aktien är kvar i drawdown), eller om den berörda börsen har stängt, behåller appen dagens trigger-spärr. Bevakningen visas som aktiv igen, men kan inte skicka en ny notis för samma utlösning förrän nästa handelsdag — då utvärderas den på nytt. Detta hindrar att bevakningen utlöses igen direkt av det aktuella värdet.
-I listor visas detta som **Nästa handelsdag**, och återaktiveringsmeddelandet säger att bevakningen kan trigga först nästa handelsdag.
+Samma regel gäller alla bevakningstyper vid återaktivering: är den berörda börsen stängd, eller är villkoret fortfarande uppfyllt just nu (kursen ligger till exempel kvar över målpriset, aktien är kvar i drawdown, eller dagsrörelsen är fortfarande över tröskeln), behåller appen dagens trigger-spärr. Bevakningen visas som aktiv igen, men kan inte skicka en ny notis förrän nästa handelsdag — då utvärderas den på nytt.
 
-Om flera engångslarm är triggade samtidigt kan du återaktivera dem alla på en gång: välj filtret **Triggade** i **Bevakningar** och tryck **Återaktivera alla**.
+Är börsen däremot öppen och villkoret inte längre uppfyllt när du återaktiverar, släpps spärren direkt — bevakningen kan då trigga igen redan vid nästa kurskontroll samma dag, i stället för att behöva vänta till börsstängning eller nästa dag.
+
+När spärren behålls visas detta i listor som **Nästa handelsdag**, och återaktiveringsmeddelandet säger att bevakningen kan trigga först nästa handelsdag.
+
+Om flera bevakningar är triggade samtidigt kan du återaktivera dem alla på en gång: välj filtret **Triggade** i **Bevakningar** och tryck **Återaktivera alla**.
 
 ### Redigera en bevakning
 
@@ -429,8 +432,8 @@ StockFlip distribueras inte via Play Store, så appen håller själv koll på om
 |---|---|---|
 | **Typ** | Målpris, Drawdown | Dagsrörelse, Nyckeltal, Insideraffärer, Aktiepar, Prisintervall, Kombinerat |
 | **Inaktiveras efter utlösning** | Ja | Nej |
-| **Återaktivering** | Manuell | Automatisk (nästa dag) |
-| **Kan utlösas igen samma dag** | Nej | Normalt nej. Aktiepar kan trigga igen om spreaden byter sida. |
+| **Återaktivering** | Manuell (krävs) | Automatisk (nästa dag), men kan även göras manuellt tidigare |
+| **Kan utlösas igen samma dag** | Nej | Normalt nej. Aktiepar kan trigga igen om spreaden byter sida. Vid manuell återaktivering: ja, om villkoret inte längre är uppfyllt och börsen är öppen — se [Återaktivera en triggad bevakning](#ateraktivera-en-triggad-bevakning). |
 
 ---
 

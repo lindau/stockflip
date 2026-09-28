@@ -3,14 +3,15 @@ package com.stockflip
 /**
  * Avgör om datumspärren (lastTriggeredDate) ska behållas vid återaktivering, så att larmet
  * inte utlöses på nytt direkt av bakgrundsjobbet eller flimrar mellan utlöst/återställd i UI:t.
- * Se [WatchItem.hasStructuralReactivationAdjustment] för varför bara vissa typer får en
- * tidigare återväpning baserad på en live-omprövning av villkoret.
  *
- * Spärras (return true) om larmet triggades idag OCH larmtypen saknar strukturell justering
- * vid återaktivering, eller om den har det men:
+ * Gäller alla larmtyper likadant: om larmet triggades idag spärras det (return true) om
  *  1. villkoret fortfarande är uppfyllt just nu, eller
  *  2. villkoret inte går att avgöra (data saknas) – konservativ spärr, eller
  *  3. marknaden för symbolen är stängd.
+ *
+ * Annars (villkoret har upphört och marknaden är öppen) släpps spärren direkt, så att larmet
+ * kan utlösas igen redan vid nästa prissynk samma handelsdag, i stället för att tvinga
+ * användaren att vänta till börsstängning eller nästa dag.
  */
 suspend fun shouldGuardAgainstImmediateRetrigger(
     watchItem: WatchItem,
@@ -19,7 +20,6 @@ suspend fun shouldGuardAgainstImmediateRetrigger(
     isMarketOpen: suspend () -> Boolean
 ): Boolean {
     if (watchItem.lastTriggeredDate != today) return false
-    if (!watchItem.hasStructuralReactivationAdjustment) return true
 
     when (conditionCurrentlyMet()) {
         true -> return true

@@ -42,24 +42,62 @@ class ReactivationGuardTest {
     }
 
     @Test
-    fun `non-structural type triggered today always keeps guard regardless of live condition`() = runTest {
-        var conditionCalls = 0
-        var marketCalls = 0
-
+    fun `non-structural type triggered today keeps guard when condition still met`() = runTest {
         val result = shouldGuardAgainstImmediateRetrigger(
             watchItem = dailyMoveItem(lastTriggeredDate = today),
             today = today,
-            conditionCurrentlyMet = { conditionCalls++; false },
-            isMarketOpen = { marketCalls++; true }
+            conditionCurrentlyMet = { true },
+            isMarketOpen = { true }
         )
 
         assertTrue(result)
-        assertEquals(0, conditionCalls)
-        assertEquals(0, marketCalls)
     }
 
     @Test
-    fun `ATHBased triggered today always keeps guard regardless of live condition`() = runTest {
+    fun `non-structural type triggered today clears guard when condition not met and market open`() = runTest {
+        val result = shouldGuardAgainstImmediateRetrigger(
+            watchItem = dailyMoveItem(lastTriggeredDate = today),
+            today = today,
+            conditionCurrentlyMet = { false },
+            isMarketOpen = { true }
+        )
+
+        assertFalse(result)
+    }
+
+    @Test
+    fun `non-structural type triggered today keeps guard when market closed even if condition resolved`() = runTest {
+        val result = shouldGuardAgainstImmediateRetrigger(
+            watchItem = dailyMoveItem(lastTriggeredDate = today),
+            today = today,
+            conditionCurrentlyMet = { false },
+            isMarketOpen = { false }
+        )
+
+        assertTrue(result)
+    }
+
+    @Test
+    fun `ATHBased triggered today keeps guard when condition still met`() = runTest {
+        val athItem = WatchItem(
+            watchType = WatchType.ATHBased(dropType = WatchType.DropType.PERCENTAGE, dropValue = 20.0),
+            ticker = "AAPL",
+            isTriggered = true,
+            lastTriggeredDate = today
+        )
+
+        val result = shouldGuardAgainstImmediateRetrigger(
+            watchItem = athItem,
+            today = today,
+            conditionCurrentlyMet = { true },
+            isMarketOpen = { true }
+        )
+
+        assertTrue(result)
+    }
+
+    @Test
+    fun `ATHBased triggered today clears guard when condition not met and market open`() = runTest {
         val athItem = WatchItem(
             watchType = WatchType.ATHBased(dropType = WatchType.DropType.PERCENTAGE, dropValue = 20.0),
             ticker = "AAPL",
@@ -74,7 +112,7 @@ class ReactivationGuardTest {
             isMarketOpen = { true }
         )
 
-        assertTrue(result)
+        assertFalse(result)
     }
 
     @Test

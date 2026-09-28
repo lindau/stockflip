@@ -294,6 +294,41 @@ class MainViewModelRefreshWatchItemsTest {
     }
 
     @Test
+    fun `reactivateWatchItem clears lastTriggeredDate lock for DailyMove when condition resolved and market open`() = runBlocking {
+        val today = WatchItem.getTodayDateString()
+        val symbol = "BTC-USD"
+        val triggeredItem = WatchItem(
+            id = 1,
+            watchType = WatchType.DailyMove(5.0, WatchType.DailyMoveDirection.UP),
+            ticker = symbol,
+            isActive = true,
+            isTriggered = true,
+            lastTriggeredDate = today
+        )
+        val watchItemDao = InMemoryWatchItemDao(listOf(triggeredItem))
+        // Dagsrörelsen (1%) ligger under tröskeln (5%) och kryptosymbolen räknas alltid
+        // som öppen marknad — villkoret för att spärra återaktiveringen är alltså inte uppfyllt.
+        val viewModel = MainViewModel(
+            stockPairDao = InMemoryStockPairDao(emptyList()),
+            watchItemDao = watchItemDao,
+            yahooFinanceService = FakeMarketDataService(
+                pricesBySymbol = mapOf(symbol to 101.0),
+                previousCloseBySymbol = mapOf(symbol to 100.0)
+            ),
+            stockNoteDao = InMemoryStockNoteDao(),
+            podcastObservationDao = InMemoryPodcastObservationDao()
+        )
+        viewModel.refreshWatchItems(showLoading = false)
+
+        viewModel.reactivateWatchItem(triggeredItem)
+
+        val updated = watchItemDao.getWatchItemById(1)!!
+        assertTrue(updated.isActive)
+        assertFalse(updated.isTriggered)
+        assertEquals(null, updated.lastTriggeredDate)
+    }
+
+    @Test
     fun `reactivateWatchItem keeps lastTriggeredDate lock for ATHBased triggered today`() = runBlocking {
         val today = WatchItem.getTodayDateString()
         val triggeredItem = WatchItem(
