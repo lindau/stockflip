@@ -3,6 +3,7 @@ package com.stockflip.ui.components.cards
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -27,10 +28,16 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.input.pointer.awaitFirstDown
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -42,7 +49,10 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -59,8 +69,11 @@ import com.stockflip.ui.theme.LocalPriceDown
 import com.stockflip.ui.theme.LocalPriceUp
 import com.stockflip.ui.theme.LocalTextTertiary
 import com.stockflip.ui.theme.NordikNumericStyle
+import java.text.SimpleDateFormat
+import java.util.Date
 import java.util.Locale
 import kotlin.math.abs
+import kotlin.math.roundToInt
 
 @Composable
 fun ClarityStockDetailPanel(
@@ -198,6 +211,7 @@ private fun ClarityStockHeroCard(
                     chartData = chartData,
                     isPositive = isPositive,
                     lineColor = changeColor,
+                    selectedPeriod = selectedPeriod,
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(112.dp),
@@ -260,6 +274,7 @@ private fun ClaritySparkChart(
     chartData: IntradayChartData?,
     isPositive: Boolean,
     lineColor: Color,
+    selectedPeriod: ChartPeriod,
     modifier: Modifier = Modifier,
 ) {
     val prices = chartData?.prices.orEmpty()
@@ -278,7 +293,44 @@ private fun ClaritySparkChart(
     }
 
     val fillColor = lineColor.copy(alpha = if (isPositive) 0.16f else 0.12f)
-    Canvas(modifier = modifier) {
+    val crosshairLineColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.25f)
+    val crosshairRingColor = MaterialTheme.colorScheme.surface
+    val tooltipBackgroundColor = MaterialTheme.colorScheme.surfaceContainerHigh
+    val tooltipDateColor = LocalTextTertiary.current
+    val tooltipPriceColor = MaterialTheme.colorScheme.onSurface
+    val textMeasurer = rememberTextMeasurer()
+
+    // Lokalt state (inte hissat) så bara denna Canvas ritas om under drag, inte resten av kortet.
+    var touchIndex by remember { mutableStateOf<Int?>(null) }
+    LaunchedEffect(chartData, selectedPeriod) { touchIndex = null }
+
+    Canvas(
+        modifier = modifier.pointerInput(prices.size) {
+            val lastIndex = prices.lastIndex.coerceAtLeast(1)
+            fun indexForX(x: Float): Int {
+                val step = size.width.toFloat() / lastIndex
+                return (x / step).roundToInt().coerceIn(0, prices.lastIndex)
+            }
+            // awaitEachGesture (inte detectHorizontalDragGestures) så hårkorset visas direkt vid
+            // nedtryck utan att kräva rörelse förbi touch-slop först.
+            awaitEachGesture {
+                val down = awaitFirstDown(requireUnconsumed = false)
+                down.consume()
+                touchIndex = indexForX(down.position.x)
+                while (true) {
+                    val event = awaitPointerEvent()
+                    val change = event.changes.firstOrNull { it.id == down.id } ?: break
+                    if (!change.pressed) {
+                        change.consume()
+                        break
+                    }
+                    change.consume()
+                    touchIndex = indexForX(change.position.x)
+                }
+                touchIndex = null
+            }
+        },
+    ) {
         val minPrice = prices.min()
         val maxPrice = prices.max()
         val range = (maxPrice - minPrice).coerceAtLeast(0.001)
@@ -312,7 +364,87 @@ private fun ClaritySparkChart(
             radius = 4.dp.toPx(),
             center = Offset(xFor(prices.lastIndex), yFor(prices.last())),
         )
+
+        val idx = touchIndex
+        if (idx != null) {
+            val crosshairX = xFor(idx)
+            val crosshairY = yFor(prices[idx])
+
+            drawLine(
+                color = crosshairLineColor,
+                start = Offset(crosshairX, 0f),
+                end = Offset(crosshairX, size.height),
+                strokeWidth = 1.5.dp.toPx(),
+            )
+            drawLine(
+                color = crosshairLineColor,
+                start = Offset(0f, crosshairY),
+                end = Offset(size.width, crosshairY),
+                strokeWidth = 1.5.dp.toPx(),
+            )
+            drawCircle(color = crosshairRingColor, radius = 6.dp.toPx(), center = Offset(crosshairX, crosshairY))
+            drawCircle(color = lineColor, radius = 4.dp.toPx(), center = Offset(crosshairX, crosshairY))
+
+            val timestamp = chartData?.timestamps?.getOrNull(idx)
+            val dateText = timestamp?.let { crosshairDateFormat(selectedPeriod).format(Date(it * 1000L)) }.orEmpty()
+            val priceText = CurrencyHelper.formatDecimal(prices[idx])
+
+            val dateStyle = TextStyle(fontSize = 9.sp, color = tooltipDateColor, fontWeight = FontWeight.Medium)
+            val priceStyle = TextStyle(fontSize = 12.sp, color = tooltipPriceColor, fontWeight = FontWeight.Bold)
+            val dateMeasured = textMeasurer.measure(dateText, dateStyle)
+            val priceMeasured = textMeasurer.measure(priceText, priceStyle)
+
+            val paddingX = 8.dp.toPx()
+            val paddingY = 6.dp.toPx()
+            val lineGap = 2.dp.toPx()
+            val tooltipWidth = maxOf(dateMeasured.size.width, priceMeasured.size.width) + paddingX * 2
+            val tooltipHeight = dateMeasured.size.height + priceMeasured.size.height + lineGap + paddingY * 2
+
+            val gap = 10.dp.toPx()
+            val preferredLeft = crosshairX + gap
+            val tooltipLeft = if (preferredLeft + tooltipWidth <= size.width) {
+                preferredLeft
+            } else {
+                (crosshairX - gap - tooltipWidth).coerceAtLeast(0f)
+            }
+            val tooltipTop = topPadding + 2.dp.toPx()
+
+            drawRoundRect(
+                color = tooltipBackgroundColor,
+                topLeft = Offset(tooltipLeft, tooltipTop),
+                size = Size(tooltipWidth, tooltipHeight),
+                cornerRadius = CornerRadius(8.dp.toPx(), 8.dp.toPx()),
+            )
+            drawText(
+                textMeasurer = textMeasurer,
+                text = dateText,
+                style = dateStyle,
+                topLeft = Offset(tooltipLeft + paddingX, tooltipTop + paddingY),
+            )
+            drawText(
+                textMeasurer = textMeasurer,
+                text = priceText,
+                style = priceStyle,
+                topLeft = Offset(
+                    x = tooltipLeft + paddingX,
+                    y = tooltipTop + paddingY + dateMeasured.size.height + lineGap,
+                ),
+            )
+        }
     }
+}
+
+/**
+ * Datumformat för crosshair-tooltipen, anpassat efter vald graf-period (svensk locale).
+ */
+private fun crosshairDateFormat(period: ChartPeriod): SimpleDateFormat = when (period) {
+    ChartPeriod.DAY -> SimpleDateFormat("HH:mm", Locale("sv", "SE"))
+    ChartPeriod.WEEK -> SimpleDateFormat("EEE d MMM", Locale("sv", "SE"))
+    ChartPeriod.MONTH,
+    ChartPeriod.THREE_MONTHS -> SimpleDateFormat("d MMM", Locale("sv", "SE"))
+    ChartPeriod.SIX_MONTHS,
+    ChartPeriod.YEAR,
+    ChartPeriod.FIVE_YEARS -> SimpleDateFormat("MMM yyyy", Locale("sv", "SE"))
 }
 
 @Composable
@@ -424,6 +556,7 @@ fun FullscreenStockChart(
             chartData = chartData,
             isPositive = isPositive,
             lineColor = changeColor,
+            selectedPeriod = selectedPeriod,
             modifier = Modifier
                 .fillMaxWidth()
                 .weight(1f)
