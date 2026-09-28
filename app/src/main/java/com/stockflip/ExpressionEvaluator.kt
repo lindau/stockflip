@@ -104,6 +104,22 @@ object ExpressionEvaluator {
                 }
                 AlertEvaluator.evaluate(rule, snapshot)
             }
+            is AlertRule.SinglePriceVsSma -> {
+                val snapshot = snapshots[rule.symbol]
+                if (snapshot == null) {
+                    Log.w(TAG, "Missing snapshot for price vs sma: ${rule.symbol}")
+                    return false
+                }
+                AlertEvaluator.evaluate(rule, snapshot)
+            }
+            is AlertRule.SingleSmaCrossover -> {
+                val snapshot = snapshots[rule.symbol]
+                if (snapshot == null) {
+                    Log.w(TAG, "Missing snapshot for sma crossover: ${rule.symbol}")
+                    return false
+                }
+                AlertEvaluator.evaluate(rule, snapshot)
+            }
         }
     }
 

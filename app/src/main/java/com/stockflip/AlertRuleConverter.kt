@@ -96,6 +96,31 @@ object AlertRuleConverter {
                     direction = direction
                 )
             }
+            is WatchType.PriceVsSma -> {
+                val ticker = watchItem.ticker ?: return null
+                val direction = when (watchType.direction) {
+                    WatchType.PriceDirection.ABOVE -> AlertRule.PriceComparisonType.ABOVE
+                    WatchType.PriceDirection.BELOW -> AlertRule.PriceComparisonType.BELOW
+                }
+                AlertRule.SinglePriceVsSma(
+                    symbol = ticker,
+                    period = watchType.period,
+                    direction = direction
+                )
+            }
+            is WatchType.SmaCrossover -> {
+                val ticker = watchItem.ticker ?: return null
+                val direction = when (watchType.direction) {
+                    WatchType.PriceDirection.ABOVE -> AlertRule.PriceComparisonType.ABOVE
+                    WatchType.PriceDirection.BELOW -> AlertRule.PriceComparisonType.BELOW
+                }
+                AlertRule.SingleSmaCrossover(
+                    symbol = ticker,
+                    shortPeriod = watchType.shortPeriod,
+                    longPeriod = watchType.longPeriod,
+                    direction = direction
+                )
+            }
             is WatchType.InsiderBuy -> null
             is WatchType.Combined -> {
                 // Combined WatchType använder AlertExpression direkt, inte AlertRule

@@ -25,6 +25,27 @@ internal fun validatePositiveDecimal(raw: String?, emptyMessage: String, invalid
     else DecimalInput.Invalid(invalidMessage)
 }
 
+/** Resultat av att tolka ett fält som ett SMA-periodantal (antal dagar). */
+internal sealed class PeriodInput {
+    data class Valid(val value: Int) : PeriodInput()
+    data class Invalid(val message: String) : PeriodInput()
+}
+
+/** Ren validering (enhetstestbar): periodantal måste vara ett heltal inom [min, max]. */
+internal fun validatePeriodInput(
+    raw: String?,
+    emptyMessage: String,
+    invalidMessage: String,
+    min: Int = 2,
+    max: Int = 500
+): PeriodInput {
+    val text = raw?.trim().orEmpty()
+    if (text.isEmpty()) return PeriodInput.Invalid(emptyMessage)
+    val value = text.toIntOrNull()
+    return if (value != null && value in min..max) PeriodInput.Valid(value)
+    else PeriodInput.Invalid(invalidMessage)
+}
+
 /**
  * Spread för aktiepar: tomt fält betyder 0 (som tidigare), men text som inte är ett tal
  * ska ge null (fel vid fältet) i stället för att tyst bli 0.

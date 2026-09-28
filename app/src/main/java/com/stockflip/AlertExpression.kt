@@ -43,6 +43,8 @@ sealed class AlertExpression {
                     is AlertRule.SingleDrawdownFromHigh -> setOf(rule.symbol)
                     is AlertRule.SingleDailyMove -> setOf(rule.symbol)
                     is AlertRule.SingleKeyMetric -> setOf(rule.symbol)
+                    is AlertRule.SinglePriceVsSma -> setOf(rule.symbol)
+                    is AlertRule.SingleSmaCrossover -> setOf(rule.symbol)
                 }
             }
             is And -> left.getSymbols() + right.getSymbols()
@@ -86,6 +88,12 @@ sealed class AlertExpression {
 	                            AlertRule.KeyMetricType.EARNINGS_PER_SHARE -> "Vinst/aktie"
 	                        }
                         "${rule.symbol} $metricName ${if (rule.direction == AlertRule.PriceComparisonType.ABOVE) "≥" else "≤"} ${rule.targetValue}"
+                    }
+                    is AlertRule.SinglePriceVsSma -> {
+                        "${rule.symbol} pris ${if (rule.direction == AlertRule.PriceComparisonType.ABOVE) "≥" else "≤"} SMA(${rule.period})"
+                    }
+                    is AlertRule.SingleSmaCrossover -> {
+                        "${rule.symbol} SMA(${rule.shortPeriod}) ${if (rule.direction == AlertRule.PriceComparisonType.ABOVE) "≥" else "≤"} SMA(${rule.longPeriod})"
                     }
                 }
             }

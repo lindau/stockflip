@@ -60,6 +60,8 @@ class WatchItemEditor(
             WatchType.Kind.DAILY_MOVE -> showEditDailyMoveDialog(item)
             WatchType.Kind.INSIDER_BUY -> showEditInsiderBuyDialog(item)
             WatchType.Kind.COMBINED -> showEditCombinedAlertDialog(item)
+            WatchType.Kind.PRICE_VS_SMA -> showEditPriceVsSmaDialog(item)
+            WatchType.Kind.SMA_CROSSOVER -> showEditSmaCrossoverDialog(item)
         }
     }
 
@@ -431,6 +433,98 @@ class WatchItemEditor(
             }
     }
 
+    private fun showEditPriceVsSmaDialog(item: WatchItem) {
+        if (item.watchType !is WatchType.PriceVsSma) return
+        val priceVsSma = item.watchType
+        val dialogView = LayoutInflater.from(context).inflate(R.layout.dialog_add_price_vs_sma, null)
+        val tickerInput = dialogView.findViewById<MaterialAutoCompleteTextView?>(R.id.tickerInput)
+        val tickerInputLayout = tickerInput?.parent as? TextInputLayout
+        tickerInputLayout?.visibility = View.GONE
+
+        val periodInput = dialogView.findViewById<TextInputEditText>(R.id.periodInput).apply {
+            setText(priceVsSma.period.toString())
+        }
+
+        MaterialAlertDialogBuilder(context)
+            .setTitle("Redigera SMA-bevakning")
+            .setView(dialogView)
+            .setOnDismissListener { onDialogDismissed?.invoke() }
+            .setPositiveButton("Uppdatera", null)
+            .setNeutralButton("Ta bort") { _, _ -> onDeleteRequested(item) }
+            .setNegativeButton("Avbryt", null)
+            .show().also { dialog ->
+                dialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE)
+                focusInput(periodInput, selectAll = false)
+                dialog.setPositiveActionKeepingOpen(scope) {
+                    val period = when (val input = validatePeriodInput(
+                        periodInput.text?.toString(), "Ange antal dagar", "Ange ett heltal mellan 2 och 500"
+                    )) {
+                        is PeriodInput.Valid -> input.value
+                        is PeriodInput.Invalid -> {
+                            periodInput.showFieldError(input.message)
+                            return@setPositiveActionKeepingOpen false
+                        }
+                    }
+                    val updatedItem = item.copy(watchType = WatchType.PriceVsSma(period, priceVsSma.direction))
+                    saveUpdate(updatedItem, "SMA-bevakning uppdaterad", periodInput)
+                }
+            }
+    }
+
+    private fun showEditSmaCrossoverDialog(item: WatchItem) {
+        if (item.watchType !is WatchType.SmaCrossover) return
+        val smaCrossover = item.watchType
+        val dialogView = LayoutInflater.from(context).inflate(R.layout.dialog_add_sma_crossover, null)
+        val tickerInput = dialogView.findViewById<MaterialAutoCompleteTextView?>(R.id.tickerInput)
+        val tickerInputLayout = tickerInput?.parent as? TextInputLayout
+        tickerInputLayout?.visibility = View.GONE
+
+        val shortPeriodInput = dialogView.findViewById<TextInputEditText>(R.id.shortPeriodInput).apply {
+            setText(smaCrossover.shortPeriod.toString())
+        }
+        val longPeriodInput = dialogView.findViewById<TextInputEditText>(R.id.longPeriodInput).apply {
+            setText(smaCrossover.longPeriod.toString())
+        }
+
+        MaterialAlertDialogBuilder(context)
+            .setTitle("Redigera SMA-korsning")
+            .setView(dialogView)
+            .setOnDismissListener { onDialogDismissed?.invoke() }
+            .setPositiveButton("Uppdatera", null)
+            .setNeutralButton("Ta bort") { _, _ -> onDeleteRequested(item) }
+            .setNegativeButton("Avbryt", null)
+            .show().also { dialog ->
+                dialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE)
+                focusInput(shortPeriodInput, selectAll = false)
+                dialog.setPositiveActionKeepingOpen(scope) {
+                    val shortPeriod = when (val input = validatePeriodInput(
+                        shortPeriodInput.text?.toString(), "Ange antal dagar för kort SMA", "Ange ett heltal mellan 2 och 500"
+                    )) {
+                        is PeriodInput.Valid -> input.value
+                        is PeriodInput.Invalid -> {
+                            shortPeriodInput.showFieldError(input.message)
+                            return@setPositiveActionKeepingOpen false
+                        }
+                    }
+                    val longPeriod = when (val input = validatePeriodInput(
+                        longPeriodInput.text?.toString(), "Ange antal dagar för långt SMA", "Ange ett heltal mellan 2 och 500"
+                    )) {
+                        is PeriodInput.Valid -> input.value
+                        is PeriodInput.Invalid -> {
+                            longPeriodInput.showFieldError(input.message)
+                            return@setPositiveActionKeepingOpen false
+                        }
+                    }
+                    if (shortPeriod >= longPeriod) {
+                        longPeriodInput.showFieldError("Långt SMA måste ha fler dagar än kort SMA")
+                        return@setPositiveActionKeepingOpen false
+                    }
+                    val updatedItem = item.copy(watchType = WatchType.SmaCrossover(shortPeriod, longPeriod, smaCrossover.direction))
+                    saveUpdate(updatedItem, "SMA-korsning uppdaterad", longPeriodInput)
+                }
+            }
+    }
+
     private fun showEditInsiderBuyDialog(item: WatchItem) {
         if (item.watchType !is WatchType.InsiderBuy) return
         MaterialAlertDialogBuilder(context)
@@ -566,7 +660,9 @@ class WatchItemEditor(
                         is AlertRule.SingleDrawdownFromHigh -> rule.symbol
                         is AlertRule.SingleDailyMove -> rule.symbol
                         is AlertRule.SingleKeyMetric -> rule.symbol
-                        is AlertRule.PairSpread -> return false
+                        is AlertRule.PairSpread,
+                        is AlertRule.SinglePriceVsSma,
+                        is AlertRule.SingleSmaCrossover -> return false
                     }
 
                     if (currentSymbol == null) {

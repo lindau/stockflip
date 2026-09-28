@@ -117,6 +117,55 @@ sealed class AlertRule {
     }
 
     /**
+     * Single-stock: Pris vs SMA(N).
+     *
+     * @param symbol Aktiens symbol
+     * @param period Antal dagar SMA beräknas över
+     * @param direction Riktning: ABOVE (pris >= SMA) eller BELOW (pris <= SMA)
+     */
+    data class SinglePriceVsSma(
+        val symbol: String,
+        val period: Int,
+        val direction: PriceComparisonType
+    ) : AlertRule() {
+        init {
+            require(period in 2..500) {
+                "period måste vara mellan 2 och 500"
+            }
+            require(direction == PriceComparisonType.ABOVE || direction == PriceComparisonType.BELOW) {
+                "direction måste vara ABOVE eller BELOW för SinglePriceVsSma"
+            }
+        }
+    }
+
+    /**
+     * Single-stock: SMA-korsning (golden/death cross).
+     *
+     * @param symbol Aktiens symbol
+     * @param shortPeriod Antal dagar för det korta SMA:t
+     * @param longPeriod Antal dagar för det långa SMA:t
+     * @param direction Riktning: ABOVE (kort >= lång, golden cross) eller BELOW (kort <= lång, death cross)
+     */
+    data class SingleSmaCrossover(
+        val symbol: String,
+        val shortPeriod: Int,
+        val longPeriod: Int,
+        val direction: PriceComparisonType
+    ) : AlertRule() {
+        init {
+            require(shortPeriod in 2..500 && longPeriod in 2..500) {
+                "perioder måste vara mellan 2 och 500"
+            }
+            require(shortPeriod < longPeriod) {
+                "shortPeriod måste vara mindre än longPeriod"
+            }
+            require(direction == PriceComparisonType.ABOVE || direction == PriceComparisonType.BELOW) {
+                "direction måste vara ABOVE eller BELOW för SingleSmaCrossover"
+            }
+        }
+    }
+
+    /**
      * Typ av prisjämförelse för SinglePrice.
      */
     enum class PriceComparisonType {

@@ -303,6 +303,8 @@ class StockDetailViewModel(
             is WatchType.InsiderBuy -> 5
             is WatchType.Combined -> 6
             is WatchType.PricePair -> 7
+            is WatchType.PriceVsSma -> 8
+            is WatchType.SmaCrossover -> 9
         }
     }
 
@@ -325,6 +327,8 @@ class StockDetailViewModel(
             is WatchType.InsiderBuy -> Double.MAX_VALUE
             is WatchType.PricePair -> watchType.priceDifference
             is WatchType.Combined -> Double.MAX_VALUE
+            is WatchType.PriceVsSma -> watchType.period.toDouble()
+            is WatchType.SmaCrossover -> watchType.shortPeriod.toDouble()
         }
     }
 
@@ -409,6 +413,31 @@ class StockDetailViewModel(
                 }
                 is WatchType.InsiderBuy -> WatchItemUiState(item)
                 is WatchType.Combined -> WatchItemUiState(item)
+                is WatchType.PriceVsSma -> {
+                    val ticker = item.ticker ?: symbol
+                    val price = yahooFinanceService.getStockPrice(ticker)
+                    val sma = yahooFinanceService.getSma(ticker, item.watchType.period)
+                    val changePercent = yahooFinanceService.getDailyChangePercent(ticker)
+                    if (price != null && sma != null)
+                        WatchItemUiState(item, LiveWatchData(
+                            currentPrice = price, currentSmaShort = sma,
+                            currentDailyChangePercent = changePercent, lastUpdatedAt = now
+                        ))
+                    else WatchItemUiState(item, previousLive[item.id].asUpdateFailed())
+                }
+                is WatchType.SmaCrossover -> {
+                    val ticker = item.ticker ?: symbol
+                    val smaShort = yahooFinanceService.getSma(ticker, item.watchType.shortPeriod)
+                    val smaLong = yahooFinanceService.getSma(ticker, item.watchType.longPeriod)
+                    val price = yahooFinanceService.getStockPrice(ticker)
+                    val changePercent = yahooFinanceService.getDailyChangePercent(ticker)
+                    if (smaShort != null && smaLong != null)
+                        WatchItemUiState(item, LiveWatchData(
+                            currentPrice = price ?: 0.0, currentSmaShort = smaShort, currentSmaLong = smaLong,
+                            currentDailyChangePercent = changePercent, lastUpdatedAt = now
+                        ))
+                    else WatchItemUiState(item, previousLive[item.id].asUpdateFailed())
+                }
             }
         }
     }
@@ -431,6 +460,12 @@ class StockDetailViewModel(
             }
         }
     }
+
+    /**
+     * Hämtar SMA(period) för aktien, används av dialogerna för att auto-inferera riktning
+     * (samma mönster som PriceTarget/KeyMetrics) innan en SMA-bevakning sparas.
+     */
+    suspend fun getSma(period: Int): Double? = yahooFinanceService.getSma(symbol, period)
 
     /**
      * Returnerar true om en aktiv bevakning med exakt samma inställningar redan finns.

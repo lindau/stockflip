@@ -272,6 +272,8 @@ private fun clarityCaseSubtitle(
         is WatchType.InsiderBuy -> "Kontrolleras var 6:e timme"
         is WatchType.Combined -> "Äldre bevakningstyp · kombinerat villkor"
         is WatchType.PricePair -> "Trigger när spreaden når nivån oavsett riktning"
+        is WatchType.PriceVsSma -> "Engångslarm · SMA(${watchType.period})"
+        is WatchType.SmaCrossover -> "Engångslarm · SMA(${watchType.shortPeriod})/SMA(${watchType.longPeriod})"
     }
 }
 

@@ -129,6 +129,23 @@ object AlertExpressionConverter {
                     put("direction", rule.direction.name)
                 }
             }
+            is AlertRule.SinglePriceVsSma -> {
+                JSONObject().apply {
+                    put("ruleType", "SinglePriceVsSma")
+                    put("symbol", rule.symbol)
+                    put("period", rule.period)
+                    put("direction", rule.direction.name)
+                }
+            }
+            is AlertRule.SingleSmaCrossover -> {
+                JSONObject().apply {
+                    put("ruleType", "SingleSmaCrossover")
+                    put("symbol", rule.symbol)
+                    put("shortPeriod", rule.shortPeriod)
+                    put("longPeriod", rule.longPeriod)
+                    put("direction", rule.direction.name)
+                }
+            }
         }
     }
 
@@ -182,6 +199,21 @@ object AlertExpressionConverter {
                     symbol = json.getString("symbol"),
                     metricType = AlertRule.KeyMetricType.valueOf(json.getString("metricType")),
                     targetValue = json.getDouble("targetValue"),
+                    direction = AlertRule.PriceComparisonType.valueOf(json.getString("direction"))
+                )
+            }
+            "SinglePriceVsSma" -> {
+                AlertRule.SinglePriceVsSma(
+                    symbol = json.getString("symbol"),
+                    period = json.getInt("period"),
+                    direction = AlertRule.PriceComparisonType.valueOf(json.getString("direction"))
+                )
+            }
+            "SingleSmaCrossover" -> {
+                AlertRule.SingleSmaCrossover(
+                    symbol = json.getString("symbol"),
+                    shortPeriod = json.getInt("shortPeriod"),
+                    longPeriod = json.getInt("longPeriod"),
                     direction = AlertRule.PriceComparisonType.valueOf(json.getString("direction"))
                 )
             }

@@ -32,6 +32,8 @@ object AlertEvaluator {
                 is AlertRule.SingleDrawdownFromHigh -> evaluateSingleDrawdownFromHigh(rule, snapshotA)
                 is AlertRule.SingleDailyMove -> evaluateSingleDailyMove(rule, snapshotA)
                 is AlertRule.SingleKeyMetric -> evaluateSingleKeyMetric(rule, snapshotA)
+                is AlertRule.SinglePriceVsSma -> evaluateSinglePriceVsSma(rule, snapshotA)
+                is AlertRule.SingleSmaCrossover -> evaluateSingleSmaCrossover(rule, snapshotA)
             }
         } catch (e: Exception) {
             Log.e(TAG, "Error evaluating alert rule: ${e.message}", e)
@@ -168,6 +170,40 @@ object AlertEvaluator {
                 // WITHIN_RANGE stöds inte för KeyMetrics
                 false
             }
+        }
+    }
+
+    /**
+     * Utvärderar om priset är över/under ett glidande medelvärde (SMA).
+     */
+    private fun evaluateSinglePriceVsSma(
+        rule: AlertRule.SinglePriceVsSma,
+        snapshot: MarketSnapshot
+    ): Boolean {
+        val currentPrice = snapshot.lastPrice ?: return false
+        val sma = snapshot.smaValues[rule.period] ?: return false
+
+        return when (rule.direction) {
+            AlertRule.PriceComparisonType.ABOVE -> currentPrice >= sma
+            AlertRule.PriceComparisonType.BELOW -> currentPrice <= sma
+            AlertRule.PriceComparisonType.WITHIN_RANGE -> false // stöds inte för SMA
+        }
+    }
+
+    /**
+     * Utvärderar SMA-korsning: kort SMA över/under långt SMA (golden/death cross-läge).
+     */
+    private fun evaluateSingleSmaCrossover(
+        rule: AlertRule.SingleSmaCrossover,
+        snapshot: MarketSnapshot
+    ): Boolean {
+        val shortSma = snapshot.smaValues[rule.shortPeriod] ?: return false
+        val longSma = snapshot.smaValues[rule.longPeriod] ?: return false
+
+        return when (rule.direction) {
+            AlertRule.PriceComparisonType.ABOVE -> shortSma >= longSma
+            AlertRule.PriceComparisonType.BELOW -> shortSma <= longSma
+            AlertRule.PriceComparisonType.WITHIN_RANGE -> false // stöds inte för SMA
         }
     }
 }

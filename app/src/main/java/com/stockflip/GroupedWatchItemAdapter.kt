@@ -596,6 +596,8 @@ class GroupedWatchItemAdapter(
             is WatchType.KeyMetrics -> "${watchType.kind.name}:${watchType.metricType.name}"
             is WatchType.DailyMove -> "${watchType.kind.name}:${watchType.direction.name}"
             is WatchType.ATHBased -> "${watchType.kind.name}:${watchType.reference.name}:${watchType.dropType.name}"
+            is WatchType.PriceVsSma -> "${watchType.kind.name}:${watchType.period}"
+            is WatchType.SmaCrossover -> "${watchType.kind.name}:${watchType.shortPeriod}:${watchType.longPeriod}"
             else -> watchType.kind.name
         }
 

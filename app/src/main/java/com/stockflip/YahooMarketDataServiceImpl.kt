@@ -32,6 +32,10 @@ class YahooMarketDataServiceImpl(
     // visar grafen direkt i stället för att hämta om den.
     private val chartCache = SingleFlightCache<Pair<String, ChartPeriod>, IntradayChartData>(clock)
 
+    // SMA-värden baseras på dagsstängningar och ändras därför inte mellan varje
+    // 1-minutersuppdatering under handelstid — en längre TTL undviker onödiga anrop.
+    private val smaCache = SingleFlightCache<Pair<String, Int>, Double>(clock)
+
     private suspend fun fetchMeta(symbol: String): Meta? {
         return try {
             Log.d(TAG, "Fetching quote data")
@@ -253,6 +257,44 @@ class YahooMarketDataServiceImpl(
         }
     }
 
+    suspend fun getSma(symbol: String, period: Int): Double? =
+        smaCache.getOrLoad(symbol to period, SMA_TTL_MS) { computeSma(symbol, period) }
+
+    private suspend fun computeSma(symbol: String, period: Int): Double? = withContext(Dispatchers.IO) {
+        val closes = fetchDailyCloses(symbol, period) ?: return@withContext null
+        if (closes.size < period) return@withContext null
+        closes.takeLast(period).average()
+    }
+
+    /** Hämtar dagsstängningar, senaste först utelämnat (kronologisk ordning), minst [minBars] om tillgängligt. */
+    private suspend fun fetchDailyCloses(symbol: String, minBars: Int): List<Double>? = withContext(Dispatchers.IO) {
+        try {
+            val range = when {
+                minBars <= 60 -> "3mo"
+                minBars <= 120 -> "6mo"
+                minBars <= 250 -> "1y"
+                minBars <= 500 -> "2y"
+                else -> "5y"
+            }
+            Log.d(TAG, "Fetching daily closes for SMA")
+            val response: YahooFinanceResponse = api.getIntradayChart(symbol, range = range, interval = "1d")
+            if (response.chart?.error != null) {
+                Log.e(TAG, "Yahoo API error while fetching daily closes: ${response.chart.error.description}")
+                return@withContext null
+            }
+            val result: Result = response.chart?.result?.firstOrNull() ?: return@withContext null
+            val timestamps = result.timestamp
+            val closes = result.indicators?.quote?.firstOrNull()?.close
+            if (timestamps == null || closes == null) return@withContext null
+            timestamps.zip(closes)
+                .mapNotNull { (_, price) -> price?.takeIf { !it.isNaN() && it > 0.0 } }
+                .takeIf { it.isNotEmpty() }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error fetching daily closes: ${e.message}", e)
+            null
+        }
+    }
+
     suspend fun getNextEarningsReport(symbol: String): NextEarningsInfo? = withContext(Dispatchers.IO) {
         try {
             Log.d(TAG, "Fetching next earnings report")
@@ -266,6 +308,7 @@ class YahooMarketDataServiceImpl(
     private companion object {
         private const val TAG: String = "YahooMarketDataService"
         private const val QUOTE_META_TTL_MS = 20_000L // 20 sekunder
+        private const val SMA_TTL_MS = 15L * 60L * 1000L // 15 minuter — baseras på dagsstängningar
 
         /** Dagsgrafen ändras hela tiden under handel; längre perioder ändras långsamt. */
         fun chartTtlMs(period: ChartPeriod): Long = when (period) {

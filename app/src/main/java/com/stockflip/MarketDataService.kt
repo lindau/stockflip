@@ -58,4 +58,5 @@ interface MarketDataService {
     suspend fun getStockDetailSnapshot(symbol: String): StockDetailSnapshot?
     suspend fun getIntradayChart(symbol: String, period: ChartPeriod = ChartPeriod.DAY): IntradayChartData?
     suspend fun getNextEarningsReport(symbol: String): NextEarningsInfo?
+    suspend fun getSma(symbol: String, period: Int): Double?
 }

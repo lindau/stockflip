@@ -398,4 +398,114 @@ class AlertEvaluatorTest {
 
         assertFalse("Should not trigger when EPS is above a below-target alert", result)
     }
+
+    @Test
+    fun `evaluate SinglePriceVsSma ABOVE should return true when price is at or above sma`() {
+        val rule = AlertRule.SinglePriceVsSma(
+            symbol = "AAPL",
+            period = 50,
+            direction = AlertRule.PriceComparisonType.ABOVE
+        )
+        val snapshot = MarketSnapshot.forSingleStock(
+            lastPrice = 105.0,
+            previousClose = null,
+            smaValues = mapOf(50 to 100.0)
+        )
+
+        val result = AlertEvaluator.evaluate(rule, snapshot)
+
+        assertTrue("Should trigger when price is above SMA", result)
+    }
+
+    @Test
+    fun `evaluate SinglePriceVsSma BELOW should return false when price is above sma`() {
+        val rule = AlertRule.SinglePriceVsSma(
+            symbol = "AAPL",
+            period = 50,
+            direction = AlertRule.PriceComparisonType.BELOW
+        )
+        val snapshot = MarketSnapshot.forSingleStock(
+            lastPrice = 105.0,
+            previousClose = null,
+            smaValues = mapOf(50 to 100.0)
+        )
+
+        val result = AlertEvaluator.evaluate(rule, snapshot)
+
+        assertFalse("Should not trigger when price is above a below-target SMA alert", result)
+    }
+
+    @Test
+    fun `evaluate SinglePriceVsSma should return false when sma value is missing`() {
+        val rule = AlertRule.SinglePriceVsSma(
+            symbol = "AAPL",
+            period = 50,
+            direction = AlertRule.PriceComparisonType.ABOVE
+        )
+        val snapshot = MarketSnapshot.forSingleStock(
+            lastPrice = 105.0,
+            previousClose = null
+        )
+
+        val result = AlertEvaluator.evaluate(rule, snapshot)
+
+        assertFalse("Should not trigger when SMA data is unavailable", result)
+    }
+
+    @Test
+    fun `evaluate SingleSmaCrossover ABOVE should return true when short sma is at or above long sma`() {
+        val rule = AlertRule.SingleSmaCrossover(
+            symbol = "AAPL",
+            shortPeriod = 50,
+            longPeriod = 200,
+            direction = AlertRule.PriceComparisonType.ABOVE
+        )
+        val snapshot = MarketSnapshot.forSingleStock(
+            lastPrice = 105.0,
+            previousClose = null,
+            smaValues = mapOf(50 to 110.0, 200 to 100.0)
+        )
+
+        val result = AlertEvaluator.evaluate(rule, snapshot)
+
+        assertTrue("Should trigger on golden cross state (short >= long)", result)
+    }
+
+    @Test
+    fun `evaluate SingleSmaCrossover BELOW should return true when short sma is at or below long sma`() {
+        val rule = AlertRule.SingleSmaCrossover(
+            symbol = "AAPL",
+            shortPeriod = 50,
+            longPeriod = 200,
+            direction = AlertRule.PriceComparisonType.BELOW
+        )
+        val snapshot = MarketSnapshot.forSingleStock(
+            lastPrice = 105.0,
+            previousClose = null,
+            smaValues = mapOf(50 to 90.0, 200 to 100.0)
+        )
+
+        val result = AlertEvaluator.evaluate(rule, snapshot)
+
+        assertTrue("Should trigger on death cross state (short <= long)", result)
+    }
+
+    @Test
+    fun `evaluate SingleSmaCrossover should return false when one sma value is missing`() {
+        val rule = AlertRule.SingleSmaCrossover(
+            symbol = "AAPL",
+            shortPeriod = 50,
+            longPeriod = 200,
+            direction = AlertRule.PriceComparisonType.ABOVE
+        )
+        val snapshot = MarketSnapshot.forSingleStock(
+            lastPrice = 105.0,
+            previousClose = null,
+            smaValues = mapOf(50 to 110.0)
+        )
+
+        val result = AlertEvaluator.evaluate(rule, snapshot)
+
+        assertFalse("Should not trigger when the long SMA is unavailable", result)
+    }
 }

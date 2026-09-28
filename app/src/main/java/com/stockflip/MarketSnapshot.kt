@@ -41,7 +41,13 @@ data class MarketSnapshot(
      * Nyckeltal (används för KeyMetrics-bevakning, Fas 2).
      * Map där nyckeln är metricType och värdet är det aktuella värdet.
      */
-    val keyMetrics: Map<AlertRule.KeyMetricType, Double> = emptyMap()
+    val keyMetrics: Map<AlertRule.KeyMetricType, Double> = emptyMap(),
+
+    /**
+     * Beräknade SMA-värden (used för PriceVsSma/SmaCrossover-bevakning).
+     * Nyckel är antal dagar (period), värde är det beräknade glidande medelvärdet.
+     */
+    val smaValues: Map<Int, Double> = emptyMap()
 ) {
     /**
      * Beräknar dagsförändring i procent.
@@ -66,14 +72,16 @@ data class MarketSnapshot(
             previousClose: Double?,
             week52High: Double? = null,
             keyMetrics: Map<AlertRule.KeyMetricType, Double> = emptyMap(),
-            allTimeHigh: Double? = null
+            allTimeHigh: Double? = null,
+            smaValues: Map<Int, Double> = emptyMap()
         ): MarketSnapshot {
             return MarketSnapshot(
                 lastPrice = lastPrice,
                 previousCloseOrPriceB = previousClose,
                 week52High = week52High,
                 allTimeHigh = allTimeHigh,
-                keyMetrics = keyMetrics
+                keyMetrics = keyMetrics,
+                smaValues = smaValues
             )
         }
         

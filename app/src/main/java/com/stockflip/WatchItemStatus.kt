@@ -92,6 +92,15 @@ fun WatchItem.triggerConditionText(
         }
         is WatchType.InsiderBuy -> "Ny insideraffär"
         is WatchType.Combined -> type.expression.getDescription()
+        is WatchType.PriceVsSma -> {
+            val operator = type.direction.comparisonOperator()
+            "Pris $operator SMA(${type.period})"
+        }
+        is WatchType.SmaCrossover -> {
+            val operator = type.direction.comparisonOperator()
+            val crossLabel = if (type.direction == WatchType.PriceDirection.ABOVE) "Golden cross" else "Death cross"
+            "SMA(${type.shortPeriod}) $operator SMA(${type.longPeriod}) ($crossLabel)"
+        }
     }
 }
 

@@ -302,6 +302,10 @@ object YahooFinanceService : MarketDataService {
         return chartMarketDataService.getIntradayChart(symbol, period)
     }
 
+    override suspend fun getSma(symbol: String, period: Int): Double? {
+        return chartMarketDataService.getSma(symbol, period)
+    }
+
     // Nyckeltal ändras i praktiken högst dagligen men hämtas via det tyngre quoteSummary-anropet
     // (crumb). Utan cache gjordes det om för varje nyckeltalsbevakning vid varje listuppdatering.
     private val keyMetricsCache = SingleFlightCache<String, KeyMetrics>()

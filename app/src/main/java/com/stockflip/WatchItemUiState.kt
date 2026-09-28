@@ -16,6 +16,8 @@ data class LiveWatchData(
     val currentDropPercentage: Double = 0.0,
     val currentDropAbsolute: Double = 0.0,
     val currentDailyChangePercent: Double? = null,
+    val currentSmaShort: Double = 0.0,
+    val currentSmaLong: Double = 0.0,
     val lastUpdatedAt: Long = 0L,
     val updateFailed: Boolean = false
 )
@@ -99,6 +101,22 @@ internal fun WatchItemUiState.hasLiveTriggerCondition(): Boolean {
 
         is WatchType.InsiderBuy -> false
         is WatchType.Combined -> false
+
+        is WatchType.PriceVsSma -> {
+            if (live.currentPrice <= 0.0 || live.currentSmaShort <= 0.0) return false
+            when (watchType.direction) {
+                WatchType.PriceDirection.ABOVE -> live.currentPrice >= live.currentSmaShort
+                WatchType.PriceDirection.BELOW -> live.currentPrice <= live.currentSmaShort
+            }
+        }
+
+        is WatchType.SmaCrossover -> {
+            if (live.currentSmaShort <= 0.0 || live.currentSmaLong <= 0.0) return false
+            when (watchType.direction) {
+                WatchType.PriceDirection.ABOVE -> live.currentSmaShort >= live.currentSmaLong
+                WatchType.PriceDirection.BELOW -> live.currentSmaShort <= live.currentSmaLong
+            }
+        }
     }
 }
 
@@ -160,5 +178,25 @@ internal fun WatchItemUiState.triggerProximity(): Double? {
         is WatchType.PricePair -> null
         is WatchType.InsiderBuy -> null
         is WatchType.Combined -> null
+
+        is WatchType.PriceVsSma -> {
+            if (live.currentPrice <= 0.0 || live.currentSmaShort <= 0.0) null
+            else when (watchType.direction) {
+                WatchType.PriceDirection.ABOVE ->
+                    (live.currentSmaShort - live.currentPrice).coerceAtLeast(0.0) / live.currentSmaShort
+                WatchType.PriceDirection.BELOW ->
+                    (live.currentPrice - live.currentSmaShort).coerceAtLeast(0.0) / live.currentSmaShort
+            }
+        }
+
+        is WatchType.SmaCrossover -> {
+            if (live.currentSmaShort <= 0.0 || live.currentSmaLong <= 0.0) null
+            else when (watchType.direction) {
+                WatchType.PriceDirection.ABOVE ->
+                    (live.currentSmaLong - live.currentSmaShort).coerceAtLeast(0.0) / live.currentSmaLong
+                WatchType.PriceDirection.BELOW ->
+                    (live.currentSmaShort - live.currentSmaLong).coerceAtLeast(0.0) / live.currentSmaLong
+            }
+        }
     }
 }

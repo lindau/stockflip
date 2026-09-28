@@ -206,7 +206,9 @@ fun ComposeWatchItemCard(
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
-            is com.stockflip.WatchType.InsiderBuy -> {
+            is com.stockflip.WatchType.InsiderBuy,
+            is com.stockflip.WatchType.PriceVsSma,
+            is com.stockflip.WatchType.SmaCrossover -> {
                 ClarityCaseCard(
                     item = item,
                     live = live,

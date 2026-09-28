@@ -358,6 +358,14 @@ class StockDetailFragment : Fragment() {
         configureQuickActionButton(binding.createInsiderBuyButton) {
             dialogManager.showCreateInsiderBuyDialog()
         }
+
+        configureQuickActionButton(binding.createPriceVsSmaButton) {
+            dialogManager.showCreatePriceVsSmaDialog()
+        }
+
+        configureQuickActionButton(binding.createSmaCrossoverButton) {
+            dialogManager.showCreateSmaCrossoverDialog()
+        }
     }
 
     private fun configureQuickActionButton(
@@ -1213,6 +1221,8 @@ class StockDetailFragment : Fragment() {
             is WatchType.InsiderBuy -> "Insideraffärer bevakas var 6:e timme"
             is WatchType.PricePair -> "Parbevakning"
             is WatchType.Combined -> "Kombinerat villkor"
+            is WatchType.PriceVsSma -> "Pris bevakas mot SMA(${watchType.period})"
+            is WatchType.SmaCrossover -> "SMA(${watchType.shortPeriod}) bevakas mot SMA(${watchType.longPeriod})"
         }
         return "$headline. Du har $activeAlertCount aktiva bevakningar för bolaget."
     }
@@ -1289,6 +1299,8 @@ class StockDetailFragment : Fragment() {
             is WatchType.InsiderBuy -> "insideraffärer"
             is WatchType.PricePair -> "aktiepar"
             is WatchType.Combined -> "kombinerat larm"
+            is WatchType.PriceVsSma -> "pris ${directionLabel(watchType.direction)} SMA(${watchType.period})"
+            is WatchType.SmaCrossover -> "SMA(${watchType.shortPeriod}) ${directionLabel(watchType.direction)} SMA(${watchType.longPeriod})"
         }
     }
 

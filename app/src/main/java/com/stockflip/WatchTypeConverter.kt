@@ -24,6 +24,8 @@ class WatchTypeConverter {
                 val encoded = Base64.encodeToString(json.toByteArray(StandardCharsets.UTF_8), Base64.NO_WRAP)
                 "COMBINED|$encoded"
             }
+            is WatchType.PriceVsSma -> "PRICE_VS_SMA|${watchType.period}|${watchType.direction.name}"
+            is WatchType.SmaCrossover -> "SMA_CROSSOVER|${watchType.shortPeriod}|${watchType.longPeriod}|${watchType.direction.name}"
         }
     }
 
@@ -74,6 +76,15 @@ class WatchTypeConverter {
                     expression = AlertExpressionConverter.fromJson(jsonString)
                 )
             }
+            "PRICE_VS_SMA" -> WatchType.PriceVsSma(
+                period = parts[1].toInt(),
+                direction = WatchType.PriceDirection.valueOf(parts[2])
+            )
+            "SMA_CROSSOVER" -> WatchType.SmaCrossover(
+                shortPeriod = parts[1].toInt(),
+                longPeriod = parts[2].toInt(),
+                direction = WatchType.PriceDirection.valueOf(parts[3])
+            )
             else -> throw IllegalArgumentException("Unknown watch type: ${parts[0]}")
         }
     }

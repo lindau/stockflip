@@ -161,6 +161,7 @@ class StockPriceUpdateWorker(
         val keyMetricNeeds = mutableMapOf<String, MutableSet<WatchType.MetricType>>()
         val week52HighNeeds = mutableSetOf<String>()
         val allTimeHighNeeds = mutableSetOf<String>()
+        val smaNeeds = mutableMapOf<String, MutableSet<Int>>()
         for (item in activeItems) {
             if (item.watchType is WatchType.InsiderBuy) continue
             item.ticker?.let { tickers.add(it) }
@@ -176,6 +177,15 @@ class StockPriceUpdateWorker(
                         WatchType.HighReference.FIFTY_TWO_WEEK_HIGH -> week52HighNeeds.add(it)
                         WatchType.HighReference.ALL_TIME_HIGH -> allTimeHighNeeds.add(it)
                     }
+                }
+                is WatchType.PriceVsSma -> {
+                    val ticker = item.ticker ?: continue
+                    smaNeeds.getOrPut(ticker) { mutableSetOf() }.add(watchType.period)
+                }
+                is WatchType.SmaCrossover -> {
+                    val ticker = item.ticker ?: continue
+                    smaNeeds.getOrPut(ticker) { mutableSetOf() }.add(watchType.shortPeriod)
+                    smaNeeds.getOrPut(ticker) { mutableSetOf() }.add(watchType.longPeriod)
                 }
                 is WatchType.Combined -> {
                     tickers.addAll(watchType.expression.getSymbols())
@@ -224,12 +234,20 @@ class StockPriceUpdateWorker(
                         }
                     }
                 }
+                val smaMap = mutableMapOf<Int, Double>()
+                val neededSmaPeriods = smaNeeds[ticker]
+                if (!neededSmaPeriods.isNullOrEmpty()) {
+                    for (period in neededSmaPeriods) {
+                        marketDataService.getSma(ticker, period)?.let { smaMap[period] = it }
+                    }
+                }
                 snapshots[ticker] = MarketSnapshot.forSingleStock(
                     lastPrice = price,
                     previousClose = prevClose,
                     week52High = week52High,
                     keyMetrics = metricsMap,
-                    allTimeHigh = allTimeHigh
+                    allTimeHigh = allTimeHigh,
+                    smaValues = smaMap
                 )
             } catch (e: Exception) {
                 Log.w(TAG, "Failed to fetch market snapshot: ${e.message}")
@@ -309,7 +327,8 @@ class StockPriceUpdateWorker(
                     }
                     val triggeredItem = fresh.markAsTriggered(today, pairTriggerSide)
                     val updatedItem = when (fresh.watchType) {
-                        is WatchType.PriceTarget, is WatchType.ATHBased ->
+                        is WatchType.PriceTarget, is WatchType.ATHBased,
+                        is WatchType.PriceVsSma, is WatchType.SmaCrossover ->
                             triggeredItem.copy(isActive = false)
                         else -> triggeredItem
                     }
@@ -370,6 +389,14 @@ class StockPriceUpdateWorker(
                         AlertEvaluator.evaluate(rule, snapshot)
                     }
                     is AlertRule.SingleKeyMetric -> {
+                        val snapshot = snapshots[rule.symbol] ?: return null
+                        AlertEvaluator.evaluate(rule, snapshot)
+                    }
+                    is AlertRule.SinglePriceVsSma -> {
+                        val snapshot = snapshots[rule.symbol] ?: return null
+                        AlertEvaluator.evaluate(rule, snapshot)
+                    }
+                    is AlertRule.SingleSmaCrossover -> {
                         val snapshot = snapshots[rule.symbol] ?: return null
                         AlertEvaluator.evaluate(rule, snapshot)
                     }
@@ -546,6 +573,27 @@ class StockPriceUpdateWorker(
                 TriggerNotificationPayload(
                     title = "Kombinerat larm triggat",
                     message = item.getDisplayName()
+                )
+            }
+
+            is WatchType.PriceVsSma -> {
+                val ticker = item.ticker ?: ""
+                val price = snapshots[ticker]?.lastPrice
+                val sma = snapshots[ticker]?.smaValues?.get(watchType.period)
+                val relation = if (watchType.direction == WatchType.PriceDirection.ABOVE) "över" else "under"
+                TriggerNotificationPayload(
+                    title = "${item.companyName ?: ticker} är nu $relation SMA(${watchType.period})",
+                    message = "Pris ${formatPrice(price ?: sma ?: 0.0)} är $relation SMA(${watchType.period})" +
+                        (sma?.let { " (${formatPrice(it)})" } ?: "") + "."
+                )
+            }
+
+            is WatchType.SmaCrossover -> {
+                val ticker = item.ticker ?: ""
+                val crossLabel = if (watchType.direction == WatchType.PriceDirection.ABOVE) "Golden cross" else "Death cross"
+                TriggerNotificationPayload(
+                    title = "${item.companyName ?: ticker}: $crossLabel",
+                    message = "SMA(${watchType.shortPeriod}) har korsat SMA(${watchType.longPeriod})."
                 )
             }
         }

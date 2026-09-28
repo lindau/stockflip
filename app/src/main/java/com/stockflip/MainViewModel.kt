@@ -451,6 +451,50 @@ class MainViewModel(
                         WatchItemUiState(item)
                     }
                 }
+                is WatchType.PriceVsSma -> {
+                    if (item.ticker != null) {
+                        Log.d(TAG, "Fetching price and SMA for price-vs-sma watch item")
+                        val price = yahooFinanceService.getStockPrice(item.ticker)
+                        val sma = yahooFinanceService.getSma(item.ticker, item.watchType.period)
+                        val changePercent = yahooFinanceService.getDailyChangePercent(item.ticker)
+                        if (price != null && sma != null) {
+                            WatchItemUiState(item, LiveWatchData(
+                                currentPrice = price,
+                                currentSmaShort = sma,
+                                currentDailyChangePercent = changePercent,
+                                lastUpdatedAt = now
+                            ))
+                        } else {
+                            Log.w(TAG, "Could not get price or SMA for price-vs-sma watch item")
+                            WatchItemUiState(item, previousLive[item.id].asUpdateFailed())
+                        }
+                    } else {
+                        WatchItemUiState(item)
+                    }
+                }
+                is WatchType.SmaCrossover -> {
+                    if (item.ticker != null) {
+                        Log.d(TAG, "Fetching SMA pair for sma-crossover watch item")
+                        val smaShort = yahooFinanceService.getSma(item.ticker, item.watchType.shortPeriod)
+                        val smaLong = yahooFinanceService.getSma(item.ticker, item.watchType.longPeriod)
+                        val price = yahooFinanceService.getStockPrice(item.ticker)
+                        val changePercent = yahooFinanceService.getDailyChangePercent(item.ticker)
+                        if (smaShort != null && smaLong != null) {
+                            WatchItemUiState(item, LiveWatchData(
+                                currentPrice = price ?: 0.0,
+                                currentSmaShort = smaShort,
+                                currentSmaLong = smaLong,
+                                currentDailyChangePercent = changePercent,
+                                lastUpdatedAt = now
+                            ))
+                        } else {
+                            Log.w(TAG, "Could not get SMA values for sma-crossover watch item")
+                            WatchItemUiState(item, previousLive[item.id].asUpdateFailed())
+                        }
+                    } else {
+                        WatchItemUiState(item)
+                    }
+                }
             }
         } catch (e: Exception) {
             Log.e(TAG, "Error fetching prices for watch item ${item.id}: ${e.message}")

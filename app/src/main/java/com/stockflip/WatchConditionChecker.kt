@@ -37,6 +37,13 @@ object WatchConditionChecker {
             is AlertRule.SingleKeyMetric ->
                 if (snapshot.keyMetrics[rule.metricType] == null) null else AlertEvaluator.evaluate(rule, snapshot)
 
+            is AlertRule.SinglePriceVsSma ->
+                if (snapshot.smaValues[rule.period] == null) null else AlertEvaluator.evaluate(rule, snapshot)
+
+            is AlertRule.SingleSmaCrossover ->
+                if (snapshot.smaValues[rule.shortPeriod] == null || snapshot.smaValues[rule.longPeriod] == null) null
+                else AlertEvaluator.evaluate(rule, snapshot)
+
             // Par-larm hanteras separat (behöver två snapshots / sidologik).
             is AlertRule.PairSpread -> null
         }

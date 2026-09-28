@@ -186,6 +186,62 @@ class YahooMarketDataServiceImplTest {
     }
 
     @Test
+    fun `getSma computes average of the last N closes`() = kotlinx.coroutines.runBlocking {
+        mockWebServer.enqueue(okResponse("""
+            {
+              "chart": {
+                "result": [
+                  {
+                    "meta": {
+                      "regularMarketPrice": 500.0
+                    },
+                    "timestamp": [1, 2, 3, 4, 5],
+                    "indicators": {
+                      "quote": [
+                        {
+                          "close": [100.0, 200.0, 300.0, 400.0, 500.0]
+                        }
+                      ]
+                    }
+                  }
+                ],
+                "error": null
+              }
+            }
+        """.trimIndent()))
+
+        val sma = service.getSma("VOLV-B.ST", 3)
+
+        assertEquals(400.0, sma!!, 0.0001)
+        val request = mockWebServer.takeRequest()
+        assertEquals("/v8/finance/chart/VOLV-B.ST?range=3mo&interval=1d", request.path)
+    }
+
+    @Test
+    fun `getSma returns null when fewer closes are available than the requested period`() = kotlinx.coroutines.runBlocking {
+        mockWebServer.enqueue(okResponse("""
+            {
+              "chart": {
+                "result": [
+                  {
+                    "meta": { "regularMarketPrice": 500.0 },
+                    "timestamp": [1, 2],
+                    "indicators": {
+                      "quote": [ { "close": [100.0, 200.0] } ]
+                    }
+                  }
+                ],
+                "error": null
+              }
+            }
+        """.trimIndent()))
+
+        val sma = service.getSma("VOLV-B.ST", 50)
+
+        assertNull(sma)
+    }
+
+    @Test
     fun `concurrent price requests for the same symbol share one network call`() = kotlinx.coroutines.runBlocking {
         // Svaret fördröjs så att alla fem anropen hinner starta innan det första är klart.
         mockWebServer.enqueue(

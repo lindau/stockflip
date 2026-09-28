@@ -95,4 +95,27 @@ class WatchTypeConverterTest {
         val decoded = converter.toWatchType(encoded)
         assertEquals(watchType, decoded)
     }
+
+    @Test
+    fun `roundtrip PriceVsSma`() {
+        val watchType = WatchType.PriceVsSma(
+            period = 50,
+            direction = WatchType.PriceDirection.BELOW
+        )
+        val encoded = converter.fromWatchType(watchType)
+        val decoded = converter.toWatchType(encoded)
+        assertEquals(watchType, decoded)
+    }
+
+    @Test
+    fun `roundtrip SmaCrossover`() {
+        val watchType = WatchType.SmaCrossover(
+            shortPeriod = 50,
+            longPeriod = 200,
+            direction = WatchType.PriceDirection.ABOVE
+        )
+        val encoded = converter.fromWatchType(watchType)
+        val decoded = converter.toWatchType(encoded)
+        assertEquals(watchType, decoded)
+    }
 }

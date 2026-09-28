@@ -504,6 +504,20 @@
                         android:layout_height="wrap_content"
                         android:text="Insideraffärer" />
 
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/createPriceVsSmaButton"
+                        style="@style/Widget.StockFlip.AssistChip"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="SMA-bevakning" />
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/createSmaCrossoverButton"
+                        style="@style/Widget.StockFlip.AssistChip"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="SMA-korsning" />
+
                 </com.google.android.material.chip.ChipGroup>
 
             </LinearLayout>

@@ -16,6 +16,8 @@ StockFlip låter dig bevaka aktier och kryptovalutor och få notiser när dina e
   - [6. Aktiepar](#6-aktiepar)
   - [7. Prisintervall](#7-prisintervall)
   - [8. Kombinerat larm](#8-kombinerat-larm)
+  - [9. SMA-bevakning](#9-sma-bevakning)
+  - [10. SMA-korsning](#10-sma-korsning)
 - [Vanliga flöden](#vanliga-floden)
 - [Hantera dina bevakningar](#hantera-dina-bevakningar)
 - [Notiser](#notiser)
@@ -42,6 +44,9 @@ StockFlip låter dig bevaka aktier och kryptovalutor och få notiser när dina e
 | **Vinst/aktie** | Bolagets vinst per aktie, ofta kallat EPS. |
 | **Aktiepar** | En bevakning som jämför prisskillnaden mellan två aktier. |
 | **Kombinerat larm** | En bevakning som kombinerar flera villkor med logiska operatorer (OCH/ELLER/INTE). |
+| **SMA** (Simple Moving Average) | Glidande medelvärde: genomsnittligt stängningspris för aktien över ett antal senaste dagar, t.ex. SMA(50) för de senaste 50 dagarna. Jämnar ut kortsiktigt brus och används för att se den underliggande trenden. |
+| **Golden cross** | När ett kortare SMA (t.ex. 50 dagar) stiger över ett längre SMA (t.ex. 200 dagar) — ofta tolkat som ett tecken på uppåtgående trend. |
+| **Death cross** | När ett kortare SMA faller under ett längre SMA — ofta tolkat som ett tecken på nedåtgående trend. |
 
 ---
 
@@ -264,6 +269,64 @@ I nuvarande appversion fungerar flikarna så här:
 
 ---
 
+### 9. SMA-bevakning
+
+**Hur SMA fungerar:** SMA (Simple Moving Average, glidande medelvärde) är genomsnittet av aktiens stängningskurs över ett visst antal senaste dagar. SMA(50) betyder alltså "genomsnittspriset de senaste 50 dagarna". Eftersom det jämnar ut dagliga upp- och nedgångar visar SMA-linjen den underliggande trenden tydligare än det råa priset. Ett kort SMA (t.ex. 20 dagar) följer priset tätt och reagerar snabbt; ett långt SMA (t.ex. 200 dagar) rör sig trögt och visar den mer långsiktiga trenden.
+
+**Vad det gör:** Skickar en notis när aktiens pris passerar ett glidande medelvärde (SMA) över ett antal dagar du väljer, t.ex. "pris under SMA(50)".
+
+**Typ:** Engångslarm — inaktiveras automatiskt när det utlöses.
+
+**Riktning:** Bestäms automatiskt när du sparar bevakningen, precis som för Målpris.
+- Om priset redan ligger *över* SMA:t → väntar på att priset ska falla **under** SMA:t.
+- Om priset redan ligger *under* SMA:t → väntar på att priset ska stiga **över** SMA:t.
+
+**Vanliga inställningar:**
+- **SMA(50)** — pris som korsar sitt 50-dagarsmedelvärde tolkas ofta som en förändring i den medelfristiga trenden.
+- **SMA(200)** — pris som korsar sitt 200-dagarsmedelvärde är ett klassiskt mått på om aktien är i en långsiktig upp- eller nedåtgående marknad ("bull"/"bear"). Pris över SMA(200) tolkas ofta som en köpsignal på lång sikt, pris under som en säljsignal.
+- **SMA(20)** — kortare och känsligare, fångar upp trendskiften snabbare men ger fler falska signaler.
+
+**Skapa en SMA-bevakning:**
+1. Öppna aktiedetaljvyn.
+2. Tryck på **SMA-bevakning**.
+3. Ange antal dagar för det glidande medelvärdet, eller välj en snabbknapp (20, 50, 100 eller 200 dagar).
+4. Tryck **Spara**.
+
+**Vad händer när den utlöses:**
+- Du får en notis.
+- Bevakningen inaktiveras — tryck **Återaktivera** för att sätta upp den igen.
+
+---
+
+### 10. SMA-korsning
+
+**Vad det gör:** Skickar en notis när ett kortare glidande medelvärde (SMA) korsar ett längre, t.ex. "SMA(50) under SMA(200)" (death cross) eller "SMA(50) över SMA(200)" (golden cross).
+
+**Typ:** Engångslarm — inaktiveras automatiskt när det utlöses.
+
+**Riktning:** Bestäms automatiskt när du sparar bevakningen, utifrån hur de två SMA:erna ligger till just nu.
+- Ligger det korta SMA:t redan över det långa → väntar på nästa **death cross** (korta faller under långa).
+- Ligger det korta SMA:t redan under det långa → väntar på nästa **golden cross** (korta stiger över långa).
+
+**Vanliga inställningar för köp- och säljsignaler:**
+- **50/200 dagar** — den mest kända kombinationen. Golden cross (SMA 50 stiger över SMA 200) tolkas traditionellt som en köpsignal och signalerar en ny långsiktig uppgångstrend. Death cross (SMA 50 faller under SMA 200) tolkas som en säljsignal och en ny nedgångstrend. Ger sällsynta men ofta mer tillförlitliga signaler.
+- **20/50 dagar** — en snabbare kombination för kortare tidshorisont. Ger fler signaler och reagerar snabbare på trendskiften, men med fler falska utslag i sidledes marknader.
+- **20/100 dagar** — en mellanväg mellan de två ovan.
+
+Vill du bevaka båda hållen (både nästa golden cross och nästa death cross) på samma periodpar skapar du två separata SMA-korsningsbevakningar — appen väljer bara en riktning åt gången baserat på nuläget när du skapar bevakningen.
+
+**Skapa en SMA-korsningsbevakning:**
+1. Öppna aktiedetaljvyn.
+2. Tryck på **SMA-korsning**.
+3. Ange antal dagar för det korta SMA:t (t.ex. 20 eller 50) och det långa SMA:t (t.ex. 100 eller 200), eller använd snabbknapparna.
+4. Tryck **Spara**.
+
+**Vad händer när den utlöses:**
+- Du får en notis om golden cross eller death cross.
+- Bevakningen inaktiveras — tryck **Återaktivera** för att sätta upp den igen.
+
+---
+
 ## Vanliga flöden
 
 ### Bevaka en köpkurs
@@ -430,7 +493,7 @@ StockFlip distribueras inte via Play Store, så appen håller själv koll på om
 
 | | Engångslarm | Återkommande larm |
 |---|---|---|
-| **Typ** | Målpris, Drawdown | Dagsrörelse, Nyckeltal, Insideraffärer, Aktiepar, Prisintervall, Kombinerat |
+| **Typ** | Målpris, Drawdown, SMA-bevakning, SMA-korsning | Dagsrörelse, Nyckeltal, Insideraffärer, Aktiepar, Prisintervall, Kombinerat |
 | **Inaktiveras efter utlösning** | Ja | Nej |
 | **Återaktivering** | Manuell (krävs) | Automatisk (nästa dag), men kan även göras manuellt tidigare |
 | **Kan utlösas igen samma dag** | Nej | Normalt nej. Aktiepar kan trigga igen om spreaden byter sida. Vid manuell återaktivering: ja, om villkoret inte längre är uppfyllt och börsen är öppen — se [Återaktivera en triggad bevakning](#ateraktivera-en-triggad-bevakning). |
@@ -446,7 +509,7 @@ StockFlip distribueras inte via Play Store, så appen håller själv koll på om
 - Om marknaden är stängd kontrollerar appen bara var 60:e minut.
 
 **Varför inaktiverades min bevakning automatiskt?**
-- Målpris och Drawdown inaktiveras automatiskt när de utlöses. Det är avsiktligt för att undvika upprepade notiser för samma händelse.
+- Målpris, Drawdown, SMA-bevakning och SMA-korsning inaktiveras automatiskt när de utlöses. Det är avsiktligt för att undvika upprepade notiser för samma händelse.
 
 **Vad betyder "Kunde inte uppdateras" på ett kort?**
 - Appen lyckades inte hämta nya kurser för bevakningen, till exempel på grund av dålig uppkoppling. Kortet visar då de senast kända värdena och vilken tid de hämtades. Raden försvinner av sig själv när nästa uppdatering lyckas, eller när du drar nedåt för att uppdatera.
@@ -467,7 +530,10 @@ StockFlip distribueras inte via Play Store, så appen håller själv koll på om
 - Alla aktier som finns på Yahoo Finance: svenska (OMX), amerikanska (NASDAQ/NYSE), krypto och mer. Svenska aktier söks med tickersuffix `.ST` (t.ex. `VOLV-B.ST`).
 
 **Kan jag bevaka index?**
-- Ja. Sök på t.ex. "OMX", "S&P" eller "Nasdaq". Index har `^` framför symbolen (`^OMXS30`, `^GSPC`, `^IXIC`). Målpris, dagsrörelse, drawdown, aktiepar och kombinerade larm fungerar som för aktier. Nyckeltal och insideraffärer finns inte för index, så de knapparna visas inte.
+- Ja. Sök på t.ex. "OMX", "S&P" eller "Nasdaq". Index har `^` framför symbolen (`^OMXS30`, `^GSPC`, `^IXIC`). Målpris, dagsrörelse, drawdown, aktiepar, SMA-bevakning, SMA-korsning och kombinerade larm fungerar som för aktier. Nyckeltal och insideraffärer finns inte för index, så de knapparna visas inte.
+
+**Hur beräknas SMA?**
+- SMA(N) är genomsnittet av aktiens senaste N dagsstängningar, hämtade från Yahoo Finance. Under pågående handelsdag används dagens senaste pris som den "senaste" punkten, precis som på de flesta handelsplattformar.
 
 **Varifrån kommer bolagsloggorna?**
 - Bolagsloggor tillhandahålls av [Logo.dev](https://www.logo.dev), kryptologotyper av [CoinCap](https://coincap.io).

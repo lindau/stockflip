@@ -63,6 +63,12 @@ data class WatchItem(
                     "Kombinerat larm"
                 }
             }
+            is WatchType.PriceVsSma -> {
+                "${companyName ?: ticker} (${ticker ?: ""})"
+            }
+            is WatchType.SmaCrossover -> {
+                "${companyName ?: ticker} (${ticker ?: ""})"
+            }
         }
     }
 
@@ -81,7 +87,8 @@ data class WatchItem(
      * shouldGuardAgainstImmediateRetrigger i ReactivationGuard.kt.
      */
     val isOneTimeAlarm: Boolean
-        get() = watchType is WatchType.PriceTarget || watchType is WatchType.ATHBased
+        get() = watchType is WatchType.PriceTarget || watchType is WatchType.ATHBased ||
+            watchType is WatchType.PriceVsSma || watchType is WatchType.SmaCrossover
 
     /**
      * Om alerten kan återaktiveras manuellt via UI (nollställa den "utlöst"-status som

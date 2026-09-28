@@ -19,7 +19,9 @@ sealed class WatchType {
         PRICE_RANGE(displayName = "Prisintervall"),
         DAILY_MOVE(displayName = "Dagsrörelse"),
         INSIDER_BUY(displayName = "Insideraffärer"),
-        COMBINED(displayName = "Kombinerat larm");
+        COMBINED(displayName = "Kombinerat larm"),
+        PRICE_VS_SMA(displayName = "SMA-bevakning"),
+        SMA_CROSSOVER(displayName = "SMA-korsning");
     }
 
     /**
@@ -127,6 +129,43 @@ sealed class WatchType {
         val expression: AlertExpression
     ) : WatchType() {
         override val kind: Kind = Kind.COMBINED
+    }
+
+    /**
+     * Watch for when a stock's price crosses above/below its simple moving average (SMA).
+     */
+    data class PriceVsSma(
+        val period: Int,
+        val direction: PriceDirection
+    ) : WatchType() {
+        override val kind: Kind = Kind.PRICE_VS_SMA
+
+        init {
+            require(period in 2..500) {
+                "period måste vara mellan 2 och 500"
+            }
+        }
+    }
+
+    /**
+     * Watch for when a short-period SMA crosses above/below a long-period SMA
+     * (golden cross / death cross).
+     */
+    data class SmaCrossover(
+        val shortPeriod: Int,
+        val longPeriod: Int,
+        val direction: PriceDirection // ABOVE = golden cross-läge, BELOW = death cross-läge
+    ) : WatchType() {
+        override val kind: Kind = Kind.SMA_CROSSOVER
+
+        init {
+            require(shortPeriod in 2..500 && longPeriod in 2..500) {
+                "perioder måste vara mellan 2 och 500"
+            }
+            require(shortPeriod < longPeriod) {
+                "shortPeriod måste vara mindre än longPeriod"
+            }
+        }
     }
 
     enum class PriceDirection {

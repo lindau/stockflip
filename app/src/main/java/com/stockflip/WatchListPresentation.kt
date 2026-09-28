@@ -25,7 +25,9 @@ internal enum class AlertsFilter(
             is WatchType.PriceTarget,
             is WatchType.ATHBased,
             is WatchType.DailyMove,
-            is WatchType.PriceRange -> true
+            is WatchType.PriceRange,
+            is WatchType.PriceVsSma,
+            is WatchType.SmaCrossover -> true
             else -> false
         }
         METRICS -> uiState.item.watchType is WatchType.KeyMetrics

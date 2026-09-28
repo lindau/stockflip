@@ -665,6 +665,150 @@ class WatchDialogManager(
             }
     }
 
+    fun showCreatePriceVsSmaDialog(suggestedPeriod: Int? = null) {
+        val stockData = currentStockData()
+        val dialogView = LayoutInflater.from(context).inflate(R.layout.dialog_add_price_vs_sma, null)
+        val tickerInput = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.tickerInput)
+        val tickerInputLayout = tickerInput?.parent as? TextInputLayout
+        tickerInputLayout?.visibility = View.GONE
+        tickerInput?.setText("$symbol - ${currentCompanyName()}")
+        tickerInput?.isEnabled = false
+
+        val periodInput = dialogView.findViewById<TextInputEditText>(R.id.periodInput)
+        val contextText = dialogView.findViewById<TextView>(R.id.contextText)
+        val triggerInfoText = dialogView.findViewById<TextView>(R.id.triggerInfoText)
+        val presetChipOne = dialogView.findViewById<Chip>(R.id.presetChipOne)
+        val presetChipTwo = dialogView.findViewById<Chip>(R.id.presetChipTwo)
+        val presetChipThree = dialogView.findViewById<Chip>(R.id.presetChipThree)
+        val presetChipFour = dialogView.findViewById<Chip>(R.id.presetChipFour)
+
+        suggestedPeriod?.let { periodInput.setText(it.toString()) }
+        contextText.text = stockData?.lastPrice?.let {
+            "Aktuellt pris är ${CurrencyHelper.formatPrice(it, stockData.currency)}. Välj antal dagar för SMA:t."
+        } ?: "Välj antal dagar för det glidande medelvärdet (SMA)."
+        triggerInfoText.text = "När priset passerar SMA:t markeras larmet som utlöst (engångslarm)."
+        setPresetChip(presetChipOne, "20 dagar", 20.0) { periodInput.setText(it.toInt().toString()) }
+        setPresetChip(presetChipTwo, "50 dagar", 50.0) { periodInput.setText(it.toInt().toString()) }
+        setPresetChip(presetChipThree, "100 dagar", 100.0) { periodInput.setText(it.toInt().toString()) }
+        setPresetChip(presetChipFour, "200 dagar", 200.0) { periodInput.setText(it.toInt().toString()) }
+
+        MaterialAlertDialogBuilder(context)
+            .setTitle("Skapa SMA-bevakning")
+            .setView(dialogView)
+            .setPositiveButton("Skapa", null)
+            .setNegativeButton("Avbryt", null)
+            .show().also { dialog ->
+                dialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE)
+                focusInput(periodInput, selectAll = false)
+                dialog.setPositiveActionKeepingOpen(lifecycleScope) {
+                    val period = when (val input = validatePeriodInput(
+                        periodInput.text?.toString(), "Ange antal dagar", "Ange ett heltal mellan 2 och 500"
+                    )) {
+                        is PeriodInput.Valid -> input.value
+                        is PeriodInput.Invalid -> {
+                            periodInput.showFieldError(input.message)
+                            return@setPositiveActionKeepingOpen false
+                        }
+                    }
+                    val currentPrice = currentStockData()?.lastPrice
+                    val sma = viewModel.getSma(period)
+                    if (currentPrice == null || sma == null || sma <= 0.0) {
+                        periodInput.showFieldError("Kunde inte hämta SMA($period) just nu. Försök igen.")
+                        return@setPositiveActionKeepingOpen false
+                    }
+                    // Auto-inferera riktning precis som för PriceTarget/KeyMetrics: om priset redan
+                    // är över SMA:t bevakas nästa korsning nedåt, annars nästa korsning uppåt.
+                    val direction = if (currentPrice >= sma) {
+                        WatchType.PriceDirection.BELOW
+                    } else {
+                        WatchType.PriceDirection.ABOVE
+                    }
+                    saveNewWatch(
+                        WatchType.PriceVsSma(period, direction),
+                        errorField = periodInput,
+                        successMessage = "SMA-bevakning skapad"
+                    )
+                }
+            }
+    }
+
+    fun showCreateSmaCrossoverDialog(suggestedShortPeriod: Int? = null, suggestedLongPeriod: Int? = null) {
+        val dialogView = LayoutInflater.from(context).inflate(R.layout.dialog_add_sma_crossover, null)
+        val tickerInput = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.tickerInput)
+        val tickerInputLayout = tickerInput?.parent as? TextInputLayout
+        tickerInputLayout?.visibility = View.GONE
+        tickerInput?.setText("$symbol - ${currentCompanyName()}")
+        tickerInput?.isEnabled = false
+
+        val shortPeriodInput = dialogView.findViewById<TextInputEditText>(R.id.shortPeriodInput)
+        val longPeriodInput = dialogView.findViewById<TextInputEditText>(R.id.longPeriodInput)
+        val triggerInfoText = dialogView.findViewById<TextView>(R.id.triggerInfoText)
+        val shortPresetChipOne = dialogView.findViewById<Chip>(R.id.shortPresetChipOne)
+        val shortPresetChipTwo = dialogView.findViewById<Chip>(R.id.shortPresetChipTwo)
+        val longPresetChipOne = dialogView.findViewById<Chip>(R.id.longPresetChipOne)
+        val longPresetChipTwo = dialogView.findViewById<Chip>(R.id.longPresetChipTwo)
+
+        suggestedShortPeriod?.let { shortPeriodInput.setText(it.toString()) }
+        suggestedLongPeriod?.let { longPeriodInput.setText(it.toString()) }
+        triggerInfoText.text = "När korsningen sker markeras larmet som utlöst (engångslarm)."
+        setPresetChip(shortPresetChipOne, "20 dagar", 20.0) { shortPeriodInput.setText(it.toInt().toString()) }
+        setPresetChip(shortPresetChipTwo, "50 dagar", 50.0) { shortPeriodInput.setText(it.toInt().toString()) }
+        setPresetChip(longPresetChipOne, "100 dagar", 100.0) { longPeriodInput.setText(it.toInt().toString()) }
+        setPresetChip(longPresetChipTwo, "200 dagar", 200.0) { longPeriodInput.setText(it.toInt().toString()) }
+
+        MaterialAlertDialogBuilder(context)
+            .setTitle("Skapa SMA-korsning")
+            .setView(dialogView)
+            .setPositiveButton("Skapa", null)
+            .setNegativeButton("Avbryt", null)
+            .show().also { dialog ->
+                dialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE)
+                focusInput(shortPeriodInput, selectAll = false)
+                dialog.setPositiveActionKeepingOpen(lifecycleScope) {
+                    val shortPeriod = when (val input = validatePeriodInput(
+                        shortPeriodInput.text?.toString(), "Ange antal dagar för kort SMA", "Ange ett heltal mellan 2 och 500"
+                    )) {
+                        is PeriodInput.Valid -> input.value
+                        is PeriodInput.Invalid -> {
+                            shortPeriodInput.showFieldError(input.message)
+                            return@setPositiveActionKeepingOpen false
+                        }
+                    }
+                    val longPeriod = when (val input = validatePeriodInput(
+                        longPeriodInput.text?.toString(), "Ange antal dagar för långt SMA", "Ange ett heltal mellan 2 och 500"
+                    )) {
+                        is PeriodInput.Valid -> input.value
+                        is PeriodInput.Invalid -> {
+                            longPeriodInput.showFieldError(input.message)
+                            return@setPositiveActionKeepingOpen false
+                        }
+                    }
+                    if (shortPeriod >= longPeriod) {
+                        longPeriodInput.showFieldError("Långt SMA måste ha fler dagar än kort SMA")
+                        return@setPositiveActionKeepingOpen false
+                    }
+                    val smaShort = viewModel.getSma(shortPeriod)
+                    val smaLong = viewModel.getSma(longPeriod)
+                    if (smaShort == null || smaLong == null) {
+                        longPeriodInput.showFieldError("Kunde inte hämta SMA-värdena just nu. Försök igen.")
+                        return@setPositiveActionKeepingOpen false
+                    }
+                    // Auto-inferera riktning: om kort SMA redan ligger över långt SMA bevakas
+                    // nästa death cross (nedåt), annars nästa golden cross (uppåt).
+                    val direction = if (smaShort >= smaLong) {
+                        WatchType.PriceDirection.BELOW
+                    } else {
+                        WatchType.PriceDirection.ABOVE
+                    }
+                    saveNewWatch(
+                        WatchType.SmaCrossover(shortPeriod, longPeriod, direction),
+                        errorField = longPeriodInput,
+                        successMessage = "SMA-korsning skapad"
+                    )
+                }
+            }
+    }
+
     fun showCreateInsiderBuyDialog() {
         val watchType = WatchType.InsiderBuy()
         MaterialAlertDialogBuilder(context)
