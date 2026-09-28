@@ -9,12 +9,20 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.systemBarsPadding
+import androidx.compose.foundation.layout.weight
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Fullscreen
+import androidx.compose.material.icons.filled.FullscreenExit
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.material3.Text
@@ -61,6 +69,8 @@ fun ClarityStockDetailPanel(
     selectedPeriod: ChartPeriod,
     onPeriodSelected: (ChartPeriod) -> Unit,
     modifier: Modifier = Modifier,
+    isLandscape: Boolean = false,
+    onFullscreenToggle: (() -> Unit)? = null,
 ) {
     Column(
         modifier = modifier.fillMaxWidth(),
@@ -71,6 +81,8 @@ fun ClarityStockDetailPanel(
             chartData = chartData,
             selectedPeriod = selectedPeriod,
             onPeriodSelected = onPeriodSelected,
+            isLandscape = isLandscape,
+            onFullscreenToggle = onFullscreenToggle,
         )
         ClarityStockStatsGrid(data = data)
         ClarityWeekRangeCard(data = data)
@@ -83,6 +95,8 @@ private fun ClarityStockHeroCard(
     chartData: IntradayChartData?,
     selectedPeriod: ChartPeriod,
     onPeriodSelected: (ChartPeriod) -> Unit,
+    isLandscape: Boolean = false,
+    onFullscreenToggle: (() -> Unit)? = null,
 ) {
     val colorScheme = MaterialTheme.colorScheme
     val periodChange = calculatePeriodChange(
@@ -175,15 +189,32 @@ private fun ClarityStockHeroCard(
                 )
             }
 
-            ClaritySparkChart(
-                chartData = chartData,
-                isPositive = isPositive,
-                lineColor = changeColor,
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(112.dp)
                     .padding(top = 16.dp),
-            )
+            ) {
+                ClaritySparkChart(
+                    chartData = chartData,
+                    isPositive = isPositive,
+                    lineColor = changeColor,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(112.dp),
+                )
+                if (isLandscape && onFullscreenToggle != null) {
+                    IconButton(
+                        onClick = onFullscreenToggle,
+                        modifier = Modifier.align(Alignment.TopEnd),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Fullscreen,
+                            contentDescription = "Visa graf i fullskärm",
+                            tint = colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+            }
 
             ClarityPeriodSelector(
                 selectedPeriod = selectedPeriod,
@@ -315,6 +346,94 @@ private fun ClarityPeriodSelector(
                 maxLines = 1,
             )
         }
+    }
+}
+
+/**
+ * Fullskärmsversion av kursgrafen, visad ovanpå resten av skärmen när telefonen
+ * är i landskapsläge och användaren tryckt på fullskärmsknappen.
+ */
+@Composable
+fun FullscreenStockChart(
+    data: StockDetailData,
+    chartData: IntradayChartData?,
+    selectedPeriod: ChartPeriod,
+    onPeriodSelected: (ChartPeriod) -> Unit,
+    onClose: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val colorScheme = MaterialTheme.colorScheme
+    val periodChange = calculatePeriodChange(
+        data = data,
+        chartData = chartData,
+        selectedPeriod = selectedPeriod,
+    )
+    val changeIndicator = periodChange.percent ?: periodChange.delta
+    val changeColor = when {
+        changeIndicator == null -> colorScheme.onSurfaceVariant
+        changeIndicator >= 0.0 -> LocalPriceUp.current
+        else -> LocalPriceDown.current
+    }
+    val isPositive = changeIndicator == null || changeIndicator >= 0.0
+
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .systemBarsPadding()
+            .padding(horizontal = 20.dp, vertical = 8.dp),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = stockMeta(data),
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        letterSpacing = 0.5.sp,
+                    ),
+                    color = LocalTextTertiary.current,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Row(
+                    verticalAlignment = Alignment.Bottom,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    Text(
+                        text = data.lastPrice?.let { CurrencyHelper.formatDecimal(it) } ?: "Laddar",
+                        style = NordikNumericStyle.copy(fontSize = 30.sp, fontWeight = FontWeight.Bold),
+                        color = colorScheme.onSurface,
+                        maxLines = 1,
+                    )
+                    DailyChangePill(periodChange = periodChange, changeColor = changeColor)
+                }
+            }
+            IconButton(onClick = onClose) {
+                Icon(
+                    imageVector = Icons.Filled.FullscreenExit,
+                    contentDescription = "Stäng fullskärmsgraf",
+                    tint = colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+
+        ClaritySparkChart(
+            chartData = chartData,
+            isPositive = isPositive,
+            lineColor = changeColor,
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f)
+                .padding(vertical = 12.dp),
+        )
+
+        ClarityPeriodSelector(
+            selectedPeriod = selectedPeriod,
+            onPeriodSelected = onPeriodSelected,
+        )
     }
 }
 

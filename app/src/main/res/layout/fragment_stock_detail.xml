@@ -612,4 +612,13 @@
         android:visibility="gone"
         tools:visibility="visible" />
 
+    <!-- Fullskärmsläge för grafen (visas endast i landskapsläge) -->
+    <androidx.compose.ui.platform.ComposeView
+        android:id="@+id/fullscreenChartView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="?android:attr/colorBackground"
+        android:visibility="gone"
+        tools:visibility="visible" />
+
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

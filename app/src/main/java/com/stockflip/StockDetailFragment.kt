@@ -1,6 +1,7 @@
 package com.stockflip
 
 import android.content.Intent
+import android.content.res.Configuration
 import android.net.Uri
 import android.os.Bundle
 import android.text.TextUtils
@@ -11,6 +12,8 @@ import android.view.ViewGroup
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Lifecycle
@@ -38,6 +41,7 @@ import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 import com.stockflip.ui.components.cards.ClarityStockDetailPanel
+import com.stockflip.ui.components.cards.FullscreenStockChart
 import com.stockflip.ui.theme.StockFlipTheme
 import kotlin.math.abs
 
@@ -77,6 +81,9 @@ class StockDetailFragment : Fragment() {
     private var insiderTransactionsExpanded = false
     private var podcastObservationsExpanded = false
     private val avanzaLinkService = AvanzaStockLinkService()
+    // Fullskärmsläge för grafen — endast tillgängligt/synligt i landskapsläge.
+    private var isChartFullscreen = false
+    private var fullscreenBackCallback: androidx.activity.OnBackPressedCallback? = null
 
     private fun syncOverviewInBackground() {
         (activity as? MainActivity)?.syncWatchItemsAfterDetailChange()
@@ -243,6 +250,7 @@ class StockDetailFragment : Fragment() {
         setupObservers()
         setupSwipeRefresh()
         setupPodcastToggle()
+        setupFullscreenChart()
 
         binding.notesCard.setOnClickListener { dialogManager.showEditNoteDialog() }
         binding.triggerReactivateButton.setOnClickListener {
@@ -565,8 +573,82 @@ class StockDetailFragment : Fragment() {
                     chartData = latestChartData,
                     selectedPeriod = latestChartPeriod,
                     onPeriodSelected = { viewModel.selectPeriod(it) },
+                    isLandscape = isLandscapeOrientation(),
+                    onFullscreenToggle = { setChartFullscreen(true) },
                 )
             }
+        }
+        if (isChartFullscreen) {
+            renderFullscreenChart()
+        }
+    }
+
+    private fun renderFullscreenChart() {
+        val data = latestStockData ?: return
+        binding.fullscreenChartView.setContent {
+            StockFlipTheme {
+                FullscreenStockChart(
+                    data = data,
+                    chartData = latestChartData,
+                    selectedPeriod = latestChartPeriod,
+                    onPeriodSelected = { viewModel.selectPeriod(it) },
+                    onClose = { setChartFullscreen(false) },
+                )
+            }
+        }
+    }
+
+    private fun isLandscapeOrientation(): Boolean {
+        return resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+    }
+
+    private fun setupFullscreenChart() {
+        val callback = object : androidx.activity.OnBackPressedCallback(false) {
+            override fun handleOnBackPressed() {
+                setChartFullscreen(false)
+            }
+        }
+        requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner, callback)
+        fullscreenBackCallback = callback
+    }
+
+    private fun setChartFullscreen(enabled: Boolean) {
+        // Fullskärm är en landskapsfunktion — gör inget om telefonen redan vridits tillbaka.
+        if (enabled && !isLandscapeOrientation()) return
+        if (isChartFullscreen == enabled) return
+
+        isChartFullscreen = enabled
+        binding.fullscreenChartView.isVisible = enabled
+        fullscreenBackCallback?.isEnabled = enabled
+        setSystemBarsHidden(enabled)
+
+        if (enabled) {
+            renderFullscreenChart()
+        } else {
+            renderClarityStockPanel()
+        }
+    }
+
+    private fun setSystemBarsHidden(hidden: Boolean) {
+        val window = activity?.window ?: return
+        val controller = WindowInsetsControllerCompat(window, binding.root)
+        if (hidden) {
+            controller.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+            controller.hide(WindowInsetsCompat.Type.systemBars())
+        } else {
+            controller.show(WindowInsetsCompat.Type.systemBars())
+        }
+    }
+
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        if (_binding == null) return
+        // Fullskärmsgrafen är enbart menad för landskapsläge — lämnar man det, stäng den.
+        if (isChartFullscreen && newConfig.orientation != Configuration.ORIENTATION_LANDSCAPE) {
+            setChartFullscreen(false)
+        } else {
+            // Uppdatera fullskärmsknappens synlighet i den vanliga vyn.
+            renderClarityStockPanel()
         }
     }
 
@@ -1410,6 +1492,10 @@ class StockDetailFragment : Fragment() {
     }
 
     override fun onDestroyView() {
+        if (isChartFullscreen) {
+            setSystemBarsHidden(false)
+            isChartFullscreen = false
+        }
         super.onDestroyView()
         _binding = null
     }
