@@ -1560,6 +1560,19 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    /**
+     * Döljer/visar MainActivitys egen "chrome" (toppfält, tidsstämpel och bottennavigering) runt
+     * fragmentContainer. Krävs för att fullskärmsgrafen i StockDetailFragment faktiskt ska ta över
+     * hela skärmen — annars förblir dessa vyer synliga och klämmer in grafen precis som innan.
+     */
+    internal fun setDetailChromeHidden(hidden: Boolean) {
+        val visibility = if (hidden) View.GONE else View.VISIBLE
+        binding.appBarLayout.visibility = visibility
+        binding.lastUpdateTime.visibility = visibility
+        binding.navDivider.visibility = visibility
+        binding.bottomNavigation.visibility = visibility
+    }
+
     internal fun syncWatchItemsAfterDetailChange() {
         detailSyncJob?.cancel()
         detailSyncJob = lifecycleScope.launch {

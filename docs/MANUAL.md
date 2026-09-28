@@ -296,6 +296,8 @@ I nuvarande appversion fungerar flikarna så här:
 - Du får en notis.
 - Bevakningen inaktiveras — tryck **Återaktivera** för att sätta upp den igen.
 
+**I kursgrafen:** Så länge du har en aktiv SMA-bevakning (eller SMA-korsning, se nedan) på aktien ritas medelvärdet som en streckad linje ovanpå kursgrafen, märkt med perioden (t.ex. "SMA50"). Har du flera bevakningar med olika perioder visas en linje per period.
+
 ---
 
 ### 10. SMA-korsning

@@ -45,6 +45,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -61,6 +62,7 @@ import com.stockflip.accessibilityLabel
 import com.stockflip.CountryFlagHelper
 import com.stockflip.CurrencyHelper
 import com.stockflip.IntradayChartData
+import com.stockflip.SmaChartLevel
 import com.stockflip.StockDetailData
 import com.stockflip.ui.components.CompanyLogoAvatar
 import com.stockflip.ui.theme.LocalCardBorder
@@ -83,6 +85,7 @@ fun ClarityStockDetailPanel(
     modifier: Modifier = Modifier,
     isLandscape: Boolean = false,
     onFullscreenToggle: (() -> Unit)? = null,
+    smaLevels: List<SmaChartLevel> = emptyList(),
 ) {
     Column(
         modifier = modifier.fillMaxWidth(),
@@ -95,6 +98,7 @@ fun ClarityStockDetailPanel(
             onPeriodSelected = onPeriodSelected,
             isLandscape = isLandscape,
             onFullscreenToggle = onFullscreenToggle,
+            smaLevels = smaLevels,
         )
         ClarityStockStatsGrid(data = data)
         ClarityWeekRangeCard(data = data)
@@ -109,6 +113,7 @@ private fun ClarityStockHeroCard(
     onPeriodSelected: (ChartPeriod) -> Unit,
     isLandscape: Boolean = false,
     onFullscreenToggle: (() -> Unit)? = null,
+    smaLevels: List<SmaChartLevel> = emptyList(),
 ) {
     val colorScheme = MaterialTheme.colorScheme
     val periodChange = calculatePeriodChange(
@@ -211,6 +216,7 @@ private fun ClarityStockHeroCard(
                     isPositive = isPositive,
                     lineColor = changeColor,
                     selectedPeriod = selectedPeriod,
+                    smaLevels = smaLevels,
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(112.dp),
@@ -275,6 +281,7 @@ private fun ClaritySparkChart(
     lineColor: Color,
     selectedPeriod: ChartPeriod,
     modifier: Modifier = Modifier,
+    smaLevels: List<SmaChartLevel> = emptyList(),
 ) {
     val prices = chartData?.prices.orEmpty()
     if (prices.size < 2) {
@@ -297,6 +304,7 @@ private fun ClaritySparkChart(
     val tooltipBackgroundColor = MaterialTheme.colorScheme.surfaceContainerHigh
     val tooltipDateColor = LocalTextTertiary.current
     val tooltipPriceColor = MaterialTheme.colorScheme.onSurface
+    val smaLineColors = listOf(MaterialTheme.colorScheme.tertiary, MaterialTheme.colorScheme.secondary)
     val textMeasurer = rememberTextMeasurer()
 
     // Lokalt state (inte hissat) så bara denna Canvas ritas om under drag, inte resten av kortet.
@@ -330,8 +338,11 @@ private fun ClaritySparkChart(
             }
         },
     ) {
-        val minPrice = prices.min()
-        val maxPrice = prices.max()
+        // Priceskalan utökas för att alltid rymma SMA-nivåerna — annars klipps linjen tyst
+        // utanför canvasen när priset ligger långt från det bevakade medelvärdet.
+        val smaValues = smaLevels.map { it.value }
+        val minPrice = minOf(prices.min(), smaValues.minOrNull() ?: prices.min())
+        val maxPrice = maxOf(prices.max(), smaValues.maxOrNull() ?: prices.max())
         val range = (maxPrice - minPrice).coerceAtLeast(0.001)
         val chartHeight = size.height * 0.88f
         val topPadding = size.height * 0.04f
@@ -363,6 +374,29 @@ private fun ClaritySparkChart(
             radius = 4.dp.toPx(),
             center = Offset(xFor(prices.lastIndex), yFor(prices.last())),
         )
+
+        smaLevels.forEachIndexed { index, level ->
+            val smaColor = smaLineColors[index % smaLineColors.size]
+            val smaY = yFor(level.value)
+            drawLine(
+                color = smaColor.copy(alpha = 0.85f),
+                start = Offset(0f, smaY),
+                end = Offset(size.width, smaY),
+                strokeWidth = 1.5.dp.toPx(),
+                pathEffect = PathEffect.dashPathEffect(floatArrayOf(8.dp.toPx(), 6.dp.toPx()), 0f),
+            )
+            val label = "SMA${level.period}"
+            val labelStyle = TextStyle(fontSize = 9.sp, color = smaColor, fontWeight = FontWeight.Bold)
+            val labelMeasured = textMeasurer.measure(label, labelStyle)
+            val labelTop = (smaY - labelMeasured.size.height - 2.dp.toPx())
+                .coerceIn(0f, size.height - labelMeasured.size.height)
+            drawText(
+                textMeasurer = textMeasurer,
+                text = label,
+                style = labelStyle,
+                topLeft = Offset(4.dp.toPx(), labelTop),
+            )
+        }
 
         val idx = touchIndex
         if (idx != null) {
@@ -492,6 +526,7 @@ fun FullscreenStockChart(
     onPeriodSelected: (ChartPeriod) -> Unit,
     onClose: () -> Unit,
     modifier: Modifier = Modifier,
+    smaLevels: List<SmaChartLevel> = emptyList(),
 ) {
     val colorScheme = MaterialTheme.colorScheme
     val periodChange = calculatePeriodChange(
@@ -556,6 +591,7 @@ fun FullscreenStockChart(
             isPositive = isPositive,
             lineColor = changeColor,
             selectedPeriod = selectedPeriod,
+            smaLevels = smaLevels,
             modifier = Modifier
                 .fillMaxWidth()
                 .weight(1f)

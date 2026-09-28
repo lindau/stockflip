@@ -444,6 +444,8 @@ class StockDetailFragment : Fragment() {
                         renderDecisionSupport()
                         renderInsiderTransactions()
                         renderTriggerBanner()
+                        // SMA-nivåerna ovanpå grafen kommer från live-bevakningsdata, inte chartState.
+                        renderClarityStockPanel()
                     }
                     is UiState.Error -> {
                         if (latestAlerts.isEmpty()) {
@@ -575,6 +577,7 @@ class StockDetailFragment : Fragment() {
                     onPeriodSelected = { viewModel.selectPeriod(it) },
                     isLandscape = isLandscapeOrientation(),
                     onFullscreenToggle = { setChartFullscreen(true) },
+                    smaLevels = smaLevelsForChart(),
                 )
             }
         }
@@ -593,9 +596,31 @@ class StockDetailFragment : Fragment() {
                     selectedPeriod = latestChartPeriod,
                     onPeriodSelected = { viewModel.selectPeriod(it) },
                     onClose = { setChartFullscreen(false) },
+                    smaLevels = smaLevelsForChart(),
                 )
             }
         }
+    }
+
+    /**
+     * SMA-nivåer att rita ovanpå kursgrafen — ett värde per unikt period från aktivens
+     * Pris-vs-SMA/SMA-korsning-bevakningar på den här aktien (deras redan hämtade live-värden).
+     */
+    private fun smaLevelsForChart(): List<SmaChartLevel> {
+        val levels = mutableMapOf<Int, Double>()
+        latestAlerts.forEach { state ->
+            when (val watchType = state.item.watchType) {
+                is WatchType.PriceVsSma -> {
+                    if (state.live.currentSmaShort > 0.0) levels[watchType.period] = state.live.currentSmaShort
+                }
+                is WatchType.SmaCrossover -> {
+                    if (state.live.currentSmaShort > 0.0) levels[watchType.shortPeriod] = state.live.currentSmaShort
+                    if (state.live.currentSmaLong > 0.0) levels[watchType.longPeriod] = state.live.currentSmaLong
+                }
+                else -> Unit
+            }
+        }
+        return levels.entries.sortedBy { it.key }.map { SmaChartLevel(period = it.key, value = it.value) }
     }
 
     private fun isLandscapeOrientation(): Boolean {
@@ -621,6 +646,9 @@ class StockDetailFragment : Fragment() {
         binding.fullscreenChartView.isVisible = enabled
         fullscreenBackCallback?.isEnabled = enabled
         setSystemBarsHidden(enabled)
+        // fragmentContainer i activity_main.xml är inklämt mellan toppfältet och bottennavigeringen —
+        // utan att gömma dem täcker grafen aldrig hela skärmen trots namnet "fullskärm".
+        (activity as? MainActivity)?.setDetailChromeHidden(enabled)
 
         if (enabled) {
             renderFullscreenChart()
@@ -1494,6 +1522,7 @@ class StockDetailFragment : Fragment() {
     override fun onDestroyView() {
         if (isChartFullscreen) {
             setSystemBarsHidden(false)
+            (activity as? MainActivity)?.setDetailChromeHidden(false)
             isChartFullscreen = false
         }
         super.onDestroyView()

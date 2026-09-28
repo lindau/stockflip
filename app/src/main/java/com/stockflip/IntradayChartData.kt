@@ -12,6 +12,12 @@ data class IntradayChartData(
     val emptyReason: String? = null
 )
 
+/** Ett SMA-referensvärde att rita som en horisontell linje ovanpå kursgrafen, t.ex. från en aktiv bevakning. */
+data class SmaChartLevel(
+    val period: Int,
+    val value: Double
+)
+
 data class PairChartSeries(
     val timestamps: List<Long>,
     val values: List<Double>
