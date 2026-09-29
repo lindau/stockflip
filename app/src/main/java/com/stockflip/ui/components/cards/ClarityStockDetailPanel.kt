@@ -176,6 +176,7 @@ private fun ClarityStockHeroCard(
 
                 Column(modifier = Modifier.weight(1f)) {
                     Row(
+                        modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(10.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
@@ -185,6 +186,7 @@ private fun ClarityStockHeroCard(
                         )
                         Text(
                             text = stockMeta(data),
+                            modifier = Modifier.weight(1f),
                             style = MaterialTheme.typography.labelSmall.copy(
                                 fontSize = 11.sp,
                                 lineHeight = 14.sp,
@@ -194,6 +196,11 @@ private fun ClarityStockHeroCard(
                             color = LocalTextTertiary.current,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
+                        )
+                        // Kugghjul och fullskärm på tickerns rad, längst till höger.
+                        ChartActionButtons(
+                            onFullscreenToggle = onFullscreenToggle,
+                            onOpenSettings = if (onIndicatorConfigChange != null) ({ showSettings = true }) else null,
                         )
                     }
 
@@ -252,11 +259,6 @@ private fun ClarityStockHeroCard(
                     modifier = Modifier.fillMaxWidth(),
                     chartHeight = 112.dp,
                 )
-                ChartActionButtons(
-                    onFullscreenToggle = onFullscreenToggle,
-                    onOpenSettings = if (onIndicatorConfigChange != null) ({ showSettings = true }) else null,
-                    modifier = Modifier.align(Alignment.TopEnd),
-                )
             }
 
             ClarityPeriodSelector(
@@ -276,7 +278,7 @@ private fun ClarityStockHeroCard(
     }
 }
 
-/** Kugghjul (indikatorval) och fullskärmsknapp uppe till höger i grafen. */
+/** Kugghjul (indikatorval) och fullskärmsknapp, placerade längst till höger på tickerns rad. */
 @Composable
 private fun ChartActionButtons(
     onFullscreenToggle: (() -> Unit)?,
@@ -284,7 +286,7 @@ private fun ChartActionButtons(
     modifier: Modifier = Modifier,
 ) {
     val colorScheme = MaterialTheme.colorScheme
-    Row(modifier = modifier.padding(4.dp), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+    Row(modifier = modifier, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
         if (onOpenSettings != null) {
             IconButton(
                 onClick = onOpenSettings,
