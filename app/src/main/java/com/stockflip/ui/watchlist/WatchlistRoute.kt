@@ -17,6 +17,11 @@ import com.stockflip.MainViewModel
 import com.stockflip.UiState
 import com.stockflip.WatchItem
 import com.stockflip.WatchItemUiState
+import com.stockflip.WatchType
+import com.stockflip.repository.StockRepository
+import com.stockflip.ui.createwatch.CombinedWatchSheet
+import com.stockflip.ui.createwatch.PairWatchSheet
+import com.stockflip.ui.createwatch.decomposeCombined
 import kotlinx.coroutines.launch
 
 /**
@@ -35,6 +40,8 @@ internal fun WatchlistRoute(
     val refreshing by viewModel.watchItemsRefreshing.collectAsState()
     var query by rememberSaveable { mutableStateOf("") }
     val scope = rememberCoroutineScope()
+    val repository = remember { StockRepository() }
+    var sheet by remember { mutableStateOf<WatchSheet?>(null) }
 
     val items: List<WatchItemUiState> = (state as? UiState.Success)?.data.orEmpty()
     val sections by remember(items, query) { derivedStateOf { sectionsFor(items, query) } }
@@ -49,14 +56,41 @@ internal fun WatchlistRoute(
         query = query,
         onQueryChange = { query = it },
         onRefresh = { scope.launch { viewModel.refreshWatchItems(showLoading = false) } },
-        onRowClick = { row -> row.symbol?.let(onOpenStock) },
+        onRowClick = { row ->
+            val item = items.firstOrNull { it.item.id == row.id }?.item
+            when {
+                item?.watchType is WatchType.PricePair -> sheet = WatchSheet.Pair(item)
+                item?.watchType is WatchType.Combined -> {
+                    if (decomposeCombined((item.watchType as WatchType.Combined).expression) != null) sheet = WatchSheet.Combined(item)
+                    else row.symbol?.let(onOpenStock)
+                }
+                else -> row.symbol?.let(onOpenStock)
+            }
+        },
         onDelete = { row ->
             val target = items.firstOrNull { it.item.id == row.id }?.item ?: return@WatchlistScreen
             scope.launch { deleteWithUndo(viewModel, snackbarHostState, target, row.title) }
         },
         onAddWatch = onAddWatch,
+        onAddPair = { sheet = WatchSheet.Pair(null) },
+        onAddCombined = { sheet = WatchSheet.Combined(null) },
         modifier = modifier,
     )
+
+    val save: suspend (WatchItem) -> String? = { item ->
+        val ok = if (item.id == 0) viewModel.addWatchItem(item) else viewModel.updateWatchItem(item)
+        if (ok) { sheet = null; null } else "Kunde inte spara bevakningen. Försök igen."
+    }
+    when (val s = sheet) {
+        is WatchSheet.Pair -> PairWatchSheet(repository, s.item, { sheet = null }, save)
+        is WatchSheet.Combined -> CombinedWatchSheet(repository, s.item, { sheet = null }, save)
+        null -> Unit
+    }
+}
+
+private sealed interface WatchSheet {
+    data class Pair(val item: WatchItem?) : WatchSheet
+    data class Combined(val item: WatchItem?) : WatchSheet
 }
 
 private suspend fun deleteWithUndo(

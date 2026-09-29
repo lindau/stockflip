@@ -12,9 +12,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -27,6 +30,10 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
@@ -57,6 +64,8 @@ internal fun WatchlistScreen(
     onRowClick: (WatchRowModel) -> Unit,
     onDelete: (WatchRowModel) -> Unit,
     onAddWatch: () -> Unit,
+    onAddPair: () -> Unit,
+    onAddCombined: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
@@ -66,7 +75,18 @@ internal fun WatchlistScreen(
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             Text("Bevakningar", style = MaterialTheme.typography.headlineMedium)
-            IconButton(onClick = onRefresh) { Icon(Icons.Outlined.Refresh, contentDescription = "Uppdatera") }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                IconButton(onClick = onRefresh) { Icon(Icons.Outlined.Refresh, contentDescription = "Uppdatera") }
+                var menuOpen by remember { mutableStateOf(false) }
+                Box {
+                    IconButton(onClick = { menuOpen = true }) { Icon(Icons.Outlined.Add, contentDescription = "Ny bevakning") }
+                    DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+                        DropdownMenuItem(text = { Text("Aktie (sök i Marknad)") }, onClick = { menuOpen = false; onAddWatch() })
+                        DropdownMenuItem(text = { Text("Aktiepar") }, onClick = { menuOpen = false; onAddPair() })
+                        DropdownMenuItem(text = { Text("Kombinerad") }, onClick = { menuOpen = false; onAddCombined() })
+                    }
+                }
+            }
         }
         SearchField(query, onQueryChange)
 
