@@ -22,6 +22,8 @@ import com.stockflip.WatchItemUiState
 import com.stockflip.WatchType
 import com.stockflip.supportsIndicators
 import com.stockflip.ui.components.EmptyState
+import com.stockflip.ui.createwatch.CreateWatchSheet
+import com.stockflip.ui.createwatch.draftFrom
 import com.stockflip.ui.components.SkeletonRow
 import androidx.compose.foundation.layout.Column
 import kotlinx.coroutines.async
@@ -38,8 +40,6 @@ internal fun StockDetailRoute(
     viewModel: StockDetailViewModel,
     snackbarHostState: SnackbarHostState,
     onBack: () -> Unit,
-    onAddWatch: () -> Unit,
-    onEditAlert: (WatchItemUiState) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -49,6 +49,8 @@ internal fun StockDetailRoute(
     val period by viewModel.selectedPeriod.collectAsState()
     var config by remember { mutableStateOf(ChartIndicatorSettings.load(context)) }
     var pullRefreshing by remember { mutableStateOf(false) }
+    var sheetOpen by remember { mutableStateOf(false) }
+    var editing by remember { mutableStateOf<WatchItemUiState?>(null) }
 
     val alerts: List<WatchItemUiState> = (alertsState as? UiState.Success)?.data.orEmpty()
     val chartData = (chartState as? UiState.Success)?.data
@@ -63,7 +65,8 @@ internal fun StockDetailRoute(
     }
 
     when (val state = stockState) {
-        is UiState.Success -> StockDetailScreen(
+        is UiState.Success -> {
+        StockDetailScreen(
             data = state.data,
             chartData = chartData,
             selectedPeriod = period,
@@ -77,10 +80,25 @@ internal fun StockDetailRoute(
             onPeriodSelected = viewModel::selectPeriod,
             onRefresh = { pullRefreshing = true; viewModel.refresh() },
             onBack = onBack,
-            onAddWatch = onAddWatch,
-            onEditAlert = onEditAlert,
+            onAddWatch = { editing = null; sheetOpen = true },
+            onEditAlert = { editing = it; sheetOpen = true },
             modifier = modifier,
         )
+        if (sheetOpen) {
+            val target = editing
+            CreateWatchSheet(
+                data = state.data,
+                initial = target?.let { draftFrom(it.item.watchType) },
+                onDismiss = { sheetOpen = false },
+                fetchSma = { viewModel.getSma(it) },
+                onSave = { type ->
+                    val error = viewModel.saveWatch(type, state.data.companyName, target?.item)
+                    if (error == null) sheetOpen = false
+                    error
+                },
+            )
+        }
+        }
         is UiState.Error -> EmptyState(state.message, actionLabel = "Försök igen", onAction = viewModel::refresh, modifier = modifier)
         UiState.Loading -> Column(modifier) { repeat(6) { SkeletonRow() } }
     }

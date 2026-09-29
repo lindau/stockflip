@@ -530,6 +530,18 @@ class StockDetailViewModel(
     }
 
     /**
+     * Sparar en ny (eller, om [existing] anges, uppdaterad) bevakning från skapa-sheeten.
+     * Returnerar ett felmeddelande, eller null när det lyckades.
+     */
+    suspend fun saveWatch(watchType: WatchType, companyName: String, existing: WatchItem?): String? {
+        if (existing == null || existing.watchType != watchType) {
+            if (isDuplicateWatch(watchType)) return "En bevakning med dessa inställningar finns redan"
+        }
+        val ok = if (existing == null) createAlert(watchType, companyName) else updateWatchItem(existing.copy(watchType = watchType))
+        return if (ok) null else "Kunde inte spara bevakningen. Försök igen."
+    }
+
+    /**
      * Tar bort en alert.
      */
     fun deleteAlert(watchItem: WatchItem) {
