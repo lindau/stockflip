@@ -130,14 +130,14 @@ Uppe till höger i grafen finns två knappar:
 
 Aktiedetaljsidan är uppdelad i sektioner så att den inte blir för lång:
 
-- **Bevakningar** — dina nivåer, alla bevakningar för bolaget och knappen **+ Ny bevakning**. Öppen som standard.
+- **Bevakningar** — dina nivåer, alla bevakningar för bolaget och den runda **+**-knappen nere till höger som alltid ligger kvar när du scrollar. Öppen som standard.
 - **Mer om bolaget** — **Senaste insideraffärer**, **Poddomnämnanden** (om funktionen finns i din version) och **Anteckningar**. Insider, podd och anteckningar är hopfällda som standard.
 
 Datum för nästa rapport visas som en liten rad under kursen i toppkortet, till exempel *Rapport om 12 dagar · 23 okt*.
 
 Tryck på en rubrik (eller pilen till höger) för att fälla ut eller ihop sektionen. När en sektion är hopfälld visas en kort sammanfattning bredvid rubriken, till exempel *4 aktiva · 1 triggad* eller *3 köp · 1 sälj*. Ditt val sparas och gäller alla aktier. Sektioner utan innehåll, till exempel insideraffärer för en aktie utan sådana, visas inte alls.
 
-Tryck på **+ Ny bevakning** för att välja bevakningstyp. Nyckeltal och insideraffärer visas bara för aktier som stöder dem. Längst ned finns genvägar till Avanza och Nordnet.
+Tryck på **+**-knappen för att välja bevakningstyp. Nyckeltal och insideraffärer visas bara för aktier som stöder dem. Längst ned finns genvägar till Avanza och Nordnet.
 
 ---
 
@@ -155,7 +155,7 @@ Tryck på **+ Ny bevakning** för att välja bevakningstyp. Nyckeltal och inside
 
 **Skapa en prismålsbevakning:**
 1. Sök upp aktien eller tryck på en befintlig bevakningskort för att öppna aktiedetaljvyn.
-2. Tryck på **+ Ny bevakning** och välj **Målpris**.
+2. Tryck på **+**-knappen nere till höger och välj **Målpris**.
 3. Ange målpriset.
 4. Tryck **Spara**.
 
@@ -179,7 +179,7 @@ Tryck på **+ Ny bevakning** för att välja bevakningstyp. Nyckeltal och inside
 
 **Skapa en dagsrörelsebevakning:**
 1. Öppna aktiedetaljvyn.
-2. Tryck på **+ Ny bevakning** och välj **Dagsrörelse**.
+2. Tryck på **+**-knappen nere till höger och välj **Dagsrörelse**.
 3. Ange tröskelprocent (t.ex. 5).
 4. Välj riktning: Upp / Ned / Båda håll.
 5. Tryck **Spara**.
@@ -203,7 +203,7 @@ Tryck på **+ Ny bevakning** för att välja bevakningstyp. Nyckeltal och inside
 
 **Skapa en drawdown-bevakning:**
 1. Öppna aktiedetaljvyn (visar aktuell drawdown i headern).
-2. Tryck på **+ Ny bevakning** och välj **Drawdown**.
+2. Tryck på **+**-knappen nere till höger och välj **Drawdown**.
 3. Välj Procent eller Kronor.
 4. Ange hur mycket nedgång som ska trigga larmet.
 5. Tryck **Spara**.
@@ -232,7 +232,7 @@ Tryck på **+ Ny bevakning** för att välja bevakningstyp. Nyckeltal och inside
 
 **Skapa en nyckeltalbevakning:**
 1. Öppna aktiedetaljvyn.
-2. Tryck på **+ Ny bevakning** och välj **Nyckeltal**.
+2. Tryck på **+**-knappen nere till höger och välj **Nyckeltal**.
 3. Välj vilket nyckeltal (P/E, P/S, Direktavkastning, Vinst/aktie).
 4. Ange målvärdet.
 5. Tryck **Spara**.
@@ -251,7 +251,7 @@ Tryck på **+ Ny bevakning** för att välja bevakningstyp. Nyckeltal och inside
 
 **Skapa en bevakning för insideraffärer:**
 1. Öppna aktiedetaljvyn för en aktie med insiderstöd.
-2. Tryck på **+ Ny bevakning** och välj **Insideraffärer**.
+2. Tryck på **+**-knappen nere till höger och välj **Insideraffärer**.
 3. Tryck **Spara**.
 
 **Vad händer när den utlöses:**
@@ -337,7 +337,7 @@ Tryck på **+ Ny bevakning** för att välja bevakningstyp. Nyckeltal och inside
 
 **Skapa en SMA-bevakning:**
 1. Öppna aktiedetaljvyn.
-2. Tryck på **+ Ny bevakning** och välj **SMA-bevakning**.
+2. Tryck på **+**-knappen nere till höger och välj **SMA-bevakning**.
 3. Ange antal dagar för det glidande medelvärdet, eller välj en snabbknapp (20, 50, 100 eller 200 dagar).
 4. Tryck **Spara**.
 
@@ -368,7 +368,7 @@ Vill du bevaka båda hållen (både nästa golden cross och nästa death cross) 
 
 **Skapa en SMA-korsningsbevakning:**
 1. Öppna aktiedetaljvyn.
-2. Tryck på **+ Ny bevakning** och välj **SMA-korsning**.
+2. Tryck på **+**-knappen nere till höger och välj **SMA-korsning**.
 3. Ange antal dagar för det korta SMA:t (t.ex. 20 eller 50) och det långa SMA:t (t.ex. 100 eller 200), eller använd snabbknapparna.
 4. Tryck **Spara**.
 
@@ -386,7 +386,7 @@ Situation: Du vill köpa Volvo B om den faller till 220 kr (nuvarande pris: 260 
 
 1. Gå till **Bevakningar** och tryck på `+`.
 2. Sök efter "VOLV-B" och öppna aktiedetaljvyn.
-3. Tryck **+ Ny bevakning** och välj **Målpris**.
+3. Tryck på **+**-knappen nere till höger och välj **Målpris**.
 4. Ange `220` som målpris.
 5. Tryck **Spara**.
 6. Appen sätter automatiskt riktningen till "under 220 kr" och skickar en notis om priset faller till 220 kr eller lägre.

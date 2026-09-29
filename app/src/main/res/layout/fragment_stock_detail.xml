@@ -21,7 +21,7 @@
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:paddingTop="12dp"
-            android:paddingBottom="16dp">
+            android:paddingBottom="96dp">
 
             <TextView
                 android:layout_width="wrap_content"
@@ -243,17 +243,6 @@
                 android:padding="16dp"
                 android:visibility="gone"
                 tools:visibility="visible" />
-
-            <!-- Ny bevakning — öppnar en bottom sheet med alla bevakningstyper -->
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/addWatchButton"
-                style="@style/Widget.Material3.Button.TonalButton"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginHorizontal="16dp"
-                android:layout_marginTop="12dp"
-                android:layout_marginBottom="4dp"
-                android:text="+ Ny bevakning" />
 
                 </LinearLayout>
             </LinearLayout>
@@ -502,6 +491,18 @@
     </androidx.core.widget.NestedScrollView>
 
     </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+
+    <!-- Ny bevakning — flytande knapp nere till höger, som på bevakningssidan -->
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/addWatchButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:layout_margin="16dp"
+        android:contentDescription="Ny bevakning"
+        android:src="@drawable/ic_fab_add"
+        app:backgroundTint="@color/pine_primary_dark"
+        app:maxImageSize="28dp" />
 
     <!-- Loading Indicator -->
     <ProgressBar
