@@ -1,36 +1,31 @@
 package com.stockflip.ui.theme
 
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Shapes
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.unit.dp
 
+// Ytor: 12 dp. Chips och knappar: helt runda ([PillShape]).
 val Shapes = Shapes(
-    // extraSmall — ikoner, indikatorer, kompakta taggar
     extraSmall = RoundedCornerShape(8.dp),
-    // small — chips, knappar, listkort (tätare radkänsla)
-    small = RoundedCornerShape(14.dp),
-    // medium — grouped containers, paneler, detaljvyer
-    medium = RoundedCornerShape(20.dp),
-    // large — bottom sheets, större modala ytor
-    large = RoundedCornerShape(22.dp),
-    // extraLarge — fullskärmsytor och hero-element
+    small      = RoundedCornerShape(12.dp),
+    medium     = RoundedCornerShape(12.dp),
+    large      = RoundedCornerShape(16.dp),
     extraLarge = RoundedCornerShape(28.dp),
 )
 
-// Lokal kortshape för listvyer — mer radlik känsla utan att påverka globalt medium
-val ListCardShape = RoundedCornerShape(10.dp)
+/** Chips, knappar och segmenterade kontroller. */
+val PillShape: Shape = CircleShape
 
-/**
- * Gruppposition för listkort — ger iOS-liknande grouped list-känsla.
- * Kort i samma ticker-grupp kopplas ihop via corner-behandling och noll vertikalt gap.
- */
+// Behålls tills korten i ui/components/cards ersatts (fas 3–4).
+val ListCardShape = RoundedCornerShape(12.dp)
+
 enum class GroupPosition { ONLY, FIRST, MIDDLE, LAST }
 
-/** Returnerar rätt corner shape baserat på position i gruppen. */
 fun groupShape(position: GroupPosition): Shape = when (position) {
-    GroupPosition.ONLY   -> RoundedCornerShape(10.dp)
-    GroupPosition.FIRST  -> RoundedCornerShape(topStart = 10.dp, topEnd = 10.dp, bottomStart = 2.dp, bottomEnd = 2.dp)
+    GroupPosition.ONLY   -> RoundedCornerShape(12.dp)
+    GroupPosition.FIRST  -> RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp, bottomStart = 2.dp, bottomEnd = 2.dp)
     GroupPosition.MIDDLE -> RoundedCornerShape(2.dp)
-    GroupPosition.LAST   -> RoundedCornerShape(topStart = 2.dp, topEnd = 2.dp, bottomStart = 10.dp, bottomEnd = 10.dp)
+    GroupPosition.LAST   -> RoundedCornerShape(topStart = 2.dp, topEnd = 2.dp, bottomStart = 12.dp, bottomEnd = 12.dp)
 }

@@ -8,162 +8,62 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import com.stockflip.R
 
-// ─── Custom Font Families ──────────────────────────────────────────────────────
-// DM Serif Display — används för rubriker och display-text (bolagsnamn, skärmtitlar)
-val DmSerifDisplay = FontFamily(
-    Font(R.font.dm_serif_display_regular, FontWeight.Normal)
+// En enda typsnittsfamilj (Inter) i två vikter: Normal/Medium för text, SemiBold enbart för rubriker.
+val Inter = FontFamily(
+    Font(R.font.inter_regular, FontWeight.Normal),
+    Font(R.font.inter_medium, FontWeight.Medium),
+    Font(R.font.inter_semibold, FontWeight.SemiBold),
 )
 
-// JetBrains Mono — används för numeriska värden (priser, procenttal, nyckeltal)
-// Har inbyggda tabular figures (fast bredd per siffra) utan fontFeatureSettings
-val JetBrainsMono = FontFamily(
-    Font(R.font.jetbrains_mono_regular, FontWeight.Normal),
-    Font(R.font.jetbrains_mono_semibold, FontWeight.SemiBold)
+/** Tabulära siffror — kolumner linjerar och kurser hoppar inte vid uppdatering. */
+private const val TNUM = "tnum"
+
+private fun style(
+    weight: FontWeight,
+    size: Int,
+    line: Int,
+    tracking: Double = 0.0,
+    tnum: Boolean = false,
+) = TextStyle(
+    fontFamily = Inter,
+    fontWeight = weight,
+    fontSize = size.sp,
+    lineHeight = line.sp,
+    letterSpacing = tracking.sp,
+    fontFeatureSettings = if (tnum) TNUM else null,
 )
 
+// Skala: 11 (etikett) · 13 (sekundär) · 15 (brödtext/rad) · 28 (skärmtitel) · 44 (hero-kurs).
 val Typography = Typography(
-    // ── Display ─────────────────────────────────────────────────────────────
-    // Används ej i appen idag — behålls för M3-kompatibilitet
-    displayLarge = TextStyle(
-        fontFamily    = DmSerifDisplay,
-        fontWeight    = FontWeight.Normal,
-        fontSize      = 57.sp,
-        lineHeight    = 64.sp,
-        letterSpacing = (-0.25).sp,
-    ),
-    displayMedium = TextStyle(
-        fontFamily    = DmSerifDisplay,
-        fontWeight    = FontWeight.Normal,
-        fontSize      = 45.sp,
-        lineHeight    = 52.sp,
-        letterSpacing = 0.sp,
-    ),
-    displaySmall = TextStyle(
-        fontFamily    = DmSerifDisplay,
-        fontWeight    = FontWeight.Normal,
-        fontSize      = 36.sp,
-        lineHeight    = 44.sp,
-        letterSpacing = 0.sp,
-    ),
+    displayLarge   = style(FontWeight.Medium, 44, 48, -1.7, tnum = true),
+    displayMedium  = style(FontWeight.Medium, 44, 48, -1.7, tnum = true),
+    displaySmall   = style(FontWeight.Medium, 28, 32, -0.8, tnum = true),
 
-    // ── Headline ─────────────────────────────────────────────────────────────
-    headlineLarge = TextStyle(
-        fontFamily    = DmSerifDisplay,
-        fontWeight    = FontWeight.Normal,
-        fontSize      = 32.sp,
-        lineHeight    = 40.sp,
-        letterSpacing = 0.sp,
-    ),
-    headlineMedium = TextStyle(
-        fontFamily    = DmSerifDisplay,
-        fontWeight    = FontWeight.Normal,
-        fontSize      = 28.sp,
-        lineHeight    = 36.sp,
-        letterSpacing = 0.sp,
-    ),
-    headlineSmall = TextStyle(
-        fontFamily    = DmSerifDisplay,
-        fontWeight    = FontWeight.Normal,
-        fontSize      = 24.sp,
-        lineHeight    = 32.sp,
-        letterSpacing = 0.sp,
-    ),
+    headlineLarge  = style(FontWeight.SemiBold, 28, 32, -0.8),
+    headlineMedium = style(FontWeight.SemiBold, 28, 32, -0.8),
+    headlineSmall  = style(FontWeight.SemiBold, 20, 26, -0.3),
 
-    // ── Title ─────────────────────────────────────────────────────────────────
-    // titleLarge — skärmrubriker och sektionstitlar
-    titleLarge = TextStyle(
-        fontFamily    = FontFamily.Default,
-        fontWeight    = FontWeight.SemiBold,
-        fontSize      = 20.sp,
-        lineHeight    = 26.sp,
-        letterSpacing = (-0.15).sp,
-    ),
-    // titleMedium — primär etikett i kortet (bolagsnamn, primärdata)
-    titleMedium = TextStyle(
-        fontFamily    = FontFamily.Default,
-        fontWeight    = FontWeight.SemiBold,
-        fontSize      = 15.sp,
-        lineHeight    = 22.sp,
-        letterSpacing = 0.sp,
-    ),
-    // titleSmall — sekundär etikett, grupprubriker i list rows
-    titleSmall = TextStyle(
-        fontFamily    = FontFamily.Default,
-        fontWeight    = FontWeight.Medium,
-        fontSize      = 13.sp,
-        lineHeight    = 18.sp,
-        letterSpacing = 0.sp,
-    ),
+    titleLarge     = style(FontWeight.SemiBold, 20, 26, -0.3),
+    titleMedium    = style(FontWeight.Medium, 15, 22, -0.15),
+    titleSmall     = style(FontWeight.Medium, 13, 18),
 
-    // ── Body ──────────────────────────────────────────────────────────────────
-    // bodyLarge — standard brödtext, dialogtext
-    bodyLarge = TextStyle(
-        fontFamily    = FontFamily.Default,
-        fontWeight    = FontWeight.Normal,
-        fontSize      = 15.sp,
-        lineHeight    = 22.sp,
-        letterSpacing = 0.15.sp,
-    ),
-    // bodyMedium — kompakt brödtext, kortbeskrivningar
-    bodyMedium = TextStyle(
-        fontFamily    = FontFamily.Default,
-        fontWeight    = FontWeight.Normal,
-        fontSize      = 13.sp,
-        lineHeight    = 18.sp,
-        letterSpacing = 0.1.sp,
-    ),
-    // bodySmall — minsta brödtext, tidsstämplar
-    bodySmall = TextStyle(
-        fontFamily    = FontFamily.Default,
-        fontWeight    = FontWeight.Normal,
-        fontSize      = 11.sp,
-        lineHeight    = 16.sp,
-        letterSpacing = 0.2.sp,
-    ),
+    bodyLarge      = style(FontWeight.Normal, 15, 22),
+    bodyMedium     = style(FontWeight.Normal, 13, 18),
+    bodySmall      = style(FontWeight.Normal, 13, 18),
 
-    // ── Label ─────────────────────────────────────────────────────────────────
-    // labelLarge — knappetikett, active filter label
-    labelLarge = TextStyle(
-        fontFamily    = FontFamily.Default,
-        fontWeight    = FontWeight.Medium,
-        fontSize      = 14.sp,
-        lineHeight    = 20.sp,
-        letterSpacing = 0.1.sp,
-    ),
-    // labelMedium — ticker-koder, chips, kategorietiketter; bredare spacing för läsbarhet
-    labelMedium = TextStyle(
-        fontFamily    = FontFamily.Default,
-        fontWeight    = FontWeight.Medium,
-        fontSize      = 11.sp,
-        lineHeight    = 16.sp,
-        letterSpacing = 0.6.sp,
-    ),
-    // labelSmall — badge-text, minsta metadata
-    labelSmall = TextStyle(
-        fontFamily    = FontFamily.Default,
-        fontWeight    = FontWeight.Medium,
-        fontSize      = 10.sp,
-        lineHeight    = 14.sp,
-        letterSpacing = 0.5.sp,
-    ),
+    labelLarge     = style(FontWeight.Medium, 15, 20),
+    labelMedium    = style(FontWeight.Medium, 13, 18),
+    // Små etiketter — gemener/versaler styrs av anroparen, grå via onSurfaceVariant.
+    labelSmall     = style(FontWeight.Medium, 11, 16, 0.9),
 )
 
-// ─── Numerisk datastil ────────────────────────────────────────────────────────
-// Används för priser, procenttal, nyckeltal — precis, tät, läsbar utan att kännas terminal.
-// JetBrains Mono har inbyggda tabular figures (fast bredd per siffra).
-val NordikNumericStyle = TextStyle(
-    fontFamily    = JetBrainsMono,
-    fontWeight    = FontWeight.SemiBold,
-    fontSize      = 15.sp,
-    lineHeight    = 20.sp,
-    letterSpacing = (-0.15).sp,
-)
+// ─── Numeriska stilar ─────────────────────────────────────────────────────────
+val NumericStyle = style(FontWeight.Medium, 15, 20, -0.15, tnum = true)
+val NumericSecondaryStyle = style(FontWeight.Normal, 13, 18, tnum = true)
+val NumericHeroStyle = style(FontWeight.Medium, 44, 48, -1.7, tnum = true)
 
-// Kompakt variant för sekundära siffror (t.ex. daglig förändring, volym, spread)
-val NordikNumericSecondaryStyle = TextStyle(
-    fontFamily    = JetBrainsMono,
-    fontWeight    = FontWeight.Normal,
-    fontSize      = 12.sp,
-    lineHeight    = 16.sp,
-    letterSpacing = (-0.1).sp,
-)
+// ─── Bakåtkompatibla namn (tas bort när korten ersatts, fas 3–4) ──────────────
+val DmSerifDisplay = Inter
+val JetBrainsMono = Inter
+val NordikNumericStyle = NumericStyle
+val NordikNumericSecondaryStyle = NumericSecondaryStyle
