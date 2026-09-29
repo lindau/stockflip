@@ -80,11 +80,11 @@ internal fun PairDetailRoute(
 
     Column(modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         Row(Modifier.fillMaxWidth().padding(horizontal = Space.xs), verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "Tillbaka") }
+            IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = stringResource(R.string.pairdetail_tillbaka)) }
         }
         when (val state = pairState) {
             UiState.Loading -> Column { repeat(4) { SkeletonRow() } }
-            is UiState.Error -> EmptyState(state.message, actionLabel = "Försök igen", onAction = viewModel::refresh)
+            is UiState.Error -> EmptyState(state.message, actionLabel = stringResource(R.string.pairdetail_forsok_igen), onAction = viewModel::refresh)
             is UiState.Success -> {
                 val data = state.data
                 PullToRefreshBox(isRefreshing = refreshing, onRefresh = { refreshing = true; viewModel.refresh() }, modifier = Modifier.fillMaxSize()) {
@@ -99,8 +99,8 @@ internal fun PairDetailRoute(
                                         val result = try { viewModel.reactivateAndReturnResult() } catch (e: Exception) { null }
                                         snackbarHostState.showSnackbar(result?.toUserMessage() ?: reactivateFailed)
                                     }
-                                }) { Text("Återaktivera") }
-                                OutlinedButton(onClick = { confirmDelete = true }) { Text("Ta bort") }
+                                }) { Text(stringResource(R.string.pairdetail_ateraktivera)) }
+                                OutlinedButton(onClick = { confirmDelete = true }) { Text(stringResource(R.string.pairdetail_ta_bort)) }
                             }
                         }
                         ClarityPairDetailPanel(
@@ -111,7 +111,7 @@ internal fun PairDetailRoute(
                             onPeriodSelected = viewModel::selectPeriod,
                             onEdit = { editing = true },
                         )
-                        TextButton(onClick = { confirmDelete = true }) { Text("Ta bort aktiepar", color = MaterialTheme.colorScheme.error) }
+                        TextButton(onClick = { confirmDelete = true }) { Text(stringResource(R.string.pairdetail_ta_bort_aktiepar), color = MaterialTheme.colorScheme.error) }
                     }
                 }
                 if (editing) {
@@ -132,7 +132,7 @@ internal fun PairDetailRoute(
     if (confirmDelete) {
         AlertDialog(
             onDismissRequest = { confirmDelete = false },
-            title = { Text("Ta bort aktiepar?") },
+            title = { Text(stringResource(R.string.pairdetail_ta_bort_aktiepar_2)) },
             confirmButton = {
                 TextButton(onClick = {
                     confirmDelete = false
@@ -140,9 +140,9 @@ internal fun PairDetailRoute(
                         if (viewModel.deletePair()) { launch { snackbarHostState.showSnackbar(deletedText) }; onBack() }
                         else snackbarHostState.showSnackbar(failedText)
                     }
-                }) { Text("Ta bort") }
+                }) { Text(stringResource(R.string.pairdetail_ta_bort)) }
             },
-            dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text("Avbryt") } },
+            dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text(stringResource(R.string.pairdetail_avbryt)) } },
         )
     }
 }

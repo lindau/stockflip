@@ -1,5 +1,7 @@
 package com.stockflip.ui.market
 
+import com.stockflip.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -76,7 +78,7 @@ internal fun MarketScreen(
 ) {
     Column(modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         Text(
-            "Marknad",
+            stringResource(R.string.market_marknad),
             style = MaterialTheme.typography.headlineMedium,
             modifier = Modifier.padding(start = Space.screenH, end = Space.screenH, top = Space.md),
         )
@@ -84,12 +86,12 @@ internal fun MarketScreen(
             value = query,
             onValueChange = onQueryChange,
             singleLine = true,
-            placeholder = { Text("Sök aktie, index eller krypto") },
+            placeholder = { Text(stringResource(R.string.market_sok_aktie_index_eller_krypto)) },
             leadingIcon = { Icon(Icons.Outlined.Search, contentDescription = null) },
             trailingIcon = {
                 if (query.isNotEmpty()) {
                     IconButton(onClick = { onQueryChange("") }) {
-                        Icon(Icons.Outlined.Close, contentDescription = "Rensa sökning")
+                        Icon(Icons.Outlined.Close, contentDescription = stringResource(R.string.market_rensa_sokning))
                     }
                 }
             },
@@ -103,10 +105,10 @@ internal fun MarketScreen(
             modifier = Modifier.fillMaxWidth().padding(horizontal = Space.screenH, vertical = Space.sm),
         )
         when (content) {
-            MarketContent.Hint -> EmptyState("Sök på namn eller ticker, t.ex. Volvo, AAPL eller BTC.")
+            MarketContent.Hint -> EmptyState(stringResource(R.string.market_sok_pa_namn_eller_ticker_t_ex_volvo_aapl))
             MarketContent.Loading -> Column { repeat(5) { SkeletonRow() } }
             MarketContent.NoResults -> EmptyState("Inga träffar för \"${query.trim()}\".")
-            is MarketContent.Failed -> EmptyState(content.message, actionLabel = "Försök igen", onAction = onRetry)
+            is MarketContent.Failed -> EmptyState(content.message, actionLabel = stringResource(R.string.market_forsok_igen), onAction = onRetry)
             is MarketContent.Results -> ResultList(content.items, header = null, onResultClick, onAction = null)
             is MarketContent.Recent -> ResultList(content.items, header = "Senast sökta", onResultClick, onClearRecent)
         }
@@ -126,7 +128,7 @@ private fun ResultList(
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.SpaceBetween) {
                     SectionLabel(header)
                     if (onAction != null) {
-                        TextButton(onClick = onAction) { Text("Rensa") }
+                        TextButton(onClick = onAction) { Text(stringResource(R.string.market_rensa)) }
                     }
                 }
             }

@@ -1,5 +1,7 @@
 package com.stockflip.ui.createwatch
 
+import com.stockflip.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -122,14 +124,14 @@ internal fun PairWatchSheet(
             OutlinedTextField(
                 value = spread,
                 onValueChange = { spread = it; error = null },
-                label = { Text("Prisskillnad (tomt = när kurserna möts)") },
+                label = { Text(stringResource(R.string.createwatch_prisskillnad_tomt_nar_kurserna_mots)) },
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                 modifier = Modifier.fillMaxWidth(),
             )
             Row(Modifier.fillMaxWidth().clickable { notifyEqual = !notifyEqual }, verticalAlignment = Alignment.CenterVertically) {
                 Checkbox(checked = notifyEqual, onCheckedChange = { notifyEqual = it })
-                Text("Notis även när kurserna är lika", style = MaterialTheme.typography.bodyMedium)
+                Text(stringResource(R.string.createwatch_notis_aven_nar_kurserna_ar_lika), style = MaterialTheme.typography.bodyMedium)
             }
             val message = error ?: (preview as? PairResult.Ok)?.sentence
             if (message != null) Text(message, style = MaterialTheme.typography.bodyMedium,
@@ -181,8 +183,8 @@ internal fun CombinedWatchSheet(
             conditions.forEachIndexed { i, c ->
                 Column(verticalArrangement = Arrangement.spacedBy(Space.sm)) {
                     if (i > 0) Row(horizontalArrangement = Arrangement.spacedBy(Space.sm)) {
-                        FilterChip(!c.or, { update(i, c.copy(or = false)) }, { Text("OCH") })
-                        FilterChip(c.or, { update(i, c.copy(or = true)) }, { Text("ELLER") })
+                        FilterChip(!c.or, { update(i, c.copy(or = false)) }, { Text(stringResource(R.string.createwatch_och)) })
+                        FilterChip(c.or, { update(i, c.copy(or = true)) }, { Text(stringResource(R.string.createwatch_eller)) })
                     }
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(Space.sm)) {
                         ConditionKind.entries.forEach { k ->
@@ -191,33 +193,33 @@ internal fun CombinedWatchSheet(
                     }
                     Row(horizontalArrangement = Arrangement.spacedBy(Space.sm), verticalAlignment = Alignment.CenterVertically) {
                         if (c.kind.hasDirection) {
-                            FilterChip(c.above, { update(i, c.copy(above = true)) }, { Text("Över") })
-                            FilterChip(!c.above, { update(i, c.copy(above = false)) }, { Text("Under") })
+                            FilterChip(c.above, { update(i, c.copy(above = true)) }, { Text(stringResource(R.string.createwatch_over)) })
+                            FilterChip(!c.above, { update(i, c.copy(above = false)) }, { Text(stringResource(R.string.createwatch_under)) })
                         }
                         if (c.kind == ConditionKind.DRAWDOWN) {
                             FilterChip(c.reference == AlertRule.HighReference.FIFTY_TWO_WEEK_HIGH,
-                                { update(i, c.copy(reference = AlertRule.HighReference.FIFTY_TWO_WEEK_HIGH)) }, { Text("52v") })
+                                { update(i, c.copy(reference = AlertRule.HighReference.FIFTY_TWO_WEEK_HIGH)) }, { Text(stringResource(R.string.createwatch_52v)) })
                             FilterChip(c.reference == AlertRule.HighReference.ALL_TIME_HIGH,
-                                { update(i, c.copy(reference = AlertRule.HighReference.ALL_TIME_HIGH)) }, { Text("All-time") })
+                                { update(i, c.copy(reference = AlertRule.HighReference.ALL_TIME_HIGH)) }, { Text(stringResource(R.string.createwatch_all_time)) })
                         }
                     }
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         OutlinedTextField(
                             value = c.value,
                             onValueChange = { update(i, c.copy(value = it)) },
-                            label = { Text("Värde") },
+                            label = { Text(stringResource(R.string.createwatch_varde)) },
                             singleLine = true,
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                             modifier = Modifier.weight(1f),
                         )
                         if (conditions.size > 1) IconButton(onClick = { conditions = conditions.filterIndexed { j, _ -> j != i }; error = null }) {
-                            Icon(Icons.Outlined.Close, contentDescription = "Ta bort villkor")
+                            Icon(Icons.Outlined.Close, contentDescription = stringResource(R.string.createwatch_ta_bort_villkor))
                         }
                     }
                 }
             }
             OutlinedButton(onClick = { conditions = conditions + ConditionDraft(); error = null }, modifier = Modifier.fillMaxWidth()) {
-                Text("Lägg till villkor")
+                Text(stringResource(R.string.createwatch_lagg_till_villkor))
             }
 
             val message = error ?: (preview as? CombinedResult.Ok)?.expression?.getDescription()

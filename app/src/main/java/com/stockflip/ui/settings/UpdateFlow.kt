@@ -1,5 +1,7 @@
 package com.stockflip.ui.settings
 
+import com.stockflip.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Row
@@ -113,18 +115,18 @@ internal fun UpdateDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Uppdatering tillgänglig") },
+        title = { Text(stringResource(R.string.settings_uppdatering_tillganglig)) },
         text = {
             Text(
                 "StockFlip v${release.versionName} finns tillgänglig.\n\n${release.releaseNotes}",
                 modifier = Modifier.verticalScroll(rememberScrollState()),
             )
         },
-        confirmButton = { TextButton(onClick = onInstall) { Text("Hämta och installera") } },
+        confirmButton = { TextButton(onClick = onInstall) { Text(stringResource(R.string.settings_hamta_och_installera)) } },
         dismissButton = {
             Row {
-                TextButton(onClick = onSkip) { Text("Hoppa över") }
-                TextButton(onClick = onDismiss) { Text("Avbryt") }
+                TextButton(onClick = onSkip) { Text(stringResource(R.string.settings_hoppa_over)) }
+                TextButton(onClick = onDismiss) { Text(stringResource(R.string.settings_avbryt)) }
             }
         },
     )

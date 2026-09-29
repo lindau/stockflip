@@ -1,5 +1,7 @@
 package com.stockflip.ui.createwatch
 
+import com.stockflip.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -72,7 +74,7 @@ internal fun CreateWatchSheet(
                 WatchKind.entries.filter { !it.advanced }.forEach { k ->
                     FilterChip(selected = draft.kind == k, enabled = !editing, onClick = { draft = WatchDraft(kind = k); error = null }, label = { Text(k.label) })
                 }
-                if (!editing) FilterChip(selected = showAdvanced, onClick = { showAdvanced = !showAdvanced }, label = { Text("Avancerat") })
+                if (!editing) FilterChip(selected = showAdvanced, onClick = { showAdvanced = !showAdvanced }, label = { Text(stringResource(R.string.createwatch_avancerat)) })
             }
             if (showAdvanced) {
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(Space.sm)) {
@@ -100,7 +102,7 @@ internal fun CreateWatchSheet(
                 OutlinedTextField(
                     value = draft.value2,
                     onValueChange = { draft = draft.copy(value2 = it); error = null },
-                    label = { Text("Långt SMA (dagar)") },
+                    label = { Text(stringResource(R.string.createwatch_langt_sma_dagar)) },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     isError = error != null,
@@ -168,10 +170,10 @@ private fun KindOptions(draft: WatchDraft, data: StockDetailData, onChange: (Wat
                 "Båda" to WatchType.DailyMoveDirection.BOTH,
             ).forEach { (l, d) -> FilterChip(selected = draft.dailyDirection == d, onClick = { onChange(draft.copy(dailyDirection = d)) }, label = { Text(l) }) }
             WatchKind.DRAWDOWN -> {
-                FilterChip(draft.dropType == WatchType.DropType.PERCENTAGE, { onChange(draft.copy(dropType = WatchType.DropType.PERCENTAGE)) }, { Text("Procent") })
-                FilterChip(draft.dropType == WatchType.DropType.ABSOLUTE, { onChange(draft.copy(dropType = WatchType.DropType.ABSOLUTE)) }, { Text("Belopp") })
-                FilterChip(draft.reference == WatchType.HighReference.FIFTY_TWO_WEEK_HIGH, { onChange(draft.copy(reference = WatchType.HighReference.FIFTY_TWO_WEEK_HIGH)) }, { Text("52v-högsta") })
-                FilterChip(draft.reference == WatchType.HighReference.ALL_TIME_HIGH, { onChange(draft.copy(reference = WatchType.HighReference.ALL_TIME_HIGH)) }, { Text("All-time-high") })
+                FilterChip(draft.dropType == WatchType.DropType.PERCENTAGE, { onChange(draft.copy(dropType = WatchType.DropType.PERCENTAGE)) }, { Text(stringResource(R.string.createwatch_procent)) })
+                FilterChip(draft.dropType == WatchType.DropType.ABSOLUTE, { onChange(draft.copy(dropType = WatchType.DropType.ABSOLUTE)) }, { Text(stringResource(R.string.createwatch_belopp)) })
+                FilterChip(draft.reference == WatchType.HighReference.FIFTY_TWO_WEEK_HIGH, { onChange(draft.copy(reference = WatchType.HighReference.FIFTY_TWO_WEEK_HIGH)) }, { Text(stringResource(R.string.createwatch_52v_hogsta)) })
+                FilterChip(draft.reference == WatchType.HighReference.ALL_TIME_HIGH, { onChange(draft.copy(reference = WatchType.HighReference.ALL_TIME_HIGH)) }, { Text(stringResource(R.string.createwatch_all_time_high)) })
             }
             WatchKind.METRIC -> listOf(
                 "P/E" to WatchType.MetricType.PE_RATIO,

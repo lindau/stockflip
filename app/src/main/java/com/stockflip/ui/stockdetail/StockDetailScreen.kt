@@ -1,5 +1,7 @@
 package com.stockflip.ui.stockdetail
 
+import com.stockflip.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -106,8 +108,8 @@ internal fun StockDetailScreen(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
-                IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "Tillbaka") }
-                IconButton(onClick = { showIndicators = true }) { Icon(Icons.Outlined.Tune, contentDescription = "Indikatorer") }
+                IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = stringResource(R.string.stockdetail_tillbaka)) }
+                IconButton(onClick = { showIndicators = true }) { Icon(Icons.Outlined.Tune, contentDescription = stringResource(R.string.stockdetail_indikatorer)) }
             }
             PullToRefreshBox(isRefreshing = isRefreshing, onRefresh = onRefresh, modifier = Modifier.fillMaxSize()) {
                 LazyColumn(Modifier.fillMaxSize()) {
@@ -165,7 +167,7 @@ internal fun StockDetailScreen(
                     }
                     item(key = "figures") {
                         Column(Modifier.padding(top = Space.lg)) {
-                            SectionLabel("Nyckeltal")
+                            SectionLabel(stringResource(R.string.stockdetail_nyckeltal))
                             val low = data.week52Low
                             val high = data.week52High
                             val price = data.lastPrice
@@ -179,12 +181,12 @@ internal fun StockDetailScreen(
                         }
                     }
                     item(key = "alerts-h") {
-                        Box(Modifier.padding(top = Space.lg)) { SectionLabel("Dina bevakningar", count = alerts.size.takeIf { it > 0 }) }
+                        Box(Modifier.padding(top = Space.lg)) { SectionLabel(stringResource(R.string.stockdetail_dina_bevakningar), count = alerts.size.takeIf { it > 0 }) }
                     }
                     if (alerts.isEmpty()) {
                         item(key = "alerts-empty") {
                             Text(
-                                "Inga bevakningar på den här aktien än.",
+                                stringResource(R.string.stockdetail_inga_bevakningar_pa_den_har_aktien_an),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.padding(horizontal = Space.screenH, vertical = Space.sm),
@@ -210,7 +212,7 @@ internal fun StockDetailScreen(
                     }
                     item(key = "note") {
                         Column(Modifier.padding(top = Space.lg)) {
-                            SectionLabel("Anteckning")
+                            SectionLabel(stringResource(R.string.stockdetail_anteckning))
                             Text(
                                 note?.takeIf { it.isNotBlank() } ?: "Lägg till en anteckning",
                                 style = MaterialTheme.typography.bodyLarge,
@@ -227,7 +229,7 @@ internal fun StockDetailScreen(
         ExtendedFloatingActionButton(
             onClick = onAddWatch,
             icon = { Icon(Icons.Outlined.Add, contentDescription = null) },
-            text = { Text("Ny bevakning") },
+            text = { Text(stringResource(R.string.stockdetail_ny_bevakning)) },
             modifier = Modifier.align(Alignment.BottomEnd).padding(Space.md),
         )
     }

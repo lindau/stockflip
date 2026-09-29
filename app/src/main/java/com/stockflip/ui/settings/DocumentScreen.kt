@@ -1,5 +1,7 @@
 package com.stockflip.ui.settings
 
+import com.stockflip.R
+import androidx.compose.ui.res.stringResource
 import android.os.Build
 import android.webkit.WebResourceRequest
 import android.webkit.WebSettings
@@ -48,7 +50,7 @@ internal fun DocumentScreen(asset: String, onBack: () -> Unit, modifier: Modifie
             verticalAlignment = Alignment.CenterVertically,
         ) {
             IconButton(onClick = onBack) {
-                Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "Tillbaka")
+                Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = stringResource(R.string.settings_tillbaka))
             }
             Text(title ?: "Dokument", style = MaterialTheme.typography.titleLarge)
         }

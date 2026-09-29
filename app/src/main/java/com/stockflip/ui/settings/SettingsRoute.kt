@@ -115,7 +115,7 @@ internal fun SettingsRoute(
                             )
                         }
                     }
-                }) { Text("Importera") }
+                }) { Text(stringResource(R.string.settings_importera)) }
             },
             dismissButton = {
                 TextButton(onClick = { pendingImport = null }) { Text(stringResource(R.string.dialog_button_cancel)) }

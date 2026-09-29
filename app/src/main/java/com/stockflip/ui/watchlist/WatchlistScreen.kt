@@ -1,5 +1,7 @@
 package com.stockflip.ui.watchlist
 
+import com.stockflip.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -74,16 +76,16 @@ internal fun WatchlistScreen(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
-            Text("Bevakningar", style = MaterialTheme.typography.headlineMedium)
+            Text(stringResource(R.string.watchlist_bevakningar), style = MaterialTheme.typography.headlineMedium)
             Row(verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = onRefresh) { Icon(Icons.Outlined.Refresh, contentDescription = "Uppdatera") }
+                IconButton(onClick = onRefresh) { Icon(Icons.Outlined.Refresh, contentDescription = stringResource(R.string.watchlist_uppdatera)) }
                 var menuOpen by remember { mutableStateOf(false) }
                 Box {
-                    IconButton(onClick = { menuOpen = true }) { Icon(Icons.Outlined.Add, contentDescription = "Ny bevakning") }
+                    IconButton(onClick = { menuOpen = true }) { Icon(Icons.Outlined.Add, contentDescription = stringResource(R.string.watchlist_ny_bevakning)) }
                     DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
-                        DropdownMenuItem(text = { Text("Aktie (sök i Marknad)") }, onClick = { menuOpen = false; onAddWatch() })
-                        DropdownMenuItem(text = { Text("Aktiepar") }, onClick = { menuOpen = false; onAddPair() })
-                        DropdownMenuItem(text = { Text("Kombinerad") }, onClick = { menuOpen = false; onAddCombined() })
+                        DropdownMenuItem(text = { Text(stringResource(R.string.watchlist_aktie_sok_i_marknad)) }, onClick = { menuOpen = false; onAddWatch() })
+                        DropdownMenuItem(text = { Text(stringResource(R.string.watchlist_aktiepar)) }, onClick = { menuOpen = false; onAddPair() })
+                        DropdownMenuItem(text = { Text(stringResource(R.string.watchlist_kombinerad)) }, onClick = { menuOpen = false; onAddCombined() })
                     }
                 }
             }
@@ -94,9 +96,9 @@ internal fun WatchlistScreen(
             when {
                 isLoading && sections.isEmpty -> Column { repeat(6) { SkeletonRow() } }
                 sections.isEmpty && loadError != null ->
-                    EmptyState(loadError, actionLabel = "Försök igen", onAction = onRefresh)
+                    EmptyState(loadError, actionLabel = stringResource(R.string.watchlist_forsok_igen), onAction = onRefresh)
                 sections.isEmpty && query.isNotBlank() -> EmptyState("Inga träffar för \"${query.trim()}\".")
-                sections.isEmpty -> EmptyState("Inga bevakningar än.", actionLabel = "Ny bevakning", onAction = onAddWatch)
+                sections.isEmpty -> EmptyState(stringResource(R.string.watchlist_inga_bevakningar_an), actionLabel = stringResource(R.string.watchlist_ny_bevakning), onAction = onAddWatch)
                 else -> WatchList(sections, onRowClick, onDelete)
             }
         }
@@ -109,7 +111,7 @@ private fun SearchField(query: String, onQueryChange: (String) -> Unit) {
         value = query,
         onValueChange = onQueryChange,
         singleLine = true,
-        placeholder = { Text("Sök bland bevakningar") },
+        placeholder = { Text(stringResource(R.string.watchlist_sok_bland_bevakningar)) },
         leadingIcon = { Icon(Icons.Outlined.Search, contentDescription = null) },
         shape = MaterialTheme.shapes.small,
         colors = TextFieldDefaults.colors(
@@ -130,13 +132,13 @@ private fun WatchList(
 ) {
     LazyColumn(Modifier.fillMaxSize()) {
         if (sections.triggered.isNotEmpty()) {
-            item(key = "h-triggered") { SectionLabel("Utlösta", count = sections.triggered.size) }
+            item(key = "h-triggered") { SectionLabel(stringResource(R.string.watchlist_utlosta), count = sections.triggered.size) }
             items(sections.triggered, key = { it.id }) { row ->
                 SwipeableRow(row, showDivider = row != sections.triggered.first(), onRowClick, onDelete)
             }
         }
         if (sections.waiting.isNotEmpty()) {
-            item(key = "h-waiting") { SectionLabel("Väntar", count = sections.waiting.size) }
+            item(key = "h-waiting") { SectionLabel(stringResource(R.string.watchlist_vantar), count = sections.waiting.size) }
             items(sections.waiting, key = { it.id }) { row ->
                 SwipeableRow(row, showDivider = row != sections.waiting.first(), onRowClick, onDelete)
             }
@@ -171,7 +173,7 @@ private fun SwipeableRow(
                 Modifier.fillMaxSize().background(MaterialTheme.colorScheme.errorContainer).padding(horizontal = Space.screenH),
                 contentAlignment = Alignment.CenterEnd,
             ) {
-                Icon(Icons.Outlined.Delete, contentDescription = "Ta bort", tint = MaterialTheme.colorScheme.error)
+                Icon(Icons.Outlined.Delete, contentDescription = stringResource(R.string.watchlist_ta_bort), tint = MaterialTheme.colorScheme.error)
             }
         },
     ) {

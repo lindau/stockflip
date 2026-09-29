@@ -1,5 +1,7 @@
 package com.stockflip.ui.settings
 
+import com.stockflip.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -47,13 +49,13 @@ internal fun SettingsScreen(
             .verticalScroll(rememberScrollState()),
     ) {
         Text(
-            "Inställningar",
+            stringResource(R.string.settings_installningar),
             style = MaterialTheme.typography.headlineMedium,
             modifier = Modifier.padding(start = Space.screenH, end = Space.screenH, top = Space.md),
         )
         if (busy) LinearProgressIndicator(Modifier.fillMaxWidth().padding(top = Space.sm))
 
-        SectionLabel("Tema")
+        SectionLabel(stringResource(R.string.settings_tema))
         SegmentedControl(
             options = ThemeMode.entries.map { it.label },
             selectedIndex = themeMode.ordinal,
@@ -61,11 +63,11 @@ internal fun SettingsScreen(
             modifier = Modifier.padding(horizontal = Space.screenH),
         )
 
-        SectionLabel("Data")
+        SectionLabel(stringResource(R.string.settings_data))
         SettingsRow("Exportera bevakningar", "Spara en säkerhetskopia som fil", onExport, showDivider = false)
         SettingsRow("Importera bevakningar", "Läs in en tidigare säkerhetskopia", onImport)
 
-        SectionLabel("Om StockFlip")
+        SectionLabel(stringResource(R.string.settings_om_stockflip))
         SettingsRow("Kolla efter uppdatering", null, onCheckUpdate, showDivider = false)
         SettingsRow("Hjälp", "Användarhandbok", onOpenHelp)
         SettingsRow("Version $versionName", "Visa ändringslogg", onOpenChangelog)
