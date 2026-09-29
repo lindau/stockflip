@@ -112,7 +112,7 @@ internal fun PairWatchSheet(
     val scope = rememberCoroutineScope()
     val preview = buildPair(a, b, spread, notifyEqual, existing)
 
-    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
+    ModalBottomSheet(onDismissRequest = onDismiss, contentColor = MaterialTheme.colorScheme.onSurface, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
         Column(
             Modifier.fillMaxWidth().navigationBarsPadding().verticalScroll(rememberScrollState())
                 .padding(horizontal = Space.screenH).padding(bottom = Space.lg),
@@ -171,7 +171,7 @@ internal fun CombinedWatchSheet(
 
     fun update(i: Int, c: ConditionDraft) { conditions = conditions.toMutableList().also { it[i] = c }; error = null }
 
-    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
+    ModalBottomSheet(onDismissRequest = onDismiss, contentColor = MaterialTheme.colorScheme.onSurface, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
         Column(
             Modifier.fillMaxWidth().navigationBarsPadding().verticalScroll(rememberScrollState())
                 .padding(horizontal = Space.screenH).padding(bottom = Space.lg),

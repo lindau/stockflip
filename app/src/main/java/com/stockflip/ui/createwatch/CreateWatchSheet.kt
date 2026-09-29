@@ -62,7 +62,7 @@ internal fun CreateWatchSheet(
         else -> null
     }
 
-    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
+    ModalBottomSheet(onDismissRequest = onDismiss, contentColor = MaterialTheme.colorScheme.onSurface, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
         Column(
             Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = Space.screenH).padding(bottom = Space.lg),
             verticalArrangement = Arrangement.spacedBy(Space.md),
