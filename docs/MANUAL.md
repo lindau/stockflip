@@ -584,7 +584,7 @@ StockFlip distribueras inte via Play Store, så appen håller själv koll på om
 - Ja. Sök på t.ex. "OMX", "S&P" eller "Nasdaq". Index har `^` framför symbolen (`^OMXS30`, `^GSPC`, `^IXIC`). Målpris, dagsrörelse, drawdown, aktiepar, SMA-bevakning, SMA-korsning och kombinerade larm fungerar som för aktier. Nyckeltal och insideraffärer finns inte för index, så de knapparna visas inte.
 
 **Var kommer kursmålen ifrån?**
-- Kortet "Analytikernas kursmål" på aktiens detaljsida hämtar snitt, lägsta och högsta kursmål, antal analytiker och rekommendation från Yahoo Finance. Kursmålet visas även som en ruta i statistiken. Uppsidan är skillnaden mellan snittkursmålet och aktuell kurs och visas bara när kursmålet anges i samma valuta som aktien handlas i.
+- Kortet "Analytikernas kursmål" på aktiens detaljsida hämtar snitt, lägsta och högsta kursmål, antal analytiker och rekommendation från Yahoo Finance. Uppsidan är skillnaden mellan snittkursmålet och aktuell kurs och visas bara när kursmålet anges i samma valuta som aktien handlas i.
 - För mindre bolag baserar sig siffrorna ofta på bara en eller två analytiker (se antalet på kortet), och för många små svenska bolag saknas kursmål helt. Yahoo visar inte när kursmålen senast uppdaterades, så de kan vara gamla. Kursmål är analytikernas bedömningar, inte en garanti för hur kursen utvecklas.
 
 **Varför saknas P/B, EV/EBITDA eller skuldsättningsgrad för en aktie?**

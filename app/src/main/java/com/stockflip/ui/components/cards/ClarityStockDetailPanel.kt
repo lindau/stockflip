@@ -123,9 +123,9 @@ fun ClarityStockDetailPanel(
             rsiPoints = rsiPoints,
             onIndicatorConfigChange = onIndicatorConfigChange,
         )
+        ClarityWeekRangeCard(data = data)
         ClarityStockStatsGrid(data = data)
         ClarityAnalystTargetCard(data = data)
-        ClarityWeekRangeCard(data = data)
     }
 }
 
@@ -1060,8 +1060,7 @@ private fun ClarityStockStatsGrid(data: StockDetailData) {
         data.returnOnEquity != null ||
         data.priceToBook != null ||
         data.evToEbitda != null ||
-        data.debtToEquity != null ||
-        data.targetMeanPrice != null
+        data.debtToEquity != null
     val stats = if (hasMetrics) {
         listOf(
             "P/E" to (data.peRatio?.let { CurrencyHelper.formatDecimal(it) } ?: "-"),
@@ -1073,7 +1072,6 @@ private fun ClarityStockStatsGrid(data: StockDetailData) {
             "P/B" to (data.priceToBook?.let { CurrencyHelper.formatDecimal(it) } ?: "-"),
             "EV/EBITDA" to (data.evToEbitda?.let { CurrencyHelper.formatDecimal(it) } ?: "-"),
             "Skuldsättn." to (data.debtToEquity?.let { "${CurrencyHelper.formatDecimal(it)}%" } ?: "-"),
-            "Kursmål" to (data.targetMeanPrice?.let { CurrencyHelper.formatPrice(it, data.financialCurrency ?: data.currency) } ?: "-"),
         )
     } else {
         listOf(
