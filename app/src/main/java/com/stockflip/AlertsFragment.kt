@@ -442,11 +442,7 @@ class AlertsFragment : Fragment() {
         if (items.isEmpty()) return
         viewLifecycleOwner.lifecycleScope.launch {
             try {
-                var guardedCount = 0
-                items.forEach { watchItem ->
-                    val result = viewModel.reactivateWatchItem(watchItem)
-                    if (result.sameDayTriggerGuarded) guardedCount++
-                }
+                val guardedCount = viewModel.reactivateWatchItems(items).count { it.sameDayTriggerGuarded }
                 val message = if (guardedCount > 0) {
                     "${items.size} bevakningar återaktiverade. $guardedCount kan trigga först nästa handelsdag."
                 } else {

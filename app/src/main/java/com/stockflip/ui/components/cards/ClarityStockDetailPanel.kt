@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -225,10 +226,14 @@ private fun ClarityStockHeroCard(
                         .fillMaxWidth()
                         .height(112.dp),
                 )
-                if (isLandscape && onFullscreenToggle != null) {
+                if (onFullscreenToggle != null) {
                     IconButton(
                         onClick = onFullscreenToggle,
-                        modifier = Modifier.align(Alignment.TopEnd),
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .padding(4.dp)
+                            .size(36.dp)
+                            .background(colorScheme.surface.copy(alpha = 0.6f), RoundedCornerShape(8.dp)),
                     ) {
                         Icon(
                             imageVector = Icons.Filled.Fullscreen,

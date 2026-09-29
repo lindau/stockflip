@@ -91,6 +91,7 @@ class StockDetailFragment : Fragment() {
     private val avanzaLinkService = AvanzaStockLinkService()
     // Fullskärmsläge för grafen — endast tillgängligt/synligt i landskapsläge.
     private var isChartFullscreen = false
+    private var pendingFullscreen = false
     private var fullscreenBackCallback: androidx.activity.OnBackPressedCallback? = null
     private var logoRefreshToken = 0
 
@@ -675,8 +676,16 @@ class StockDetailFragment : Fragment() {
     }
 
     private fun setChartFullscreen(enabled: Boolean) {
-        // Fullskärm är en landskapsfunktion — gör inget om telefonen redan vridits tillbaka.
-        if (enabled && !isLandscapeOrientation()) return
+        if (enabled && !isLandscapeOrientation()) {
+            // Tvinga landskap; fullskärm aktiveras i onConfigurationChanged när vridningen skett.
+            pendingFullscreen = true
+            activity?.requestedOrientation = android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+            return
+        }
+        if (!enabled) {
+            pendingFullscreen = false
+            activity?.requestedOrientation = android.content.pm.ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+        }
         if (isChartFullscreen == enabled) return
 
         isChartFullscreen = enabled
@@ -708,6 +717,11 @@ class StockDetailFragment : Fragment() {
     override fun onConfigurationChanged(newConfig: Configuration) {
         super.onConfigurationChanged(newConfig)
         if (_binding == null) return
+        if (pendingFullscreen && newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE) {
+            pendingFullscreen = false
+            setChartFullscreen(true)
+            return
+        }
         // Fullskärmsgrafen är enbart menad för landskapsläge — lämnar man det, stäng den.
         if (isChartFullscreen && newConfig.orientation != Configuration.ORIENTATION_LANDSCAPE) {
             setChartFullscreen(false)
@@ -1557,6 +1571,10 @@ class StockDetailFragment : Fragment() {
     }
 
     override fun onDestroyView() {
+        if (isChartFullscreen || pendingFullscreen) {
+            pendingFullscreen = false
+            activity?.requestedOrientation = android.content.pm.ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+        }
         if (isChartFullscreen) {
             setSystemBarsHidden(false)
             (activity as? MainActivity)?.setDetailChromeHidden(false)

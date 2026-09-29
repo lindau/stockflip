@@ -88,6 +88,8 @@ class MainViewModel(
                 _watchItemUiState.value = UiState.Loading
             }
             val items = watchItemDao.getAllWatchItems()
+            // Behåll senast kända live-data så att t.ex. återaktiveringsspärren kan utvärdera villkoret.
+            val previousLive = currentLiveById()
             Log.d(TAG, "Loaded ${items.size} watch items")
 
             // KeyMetrics currentMetricValue is @Ignore and not saved to database,
@@ -95,7 +97,7 @@ class MainViewModel(
             val hasKeyMetrics = items.any { it.watchType is WatchType.KeyMetrics }
 
             // Visa alltid DB-datan direkt så skärmen aldrig fastnar i Loading.
-            _watchItemUiState.value = UiState.Success(items.map { WatchItemUiState(it) })
+            _watchItemUiState.value = UiState.Success(items.map { WatchItemUiState(it, previousLive[it.id] ?: LiveWatchData()) })
             Log.d(TAG, "Set UI state to Success with ${items.size} watch items (stale=${forceShowStaleData || hasKeyMetrics})")
 
             if (hasKeyMetrics && !forceShowStaleData) {
@@ -149,14 +151,15 @@ class MainViewModel(
                             if (pendingCount > 0 && now - lastPartialEmitAt >= PARTIAL_EMIT_INTERVAL_MS) {
                                 lastPartialEmitAt = now
                                 _watchItemUiState.value = UiState.Success(
-                                    mergeWithPrevious(items, results, previousLive)
+                                    withFreshItems(mergeWithPrevious(items, results, previousLive))
                                 )
                             }
                         }
                     }
                 }
             }
-            val updatedItems = results.map { it!! }
+            // Bevakningar kan ha ändrats (t.ex. återaktiverats) medan hämtningen pågick.
+            val updatedItems = withFreshItems(results.map { it!! })
 
             Log.d(TAG, "Refresh complete, built ${updatedItems.size} WatchItemUiState objects")
 
@@ -240,17 +243,9 @@ class MainViewModel(
     suspend fun reactivateWatchItem(watchItem: WatchItem): WatchReactivationResult {
         try {
             Log.d(TAG, "Reactivating watch item")
-            val keepLastTriggeredDate = shouldGuardAgainstImmediateRetrigger(watchItem)
-            val updatedWatchItem: WatchItem = watchItem.reactivate(
-                currentPrice = currentPriceForReactivation(watchItem),
-                keepLastTriggeredDate = keepLastTriggeredDate
-            )
-            watchItemDao.update(updatedWatchItem)
+            val result = reactivateInDb(watchItem)
             syncWatchItemsAfterMutation()
-            return WatchReactivationResult(
-                watchItem = updatedWatchItem,
-                sameDayTriggerGuarded = keepLastTriggeredDate
-            )
+            return result
         } catch (e: Exception) {
             Log.e(TAG, "Error reactivating watch item: ${e.message}")
             // Anroparen visar felet själv; listtillståndet lämnas orört.
@@ -258,13 +253,41 @@ class MainViewModel(
         }
     }
 
+    /** Återaktiverar flera bevakningar med en enda synk av listan (undviker race mellan varje steg). */
+    suspend fun reactivateWatchItems(watchItems: List<WatchItem>): List<WatchReactivationResult> {
+        try {
+            val results = watchItems.map { reactivateInDb(it) }
+            syncWatchItemsAfterMutation()
+            return results
+        } catch (e: Exception) {
+            Log.e(TAG, "Error reactivating watch items: ${e.message}")
+            syncWatchItemsAfterMutation()
+            throw e
+        }
+    }
+
+    private suspend fun reactivateInDb(watchItem: WatchItem): WatchReactivationResult {
+        val currentPrice = currentPriceForReactivation(watchItem)
+        val keepLastTriggeredDate = shouldGuardAgainstImmediateRetrigger(watchItem, currentPrice)
+        val updatedWatchItem = watchItem.reactivate(
+            currentPrice = currentPrice,
+            keepLastTriggeredDate = keepLastTriggeredDate
+        )
+        watchItemDao.update(updatedWatchItem)
+        return WatchReactivationResult(
+            watchItem = updatedWatchItem,
+            sameDayTriggerGuarded = keepLastTriggeredDate
+        )
+    }
+
     suspend fun updateWatchItem(watchItem: WatchItem): Boolean {
         return try {
             Log.d(TAG, "Updating watch item")
-            val keepLastTriggeredDate = shouldGuardAgainstImmediateRetrigger(watchItem)
+            val currentPrice = currentPriceForReactivation(watchItem)
+            val keepLastTriggeredDate = shouldGuardAgainstImmediateRetrigger(watchItem, currentPrice)
             watchItemDao.update(
                 watchItem.reactivate(
-                    currentPrice = currentPriceForReactivation(watchItem),
+                    currentPrice = currentPrice,
                     keepLastTriggeredDate = keepLastTriggeredDate
                 )
             )
@@ -285,10 +308,10 @@ class MainViewModel(
         }
     }
 
-    private suspend fun shouldGuardAgainstImmediateRetrigger(watchItem: WatchItem): Boolean =
+    private suspend fun shouldGuardAgainstImmediateRetrigger(watchItem: WatchItem, currentPrice: Double?): Boolean =
         shouldGuardAgainstImmediateRetrigger(
             watchItem = watchItem,
-            conditionCurrentlyMet = { conditionCurrentlyMet(watchItem) },
+            conditionCurrentlyMet = { conditionCurrentlyMet(watchItem, currentPrice) },
             isMarketOpen = { isMarketOpenForReactivation(watchItem) }
         )
 
@@ -503,6 +526,12 @@ class MainViewModel(
     }
 
     /** Delresultat: klara bevakningar får nya värden, övriga behåller senast kända (i ursprunglig ordning). */
+    /** Byter ut raderna mot senaste DB-versionen (behåller live-data); borttagna bevakningar släpps. */
+    private suspend fun withFreshItems(states: List<WatchItemUiState>): List<WatchItemUiState> {
+        val fresh = watchItemDao.getAllWatchItems().associateBy { it.id }
+        return states.mapNotNull { state -> fresh[state.item.id]?.let { state.copy(item = it) } }
+    }
+
     private fun mergeWithPrevious(
         items: List<WatchItem>,
         results: Array<WatchItemUiState?>,
@@ -539,13 +568,15 @@ class MainViewModel(
      * Utvärderar larmets villkor mot senaste live-data i UI-tillståndet.
      * @return true/false om det går att avgöra, annars null.
      */
-    private fun conditionCurrentlyMet(watchItem: WatchItem): Boolean? {
+    private fun conditionCurrentlyMet(watchItem: WatchItem, currentPrice: Double?): Boolean? {
         val uiState = (_watchItemUiState.value as? UiState.Success<List<WatchItemUiState>>)
             ?.data
             ?.firstOrNull { it.item.id == watchItem.id }
             ?: return null
         if (uiState.live.lastUpdatedAt == 0L || uiState.live.updateFailed) return null
-        return uiState.hasLiveTriggerCondition()
+        // Utvärdera mot den återaktiverade bevakningen — PriceTarget får ny riktning vid återaktivering.
+        val reactivated = watchItem.reactivate(currentPrice = currentPrice, keepLastTriggeredDate = false)
+        return uiState.copy(item = reactivated).hasLiveTriggerCondition()
     }
 
     private suspend fun currentPriceForReactivation(watchItem: WatchItem): Double? {
