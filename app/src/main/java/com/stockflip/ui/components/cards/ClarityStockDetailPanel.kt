@@ -330,7 +330,7 @@ private fun ChartActionButtons(
 
 /** Dialog med en switch per indikator. Bollinger och RSI är bara valbara för 1M och längre. */
 @Composable
-private fun ChartSettingsDialog(
+internal fun ChartSettingsDialog(
     config: ChartIndicatorConfig,
     canShowIndicators: Boolean,
     onChange: (ChartIndicatorConfig) -> Unit,
@@ -439,6 +439,7 @@ private fun ClaritySparkChart(
     modifier: Modifier = Modifier,
     smaLevels: List<SmaChartLevel> = emptyList(),
     bollingerPoints: List<BollingerPoint> = emptyList(),
+    watchLevels: List<Double> = emptyList(),
     touchIndex: Int? = null,
     onTouchIndexChange: (Int?) -> Unit = {},
 ) {
@@ -466,6 +467,7 @@ private fun ClaritySparkChart(
     val tooltipPriceColor = MaterialTheme.colorScheme.onSurface
     val smaLineColors = listOf(MaterialTheme.colorScheme.tertiary, MaterialTheme.colorScheme.secondary)
     val bollingerColor = MaterialTheme.colorScheme.primary
+    val watchLevelColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)
     val textMeasurer = rememberTextMeasurer()
 
     Canvas(
@@ -498,7 +500,7 @@ private fun ClaritySparkChart(
         // Priceskalan utökas för att alltid rymma SMA-nivåerna — annars klipps linjen tyst
         // utanför canvasen när priset ligger långt från det bevakade medelvärdet.
         val bandValues = bollingerPoints.flatMap { listOf(it.upper, it.lower) }
-        val smaValues = smaLevels.flatMap { level -> level.points.map { it.value } } + bandValues
+        val smaValues = smaLevels.flatMap { level -> level.points.map { it.value } } + bandValues + watchLevels
         val minPrice = minOf(prices.min(), smaValues.minOrNull() ?: prices.min())
         val maxPrice = maxOf(prices.max(), smaValues.maxOrNull() ?: prices.max())
         val range = (maxPrice - minPrice).coerceAtLeast(0.001)
@@ -522,6 +524,18 @@ private fun ClaritySparkChart(
         }
 
         drawPath(fillPath, color = fillColor)
+
+        // Bevakningsnivåer: tunn streckad linje över hela bredden.
+        watchLevels.forEach { level ->
+            val y = yFor(level)
+            drawLine(
+                color = watchLevelColor,
+                start = Offset(0f, y),
+                end = Offset(size.width, y),
+                strokeWidth = 1.dp.toPx(),
+                pathEffect = PathEffect.dashPathEffect(floatArrayOf(4.dp.toPx(), 4.dp.toPx()), 0f),
+            )
+        }
 
         // Bollinger Bands ritas under kurslinjen: ifyllt band mellan övre/undre, streckade
         // ytterlinjer och en tunn mittlinje (SMA). Samma carry-forward som för SMA-linjerna.
@@ -741,6 +755,7 @@ private fun ColumnScope.ClarityChartWithIndicatorsBody(
     bollingerPoints: List<BollingerPoint>,
     rsiPoints: List<RsiPoint>,
     chartHeight: androidx.compose.ui.unit.Dp?,
+    watchLevels: List<Double> = emptyList(),
 ) {
     var touchIndex by remember { mutableStateOf<Int?>(null) }
     LaunchedEffect(chartData, selectedPeriod) { touchIndex = null }
@@ -755,6 +770,7 @@ private fun ColumnScope.ClarityChartWithIndicatorsBody(
         selectedPeriod = selectedPeriod,
         smaLevels = smaLevels,
         bollingerPoints = bands,
+        watchLevels = watchLevels,
         touchIndex = touchIndex,
         onTouchIndexChange = { touchIndex = it },
         modifier = if (chartHeight != null) {
@@ -777,7 +793,7 @@ private fun ColumnScope.ClarityChartWithIndicatorsBody(
 }
 
 @Composable
-private fun ClarityChartWithIndicators(
+internal fun ClarityChartWithIndicators(
     chartData: IntradayChartData?,
     isPositive: Boolean,
     lineColor: Color,
@@ -788,6 +804,7 @@ private fun ClarityChartWithIndicators(
     rsiPoints: List<RsiPoint>,
     modifier: Modifier = Modifier,
     chartHeight: androidx.compose.ui.unit.Dp? = null,
+    watchLevels: List<Double> = emptyList(),
 ) {
     Column(modifier = modifier) {
         ClarityChartWithIndicatorsBody(
@@ -800,6 +817,7 @@ private fun ClarityChartWithIndicators(
             bollingerPoints = bollingerPoints,
             rsiPoints = rsiPoints,
             chartHeight = chartHeight,
+            watchLevels = watchLevels,
         )
     }
 }
