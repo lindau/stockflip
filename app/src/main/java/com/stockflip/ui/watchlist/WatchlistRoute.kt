@@ -47,6 +47,11 @@ internal fun WatchlistRoute(
     val items: List<WatchItemUiState> = (state as? UiState.Success)?.data.orEmpty()
     val sections by remember(items, query) { derivedStateOf { sectionsFor(items, query) } }
 
+    // Som MainActivity förut: visa sparad data direkt, uppdatera sedan kurserna tyst i bakgrunden.
+    LaunchedEffect(Unit) {
+        viewModel.loadWatchItems(forceShowStaleData = true)
+        viewModel.refreshWatchItems(showLoading = false)
+    }
     LaunchedEffect(Unit) { viewModel.actionError.collect { snackbarHostState.showSnackbar(it) } }
 
     WatchlistScreen(
