@@ -74,11 +74,12 @@ Live/network tests in `YahooFinanceServiceTest.kt` are annotated with `@Ignore` 
 
 ### UI
 
-The app uses a **hybrid View/Compose** approach:
-- Fragments (`MainActivity`, `AlertsFragment`, `StockDetailFragment`) use XML layouts with View Binding.
-- Alert and watch item cards in `ui/components/cards/` and the stock summary header (`StockSummaryRow`) are Jetpack Compose components embedded via `ComposeView`.
-- Theme is in `ui/theme/` (Material 3). `PriceUp`/`PriceDown` colours are defined in `Color.kt`.
-- `SwipeToDeleteCallback` (`ui/SwipeToDeleteCallback.kt`) is a reusable `ItemTouchHelper` for RecyclerViews.
+Hela UI:t är **Jetpack Compose** (Material 3), med `AppActivity` som enda Activity (launcher):
+- `ui/nav/` — `AppShell` (tre flikar: Bevakningar · Marknad · Inställningar) och rutter (`Routes`): aktiedetalj `stock/{symbol}`, pardetalj `pair/{id}`, `document/{asset}` (manual/ändringslogg i låst WebView).
+- Varje skärm är en tillståndslös `*Screen` plus en `*Route` som kopplar mot ViewModel: `ui/watchlist`, `ui/market`, `ui/settings`, `ui/stockdetail`, `ui/pairdetail`, `ui/createwatch` (bottom sheets för skapa/redigera: pris m.fl., aktiepar, kombinerad).
+- Delade komponenter i `ui/components/`; tema (färg, Inter, former, spacing) i `ui/theme/`. Tema-val (`ThemeMode`) sparas i `settings/night_mode`.
+- Notis-deep-links (`AppActivity.EXTRA_*` + HMAC-token, `NotificationNavigationSecurity`) tolkas i `AppActivity.routeFromIntent`.
+- Pardetaljens panel (`ClarityPairDetailPanel`) är fortfarande i äldre kortstil.
 
 ### Key Conventions
 
@@ -89,7 +90,7 @@ The app uses a **hybrid View/Compose** approach:
 - Price formatting uses Swedish locale (`sv_SE`) with `#,##0.00` pattern.
 - Code comments are mixed Swedish/English (Swedish is common in business logic).
 - Direction for `PriceTarget` and `KeyMetrics` is **auto-inferred at save**: if current value ≥ target → `BELOW`, else `ABOVE`. No direction field exists in the dialogs.
-- Pull-to-refresh uses `SwipeRefreshLayout` in both `MainActivity` and `StockDetailFragment`. Always set `isRefreshing = false` in both `Success` and `Error` branches of the `stockDataState` observer.
+- Pull-to-refresh uses M3 `PullToRefreshBox`. Always reset the refreshing flag in both `Success` and `Error` states.
 - **Coroutine job-hantering:** Om `viewModelScope.launch` anropas från en funktion som kan triggas flera gånger (t.ex. vid användarinteraktion), spara alltid `Job`-referensen och avbryt föregående job innan ett nytt startas. Annars kan en äldre coroutine skriva ett gammalt `Error`-tillstånd ovanpå ett nyare lyckat resultat. Mönster: `private var myJob: Job? = null` / `myJob?.cancel(); myJob = viewModelScope.launch { ... }`
 - **Tester med StockDetailViewModel:** Använd INTE `advanceUntilIdle()` i tester som skapar en `StockDetailViewModel`. `observeAlerts()` samlar en oändlig `MutableStateFlow` vars `fetchPricesForItems()`-anrop schemalägger ny work, vilket gör att `advanceUntilIdle()` aldrig terminerar (hänger testsviten i timmar).
 - **Tester med MainViewModel:** Använd `runBlocking` istället för `runTest` i tester som skapar en `MainViewModel`. `startAutoRefresh()` kör en `while(true)`-loop som gör att `runTest`'s interna `advanceUntilIdle()` aldrig terminerar.
@@ -100,7 +101,7 @@ The app uses a **hybrid View/Compose** approach:
 
 Användarhandboken har **två kopior som alltid ska vara identiska**:
 - `docs/MANUAL.md` — läsbar direkt i repot
-- `app/src/main/assets/manual.md` — används av appen (läses av `HelpFragment`)
+- `app/src/main/assets/manual.md` — används av appen (visas i Inställningar → Hjälp via `DocumentScreen`)
 - `docs/DOCUMENTATION_MAP.md` — översikt över aktiv dokumentation, referenser och genererat material
 
 När du uppdaterar manualen måste du uppdatera **båda filerna**. När en ny bevakningsttyp, UI-funktion eller ett användarflöde läggs till eller ändras, uppdatera båda kopiorna. Detta gäller speciellt:

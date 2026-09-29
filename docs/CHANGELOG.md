@@ -2,6 +2,15 @@
 
 ## 1.2
 
+- Ny design: lugnare, platt gränssnitt med en accentfärg och tabulära siffror. Hela appen är nu byggd i Jetpack Compose
+- Ny huvudnavigation med `Bevakningar`, `Marknad` och `Inställningar`. Aktier och aktiepar visas i samma platta lista, med utlösta överst
+- `Marknad` ersätter att lägga till aktier: sök och öppna aktiens detaljsida, med senast sökta
+- `Inställningar` samlar tema, export/import, kontroll av uppdatering, Hjälp och ändringslogg
+- Ett enda skapa-flöde i en nedre panel för bevakningar, med en mening som beskriver vad du bevakar. Aktiepar och kombinerade bevakningar skapas från `+` i Bevakningar
+- Svep en rad åt vänster för att ta bort, med `Ångra`
+- Aktiedetaljen har ren graf med streckade bevakningsnivåer, periodval, nyckeltal och en anteckning
+- Masshantering (markeringsläge) och pausa/aktivera-svep finns inte längre
+
 - Bolagsloggor visas nu i översikten och på aktiedetaljen, med flagga som sekundär info
 - Insideraffärer kontrolleras nu var 6:e timme istället för en gång per dag
 - Ny huvudnavigation med `Översikt`, `Par` och `Mina case`

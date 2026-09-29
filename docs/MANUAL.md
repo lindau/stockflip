@@ -91,15 +91,17 @@ Index följer sin hemmabörs öppettider, t.ex. `^OMXS30` Stockholm och `^GSPC` 
 
 Appen har tre flikar längst ned:
 
-- **Översikt** — ett läsläge som prioriterar vad som kräver din uppmärksamhet nu
-- **Par** — enbart aktiepar-bevakningar
-- **Bevakningar** — här lägger du till aktier och skapar, redigerar, pausar eller tar bort bevakningar
+- **Bevakningar** — startsidan. En enda platt lista med alla dina bevakningar, både aktier och aktiepar. Utlösta ligger överst under rubriken `Utlösta`, resten under `Väntar`.
+- **Marknad** — sök efter en aktie, ett index eller en kryptovaluta. Tryck på en träff för att öppna aktiens detaljsida. Dina senast öppnade träffar visas när sökfältet är tomt.
+- **Inställningar** — tema (System, Ljust eller Mörkt), export och import av bevakningar, kontroll av uppdatering, Hjälp (den här handboken) och ändringsloggen (tryck på versionsraden).
 
-I nuvarande appversion fungerar flikarna så här:
+I fliken **Bevakningar** kan du söka bland dina bevakningar med sökfältet högst upp och dra nedåt för att uppdatera kurserna. Tryck på **+** uppe till höger för att skapa en ny bevakning:
 
-- **Översikt:** aktiepar visas inte här utan i fliken **Par**. Översikten visar sektioner som `Nytt och triggade`, `Nära att triggas`, `Aktiva bevakningar` och `Inaktiva`. Härifrån läser du läget, men nya aktier läggs inte till här.
-- **Par:** tryck på `+` för att skapa ett aktiepar.
-- **Bevakningar:** tryck på `+` för att lägga till en ny aktie, ett index eller en kryptovaluta. Öppna sedan aktiens detaljsida och välj vilken typ av bevakning du vill skapa. Filtret du valt (t.ex. **Triggade**) ligger kvar när du byter flik och kommer tillbaka.
+- **Aktie** — öppnar **Marknad** där du söker upp aktien och väljer bevakningstyp på detaljsidan.
+- **Aktiepar** — välj två aktier och en prisskillnad.
+- **Kombinerad** — välj en aktie och lägg till flera villkor som kopplas med OCH/ELLER.
+
+Tryck på en aktie i listan för att öppna detaljsidan, eller på ett aktiepar för att öppna pardetaljen.
 
 ---
 
@@ -445,25 +447,14 @@ Om du redan har äldre bevakningar av typen **Prisintervall** eller **Kombinerat
 
 ### Aktivera och inaktivera
 
-Tryck på **reglaget** på bevakningskortet för att stänga av eller slå på en bevakning utan att ta bort den. En inaktiv bevakning kontrolleras inte och skickar inga notiser.
-
-Vill du snabbt stänga av eller slå på *alla* bevakningar för en aktie utan att öppna varje bevakning för sig, använd reglaget bredvid rubriken "Bevakningar" på aktiens detaljvy.
-
-### Masshantering i Bevakningar
-
-I fliken **Bevakningar** kan du långtrycka på en bevakning för att gå in i markeringsläge. Där kan du välja flera bevakningar samtidigt och:
-
-- **Aktivera**
-- **Pausa**
-- **Ta bort**
-- **Avsluta markeringsläge**
+En bevakning som utlösts kan återaktiveras (se nedan). Bevakningar kontrolleras så länge de är aktiva och skickar då notiser när villkoret uppfylls.
 
 ### Återaktivera en triggad bevakning
 
 Engångslarm (Målpris och Drawdown) inaktiveras automatiskt efter utlösning och kräver alltid manuell återaktivering. Återkommande larm (Dagsrörelse, Nyckeltal, Aktiepar, Prisintervall, Kombinerat) återaktiveras normalt automatiskt nästa handelsdag, men du kan även återaktivera dem manuellt tidigare — till exempel för att slippa se "Triggad"-märket resten av dagen.
 
-- Hitta bevakningen i listan — den visar "Triggad [datum]".
-- Tryck **Återaktivera** direkt på kortet.
+- Hitta bevakningen under **Utlösta** i listan.
+- Öppna aktiens detaljsida (eller pardetaljen för ett aktiepar) och återaktivera bevakningen där.
 
 Bevakningen är nu aktiv igen. För målpris räknar appen om riktningen från aktuell kurs: om kursen ligger över målpriset bevakas nästa passage ned under nivån, och om kursen ligger under målpriset bevakas nästa passage upp över nivån.
 
@@ -473,24 +464,22 @@ Samma regel gäller alla bevakningstyper vid återaktivering: är den berörda b
 
 När spärren behålls visas detta i listor som **Nästa handelsdag**, och återaktiveringsmeddelandet säger att bevakningen kan trigga först nästa handelsdag.
 
-Om flera bevakningar är triggade samtidigt kan du återaktivera dem alla på en gång: välj filtret **Triggade** i **Bevakningar** och tryck **Återaktivera alla**.
 
 ### Redigera en bevakning
 
-1. Tryck på bevakningskortet.
-2. Ändra de önskade värdena i dialogen.
-3. Tryck **Uppdatera**.
+1. Öppna aktiens detaljsida och tryck på bevakningen under **Dina bevakningar**. För ett aktiepar eller en kombinerad bevakning trycker du på raden i **Bevakningar** (aktiepar öppnar pardetaljen, där du trycker **Redigera**).
+2. Ändra värdena i den nedre panelen.
+3. Tryck **Spara**.
+
+Kombinerade bevakningar med NOT, flera aktier, SMA eller prisintervall kan inte redigeras i byggaren.
 
 ### Ta bort en bevakning
 
-**Alternativ 1 — Swipe:** Svep kortet åt vänster. I **Bevakningar** pausas en aktiv bevakning (paus-ikon) och en pausad aktiveras igen (play-ikon) — inget tas bort. En utlöst bevakning aktiveras i stället med knappen **Återaktivera**. I fliken **Par** tas aktieparet bort direkt (röd papperskorg). I alla fallen visas ett meddelande längst ned med **Ångra**. Svep åt höger öppnar detaljvyn.
+Svep raden åt vänster i **Bevakningar**. Ett meddelande längst ned visar **Ångra** en kort stund. Ett aktiepar kan också tas bort från pardetaljen.
 
-**Alternativ 2 — Via dialog:** Tryck på kortet → tryck **Ta bort** längst ned i dialogen.
+### Utlösta bevakningar i listan
 
-### Förstå "Ny"-märket och triggad-badge
-
-- **Triggad-badge (amber/gul):** Visar datumet då bevakningen utlöstes. Visas alltid så länge bevakningen är i triggat läge.
-- **Ny-märke (lila/primärfärg):** Visar att det är en utlösning du *inte sett* sedan den inträffade. Försvinner automatiskt när du öppnar aktiedetaljvyn för den berörda aktien.
+En utlöst bevakning markeras med en liten färgad prick före namnet och ligger överst i listan under `Utlösta`. Pricken försvinner när bevakningen återaktiverats.
 
 ### Poddomnämnanden
 
