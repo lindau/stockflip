@@ -206,6 +206,7 @@ private fun SwipeableRow(
                 onClick = { onRowClick(row) },
                 showDivider = showDivider,
                 sparkline = sparkline,
+                staleLabel = row.staleLabel,
             )
         }
     }

@@ -97,6 +97,12 @@ internal fun StockDetailScreen(
     insiderTransactions: List<com.stockflip.InsiderTransactionEntity>,
     insiderHighlightId: String?,
     podcastObservations: List<com.stockflip.PodcastObservationEntity>,
+    podcastConfigured: Boolean,
+    podcastEnabled: Boolean,
+    podcastSyncSummary: String?,
+    podcastSyncing: Boolean,
+    onPodcastToggle: (Boolean) -> Unit,
+    onPodcastSync: () -> Unit,
     onOpenAvanza: () -> Unit,
     onOpenNordnet: () -> Unit,
     banner: DetailBanner?,
@@ -307,7 +313,9 @@ internal fun StockDetailScreen(
                     }
                     item(key = "analyst") { AnalystSection(data) }
                     item(key = "insider") { InsiderSection(insiderTransactions, insiderHighlightId) }
-                    item(key = "podcast") { PodcastSection(podcastObservations) }
+                    item(key = "podcast") {
+                        PodcastSection(podcastConfigured, podcastEnabled, podcastObservations, podcastSyncSummary, podcastSyncing, onPodcastToggle, onPodcastSync)
+                    }
                     item(key = "broker") { BrokerLinks(onOpenAvanza, onOpenNordnet) }
                     item(key = "end") { Box(Modifier.height(96.dp)) }
                 }

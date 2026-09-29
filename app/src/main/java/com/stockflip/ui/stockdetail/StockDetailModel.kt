@@ -112,6 +112,7 @@ internal fun alertLines(
     val second = when {
         triggered -> com.stockflip.ui.components.triggerWhen(triggerMillis, alert.item.lastTriggeredDate, now)?.detailText() ?: "Utlöst"
         !alert.item.isActive -> "Pausad"
+        live.updateFailed -> com.stockflip.ui.components.cards.updateFailedLabel(live)
         else -> when (val wt = alert.item.watchType) {
             is com.stockflip.WatchType.PriceTarget -> live.currentPrice.takeIf { it > 0 }?.let { "Nu ${com.stockflip.ui.components.formatNumber(it)} $unit" }
             is com.stockflip.WatchType.ATHBased -> when (wt.dropType) {

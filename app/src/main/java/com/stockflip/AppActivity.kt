@@ -71,6 +71,16 @@ class AppActivity : ComponentActivity() {
 
     private var themeMode by mutableStateOf(ThemeMode.System)
 
+    // Måste vara ett fält: registerForActivityResult kräver registrering före STARTED.
+    private val notificationPermissionLauncher = registerForActivityResult(
+        androidx.activity.result.contract.ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (!granted) {
+            android.widget.Toast.makeText(this, "Utan notistillstånd kan appen inte varna dig när en bevakning utlöses", android.widget.Toast.LENGTH_LONG).show()
+        }
+        askBatteryExemptionOnce()
+    }
+
     /** Sätts av en verifierad uppdateringsnotis; förbrukas när Inställningar visats. */
     private var pendingUpdateCheck by mutableStateOf(false)
 
@@ -82,7 +92,10 @@ class AppActivity : ComponentActivity() {
         themeMode = ThemeMode.fromPref(
             getSharedPreferences("settings", MODE_PRIVATE).getInt("night_mode", ThemeMode.System.prefValue)
         )
-        if (savedInstanceState == null) pendingRoute = routeFromIntent(intent)
+        if (savedInstanceState == null) {
+            pendingRoute = routeFromIntent(intent)
+            requestStartupPermissions()
+        }
         setContent {
             StockFlipTheme(darkTheme = themeMode.forcedDark ?: isSystemInDarkTheme()) {
                 val navController = rememberNavController()
@@ -174,6 +187,27 @@ class AppActivity : ComponentActivity() {
             }
         }
         return ViewModelProvider(this, factory)["pair-$watchItemId", PairDetailViewModel::class.java]
+    }
+
+    /**
+     * Som gamla MainActivity: be om notistillstånd (Android 13+) och undantag från batterioptimering, annars får en
+     * nyinstallerad app inga notiser och bakgrundskontrollerna kan stoppas. Batterifrågan ställs bara en gång.
+     */
+    private fun requestStartupPermissions() {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU &&
+            checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED
+        ) {
+            notificationPermissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+        } else {
+            askBatteryExemptionOnce()
+        }
+    }
+
+    private fun askBatteryExemptionOnce() {
+        val prefs = getSharedPreferences("settings", MODE_PRIVATE)
+        if (prefs.getBoolean("battery_exemption_asked", false)) return
+        prefs.edit { putBoolean("battery_exemption_asked", true) }
+        StockPriceUpdater.requestBatteryOptimizationExemption(this)
     }
 
     private fun saveThemeMode(mode: ThemeMode) {

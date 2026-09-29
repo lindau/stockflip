@@ -70,6 +70,9 @@ internal fun StockDetailRoute(
     val insiders by viewModel.insiderTransactionsState.collectAsState()
     val podcasts by viewModel.podcastObservationsState.collectAsState()
     val avanza = remember { AvanzaStockLinkService() }
+    var podcastEnabled by remember { mutableStateOf(com.stockflip.PodcastObservationSettings.isEnabled(context)) }
+    var podcastSummary by remember { mutableStateOf(com.stockflip.PodcastObservationSettings.lastSyncSummary(context)) }
+    var podcastSyncing by remember { mutableStateOf(false) }
     var noteOpen by remember { mutableStateOf(false) }
 
     val alerts: List<WatchItemUiState> = (alertsState as? UiState.Success)?.data.orEmpty()
@@ -113,6 +116,24 @@ internal fun StockDetailRoute(
             insiderTransactions = insiders,
             insiderHighlightId = launch.insiderId,
             podcastObservations = podcasts,
+            podcastConfigured = com.stockflip.BuildConfig.PODCAST_ANALYSIS_BASE_URL.isNotBlank(),
+            podcastEnabled = podcastEnabled,
+            podcastSyncSummary = podcastSummary,
+            podcastSyncing = podcastSyncing,
+            onPodcastToggle = { on ->
+                com.stockflip.PodcastObservationSettings.setEnabled(context, on)
+                podcastEnabled = on
+                podcastSummary = com.stockflip.PodcastObservationSettings.lastSyncSummary(context)
+            },
+            onPodcastSync = {
+                scope.launch {
+                    podcastSyncing = true
+                    com.stockflip.PodcastObservationWorker.performSync(context)
+                    podcastSyncing = false
+                    viewModel.loadPodcastObservations()
+                    podcastSummary = com.stockflip.PodcastObservationSettings.lastSyncSummary(context)
+                }
+            },
             onOpenAvanza = { scope.launch { openAvanza(context, avanza, state.data.symbol) } },
             onOpenNordnet = { openNordnet(context) },
             banner = if (bannerDismissed) null else detailBannerFor(

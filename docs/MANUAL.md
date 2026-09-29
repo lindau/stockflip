@@ -485,7 +485,7 @@ En utlöst bevakning markeras med en liten färgad prick före namnet och ligger
 
 Den här funktionen kräver att telefonen är ansluten till samma Tailscale-nätverk som podcast-pipeline-instansen, en fristående tjänst som analyserar poddavsnitt. Är instansen inte nåbar fungerar resten av appen som vanligt, bara utan poddfunktionerna nedan.
 
-Poddomnämnanden visas på aktiedetaljen under rubriken Poddomnämnanden.
+Poddomnämnanden visas på aktiedetaljen under rubriken Poddomnämnanden, med en switch som slår på eller av poddanalysen och knappen **Synka nu** som hämtar nya omnämnanden direkt. Sektionen finns bara i utvecklarbyggen där poddanalysens adress är inställd.
 
 **Sektionen "Poddomnämnanden" på aktiedetaljen:**
 - En egen sektion längst ned på aktiens detaljvy visar mer detaljer, med en **på/av-växel** i sektionsrubriken (av som standard).
@@ -498,7 +498,7 @@ Poddomnämnanden visas på aktiedetaljen under rubriken Poddomnämnanden.
 
 ### Aktivera notisbehörighet
 
-Appen ber om notisbehörighet första gången du startar den. Om du avböjde kan du aktivera det igen via:
+Appen ber om notisbehörighet (Android 13 och senare) och om undantag från batterisparläge första gången du startar den. Tillåt båda, annars kan bevakningarna inte varna dig. Om du avböjde notisbehörigheten kan du aktivera det igen via:
 
 **Android-inställningar → Appar → StockFlip → Notiser → Tillåt**
 
@@ -552,7 +552,7 @@ StockFlip distribueras inte via Play Store, så appen håller själv koll på om
 - Målpris, Drawdown, SMA-bevakning och SMA-korsning inaktiveras automatiskt när de utlöses. Det är avsiktligt för att undvika upprepade notiser för samma händelse.
 
 **Vad händer om en uppdatering misslyckas?**
-- Appen visar de senast kända värdena och ett kort meddelande längst ned. Dra nedåt för att försöka igen.
+- Appen visar de senast kända värdena. Raden i **Bevakningar** får en röd text, `Kunde inte uppdateras · visar värden från 14:32`, så att du ser hur gamla siffrorna är, och en kort ruta längst ned berättar att uppdateringen misslyckades. Dra nedåt för att försöka igen.
 
 **Vad händer om en vy inte kan laddas?**
 - Om en vy inte kan laddas första gången visas ett felmeddelande med knappen **Försök igen**. Om vyn redan visar data och en uppdatering misslyckas ligger de senast kända värdena kvar, och ett kort meddelande visas längst ned.

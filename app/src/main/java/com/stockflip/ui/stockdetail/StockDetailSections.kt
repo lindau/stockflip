@@ -89,23 +89,60 @@ internal fun InsiderSection(transactions: List<InsiderTransactionEntity>, highli
     }
 }
 
+/** Text när poddanalysen är på men inga omnämnanden finns; visar senaste synkresultat om det finns. */
+internal fun podcastEmptyText(syncSummary: String?): String =
+    if (syncSummary != null) "Inga poddomnämnanden har hittats ännu för denna ticker.\n$syncSummary"
+    else "Inga poddomnämnanden har hittats ännu. Synken har inte kört än."
+
+/**
+ * Poddomnämnanden med på/av-switch (poddanalys) och "Synka nu". Visas bara när funktionen är konfigurerad
+ * ([configured], dvs. `PODCAST_ANALYSIS_BASE_URL` satt); annars ingenting.
+ */
 @Composable
-internal fun PodcastSection(observations: List<PodcastObservationEntity>) {
-    if (observations.isEmpty()) return
-    SectionLabel("Poddomnämnanden", count = observations.size)
-    val fmt = SimpleDateFormat("d MMM yyyy", Locale("sv", "SE"))
-    observations.take(5).forEach { o ->
-        Column(Modifier.fillMaxWidth().padding(horizontal = Space.screenH, vertical = Space.md)) {
-            val head = listOfNotNull(o.podcast, o.publishedAtMillis?.let { fmt.format(Date(it)) }).joinToString(" · ")
-            Text(head, style = MaterialTheme.typography.titleMedium)
-            listOfNotNull(o.episodeTitle, o.recommendation ?: o.stance).joinToString(" · ").takeIf { it.isNotBlank() }?.let {
-                Text(it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-            o.exactQuote?.takeIf { it.isNotBlank() }?.let {
-                Text("”$it”".replaceFirst('”', '“'), style = MaterialTheme.typography.bodyMedium, maxLines = 3, overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.padding(top = Space.xs))
+internal fun PodcastSection(
+    configured: Boolean,
+    enabled: Boolean,
+    observations: List<PodcastObservationEntity>,
+    syncSummary: String?,
+    syncing: Boolean,
+    onToggle: (Boolean) -> Unit,
+    onSync: () -> Unit,
+) {
+    if (!configured) return
+    Row(Modifier.fillMaxWidth(), verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+        SectionLabel("Poddomnämnanden", Modifier.weight(1f), count = observations.size.takeIf { enabled && it > 0 })
+        androidx.compose.material3.Switch(
+            checked = enabled,
+            onCheckedChange = onToggle,
+            modifier = Modifier.padding(end = Space.screenH, top = Space.md),
+        )
+    }
+    if (!enabled) return
+    if (observations.isEmpty()) {
+        Text(
+            podcastEmptyText(syncSummary),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(horizontal = Space.screenH, vertical = Space.sm),
+        )
+    } else {
+        val fmt = SimpleDateFormat("d MMM yyyy", Locale("sv", "SE"))
+        observations.take(5).forEach { o ->
+            Column(Modifier.fillMaxWidth().padding(horizontal = Space.screenH, vertical = Space.md)) {
+                val head = listOfNotNull(o.podcast, o.publishedAtMillis?.let { fmt.format(Date(it)) }).joinToString(" · ")
+                Text(head, style = MaterialTheme.typography.titleMedium)
+                listOfNotNull(o.episodeTitle, o.recommendation ?: o.stance).joinToString(" · ").takeIf { it.isNotBlank() }?.let {
+                    Text(it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                o.exactQuote?.takeIf { it.isNotBlank() }?.let {
+                    Text("\u201C$it\u201D", style = MaterialTheme.typography.bodyMedium, maxLines = 3, overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.padding(top = Space.xs))
+                }
             }
         }
+    }
+    TextButton(onClick = onSync, enabled = !syncing, modifier = Modifier.padding(horizontal = Space.md)) {
+        Text(if (syncing) "Synkar…" else "Synka nu")
     }
 }
 

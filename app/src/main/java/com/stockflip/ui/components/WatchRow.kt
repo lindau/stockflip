@@ -23,6 +23,7 @@ import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.stockflip.ui.theme.LocalPriceDown
 import com.stockflip.ui.theme.LocalPriceUp
 import com.stockflip.ui.theme.NumericSecondaryStyle
@@ -49,6 +50,7 @@ fun WatchRow(
     modifier: Modifier = Modifier,
     sparkline: List<Double>? = null,
     showDivider: Boolean = true,
+    staleLabel: String? = null,
 ) {
     val triggeredLabel = "Utlöst"
     Column(modifier.fillMaxWidth()) {
@@ -96,6 +98,16 @@ fun WatchRow(
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.padding(top = 3.dp),
                 )
+                if (staleLabel != null) {
+                    Text(
+                        text = staleLabel,
+                        style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.sp),
+                        color = MaterialTheme.colorScheme.error,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.padding(top = 2.dp),
+                    )
+                }
             }
             if (sparkline != null) Sparkline(sparkline)
             Column(Modifier.widthIn(min = 76.dp), horizontalAlignment = Alignment.End) {

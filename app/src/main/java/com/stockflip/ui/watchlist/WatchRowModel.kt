@@ -3,6 +3,7 @@ package com.stockflip.ui.watchlist
 import com.stockflip.WatchItemUiState
 import com.stockflip.CurrencyHelper
 import com.stockflip.WatchType
+import com.stockflip.ui.components.cards.updateFailedLabel
 import com.stockflip.ui.components.listText
 import com.stockflip.ui.components.triggerWhen
 import com.stockflip.ui.createwatch.describeExpression
@@ -28,6 +29,8 @@ internal data class WatchRowModel(
     val isPair: Boolean,
     /** Symbol att öppna detaljsidan för; `null` för par och bevakningar utan enskild aktie. */
     val symbol: String?,
+    /** "Kunde inte uppdateras · visar värden från 14:32" när senaste kursuppdateringen misslyckades, annars null. */
+    val staleLabel: String? = null,
 )
 
 internal data class WatchListSections(
@@ -76,6 +79,7 @@ internal fun WatchItemUiState.toRowModel(triggerMillis: Long? = null, now: Long 
         paused = !item.isActive,
         isPair = isPair,
         symbol = if (isPair) null else item.ticker,
+        staleLabel = updateFailedLabel(live),
     )
 }
 
