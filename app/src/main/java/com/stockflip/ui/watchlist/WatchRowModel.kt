@@ -146,3 +146,9 @@ internal fun sectionsFor(items: List<WatchItemUiState>, query: String = ""): Wat
         waiting = rows.filterNot { it.triggered },
     )
 }
+
+/** "Uppdaterad 14:32" utifrån den senaste lyckade kursuppdateringen i listan, eller null om ingen hämtats. */
+internal fun lastUpdatedLabel(items: List<WatchItemUiState>, format: (Long) -> String): String? {
+    val latest = items.filter { !it.live.updateFailed }.maxOfOrNull { it.live.lastUpdatedAt } ?: 0L
+    return if (latest > 0L) "Uppdaterad ${format(latest)}" else null
+}

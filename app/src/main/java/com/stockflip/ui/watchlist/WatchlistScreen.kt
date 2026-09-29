@@ -71,6 +71,7 @@ internal fun WatchlistScreen(
     onAddWatch: () -> Unit,
     onAddPair: () -> Unit,
     onAddCombined: () -> Unit,
+    lastUpdated: String? = null,
     modifier: Modifier = Modifier,
 ) {
     Column(modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
@@ -92,6 +93,10 @@ internal fun WatchlistScreen(
                     }
                 }
             }
+        }
+        lastUpdated?.let {
+            Text(it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(horizontal = Space.screenH))
         }
         SearchField(query, onQueryChange)
 

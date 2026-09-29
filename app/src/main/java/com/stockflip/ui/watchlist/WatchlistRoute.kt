@@ -1,6 +1,9 @@
 package com.stockflip.ui.watchlist
 
 import androidx.compose.material3.SnackbarDuration
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.runtime.Composable
@@ -80,6 +83,7 @@ internal fun WatchlistRoute(
         onAddWatch = onAddWatch,
         onAddPair = { sheet = WatchSheet.Pair(null) },
         onAddCombined = { sheet = WatchSheet.Combined(null) },
+        lastUpdated = lastUpdatedLabel(items) { SimpleDateFormat("HH:mm", Locale("sv", "SE")).format(Date(it)) },
         modifier = modifier,
     )
 

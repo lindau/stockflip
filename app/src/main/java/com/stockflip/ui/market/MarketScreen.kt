@@ -105,12 +105,12 @@ internal fun MarketScreen(
             modifier = Modifier.fillMaxWidth().padding(horizontal = Space.screenH, vertical = Space.sm),
         )
         when (content) {
-            MarketContent.Hint -> EmptyState(stringResource(R.string.market_sok_pa_namn_eller_ticker_t_ex_volvo_aapl))
+            MarketContent.Hint -> ResultsWithIndex(emptyList(), onResultClick, onClearRecent)
             MarketContent.Loading -> Column { repeat(5) { SkeletonRow() } }
             MarketContent.NoResults -> EmptyState("Inga träffar för \"${query.trim()}\".")
             is MarketContent.Failed -> EmptyState(content.message, actionLabel = stringResource(R.string.market_forsok_igen), onAction = onRetry)
             is MarketContent.Results -> ResultList(content.items, header = null, onResultClick, onAction = null)
-            is MarketContent.Recent -> ResultList(content.items, header = "Senast sökta", onResultClick, onClearRecent)
+            is MarketContent.Recent -> ResultsWithIndex(content.items, onResultClick, onClearRecent)
         }
     }
 }
@@ -126,7 +126,7 @@ private fun ResultList(
         if (header != null) {
             item(key = "header") {
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.SpaceBetween) {
-                    SectionLabel(header)
+                    SectionLabel(header, Modifier.weight(1f))
                     if (onAction != null) {
                         TextButton(onClick = onAction) { Text(stringResource(R.string.market_rensa)) }
                     }
@@ -172,6 +172,41 @@ private fun ResultRow(result: StockSearchResult, showDivider: Boolean, onClick: 
                     modifier = Modifier.padding(top = 3.dp),
                 )
             }
+        }
+    }
+}
+
+/** Genvägar till vanliga index; öppnar samma detaljsida som en sökträff. */
+internal val INDEX_SHORTCUTS = listOf(
+    StockSearchResult("^OMX", "OMXS30", isIndex = true),
+    StockSearchResult("^GSPC", "S&P 500", isIndex = true),
+    StockSearchResult("^IXIC", "Nasdaq Composite", isIndex = true),
+    StockSearchResult("^GDAXI", "DAX", isIndex = true),
+    StockSearchResult("^FTSE", "FTSE 100", isIndex = true),
+    StockSearchResult("^N225", "Nikkei 225", isIndex = true),
+)
+
+@Composable
+private fun ResultsWithIndex(
+    recent: List<StockSearchResult>,
+    onClick: (StockSearchResult) -> Unit,
+    onClearRecent: () -> Unit,
+) {
+    LazyColumn(Modifier.fillMaxSize()) {
+        if (recent.isNotEmpty()) {
+            item(key = "recent-h") {
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.SpaceBetween) {
+                    SectionLabel("Senast sökta", Modifier.weight(1f))
+                    TextButton(onClick = onClearRecent) { Text("Rensa") }
+                }
+            }
+            itemsIndexed(recent, key = { _, it -> "r-" + it.symbol }) { index, result ->
+                ResultRow(result, showDivider = index > 0, onClick = { onClick(result) })
+            }
+        }
+        item(key = "index-h") { SectionLabel("Index") }
+        itemsIndexed(INDEX_SHORTCUTS, key = { _, it -> "i-" + it.symbol }) { index, result ->
+            ResultRow(result, showDivider = index > 0, onClick = { onClick(result) })
         }
     }
 }
