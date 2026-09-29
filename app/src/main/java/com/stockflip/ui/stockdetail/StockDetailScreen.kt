@@ -64,7 +64,7 @@ import com.stockflip.ui.components.formatSignedPercent
 import com.stockflip.ui.components.rangeFraction
 import com.stockflip.ui.theme.LocalPriceDown
 import com.stockflip.ui.theme.LocalPriceUp
-import com.stockflip.ui.theme.NordikNumericStyle
+import com.stockflip.ui.theme.NumericStyle
 import com.stockflip.ui.theme.Space
 import com.stockflip.ui.watchlist.toRowModel
 
@@ -134,7 +134,7 @@ internal fun StockDetailScreen(
                                 PriceText(
                                     text = data.lastPrice?.let { formatNumber(it) } ?: "–",
                                     value = data.lastPrice ?: 0.0,
-                                    style = NordikNumericStyle.copy(fontSize = 44.sp, lineHeight = 48.sp),
+                                    style = NumericStyle.copy(fontSize = 44.sp, lineHeight = 48.sp),
                                 )
                                 if (changePercent != null) {
                                     Text(

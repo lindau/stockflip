@@ -19,8 +19,8 @@ import com.stockflip.CurrencyHelper
 import com.stockflip.R
 import com.stockflip.ui.theme.LocalPriceDown
 import com.stockflip.ui.theme.LocalPriceUp
-import com.stockflip.ui.theme.NordikNumericSecondaryStyle
-import com.stockflip.ui.theme.NordikNumericStyle
+import com.stockflip.ui.theme.NumericSecondaryStyle
+import com.stockflip.ui.theme.NumericStyle
 
 /**
  * Summaryrad för en aktie: namn + ticker till vänster, pris + daglig förändring till höger.
@@ -28,8 +28,8 @@ import com.stockflip.ui.theme.NordikNumericStyle
  * Typografisk hierarki:
  * - Bolagsnamn: [titleMedium] (SemiBold 15sp) — primär identifierare
  * - Ticker: [labelMedium] (Medium 11sp, 0.6sp spacing) — sekundär kod
- * - Pris: [NordikNumericStyle] (SemiBold 15sp, tnum) — primärdata
- * - Daglig förändring: [NordikNumericSecondaryStyle] (Normal 12sp, tnum) — sekundärdata
+ * - Pris: [NumericStyle] (SemiBold 15sp, tnum) — primärdata
+ * - Daglig förändring: [NumericSecondaryStyle] (Normal 12sp, tnum) — sekundärdata
  */
 @Composable
 fun StockSummaryRow(
@@ -88,7 +88,7 @@ fun StockSummaryRow(
             ) {
                 Text(
                     text = if (price > 0) CurrencyHelper.formatPrice(price, currency) else "—",
-                    style = NordikNumericStyle,
+                    style = NumericStyle,
                     color = MaterialTheme.colorScheme.onSurface,
                 )
                 if (dailyChangePercent != null) {
@@ -107,7 +107,7 @@ fun StockSummaryRow(
                         )
                         Text(
                             text = "${if (dailyChangePercent >= 0) "+" else ""}${CurrencyHelper.formatDecimal(dailyChangePercent)}%",
-                            style = NordikNumericSecondaryStyle,
+                            style = NumericSecondaryStyle,
                             color = trendColor,
                         )
                     }

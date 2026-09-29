@@ -60,10 +60,3 @@ val Typography = Typography(
 // ─── Numeriska stilar ─────────────────────────────────────────────────────────
 val NumericStyle = style(FontWeight.Medium, 15, 20, -0.15, tnum = true)
 val NumericSecondaryStyle = style(FontWeight.Normal, 13, 18, tnum = true)
-val NumericHeroStyle = style(FontWeight.Medium, 44, 48, -1.7, tnum = true)
-
-// ─── Bakåtkompatibla namn (tas bort när korten ersatts, fas 3–4) ──────────────
-val DmSerifDisplay = Inter
-val JetBrainsMono = Inter
-val NordikNumericStyle = NumericStyle
-val NordikNumericSecondaryStyle = NumericSecondaryStyle

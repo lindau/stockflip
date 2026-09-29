@@ -82,7 +82,7 @@ import com.stockflip.ui.theme.LocalCardBorder
 import com.stockflip.ui.theme.LocalPriceDown
 import com.stockflip.ui.theme.LocalPriceUp
 import com.stockflip.ui.theme.LocalTextTertiary
-import com.stockflip.ui.theme.NordikNumericStyle
+import com.stockflip.ui.theme.NumericStyle
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -228,7 +228,7 @@ private fun ClarityStockHeroCard(
                 Text(
                     text = data.lastPrice?.let { CurrencyHelper.formatDecimal(it) } ?: "Laddar",
                     modifier = Modifier.weight(1f, fill = false),
-                    style = NordikNumericStyle.copy(
+                    style = NumericStyle.copy(
                         fontSize = 44.sp,
                         lineHeight = 50.sp,
                         fontWeight = FontWeight.Bold,
@@ -1017,7 +1017,7 @@ fun FullscreenStockChart(
                 ) {
                     Text(
                         text = data.lastPrice?.let { CurrencyHelper.formatDecimal(it) } ?: "Laddar",
-                        style = NordikNumericStyle.copy(fontSize = 30.sp, fontWeight = FontWeight.Bold),
+                        style = NumericStyle.copy(fontSize = 30.sp, fontWeight = FontWeight.Bold),
                         color = colorScheme.onSurface,
                         maxLines = 1,
                     )
@@ -1158,7 +1158,7 @@ private fun ClarityStatCell(
             Text(
                 text = value,
                 modifier = Modifier.padding(top = 4.dp),
-                style = NordikNumericStyle.copy(fontSize = 16.sp, lineHeight = 20.sp, fontWeight = FontWeight.Bold),
+                style = NumericStyle.copy(fontSize = 16.sp, lineHeight = 20.sp, fontWeight = FontWeight.Bold),
                 color = MaterialTheme.colorScheme.onSurface,
                 maxLines = 1,
                 softWrap = false,
