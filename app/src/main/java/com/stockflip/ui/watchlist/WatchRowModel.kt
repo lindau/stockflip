@@ -1,7 +1,10 @@
 package com.stockflip.ui.watchlist
 
 import com.stockflip.WatchItemUiState
+import com.stockflip.CurrencyHelper
 import com.stockflip.WatchType
+import com.stockflip.ui.components.listText
+import com.stockflip.ui.components.triggerWhen
 import com.stockflip.ui.createwatch.describeExpression
 import com.stockflip.isTriggeredForDisplay
 import com.stockflip.ui.components.MINUS
@@ -36,7 +39,7 @@ internal data class WatchListSections(
 
 private const val DASH = "–"
 
-internal fun WatchItemUiState.toRowModel(): WatchRowModel {
+internal fun WatchItemUiState.toRowModel(triggerMillis: Long? = null, now: Long = System.currentTimeMillis()): WatchRowModel {
     val wt = item.watchType
     val isPair = wt is WatchType.PricePair
     val triggered = isTriggeredForDisplay()
@@ -52,7 +55,7 @@ internal fun WatchItemUiState.toRowModel(): WatchRowModel {
 
     val subtitle = buildString {
         append(conditionText(triggered))
-        if (triggered) append(" · utlöst")
+        if (triggered) append(" · ").append(triggerWhen(triggerMillis, item.lastTriggeredDate, now)?.listText() ?: "utlöst")
         if (!item.isActive) append(" · pausad")
     }
 
@@ -76,10 +79,12 @@ internal fun WatchItemUiState.toRowModel(): WatchRowModel {
     )
 }
 
-private fun WatchItemUiState.conditionText(triggered: Boolean): String = when (val wt = item.watchType) {
+private fun WatchItemUiState.conditionText(triggered: Boolean): String = conditionText(triggered, currencyUnit(item.ticker ?: item.ticker1))
+
+private fun WatchItemUiState.conditionText(triggered: Boolean, unit: String): String = when (val wt = item.watchType) {
     is WatchType.PriceTarget -> {
         val above = wt.direction == WatchType.PriceDirection.ABOVE
-        val base = "${if (above) "Över" else "Under"} ${number(wt.targetPrice)} kr"
+        val base = "${if (above) "Över" else "Under"} ${number(wt.targetPrice)} $unit"
         if (!triggered && live.currentPrice > 0) {
             val remaining = abs(wt.targetPrice - live.currentPrice) / live.currentPrice * 100
             "$base · ${formatNumber(remaining, 1)} % kvar"
@@ -89,13 +94,13 @@ private fun WatchItemUiState.conditionText(triggered: Boolean): String = when (v
         val ref = if (wt.reference == WatchType.HighReference.ALL_TIME_HIGH) "all-time-high" else "52v-högsta"
         val amount = when (wt.dropType) {
             WatchType.DropType.PERCENTAGE -> "$MINUS${number(wt.dropValue)} %"
-            WatchType.DropType.ABSOLUTE -> "$MINUS${number(wt.dropValue)} kr"
+            WatchType.DropType.ABSOLUTE -> "$MINUS${number(wt.dropValue)} $unit"
         }
         val now = when (wt.dropType) {
             WatchType.DropType.PERCENTAGE -> live.currentDropPercentage.takeIf { it > 0 }
                 ?.let { " · nu $MINUS${formatNumber(it, 1)} %" }
             WatchType.DropType.ABSOLUTE -> live.currentDropAbsolute.takeIf { it > 0 }
-                ?.let { " · nu $MINUS${formatNumber(it)} kr" }
+                ?.let { " · nu $MINUS${formatNumber(it)} $unit" }
         }.orEmpty()
         "Från $ref $amount" + if (triggered) "" else now
     }
@@ -116,8 +121,8 @@ private fun WatchItemUiState.conditionText(triggered: Boolean): String = when (v
             ?.let { " · nu ${formatNumber(it, 1)}" }.orEmpty()
         "$name $dir ${number(wt.targetValue)}$now"
     }
-    is WatchType.PriceRange -> "Mellan ${number(wt.minPrice)} och ${number(wt.maxPrice)} kr"
-    is WatchType.PricePair -> "Prisskillnad ${number(wt.priceDifference)} kr"
+    is WatchType.PriceRange -> "Mellan ${number(wt.minPrice)} och ${number(wt.maxPrice)} $unit"
+    is WatchType.PricePair -> "Prisskillnad ${number(wt.priceDifference)} $unit"
     is WatchType.PriceVsSma -> {
         val dir = if (wt.direction == WatchType.PriceDirection.ABOVE) "över" else "under"
         "Pris $dir SMA ${wt.period}"
@@ -137,9 +142,14 @@ private fun number(v: Double): String = formatNumber(v, if (v == floor(v)) 0 els
  * Delar upp raderna i "Utlösta" (överst) och "Väntar". [query] filtrerar på titel och symbol.
  * Ordningen inom varje grupp behålls som den kom in.
  */
-internal fun sectionsFor(items: List<WatchItemUiState>, query: String = ""): WatchListSections {
+internal fun sectionsFor(
+    items: List<WatchItemUiState>,
+    query: String = "",
+    triggerTimes: Map<Int, Long> = emptyMap(),
+    now: Long = System.currentTimeMillis(),
+): WatchListSections {
     val q = query.trim()
-    val rows = items.map { it.toRowModel() }
+    val rows = items.map { it.toRowModel(triggerTimes[it.item.id], now) }
         .filter { q.isEmpty() || it.title.contains(q, ignoreCase = true) || it.symbol?.contains(q, ignoreCase = true) == true }
     return WatchListSections(
         triggered = rows.filter { it.triggered },
@@ -152,3 +162,6 @@ internal fun lastUpdatedLabel(items: List<WatchItemUiState>, format: (Long) -> S
     val latest = items.filter { !it.live.updateFailed }.maxOfOrNull { it.live.lastUpdatedAt } ?: 0L
     return if (latest > 0L) "Uppdaterad ${format(latest)}" else null
 }
+
+/** Valutaenhet för en ticker, t.ex. "kr", "$" eller "€"; "kr" när valutan är okänd. */
+internal fun currencyUnit(ticker: String?): String = CurrencyHelper.getCurrencySymbol(CurrencyHelper.getCurrencyFromSymbol(ticker))

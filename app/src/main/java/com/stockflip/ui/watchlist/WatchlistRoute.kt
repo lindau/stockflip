@@ -20,6 +20,7 @@ import com.stockflip.MainViewModel
 import com.stockflip.UiState
 import com.stockflip.WatchItem
 import com.stockflip.WatchItemUiState
+import com.stockflip.isTriggeredForDisplay
 import com.stockflip.WatchType
 import com.stockflip.repository.StockRepository
 import com.stockflip.ui.createwatch.CombinedWatchSheet
@@ -51,7 +52,14 @@ internal fun WatchlistRoute(
     var sparklines by remember { mutableStateOf<Map<String, List<Double>>>(emptyMap()) }
     val symbols = items.mapNotNull { it.item.ticker?.takeIf { _ -> it.item.watchType !is com.stockflip.WatchType.PricePair } }.distinct()
     LaunchedEffect(symbols) { if (symbols.isNotEmpty()) sparklines = SparklineStore.load(symbols, com.stockflip.YahooFinanceService) }
-    val sections by remember(items, query) { derivedStateOf { sectionsFor(items, query) } }
+    val context = androidx.compose.ui.platform.LocalContext.current
+    var triggerTimes by remember { mutableStateOf<Map<Int, Long>>(emptyMap()) }
+    LaunchedEffect(items.count { it.isTriggeredForDisplay() }) {
+        triggerTimes = try {
+            com.stockflip.StockPairDatabase.getDatabase(context).triggerHistoryDao().getLatestPerWatchItem().associate { it.watchItemId to it.triggeredAt }
+        } catch (e: Exception) { emptyMap() }
+    }
+    val sections by remember(items, query, triggerTimes) { derivedStateOf { sectionsFor(items, query, triggerTimes) } }
 
     // Som MainActivity förut: visa sparad data direkt, uppdatera sedan kurserna tyst i bakgrunden.
     LaunchedEffect(Unit) {

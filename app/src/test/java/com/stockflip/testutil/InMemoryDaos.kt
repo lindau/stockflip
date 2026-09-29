@@ -161,6 +161,9 @@ class InMemoryTriggerHistoryDao : TriggerHistoryDao {
             .sortedByDescending { it.triggeredAt }
             .take(limit)
 
+    override suspend fun getLatestPerWatchItem(): List<TriggerHistoryEntity> =
+        entries.groupBy { it.watchItemId }.map { (_, list) -> list.maxByOrNull { it.triggeredAt }!! }
+
     override suspend fun deleteOlderThan(before: Long) {
         entries.removeAll { it.triggeredAt < before }
     }
