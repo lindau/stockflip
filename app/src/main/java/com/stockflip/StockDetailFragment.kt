@@ -22,6 +22,9 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.stockflip.databinding.BottomSheetAddWatchBinding
+import com.stockflip.ui.CollapsibleSection
+import com.stockflip.ui.DetailSectionSummaries
 import com.stockflip.ui.SwipeToDeleteCallback
 import com.stockflip.databinding.FragmentStockDetailBinding
 import com.stockflip.repository.MetricHistoryRepository
@@ -90,6 +93,12 @@ class StockDetailFragment : Fragment() {
     private var latestPodcastObservations: List<PodcastObservationEntity> = emptyList()
     private var triggerBannerDismissed = false
     private var insiderNotificationHandled = false
+    private var showKeyMetricsAction = true
+    private var showInsiderBuyAction = false
+    private var alertsSection: CollapsibleSection? = null
+    private var insiderSection: CollapsibleSection? = null
+    private var podcastSection: CollapsibleSection? = null
+    private var notesSection: CollapsibleSection? = null
     private var insiderTransactionsExpanded = false
     private var podcastObservationsExpanded = false
     private val avanzaLinkService = AvanzaStockLinkService()
@@ -261,6 +270,7 @@ class StockDetailFragment : Fragment() {
         )
 
         setupRecyclerView()
+        setupSections()
         setupQuickActions()
         setupObservers()
         setupSwipeRefresh()
@@ -359,45 +369,51 @@ class StockDetailFragment : Fragment() {
     }
 
     private fun setupQuickActions() {
-        val companyName = arguments?.getString(ARG_COMPANY_NAME)
-        val symbol = arguments?.getString(ARG_SYMBOL)
-        binding.addWatchHeaderText.text = "Lägg till bevakning av ${companyName ?: symbol ?: ""}"
-
-        configureQuickActionButton(binding.createPriceTargetButton) {
-            dialogManager.showCreatePriceTargetDialog()
-        }
-
-        configureQuickActionButton(binding.createDrawdownButton) {
-            dialogManager.showCreateDrawdownDialog()
-        }
-
-        configureQuickActionButton(binding.createDailyMoveButton) {
-            dialogManager.showCreateDailyMoveDialog()
-        }
-
-        configureQuickActionButton(binding.createKeyMetricsButton) {
-            dialogManager.showCreateKeyMetricsDialog()
-        }
-
-        configureQuickActionButton(binding.createInsiderBuyButton) {
-            dialogManager.showCreateInsiderBuyDialog()
-        }
-
-        configureQuickActionButton(binding.createPriceVsSmaButton) {
-            dialogManager.showCreatePriceVsSmaDialog()
-        }
-
-        configureQuickActionButton(binding.createSmaCrossoverButton) {
-            dialogManager.showCreateSmaCrossoverDialog()
-        }
+        binding.addWatchButton.setOnClickListener { showAddWatchSheet() }
     }
 
-    private fun configureQuickActionButton(
-        button: View,
-        onClick: () -> Unit
-    ) {
-        button.isVisible = true
-        button.setOnClickListener { onClick() }
+    private fun showAddWatchSheet() {
+        val sheet = BottomSheetDialog(requireContext())
+        val sheetBinding = BottomSheetAddWatchBinding.inflate(layoutInflater)
+        val companyName = arguments?.getString(ARG_COMPANY_NAME)
+        val symbol = arguments?.getString(ARG_SYMBOL)
+        sheetBinding.addWatchSheetTitle.text = "Ny bevakning av ${companyName ?: symbol ?: ""}".trim()
+        sheetBinding.sheetKeyMetrics.isVisible = showKeyMetricsAction
+        sheetBinding.sheetInsiderBuy.isVisible = showInsiderBuyAction
+
+        fun action(row: View, onClick: () -> Unit) = row.setOnClickListener {
+            sheet.dismiss()
+            onClick()
+        }
+        action(sheetBinding.sheetPriceTarget) { dialogManager.showCreatePriceTargetDialog() }
+        action(sheetBinding.sheetDrawdown) { dialogManager.showCreateDrawdownDialog() }
+        action(sheetBinding.sheetDailyMove) { dialogManager.showCreateDailyMoveDialog() }
+        action(sheetBinding.sheetKeyMetrics) { dialogManager.showCreateKeyMetricsDialog() }
+        action(sheetBinding.sheetInsiderBuy) { dialogManager.showCreateInsiderBuyDialog() }
+        action(sheetBinding.sheetPriceVsSma) { dialogManager.showCreatePriceVsSmaDialog() }
+        action(sheetBinding.sheetSmaCrossover) { dialogManager.showCreateSmaCrossoverDialog() }
+
+        sheet.setContentView(sheetBinding.root)
+        sheet.show()
+    }
+
+    private fun setupSections() {
+        val ctx = requireContext()
+        fun section(
+            key: String,
+            title: String,
+            header: com.stockflip.databinding.ViewSectionHeaderBinding,
+            body: View,
+            expanded: Boolean
+        ) = CollapsibleSection(
+            ctx, key, header.root, header.sectionTitle, header.sectionSummary,
+            header.sectionArrow, body, expanded
+        ).also { it.setTitle(title) }
+
+        alertsSection = section("alerts", "Bevakningar", binding.alertsHeader, binding.alertsBody, true)
+        insiderSection = section("insider", "Senaste insideraffärer", binding.insiderHeader, binding.insiderBody, false)
+        podcastSection = section("podcast", "Poddomnämnanden", binding.podcastHeader, binding.podcastBody, false)
+        notesSection = section("notes", "Anteckningar", binding.notesHeader, binding.notesBody, false)
     }
 
     private fun setupObservers() {
@@ -451,12 +467,18 @@ class StockDetailFragment : Fragment() {
                         alertAdapter.submitList(state.data)
                         renderAlertsEmptyState()
                         binding.alertsRecyclerView.isVisible = state.data.isNotEmpty()
-                        binding.allAlertsEnabledSwitch.isVisible = state.data.isNotEmpty()
-                        binding.allAlertsEnabledSwitch.setOnCheckedChangeListener(null)
-                        binding.allAlertsEnabledSwitch.isChecked = state.data.isNotEmpty() && state.data.all { it.item.isActive }
-                        binding.allAlertsEnabledSwitch.setOnCheckedChangeListener { _, isChecked ->
+                        binding.alertsHeader.sectionSwitch.isVisible = state.data.isNotEmpty()
+                        binding.alertsHeader.sectionSwitch.setOnCheckedChangeListener(null)
+                        binding.alertsHeader.sectionSwitch.isChecked = state.data.isNotEmpty() && state.data.all { it.item.isActive }
+                        binding.alertsHeader.sectionSwitch.setOnCheckedChangeListener { _, isChecked ->
                             viewModel.toggleAllAlerts(isChecked)
                         }
+                        alertsSection?.setSummary(
+                            DetailSectionSummaries.alerts(
+                                active = state.data.count { it.item.isActive && !it.item.isTriggered },
+                                triggered = state.data.count { it.item.isTriggered }
+                            )
+                        )
                         renderDecisionSupport()
                         renderInsiderTransactions()
                         renderTriggerBanner()
@@ -553,6 +575,7 @@ class StockDetailFragment : Fragment() {
             viewModel.noteState.collect { note ->
                 if (note != null && note.note.isNotBlank()) {
                     binding.notesText.text = note.note
+                    notesSection?.setSummary(DetailSectionSummaries.note(note.note))
                     binding.notesText.setTextColor(
                         com.google.android.material.color.MaterialColors.getColor(
                             binding.notesText,
@@ -561,6 +584,7 @@ class StockDetailFragment : Fragment() {
                     )
                 } else {
                     binding.notesText.setText(R.string.notes_placeholder)
+                    notesSection?.setSummary(null)
                     binding.notesText.setTextColor(
                         com.google.android.material.color.MaterialColors.getColor(
                             binding.notesText,
@@ -577,12 +601,8 @@ class StockDetailFragment : Fragment() {
         // Dölj nyckeltal-knappen för krypto och index (saknar bolagsdata)
         val isNonEquity = StockSearchResult.isNonEquitySymbol(data.symbol)
 
-        binding.createKeyMetricsButton.visibility = if (isNonEquity) android.view.View.GONE else android.view.View.VISIBLE
-        binding.createInsiderBuyButton.visibility = if (canUseSecInsiderData(data)) {
-            android.view.View.VISIBLE
-        } else {
-            android.view.View.GONE
-        }
+        showKeyMetricsAction = !isNonEquity
+        showInsiderBuyAction = canUseSecInsiderData(data)
 
         binding.notesCard.isVisible = true
     }
@@ -810,8 +830,14 @@ class StockDetailFragment : Fragment() {
     private fun renderInsiderTransactions() {
         val hasInsiderWatch = latestAlerts.any { it.item.watchType is WatchType.InsiderBuy }
         val showSection = latestInsiderTransactions.isNotEmpty() || hasInsiderWatch
-        binding.insiderSectionLabel.isVisible = showSection
+        binding.insiderSection.isVisible = showSection
         binding.insiderTransactionsCard.isVisible = showSection
+        insiderSection?.setSummary(
+            DetailSectionSummaries.insider(
+                buys = latestInsiderTransactions.count { it.transactionType != InsiderTransactionType.SELL.name },
+                sells = latestInsiderTransactions.count { it.transactionType == InsiderTransactionType.SELL.name }
+            )
+        )
         if (!showSection) return
 
         binding.insiderTransactionsContainer.removeAllViews()
@@ -879,12 +905,6 @@ class StockDetailFragment : Fragment() {
         binding.insiderToggleText.setOnClickListener(toggle)
         binding.insiderToggleText.isClickable = true
         binding.insiderToggleText.isFocusable = true
-        binding.insiderSectionLabel.setOnClickListener(toggle)
-        binding.insiderSectionLabel.isClickable = true
-        binding.insiderSectionLabel.isFocusable = true
-        binding.insiderTransactionsCard.setOnClickListener(toggle)
-        binding.insiderTransactionsCard.isClickable = true
-        binding.insiderTransactionsCard.isFocusable = true
     }
 
     private fun clearInsiderToggle() {
@@ -892,12 +912,6 @@ class StockDetailFragment : Fragment() {
         binding.insiderToggleText.setOnClickListener(null)
         binding.insiderToggleText.isClickable = false
         binding.insiderToggleText.isFocusable = false
-        binding.insiderSectionLabel.setOnClickListener(null)
-        binding.insiderSectionLabel.isClickable = false
-        binding.insiderSectionLabel.isFocusable = false
-        binding.insiderTransactionsCard.setOnClickListener(null)
-        binding.insiderTransactionsCard.isClickable = false
-        binding.insiderTransactionsCard.isFocusable = false
     }
 
     private fun hasHiddenInsiderTransactions(): Boolean {
@@ -910,7 +924,7 @@ class StockDetailFragment : Fragment() {
         renderInsiderTransactions()
         if (!insiderTransactionsExpanded) {
             binding.stockDetailScrollView.post {
-                binding.stockDetailScrollView.smoothScrollTo(0, binding.insiderSectionLabel.top)
+                binding.stockDetailScrollView.smoothScrollTo(0, binding.insiderSection.top)
             }
         }
     }
@@ -981,11 +995,12 @@ class StockDetailFragment : Fragment() {
 
     private fun setupPodcastToggle() {
         val configured = BuildConfig.PODCAST_ANALYSIS_BASE_URL.isNotBlank()
-        binding.podcastSectionHeader.isVisible = configured
+        binding.podcastSection.isVisible = configured
         if (!configured) return
 
-        binding.podcastEnabledSwitch.isChecked = PodcastObservationSettings.isEnabled(requireContext())
-        binding.podcastEnabledSwitch.setOnCheckedChangeListener { _, isChecked ->
+        binding.podcastHeader.sectionSwitch.isVisible = true
+        binding.podcastHeader.sectionSwitch.isChecked = PodcastObservationSettings.isEnabled(requireContext())
+        binding.podcastHeader.sectionSwitch.setOnCheckedChangeListener { _, isChecked ->
             PodcastObservationSettings.setEnabled(requireContext(), isChecked)
             renderPodcastObservations()
         }
@@ -1012,6 +1027,7 @@ class StockDetailFragment : Fragment() {
         }
         val enabled = PodcastObservationSettings.isEnabled(requireContext())
         binding.podcastObservationsCard.isVisible = enabled
+        podcastSection?.setSummary(DetailSectionSummaries.podcast(enabled, latestPodcastObservations.size))
         if (!enabled) return
 
         binding.podcastObservationsContainer.removeAllViews()
@@ -1084,9 +1100,6 @@ class StockDetailFragment : Fragment() {
         binding.podcastToggleText.setOnClickListener(toggle)
         binding.podcastToggleText.isClickable = true
         binding.podcastToggleText.isFocusable = true
-        binding.podcastSectionLabel.setOnClickListener(toggle)
-        binding.podcastSectionLabel.isClickable = true
-        binding.podcastSectionLabel.isFocusable = true
     }
 
     private fun clearPodcastToggle() {
@@ -1094,9 +1107,6 @@ class StockDetailFragment : Fragment() {
         binding.podcastToggleText.setOnClickListener(null)
         binding.podcastToggleText.isClickable = false
         binding.podcastToggleText.isFocusable = false
-        binding.podcastSectionLabel.setOnClickListener(null)
-        binding.podcastSectionLabel.isClickable = false
-        binding.podcastSectionLabel.isFocusable = false
     }
 
     private fun hasHiddenPodcastObservations(): Boolean {
@@ -1109,7 +1119,7 @@ class StockDetailFragment : Fragment() {
         renderPodcastObservations()
         if (!podcastObservationsExpanded) {
             binding.stockDetailScrollView.post {
-                binding.stockDetailScrollView.smoothScrollTo(0, binding.podcastSectionHeader.top)
+                binding.stockDetailScrollView.smoothScrollTo(0, binding.podcastSection.top)
             }
         }
     }
@@ -1176,8 +1186,9 @@ class StockDetailFragment : Fragment() {
         val highlightId = arguments?.getString(ARG_HIGHLIGHT_INSIDER_TRANSACTION_ID) ?: return
         val highlighted = latestInsiderTransactions.firstOrNull { it.id == highlightId } ?: return
         insiderNotificationHandled = true
+        insiderSection?.expand()
         binding.stockDetailScrollView.post {
-            binding.stockDetailScrollView.smoothScrollTo(0, binding.insiderSectionLabel.top)
+            binding.stockDetailScrollView.smoothScrollTo(0, binding.insiderSection.top)
             showInsiderTransactionSheet(highlighted)
         }
     }
@@ -1302,7 +1313,6 @@ class StockDetailFragment : Fragment() {
     private fun renderNextReportSection(data: StockDetailData) {
         val earnings = data.nextEarnings
         val showSection = earnings != null && earnings.reportDateMillis > 0L
-        binding.nextReportLabel.isVisible = showSection
         binding.nextReportCard.isVisible = showSection
         if (!showSection) return
 
@@ -1619,6 +1629,10 @@ class StockDetailFragment : Fragment() {
             (activity as? MainActivity)?.setDetailChromeHidden(false)
             isChartFullscreen = false
         }
+        alertsSection = null
+        insiderSection = null
+        podcastSection = null
+        notesSection = null
         super.onDestroyView()
         _binding = null
     }

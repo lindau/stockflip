@@ -58,11 +58,11 @@ class WatchDialogManager(
     private val lifecycleScope get() = fragment.viewLifecycleOwner.lifecycleScope
 
     private fun hideQuickActions() {
-        fragment.view?.findViewById<View>(R.id.quickActionsCard)?.visibility = View.GONE
+        fragment.view?.findViewById<View>(R.id.addWatchButton)?.visibility = View.GONE
     }
 
     private fun showQuickActions() {
-        fragment.view?.findViewById<View>(R.id.quickActionsCard)?.visibility = View.VISIBLE
+        fragment.view?.findViewById<View>(R.id.addWatchButton)?.visibility = View.VISIBLE
     }
 
     private fun currentCurrencySymbol(): String = CurrencyHelper.getCurrencySymbol(currentCurrency())
