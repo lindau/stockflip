@@ -20,6 +20,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.Fullscreen
 import androidx.compose.material.icons.outlined.Tune
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
@@ -91,6 +92,11 @@ internal fun StockDetailScreen(
     onAddWatch: () -> Unit,
     onEditAlert: (WatchItemUiState) -> Unit,
     onAlertAction: (WatchItemUiState, AlertAction) -> Unit,
+    insiderTransactions: List<com.stockflip.InsiderTransactionEntity>,
+    insiderHighlightId: String?,
+    podcastObservations: List<com.stockflip.PodcastObservationEntity>,
+    onOpenAvanza: () -> Unit,
+    onOpenNordnet: () -> Unit,
     banner: DetailBanner?,
     highlightWatchId: Int?,
     onBannerReactivate: () -> Unit,
@@ -101,6 +107,7 @@ internal fun StockDetailScreen(
     modifier: Modifier = Modifier,
 ) {
     var showIndicators by remember { mutableStateOf(false) }
+    var showFullscreen by remember { mutableStateOf(false) }
     val periods = ChartPeriod.entries
     val change = calculatePeriodChange(data, chartData, selectedPeriod)
     val changePercent = change.percent
@@ -119,7 +126,10 @@ internal fun StockDetailScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
                 IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = stringResource(R.string.stockdetail_tillbaka)) }
+                Row {
+                IconButton(onClick = { showFullscreen = true }) { Icon(Icons.Outlined.Fullscreen, contentDescription = "Helskärm") }
                 IconButton(onClick = { showIndicators = true }) { Icon(Icons.Outlined.Tune, contentDescription = stringResource(R.string.stockdetail_indikatorer)) }
+                }
             }
             PullToRefreshBox(isRefreshing = isRefreshing, onRefresh = onRefresh, modifier = Modifier.fillMaxSize()) {
                 LazyColumn(Modifier.fillMaxSize()) {
@@ -258,6 +268,10 @@ internal fun StockDetailScreen(
                             )
                         }
                     }
+                    item(key = "analyst") { AnalystSection(data) }
+                    item(key = "insider") { InsiderSection(insiderTransactions, insiderHighlightId) }
+                    item(key = "podcast") { PodcastSection(podcastObservations) }
+                    item(key = "broker") { BrokerLinks(onOpenAvanza, onOpenNordnet) }
                     item(key = "end") { Box(Modifier.height(96.dp)) }
                 }
             }
@@ -268,6 +282,27 @@ internal fun StockDetailScreen(
             text = { Text(stringResource(R.string.stockdetail_ny_bevakning)) },
             modifier = Modifier.align(Alignment.BottomEnd).padding(Space.md),
         )
+    }
+    if (showFullscreen) {
+        androidx.compose.ui.window.Dialog(
+            onDismissRequest = { showFullscreen = false },
+            properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false),
+        ) {
+            androidx.compose.material3.Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+            com.stockflip.ui.components.cards.FullscreenStockChart(
+                data = data,
+                chartData = chartData,
+                selectedPeriod = selectedPeriod,
+                onPeriodSelected = onPeriodSelected,
+                onClose = { showFullscreen = false },
+                smaLevels = smaLevels,
+                indicatorConfig = indicatorConfig,
+                bollingerPoints = bollingerPoints,
+                rsiPoints = rsiPoints,
+                onIndicatorConfigChange = onIndicatorConfigChange,
+            )
+            }
+        }
     }
     if (showIndicators) {
         ChartSettingsDialog(

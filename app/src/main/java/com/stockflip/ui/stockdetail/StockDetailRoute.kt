@@ -1,7 +1,12 @@
 package com.stockflip.ui.stockdetail
 
 import androidx.compose.material3.SnackbarHostState
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
+import android.widget.Toast
 import androidx.compose.runtime.Composable
+import com.stockflip.AvanzaStockLinkService
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -61,6 +66,9 @@ internal fun StockDetailRoute(
     var sheetOpen by remember { mutableStateOf(false) }
     var editing by remember { mutableStateOf<WatchItemUiState?>(null) }
     val note by viewModel.noteState.collectAsState()
+    val insiders by viewModel.insiderTransactionsState.collectAsState()
+    val podcasts by viewModel.podcastObservationsState.collectAsState()
+    val avanza = remember { AvanzaStockLinkService() }
     var noteOpen by remember { mutableStateOf(false) }
 
     val alerts: List<WatchItemUiState> = (alertsState as? UiState.Success)?.data.orEmpty()
@@ -101,6 +109,11 @@ internal fun StockDetailRoute(
                     editing = alert; sheetOpen = true
                 }
             },
+            insiderTransactions = insiders,
+            insiderHighlightId = launch.insiderId,
+            podcastObservations = podcasts,
+            onOpenAvanza = { scope.launch { openAvanza(context, avanza, state.data.symbol) } },
+            onOpenNordnet = { openNordnet(context) },
             banner = if (bannerDismissed) null else detailBannerFor(
                 launch.title, launch.message,
                 alerts.firstOrNull { it.item.id == launch.watchId }?.isTriggeredForDisplay(),
@@ -198,4 +211,27 @@ private suspend fun loadIndicators(
     val sma = smaPeriods.map { p -> async { p to viewModel.getSmaSeries(p, period) } }.awaitAll()
         .mapNotNull { (p, pts) -> pts?.takeIf { it.isNotEmpty() }?.let { SmaChartLevel(p, it) } }
     Indicators(sma, bands.await().orEmpty(), rsi.await().orEmpty())
+}
+
+private suspend fun openAvanza(context: Context, service: AvanzaStockLinkService, symbol: String) {
+    val query = brokerSearchQuery(symbol)
+    val url = service.findStockPageUrl(query) ?: "https://www.avanza.se/sok.html?q=${Uri.encode(query)}"
+    try {
+        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)).setPackage("se.avanzabank.androidapplikation"))
+    } catch (e: Exception) {
+        try {
+            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+        } catch (e2: Exception) {
+            Toast.makeText(context, "Kunde inte öppna Avanza", Toast.LENGTH_SHORT).show()
+        }
+    }
+}
+
+private fun openNordnet(context: Context) {
+    val launch = context.packageManager.getLaunchIntentForPackage("com.nordnet")
+    try {
+        context.startActivity(launch ?: Intent(Intent.ACTION_VIEW, Uri.parse("https://www.nordnet.se/aktier/kurser")))
+    } catch (e: Exception) {
+        Toast.makeText(context, "Kunde inte öppna Nordnet", Toast.LENGTH_SHORT).show()
+    }
 }
