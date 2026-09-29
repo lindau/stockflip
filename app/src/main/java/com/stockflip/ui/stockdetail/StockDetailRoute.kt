@@ -8,6 +8,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
+import com.stockflip.isTriggeredForDisplay
+import com.stockflip.ui.nav.DetailLaunch
 import com.stockflip.toUserMessage
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.setValue
@@ -42,6 +45,7 @@ import kotlinx.coroutines.coroutineScope
 internal fun StockDetailRoute(
     viewModel: StockDetailViewModel,
     snackbarHostState: SnackbarHostState,
+    launch: DetailLaunch = DetailLaunch(),
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -53,6 +57,7 @@ internal fun StockDetailRoute(
     var config by remember { mutableStateOf(ChartIndicatorSettings.load(context)) }
     var pullRefreshing by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
+    var bannerDismissed by rememberSaveable { mutableStateOf(false) }
     var sheetOpen by remember { mutableStateOf(false) }
     var editing by remember { mutableStateOf<WatchItemUiState?>(null) }
     val note by viewModel.noteState.collectAsState()
@@ -96,6 +101,24 @@ internal fun StockDetailRoute(
                     editing = alert; sheetOpen = true
                 }
             },
+            banner = if (bannerDismissed) null else detailBannerFor(
+                launch.title, launch.message,
+                alerts.firstOrNull { it.item.id == launch.watchId }?.isTriggeredForDisplay(),
+            ),
+            highlightWatchId = launch.watchId,
+            onBannerReactivate = {
+                alerts.firstOrNull { it.item.id == launch.watchId }?.let { alert ->
+                    scope.launch {
+                        val result = try { viewModel.reactivateAlertAndReturnResult(alert.item) } catch (e: Exception) { null }
+                        snackbarHostState.showSnackbar(result?.toUserMessage() ?: "Kunde inte återaktivera bevakningen")
+                        bannerDismissed = true
+                    }
+                }
+            },
+            onBannerDelete = {
+                alerts.firstOrNull { it.item.id == launch.watchId }?.let { viewModel.deleteAlert(it.item); bannerDismissed = true }
+            },
+            onBannerDismiss = { bannerDismissed = true },
             onAlertAction = { alert, action ->
                 scope.launch {
                     when (action) {

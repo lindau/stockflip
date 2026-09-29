@@ -34,7 +34,7 @@ fun AppShell(
     watchlist: @Composable () -> Unit,
     market: @Composable () -> Unit,
     settings: @Composable () -> Unit,
-    stockDetail: @Composable (symbol: String, onBack: () -> Unit) -> Unit,
+    stockDetail: @Composable (symbol: String, launch: DetailLaunch, onBack: () -> Unit) -> Unit,
     pairDetail: @Composable (watchItemId: Int, onBack: () -> Unit) -> Unit = { _, _ -> },
     document: @Composable (asset: String, onBack: () -> Unit) -> Unit = { _, _ -> },
     navController: NavHostController = rememberNavController(),
@@ -62,10 +62,23 @@ fun AppShell(
             composable(Routes.SETTINGS) { settings() }
             composable(
                 route = Routes.STOCK_DETAIL,
-                arguments = listOf(navArgument(Routes.ARG_SYMBOL) { type = NavType.StringType }),
+                arguments = listOf(
+                    navArgument(Routes.ARG_SYMBOL) { type = NavType.StringType },
+                    navArgument(Routes.ARG_WATCH_ID) { type = NavType.IntType; defaultValue = -1 },
+                    navArgument(Routes.ARG_INSIDER_ID) { type = NavType.StringType; nullable = true; defaultValue = null },
+                    navArgument(Routes.ARG_TITLE) { type = NavType.StringType; nullable = true; defaultValue = null },
+                    navArgument(Routes.ARG_MESSAGE) { type = NavType.StringType; nullable = true; defaultValue = null },
+                ),
             ) { entry ->
-                val symbol = entry.arguments?.getString(Routes.ARG_SYMBOL).orEmpty()
-                stockDetail(symbol) { navController.popBackStack() }
+                val args = entry.arguments
+                val symbol = args?.getString(Routes.ARG_SYMBOL).orEmpty()
+                val launch = DetailLaunch(
+                    watchId = args?.getInt(Routes.ARG_WATCH_ID, -1)?.takeIf { it > 0 },
+                    insiderId = args?.getString(Routes.ARG_INSIDER_ID),
+                    title = args?.getString(Routes.ARG_TITLE),
+                    message = args?.getString(Routes.ARG_MESSAGE),
+                )
+                stockDetail(symbol, launch) { navController.popBackStack() }
             }
             composable(
                 route = Routes.PAIR_DETAIL,

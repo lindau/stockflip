@@ -91,6 +91,11 @@ internal fun StockDetailScreen(
     onAddWatch: () -> Unit,
     onEditAlert: (WatchItemUiState) -> Unit,
     onAlertAction: (WatchItemUiState, AlertAction) -> Unit,
+    banner: DetailBanner?,
+    highlightWatchId: Int?,
+    onBannerReactivate: () -> Unit,
+    onBannerDelete: () -> Unit,
+    onBannerDismiss: () -> Unit,
     note: String?,
     onEditNote: () -> Unit,
     modifier: Modifier = Modifier,
@@ -118,6 +123,24 @@ internal fun StockDetailScreen(
             }
             PullToRefreshBox(isRefreshing = isRefreshing, onRefresh = onRefresh, modifier = Modifier.fillMaxSize()) {
                 LazyColumn(Modifier.fillMaxSize()) {
+                    if (banner != null) item(key = "banner") {
+                        Column(
+                            Modifier.fillMaxWidth().padding(horizontal = Space.screenH, vertical = Space.sm)
+                                .background(MaterialTheme.colorScheme.primaryContainer, MaterialTheme.shapes.small)
+                                .padding(Space.md),
+                            verticalArrangement = Arrangement.spacedBy(Space.xs),
+                        ) {
+                            banner.title?.let { Text(it, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onPrimaryContainer) }
+                            banner.message?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onPrimaryContainer) }
+                            Row(horizontalArrangement = Arrangement.spacedBy(Space.sm)) {
+                                if (banner.canAct) {
+                                    TextButton(onClick = onBannerReactivate) { Text("Återaktivera") }
+                                    TextButton(onClick = onBannerDelete) { Text("Ta bort") }
+                                }
+                                TextButton(onClick = onBannerDismiss) { Text("Stäng") }
+                            }
+                        }
+                    }
                     item(key = "hero") {
                         Column(Modifier.padding(horizontal = Space.screenH)) {
                             Text(data.companyName, style = MaterialTheme.typography.headlineMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
@@ -204,7 +227,9 @@ internal fun StockDetailScreen(
                         items(alerts, key = { it.item.id }) { alert ->
                             val row = alert.toRowModel()
                             Row(
-                                Modifier.fillMaxWidth().heightIn(min = Space.touch).clickable { onEditAlert(alert) }
+                                Modifier.fillMaxWidth().heightIn(min = Space.touch)
+                                    .then(if (alert.item.id == highlightWatchId) Modifier.background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f)) else Modifier)
+                                    .clickable { onEditAlert(alert) }
                                     .padding(horizontal = Space.screenH, vertical = 12.dp),
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically,

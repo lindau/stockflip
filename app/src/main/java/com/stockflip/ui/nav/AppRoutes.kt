@@ -16,9 +16,22 @@ object Routes {
     const val SETTINGS = "settings"
 
     const val ARG_SYMBOL = "symbol"
-    const val STOCK_DETAIL = "stock/{$ARG_SYMBOL}"
+    const val ARG_WATCH_ID = "watchId"
+    const val ARG_INSIDER_ID = "insiderId"
+    const val ARG_TITLE = "title"
+    const val ARG_MESSAGE = "message"
+    const val STOCK_DETAIL =
+        "stock/{$ARG_SYMBOL}?$ARG_WATCH_ID={$ARG_WATCH_ID}&$ARG_INSIDER_ID={$ARG_INSIDER_ID}&$ARG_TITLE={$ARG_TITLE}&$ARG_MESSAGE={$ARG_MESSAGE}"
 
-    fun stockDetail(symbol: String) = "stock/${Uri.encode(symbol)}"
+    fun stockDetail(symbol: String, launch: DetailLaunch = DetailLaunch()): String {
+        val query = listOfNotNull(
+            launch.watchId?.let { "$ARG_WATCH_ID=$it" },
+            launch.insiderId?.let { "$ARG_INSIDER_ID=${Uri.encode(it)}" },
+            launch.title?.let { "$ARG_TITLE=${Uri.encode(it)}" },
+            launch.message?.let { "$ARG_MESSAGE=${Uri.encode(it)}" },
+        )
+        return "stock/${Uri.encode(symbol)}" + if (query.isEmpty()) "" else "?" + query.joinToString("&")
+    }
 
     const val ARG_PAIR_ID = "pairId"
     const val PAIR_DETAIL = "pair/{$ARG_PAIR_ID}"
@@ -45,3 +58,14 @@ enum class TopLevelTab(
 
 /** Nedre navigeringen visas bara på flikarnas rotskärmar, inte på detaljsidor. */
 fun isTopLevelRoute(route: String?): Boolean = TopLevelTab.entries.any { it.route == route }
+
+/**
+ * Sammanhang när aktiedetaljen öppnas från en notis: vilken bevakning eller insideraffär som ska
+ * markeras och notisens text. Tomt vid vanlig navigering.
+ */
+data class DetailLaunch(
+    val watchId: Int? = null,
+    val insiderId: String? = null,
+    val title: String? = null,
+    val message: String? = null,
+)

@@ -32,6 +32,7 @@ import com.stockflip.viewmodel.StockSearchViewModel
 import com.stockflip.repository.MetricHistoryRepository
 import com.stockflip.repository.TriggerHistoryRepository
 import com.stockflip.ui.nav.AppShell
+import com.stockflip.ui.nav.DetailLaunch
 import com.stockflip.ui.nav.Routes
 import com.stockflip.ui.nav.TopLevelTab
 import com.stockflip.ui.nav.navigateToTab
@@ -145,10 +146,11 @@ class AppActivity : ComponentActivity() {
                         )
                     },
                     document = { asset, onBack -> DocumentScreen(asset, onBack) },
-                    stockDetail = { symbol, onBack ->
+                    stockDetail = { symbol, launch, onBack ->
                         StockDetailRoute(
                             viewModel = stockDetailViewModel(symbol),
                             snackbarHostState = snackbar,
+                            launch = launch,
                             onBack = onBack,
                         )
                     },
@@ -215,6 +217,9 @@ class AppActivity : ComponentActivity() {
         val ticker = intent.getStringExtra(AppActivity.EXTRA_OPEN_TICKER)
         val watchId = intent.getIntExtra(AppActivity.EXTRA_OPEN_WATCH_ID, -1).takeIf { it > 0 }
         val updateVersion = intent.getStringExtra(AppActivity.EXTRA_OPEN_UPDATE_VERSION)
+        val triggerTitle = intent.getStringExtra(AppActivity.EXTRA_TRIGGER_TITLE)
+        val triggerMessage = intent.getStringExtra(AppActivity.EXTRA_TRIGGER_MESSAGE)
+        val insiderTransactionId = intent.getStringExtra(AppActivity.EXTRA_OPEN_INSIDER_TRANSACTION_ID)
         val protectedIntent = pairId != -1 || ticker != null || watchId != null || updateVersion != null ||
             intent.hasExtra(AppActivity.EXTRA_TRIGGER_TITLE) || intent.hasExtra(AppActivity.EXTRA_TRIGGER_MESSAGE)
         if (!protectedIntent) return null
@@ -234,7 +239,15 @@ class AppActivity : ComponentActivity() {
             return null
         }
         return when (destination) {
-            is NotificationDestination.Stock -> Routes.stockDetail(destination.ticker)
+            is NotificationDestination.Stock -> Routes.stockDetail(
+                destination.ticker,
+                DetailLaunch(
+                    watchId = destination.watchItemId,
+                    insiderId = insiderTransactionId,
+                    title = triggerTitle,
+                    message = triggerMessage,
+                ),
+            )
             is NotificationDestination.PairWatch -> Routes.pairDetail(destination.pairWatchItemId)
             is NotificationDestination.AppUpdate -> {
                 pendingUpdateCheck = true

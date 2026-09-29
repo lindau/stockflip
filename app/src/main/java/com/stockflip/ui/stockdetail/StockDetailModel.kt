@@ -74,3 +74,10 @@ internal fun alertStatusLabel(triggered: Boolean, isActive: Boolean): String = w
     !isActive -> "Pausad"
     else -> "Väntar"
 }
+
+/** Banderoll högst upp när detaljen öppnats från en notis. [canAct] = bevakningen finns och är utlöst. */
+internal data class DetailBanner(val title: String?, val message: String?, val canAct: Boolean)
+
+internal fun detailBannerFor(title: String?, message: String?, watchTriggered: Boolean?): DetailBanner? =
+    if (title.isNullOrBlank() && message.isNullOrBlank()) null
+    else DetailBanner(title, message, canAct = watchTriggered == true)
