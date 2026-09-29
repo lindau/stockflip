@@ -39,6 +39,13 @@
             </intent-filter>
         </activity>
 
+        <!-- Nya Compose-skalet (redesign). Inte launcher förrän Par/Kombinerad/Inställningar/Marknad är portade. -->
+        <activity
+            android:name=".AppActivity"
+            android:configChanges="orientation|screenSize|keyboardHidden"
+            android:exported="true"
+            android:launchMode="singleTop" />
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"
