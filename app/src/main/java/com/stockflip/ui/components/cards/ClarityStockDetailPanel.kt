@@ -500,7 +500,11 @@ private fun ClaritySparkChart(
         // Priceskalan utökas för att alltid rymma SMA-nivåerna — annars klipps linjen tyst
         // utanför canvasen när priset ligger långt från det bevakade medelvärdet.
         val bandValues = bollingerPoints.flatMap { listOf(it.upper, it.lower) }
-        val smaValues = smaLevels.flatMap { level -> level.points.map { it.value } } + bandValues + watchLevels
+        // Bevakningsnivåer långt från kurserna (mer än halva prisspannet utanför) skulle platta ut
+        // kurslinjen, så de skalas inte in och ritas inte.
+        val priceSpan = (prices.max() - prices.min()).coerceAtLeast(prices.max() * 0.002)
+        val visibleWatchLevels = watchLevels.filter { it >= prices.min() - priceSpan * 0.5 && it <= prices.max() + priceSpan * 0.5 }
+        val smaValues = smaLevels.flatMap { level -> level.points.map { it.value } } + bandValues + visibleWatchLevels
         val minPrice = minOf(prices.min(), smaValues.minOrNull() ?: prices.min())
         val maxPrice = maxOf(prices.max(), smaValues.maxOrNull() ?: prices.max())
         val range = (maxPrice - minPrice).coerceAtLeast(0.001)
@@ -526,7 +530,7 @@ private fun ClaritySparkChart(
         drawPath(fillPath, color = fillColor)
 
         // Bevakningsnivåer: tunn streckad linje över hela bredden.
-        watchLevels.forEach { level ->
+        visibleWatchLevels.forEach { level ->
             val y = yFor(level)
             drawLine(
                 color = watchLevelColor,
