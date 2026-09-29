@@ -9,7 +9,7 @@
 - Ett enda skapa-flöde i en nedre panel för bevakningar, med en mening som beskriver vad du bevakar. Aktiepar och kombinerade bevakningar skapas från `+` i Bevakningar
 - Svep en rad åt vänster för att ta bort, med `Ångra`
 - Aktiedetaljen har ren graf med streckade bevakningsnivåer, periodval, nyckeltal och en anteckning
-- Masshantering (markeringsläge) och pausa/aktivera-svep finns inte längre
+- Masshantering (markeringsläge) finns inte längre. Pausa, aktivera och återaktivera görs med en knapp vid varje bevakning på aktiens detaljsida
 
 - Bolagsloggor visas nu i översikten och på aktiedetaljen, med flagga som sekundär info
 - Insideraffärer kontrolleras nu var 6:e timme istället för en gång per dag

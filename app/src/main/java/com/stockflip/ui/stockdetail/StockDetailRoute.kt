@@ -7,6 +7,9 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import com.stockflip.toUserMessage
+import kotlinx.coroutines.launch
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -49,6 +52,7 @@ internal fun StockDetailRoute(
     val period by viewModel.selectedPeriod.collectAsState()
     var config by remember { mutableStateOf(ChartIndicatorSettings.load(context)) }
     var pullRefreshing by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
     var sheetOpen by remember { mutableStateOf(false) }
     var editing by remember { mutableStateOf<WatchItemUiState?>(null) }
     val note by viewModel.noteState.collectAsState()
@@ -83,7 +87,29 @@ internal fun StockDetailRoute(
             onRefresh = { pullRefreshing = true; viewModel.refresh() },
             onBack = onBack,
             onAddWatch = { editing = null; sheetOpen = true },
-            onEditAlert = { editing = it; sheetOpen = true },
+            onEditAlert = { alert ->
+                // Typer som sheeten inte kan redigera (t.ex. prisintervall, kombinerad) får inte öppna ett tomt
+                // "Ny bevakning"-formulär som sedan skulle skriva över den befintliga bevakningen.
+                if (draftFrom(alert.item.watchType) == null) {
+                    scope.launch { snackbarHostState.showSnackbar("Den här bevakningstypen kan inte redigeras här. Svep bort den i Bevakningar och skapa en ny.") }
+                } else {
+                    editing = alert; sheetOpen = true
+                }
+            },
+            onAlertAction = { alert, action ->
+                scope.launch {
+                    when (action) {
+                        AlertAction.Reactivate -> {
+                            val result = try { viewModel.reactivateAlertAndReturnResult(alert.item) } catch (e: Exception) { null }
+                            snackbarHostState.showSnackbar(result?.toUserMessage() ?: "Kunde inte återaktivera bevakningen")
+                        }
+                        AlertAction.Pause, AlertAction.Resume -> {
+                            viewModel.toggleAlert(alert.item)
+                            snackbarHostState.showSnackbar(if (action == AlertAction.Pause) "Bevakningen är pausad" else "Bevakningen är aktiv")
+                        }
+                    }
+                }
+            },
             note = note?.note,
             onEditNote = { noteOpen = true },
             modifier = modifier,

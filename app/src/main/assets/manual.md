@@ -444,16 +444,16 @@ Om du redan har äldre bevakningar av typen **Prisintervall** eller **Kombinerat
 
 ## Hantera dina bevakningar
 
-### Aktivera och inaktivera
+### Pausa och aktivera
 
-En bevakning som utlösts kan återaktiveras (se nedan). Bevakningar kontrolleras så länge de är aktiva och skickar då notiser när villkoret uppfylls.
+På aktiens detaljsida står en knapp till höger om varje bevakning under **Dina bevakningar**: **Pausa** för en aktiv bevakning och **Aktivera** för en pausad. En pausad bevakning kontrolleras inte och skickar inga notiser. Statusen visas som `Väntar`, `Utlöst` eller `Pausad`.
 
 ### Återaktivera en triggad bevakning
 
 Engångslarm (Målpris och Drawdown) inaktiveras automatiskt efter utlösning och kräver alltid manuell återaktivering. Återkommande larm (Dagsrörelse, Nyckeltal, Aktiepar, Prisintervall, Kombinerat) återaktiveras normalt automatiskt nästa handelsdag, men du kan även återaktivera dem manuellt tidigare — till exempel för att slippa se "Triggad"-märket resten av dagen.
 
 - Hitta bevakningen under **Utlösta** i listan.
-- Öppna aktiens detaljsida (eller pardetaljen för ett aktiepar) och återaktivera bevakningen där.
+- Öppna aktiens detaljsida och tryck **Återaktivera** vid bevakningen (för ett aktiepar öppnar du pardetaljen och trycker **Återaktivera** där).
 
 Bevakningen är nu aktiv igen. För målpris räknar appen om riktningen från aktuell kurs: om kursen ligger över målpriset bevakas nästa passage ned under nivån, och om kursen ligger under målpriset bevakas nästa passage upp över nivån.
 
@@ -470,7 +470,7 @@ När spärren behålls visas detta i listor som **Nästa handelsdag**, och åter
 2. Ändra värdena i den nedre panelen.
 3. Tryck **Spara**.
 
-Kombinerade bevakningar med NOT, flera aktier, SMA eller prisintervall kan inte redigeras i byggaren.
+Kombinerade bevakningar med NOT, flera aktier, SMA eller prisintervall kan inte redigeras i byggaren, och prisintervall- och kombinerade bevakningar kan inte redigeras från aktiedetaljen: svep bort dem i **Bevakningar** och skapa en ny.
 
 ### Ta bort en bevakning
 

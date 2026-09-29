@@ -27,6 +27,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -89,6 +90,7 @@ internal fun StockDetailScreen(
     onBack: () -> Unit,
     onAddWatch: () -> Unit,
     onEditAlert: (WatchItemUiState) -> Unit,
+    onAlertAction: (WatchItemUiState, AlertAction) -> Unit,
     note: String?,
     onEditNote: () -> Unit,
     modifier: Modifier = Modifier,
@@ -209,10 +211,13 @@ internal fun StockDetailScreen(
                             ) {
                                 Text(row.subtitle.substringBefore(" · utlöst").substringBefore(" · pausad"),
                                     style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
+                                val triggered = alert.isTriggeredForDisplay()
                                 PillStatus(
-                                    text = when { !alert.item.isActive -> "Pausad"; alert.isTriggeredForDisplay() -> "Utlöst"; else -> "Väntar" },
-                                    highlighted = alert.isTriggeredForDisplay(),
+                                    text = alertStatusLabel(triggered, alert.item.isActive),
+                                    highlighted = triggered,
                                 )
+                                val action = alertActionFor(triggered, alert.item.isActive)
+                                TextButton(onClick = { onAlertAction(alert, action) }) { Text(action.label) }
                             }
                         }
                     }

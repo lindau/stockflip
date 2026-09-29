@@ -55,3 +55,22 @@ internal fun compactMoney(value: Double, currency: String): String {
     }
     return "${formatNumber(scaled, if (unit.isEmpty()) 0 else 1)} $unit $currency".replace("  ", " ").trim()
 }
+
+/** Vad man kan göra med en bevakning direkt från raden på aktiedetaljen. */
+internal enum class AlertAction(val label: String) {
+    Reactivate("Återaktivera"), Resume("Aktivera"), Pause("Pausa")
+}
+
+/** Utlöst → återaktivera; pausad (ej utlöst) → aktivera; annars → pausa. */
+internal fun alertActionFor(triggered: Boolean, isActive: Boolean): AlertAction = when {
+    triggered -> AlertAction.Reactivate
+    !isActive -> AlertAction.Resume
+    else -> AlertAction.Pause
+}
+
+/** Statuspill: "Utlöst" går före "Pausad" eftersom engångsbevakningar blir inaktiva när de utlösts. */
+internal fun alertStatusLabel(triggered: Boolean, isActive: Boolean): String = when {
+    triggered -> "Utlöst"
+    !isActive -> "Pausad"
+    else -> "Väntar"
+}
