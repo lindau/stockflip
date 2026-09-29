@@ -439,11 +439,14 @@ class StockPriceUpdateWorker(
             is WatchType.PriceTarget -> {
                 val ticker = item.ticker ?: ""
                 val price = snapshots[ticker]?.lastPrice
-                val directionText = if (watchType.direction == WatchType.PriceDirection.ABOVE) "nådde" else "föll till"
-                TriggerNotificationPayload(
-                    title = "${item.companyName ?: ticker} $directionText ${formatPrice(price ?: watchType.targetPrice)}",
-                    message = "Målpris ${formatPrice(watchType.targetPrice)} har nåtts."
+                val text = NotificationText.priceTarget(
+                    name = item.companyName ?: ticker,
+                    above = watchType.direction == WatchType.PriceDirection.ABOVE,
+                    target = watchType.targetPrice,
+                    price = price,
+                    currency = CurrencyHelper.getCurrencyFromSymbol(ticker),
                 )
+                TriggerNotificationPayload(title = text.title, message = text.message)
             }
 
             is WatchType.ATHBased -> {
