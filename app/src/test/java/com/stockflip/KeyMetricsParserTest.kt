@@ -1,0 +1,90 @@
+package com.stockflip
+
+import org.json.JSONObject
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
+import org.junit.Test
+
+class KeyMetricsParserTest {
+
+    private fun result(json: String): JSONObject = JSONObject(json)
+
+    @Test
+    fun `parses price to book, ev to ebitda and debt to equity`() {
+        val metrics = parseKeyMetrics(result("""
+            {
+              "summaryDetail": { "trailingPE": { "raw": 12.5 } },
+              "defaultKeyStatistics": {
+                "priceToBook": { "raw": 3.4 },
+                "enterpriseToEbitda": { "raw": 9.8 }
+              },
+              "financialData": { "debtToEquity": { "raw": 45.2 } }
+            }
+        """.trimIndent()))
+
+        assertNotNull(metrics)
+        assertEquals(3.4, metrics!!.priceToBook!!, 0.0001)
+        assertEquals(9.8, metrics.evToEbitda!!, 0.0001)
+        assertEquals(45.2, metrics.debtToEquity!!, 0.0001)
+        assertEquals(12.5, metrics.peRatio!!, 0.0001)
+    }
+
+    @Test
+    fun `keeps negative values for the new metrics`() {
+        val metrics = parseKeyMetrics(result("""
+            {
+              "defaultKeyStatistics": {
+                "priceToBook": { "raw": -2.1 },
+                "enterpriseToEbitda": { "raw": -15.0 }
+              },
+              "financialData": { "debtToEquity": { "raw": -80.0 } }
+            }
+        """.trimIndent()))!!
+
+        assertEquals(-2.1, metrics.priceToBook!!, 0.0001)
+        assertEquals(-15.0, metrics.evToEbitda!!, 0.0001)
+        assertEquals(-80.0, metrics.debtToEquity!!, 0.0001)
+    }
+
+    @Test
+    fun `missing or empty fields give null values`() {
+        val metrics = parseKeyMetrics(result("""
+            {
+              "defaultKeyStatistics": { "priceToBook": {} },
+              "financialData": { "currentPrice": { "raw": 100.0 } }
+            }
+        """.trimIndent()))!!
+
+        assertNull(metrics.priceToBook)
+        assertNull(metrics.evToEbitda)
+        assertNull(metrics.debtToEquity)
+    }
+
+    @Test
+    fun `keeps existing metrics behaviour`() {
+        val metrics = parseKeyMetrics(result("""
+            {
+              "summaryDetail": {
+                "trailingAnnualDividendYield": { "raw": 0.031 },
+                "priceToSalesTrailing12Months": { "raw": 1.5 },
+                "marketCap": { "raw": 1000000.0 }
+              },
+              "defaultKeyStatistics": { "forwardEps": { "raw": 7.0 } },
+              "financialData": { "returnOnEquity": { "raw": 0.18 } }
+            }
+        """.trimIndent()))!!
+
+        assertEquals(3.1, metrics.dividendYield!!, 0.0001)
+        assertEquals(1.5, metrics.psRatio!!, 0.0001)
+        assertEquals(1000000.0, metrics.marketCap!!, 0.0001)
+        assertEquals(7.0, metrics.earningsPerShare!!, 0.0001)
+        assertEquals(18.0, metrics.returnOnEquity!!, 0.0001)
+    }
+
+    @Test
+    fun `returns null when no module is present`() {
+        assertNull(parseKeyMetrics(result("{}")))
+        assertNull(parseKeyMetrics(null))
+    }
+}

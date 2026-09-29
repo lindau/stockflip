@@ -28,6 +28,20 @@ data class SmaChartLevel(
     val points: List<SmaPoint>
 )
 
+/** En daglig RSI-datapunkt (0–100). */
+data class RsiPoint(
+    val timestamp: Long,
+    val value: Double
+)
+
+/** En daglig Bollinger-datapunkt: [middle] är SMA, [upper]/[lower] banden. */
+data class BollingerPoint(
+    val timestamp: Long,
+    val upper: Double,
+    val middle: Double,
+    val lower: Double
+)
+
 data class PairChartSeries(
     val timestamps: List<Long>,
     val values: List<Double>
@@ -68,3 +82,6 @@ fun ChartPeriod.accessibilityLabel(): String = when (this) {
     ChartPeriod.YEAR -> "1 år"
     ChartPeriod.FIVE_YEARS -> "5 år"
 }
+
+/** RSI/Bollinger beräknas på dagsdata och är bara meningsfulla när grafen själv är daglig eller grövre. */
+fun ChartPeriod.supportsIndicators(): Boolean = this != ChartPeriod.DAY && this != ChartPeriod.WEEK

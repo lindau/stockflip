@@ -7,6 +7,7 @@ StockFlip låter dig bevaka aktier och kryptovalutor och få notiser när dina e
 - [Ordlista](#ordlista)
 - [Hur appen fungerar i bakgrunden](#hur-appen-fungerar-i-bakgrunden)
 - [Navigering i appen](#navigering-i-appen)
+- [Kursgrafen och indikatorer](#kursgrafen-och-indikatorer)
 - [Bevakningstyperna](#bevakningstyperna)
   - [1. Målpris](#1-malpris)
   - [2. Dagsrörelse](#2-dagsrorelse)
@@ -42,9 +43,14 @@ StockFlip låter dig bevaka aktier och kryptovalutor och få notiser när dina e
 | **P/S-tal** | Aktiekursen delat med omsättning per aktie. |
 | **Direktavkastning** | Utdelningen per aktie delat med aktiekursen, i procent. |
 | **Vinst/aktie** | Bolagets vinst per aktie, ofta kallat EPS. |
+| **P/B-tal** (Price/Book) | Börsvärdet delat med bolagets bokförda egna kapital (substansvärde). Under 1 betyder att bolaget värderas lägre än det egna kapitalet i balansräkningen. |
+| **EV/EBITDA** | Företagsvärdet (börsvärde + nettoskuld) delat med rörelseresultat före avskrivningar. Ett värderingsmått som tar hänsyn till bolagets skulder och därför fungerar bättre än P/E när bolag är olika skuldsatta. |
+| **Skuldsättningsgrad** | Bolagets skulder i procent av det egna kapitalet. I appens statistikruta står den förkortad som "Skuldsättn.". |
 | **Aktiepar** | En bevakning som jämför prisskillnaden mellan två aktier. |
 | **Kombinerat larm** | En bevakning som kombinerar flera villkor med logiska operatorer (OCH/ELLER/INTE). |
 | **SMA** (Simple Moving Average) | Glidande medelvärde: genomsnittligt stängningspris för aktien över ett antal senaste dagar, t.ex. SMA(50) för de senaste 50 dagarna. Jämnar ut kortsiktigt brus och används för att se den underliggande trenden. |
+| **RSI** (Relative Strength Index) | Momentumindikator mellan 0 och 100 som mäter hur snabbt kursen stigit eller fallit på sistone (här RSI(14), Wilders utjämning). Över 70 tolkas ofta som överköpt, under 30 som översåld. |
+| **Bollinger Bands** | Ett band runt kursen: ett glidande medelvärde (SMA 20) med en övre och undre linje två standardavvikelser ovanför och under. Ju mer kursen svänger, desto bredare band. Kursen nära övre kanten kan tyda på att den rört sig starkt uppåt, nära den undre på motsatsen. |
 | **Golden cross** | När ett kortare SMA (t.ex. 50 dagar) stiger över ett längre SMA (t.ex. 200 dagar) — ofta tolkat som ett tecken på uppåtgående trend. |
 | **Death cross** | När ett kortare SMA faller under ett längre SMA — ofta tolkat som ett tecken på nedåtgående trend. |
 
@@ -91,6 +97,29 @@ I nuvarande appversion fungerar flikarna så här:
 - **Översikt:** aktiepar visas inte här utan i fliken **Par**. Översikten visar sektioner som `Nytt och triggade`, `Nära att triggas`, `Aktiva bevakningar` och `Inaktiva`. Härifrån läser du läget, men nya aktier läggs inte till här.
 - **Par:** tryck på `+` för att skapa ett aktiepar.
 - **Bevakningar:** tryck på `+` för att lägga till en ny aktie, ett index eller en kryptovaluta. Öppna sedan aktiens detaljsida och välj vilken typ av bevakning du vill skapa. Filtret du valt (t.ex. **Triggade**) ligger kvar när du byter flik och kommer tillbaka.
+
+---
+
+## Kursgrafen och indikatorer
+
+Överst på aktiens detaljsida visas kursgrafen. Välj period under grafen (1D, 1V, 1M, 3M, 6M, 1Å, 5Å) och tryck och dra i grafen för att se kurs och datum för en enskild punkt.
+
+Uppe till höger i grafen finns två knappar:
+
+- **Kugghjul** — välj vilka indikatorer som ritas i grafen (se nedan).
+- **Fullskärm** — visar grafen över hela skärmen i liggande läge. Kugghjulet finns även där.
+
+**Indikatorer du kan välja:**
+
+- **SMA (från bevakningar)** — de streckade SMA-linjerna för dina SMA-bevakningar. På som standard.
+- **Bollinger Bands (20, 2σ)** — ett skuggat band runt kursen med streckade linjer för övre och undre gräns och en tunn mittlinje (SMA 20). Av som standard.
+- **RSI (14)** — visas i en egen liten panel under grafen med hjälplinjer vid 30 och 70 och aktuellt värde. När du trycker i grafen visas RSI-värdet för samma dag. Av som standard.
+
+**Bra att veta:**
+
+- Bollinger Bands och RSI visas för perioderna **1M och längre**. För 1D och 1V (som visar kursen minut för minut) går de inte att slå på, eftersom de bygger på dagsstängningar.
+- Ditt val gäller alla aktier och sparas tills du ändrar det.
+- Indikatorerna är bara ett hjälpmedel i grafen — de skickar inga notiser. Bevakningar skapar du som vanligt under respektive bevakningstyp.
 
 ---
 
@@ -178,6 +207,8 @@ I nuvarande appversion fungerar flikarna så här:
 - **P/S-tal** — värderingsmått baserat på omsättning
 - **Direktavkastning** — utdelning i procent av kursen
 - **Vinst/aktie** — vinst per aktie (EPS)
+
+**Bara visning:** Aktiens detaljsida visar fler nyckeltal än de som går att bevaka — Börsvärde, ROE, P/B, EV/EBITDA och Skuldsättningsgrad visas i statistikrutorna men kan inte användas i en bevakning.
 
 **Riktning:** Bestäms automatiskt när du sparar bevakningen (samma logik som Prismål).
 
@@ -296,7 +327,7 @@ I nuvarande appversion fungerar flikarna så här:
 - Du får en notis.
 - Bevakningen inaktiveras — tryck **Återaktivera** för att sätta upp den igen.
 
-**I kursgrafen:** Så länge du har en aktiv SMA-bevakning (eller SMA-korsning, se nedan) på aktien ritas medelvärdets historiska utveckling som en streckad linje ovanpå kursgrafen, märkt med perioden (t.ex. "SMA50") — precis som på t.ex. Yahoo Finance rör sig linjen upp och ner i takt med kursen, inte en rak vågrät linje. Har du flera bevakningar med olika perioder visas en linje per period.
+**I kursgrafen:** Så länge du har en aktiv SMA-bevakning (eller SMA-korsning, se nedan) på aktien ritas medelvärdets historiska utveckling som en streckad linje ovanpå kursgrafen, märkt med perioden (t.ex. "SMA50") — precis som på t.ex. Yahoo Finance rör sig linjen upp och ner i takt med kursen, inte en rak vågrät linje. Har du flera bevakningar med olika perioder visas en linje per period. Du kan slå av och på SMA-linjerna med kugghjulet ovanför grafen, se [Kursgrafen och indikatorer](#kursgrafen-och-indikatorer).
 
 ---
 
@@ -534,8 +565,14 @@ StockFlip distribueras inte via Play Store, så appen håller själv koll på om
 **Kan jag bevaka index?**
 - Ja. Sök på t.ex. "OMX", "S&P" eller "Nasdaq". Index har `^` framför symbolen (`^OMXS30`, `^GSPC`, `^IXIC`). Målpris, dagsrörelse, drawdown, aktiepar, SMA-bevakning, SMA-korsning och kombinerade larm fungerar som för aktier. Nyckeltal och insideraffärer finns inte för index, så de knapparna visas inte.
 
+**Varför saknas P/B, EV/EBITDA eller skuldsättningsgrad för en aktie?**
+- Värdena hämtas från Yahoo Finance och finns inte för alla bolag. De saknas ofta för banker, försäkrings- och fastighetsbolag (särskilt EV/EBITDA och skuldsättningsgrad), samt för mindre bolag. Saknade värden visas som "-". Negativa värden är möjliga, till exempel negativt EV/EBITDA när bolaget går med förlust.
+
 **Hur beräknas SMA?**
 - SMA(N) är genomsnittet av aktiens senaste N dagsstängningar, hämtade från Yahoo Finance. Under pågående handelsdag används dagens senaste pris som den "senaste" punkten, precis som på de flesta handelsplattformar.
+
+**Hur beräknas RSI och Bollinger Bands?**
+- Båda beräknas i appen från aktiens dagsstängningar hämtade från Yahoo Finance. RSI(14) använder Wilders utjämning, och Bollinger Bands är SMA(20) ± 2 standardavvikelser. Värdena kan skilja sig något från andra tjänster eftersom RSI är känslig för hur många dagar tillbaka beräkningen startar.
 
 **Varifrån kommer bolagsloggorna?**
 - Bolagsloggor tillhandahålls av [Logo.dev](https://www.logo.dev), kryptologotyper av [CoinCap](https://coincap.io).

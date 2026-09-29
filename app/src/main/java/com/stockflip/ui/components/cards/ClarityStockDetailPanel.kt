@@ -8,6 +8,7 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -20,6 +21,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Fullscreen
 import androidx.compose.material.icons.filled.FullscreenExit
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.Switch
+import androidx.compose.material3.TextButton
+import androidx.compose.ui.window.Dialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -58,7 +63,12 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.stockflip.BollingerPoint
+import com.stockflip.ChartIndicatorConfig
 import com.stockflip.ChartPeriod
+import com.stockflip.RsiPoint
+import com.stockflip.TechnicalIndicators
+import com.stockflip.supportsIndicators
 import com.stockflip.accessibilityLabel
 import com.stockflip.CountryFlagHelper
 import com.stockflip.CurrencyHelper
@@ -89,6 +99,10 @@ fun ClarityStockDetailPanel(
     onFullscreenToggle: (() -> Unit)? = null,
     smaLevels: List<SmaChartLevel> = emptyList(),
     logoRefreshToken: Int = 0,
+    indicatorConfig: ChartIndicatorConfig = ChartIndicatorConfig(),
+    bollingerPoints: List<BollingerPoint> = emptyList(),
+    rsiPoints: List<RsiPoint> = emptyList(),
+    onIndicatorConfigChange: ((ChartIndicatorConfig) -> Unit)? = null,
 ) {
     Column(
         modifier = modifier.fillMaxWidth(),
@@ -103,6 +117,10 @@ fun ClarityStockDetailPanel(
             onFullscreenToggle = onFullscreenToggle,
             smaLevels = smaLevels,
             logoRefreshToken = logoRefreshToken,
+            indicatorConfig = indicatorConfig,
+            bollingerPoints = bollingerPoints,
+            rsiPoints = rsiPoints,
+            onIndicatorConfigChange = onIndicatorConfigChange,
         )
         ClarityStockStatsGrid(data = data)
         ClarityWeekRangeCard(data = data)
@@ -119,8 +137,13 @@ private fun ClarityStockHeroCard(
     onFullscreenToggle: (() -> Unit)? = null,
     smaLevels: List<SmaChartLevel> = emptyList(),
     logoRefreshToken: Int = 0,
+    indicatorConfig: ChartIndicatorConfig = ChartIndicatorConfig(),
+    bollingerPoints: List<BollingerPoint> = emptyList(),
+    rsiPoints: List<RsiPoint> = emptyList(),
+    onIndicatorConfigChange: ((ChartIndicatorConfig) -> Unit)? = null,
 ) {
     val colorScheme = MaterialTheme.colorScheme
+    var showSettings by remember { mutableStateOf(false) }
     val periodChange = calculatePeriodChange(
         data = data,
         chartData = chartData,
@@ -216,32 +239,23 @@ private fun ClarityStockHeroCard(
                     .fillMaxWidth()
                     .padding(top = 16.dp),
             ) {
-                ClaritySparkChart(
+                ClarityChartWithIndicators(
                     chartData = chartData,
                     isPositive = isPositive,
                     lineColor = changeColor,
                     selectedPeriod = selectedPeriod,
                     smaLevels = smaLevels,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(112.dp),
+                    indicatorConfig = indicatorConfig,
+                    bollingerPoints = bollingerPoints,
+                    rsiPoints = rsiPoints,
+                    modifier = Modifier.fillMaxWidth(),
+                    chartHeight = 112.dp,
                 )
-                if (onFullscreenToggle != null) {
-                    IconButton(
-                        onClick = onFullscreenToggle,
-                        modifier = Modifier
-                            .align(Alignment.TopEnd)
-                            .padding(4.dp)
-                            .size(36.dp)
-                            .background(colorScheme.surface.copy(alpha = 0.6f), RoundedCornerShape(8.dp)),
-                    ) {
-                        Icon(
-                            imageVector = Icons.Filled.Fullscreen,
-                            contentDescription = "Visa graf i fullskärm",
-                            tint = colorScheme.onSurfaceVariant,
-                        )
-                    }
-                }
+                ChartActionButtons(
+                    onFullscreenToggle = onFullscreenToggle,
+                    onOpenSettings = if (onIndicatorConfigChange != null) ({ showSettings = true }) else null,
+                    modifier = Modifier.align(Alignment.TopEnd),
+                )
             }
 
             ClarityPeriodSelector(
@@ -250,6 +264,126 @@ private fun ClarityStockHeroCard(
                 modifier = Modifier.padding(top = 10.dp),
             )
         }
+    }
+    if (showSettings && onIndicatorConfigChange != null) {
+        ChartSettingsDialog(
+            config = indicatorConfig,
+            canShowIndicators = selectedPeriod.supportsIndicators(),
+            onChange = onIndicatorConfigChange,
+            onDismiss = { showSettings = false },
+        )
+    }
+}
+
+/** Kugghjul (indikatorval) och fullskärmsknapp uppe till höger i grafen. */
+@Composable
+private fun ChartActionButtons(
+    onFullscreenToggle: (() -> Unit)?,
+    onOpenSettings: (() -> Unit)?,
+    modifier: Modifier = Modifier,
+) {
+    val colorScheme = MaterialTheme.colorScheme
+    Row(modifier = modifier.padding(4.dp), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+        if (onOpenSettings != null) {
+            IconButton(
+                onClick = onOpenSettings,
+                modifier = Modifier
+                    .size(36.dp)
+                    .background(colorScheme.surface.copy(alpha = 0.6f), RoundedCornerShape(8.dp)),
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Settings,
+                    contentDescription = "Välj indikatorer i grafen",
+                    tint = colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+        if (onFullscreenToggle != null) {
+            IconButton(
+                onClick = onFullscreenToggle,
+                modifier = Modifier
+                    .size(36.dp)
+                    .background(colorScheme.surface.copy(alpha = 0.6f), RoundedCornerShape(8.dp)),
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Fullscreen,
+                    contentDescription = "Visa graf i fullskärm",
+                    tint = colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+    }
+}
+
+/** Dialog med en switch per indikator. Bollinger och RSI är bara valbara för 1M och längre. */
+@Composable
+private fun ChartSettingsDialog(
+    config: ChartIndicatorConfig,
+    canShowIndicators: Boolean,
+    onChange: (ChartIndicatorConfig) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    Dialog(onDismissRequest = onDismiss) {
+        Card(shape = RoundedCornerShape(20.dp)) {
+            Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(
+                    text = "Visa i grafen",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                )
+                IndicatorSwitchRow(
+                    label = "SMA (från bevakningar)",
+                    checked = config.showSma,
+                    enabled = true,
+                    onCheckedChange = { onChange(config.copy(showSma = it)) },
+                )
+                IndicatorSwitchRow(
+                    label = "Bollinger Bands (${TechnicalIndicators.DEFAULT_BOLLINGER_PERIOD}, 2σ)",
+                    checked = config.showBollinger,
+                    enabled = canShowIndicators,
+                    onCheckedChange = { onChange(config.copy(showBollinger = it)) },
+                )
+                IndicatorSwitchRow(
+                    label = "RSI (${TechnicalIndicators.DEFAULT_RSI_PERIOD})",
+                    checked = config.showRsi,
+                    enabled = canShowIndicators,
+                    onCheckedChange = { onChange(config.copy(showRsi = it)) },
+                )
+                if (!canShowIndicators) {
+                    Text(
+                        text = "Bollinger och RSI visas för 1M och längre.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                TextButton(onClick = onDismiss, modifier = Modifier.align(Alignment.End)) {
+                    Text("Klar")
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun IndicatorSwitchRow(
+    label: String,
+    checked: Boolean,
+    enabled: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .minimumInteractiveComponentSize(),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyMedium,
+            color = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.weight(1f),
+        )
+        Switch(checked = checked, onCheckedChange = onCheckedChange, enabled = enabled)
     }
 }
 
@@ -291,6 +425,9 @@ private fun ClaritySparkChart(
     selectedPeriod: ChartPeriod,
     modifier: Modifier = Modifier,
     smaLevels: List<SmaChartLevel> = emptyList(),
+    bollingerPoints: List<BollingerPoint> = emptyList(),
+    touchIndex: Int? = null,
+    onTouchIndexChange: (Int?) -> Unit = {},
 ) {
     val prices = chartData?.prices.orEmpty()
     val timestamps = chartData?.timestamps.orEmpty()
@@ -315,11 +452,8 @@ private fun ClaritySparkChart(
     val tooltipDateColor = LocalTextTertiary.current
     val tooltipPriceColor = MaterialTheme.colorScheme.onSurface
     val smaLineColors = listOf(MaterialTheme.colorScheme.tertiary, MaterialTheme.colorScheme.secondary)
+    val bollingerColor = MaterialTheme.colorScheme.primary
     val textMeasurer = rememberTextMeasurer()
-
-    // Lokalt state (inte hissat) så bara denna Canvas ritas om under drag, inte resten av kortet.
-    var touchIndex by remember { mutableStateOf<Int?>(null) }
-    LaunchedEffect(chartData, selectedPeriod) { touchIndex = null }
 
     Canvas(
         modifier = modifier.pointerInput(prices.size) {
@@ -333,7 +467,7 @@ private fun ClaritySparkChart(
             awaitEachGesture {
                 val down = awaitFirstDown(requireUnconsumed = false)
                 down.consume()
-                touchIndex = indexForX(down.position.x)
+                onTouchIndexChange(indexForX(down.position.x))
                 while (true) {
                     val event = awaitPointerEvent()
                     val change = event.changes.firstOrNull { it.id == down.id } ?: break
@@ -342,15 +476,16 @@ private fun ClaritySparkChart(
                         break
                     }
                     change.consume()
-                    touchIndex = indexForX(change.position.x)
+                    onTouchIndexChange(indexForX(change.position.x))
                 }
-                touchIndex = null
+                onTouchIndexChange(null)
             }
         },
     ) {
         // Priceskalan utökas för att alltid rymma SMA-nivåerna — annars klipps linjen tyst
         // utanför canvasen när priset ligger långt från det bevakade medelvärdet.
-        val smaValues = smaLevels.flatMap { level -> level.points.map { it.value } }
+        val bandValues = bollingerPoints.flatMap { listOf(it.upper, it.lower) }
+        val smaValues = smaLevels.flatMap { level -> level.points.map { it.value } } + bandValues
         val minPrice = minOf(prices.min(), smaValues.minOrNull() ?: prices.min())
         val maxPrice = maxOf(prices.max(), smaValues.maxOrNull() ?: prices.max())
         val range = (maxPrice - minPrice).coerceAtLeast(0.001)
@@ -374,6 +509,54 @@ private fun ClaritySparkChart(
         }
 
         drawPath(fillPath, color = fillColor)
+
+        // Bollinger Bands ritas under kurslinjen: ifyllt band mellan övre/undre, streckade
+        // ytterlinjer och en tunn mittlinje (SMA). Samma carry-forward som för SMA-linjerna.
+        if (bollingerPoints.isNotEmpty()) {
+            val upper = alignSeriesToChart(timestamps, bollingerPoints) { it.timestamp }
+            val firstIndex = upper.indexOfFirst { it != null }
+            if (firstIndex >= 0) {
+                val upperPath = Path()
+                val lowerPath = Path()
+                val middlePath = Path()
+                val bandPath = Path()
+                for (i in firstIndex..upper.lastIndex) {
+                    val point = upper[i] ?: continue
+                    val x = xFor(i)
+                    if (i == firstIndex) {
+                        upperPath.moveTo(x, yFor(point.upper))
+                        lowerPath.moveTo(x, yFor(point.lower))
+                        middlePath.moveTo(x, yFor(point.middle))
+                        bandPath.moveTo(x, yFor(point.upper))
+                    } else {
+                        upperPath.lineTo(x, yFor(point.upper))
+                        lowerPath.lineTo(x, yFor(point.lower))
+                        middlePath.lineTo(x, yFor(point.middle))
+                        bandPath.lineTo(x, yFor(point.upper))
+                    }
+                }
+                for (i in upper.lastIndex downTo firstIndex) {
+                    val point = upper[i] ?: continue
+                    bandPath.lineTo(xFor(i), yFor(point.lower))
+                }
+                bandPath.close()
+                drawPath(bandPath, color = bollingerColor.copy(alpha = 0.08f))
+                val dashed = Stroke(
+                    width = 1.2.dp.toPx(),
+                    cap = StrokeCap.Round,
+                    join = StrokeJoin.Round,
+                    pathEffect = PathEffect.dashPathEffect(floatArrayOf(6.dp.toPx(), 4.dp.toPx()), 0f),
+                )
+                drawPath(upperPath, color = bollingerColor.copy(alpha = 0.7f), style = dashed)
+                drawPath(lowerPath, color = bollingerColor.copy(alpha = 0.7f), style = dashed)
+                drawPath(
+                    middlePath,
+                    color = bollingerColor.copy(alpha = 0.45f),
+                    style = Stroke(width = 1.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round),
+                )
+            }
+        }
+
         drawPath(
             path = linePath,
             color = lineColor,
@@ -390,7 +573,7 @@ private fun ClaritySparkChart(
         // dag för dag i takt med priset i stället för att ritas som en enda vågrät linje.
         smaLevels.forEachIndexed { index, level ->
             val smaColor = smaLineColors[index % smaLineColors.size]
-            val alignedValues = alignSmaToChart(timestamps, level.points)
+            val alignedValues = alignSeriesToChart(timestamps, level.points) { it.timestamp }.map { it?.value }
 
             val smaPath = Path()
             var started = false
@@ -505,25 +688,190 @@ private fun ClaritySparkChart(
 }
 
 /**
- * Slår ihop en SMA-serie (en punkt per dagsstängning) med kursgrafens egna tidsstämplar:
- * för varje graf-punkt väljs den senaste SMA-punkten vid eller före den tidsstämpeln
- * ("carry forward"), null tills den första SMA-punkten är tillgänglig. Båda listorna
+ * Slår ihop en indikatorserie (en punkt per dagsstängning) med kursgrafens egna tidsstämplar:
+ * för varje graf-punkt väljs den senaste punkten vid eller före den tidsstämpeln
+ * ("carry forward"), null tills den första punkten är tillgänglig. Båda listorna
  * antas vara kronologiskt sorterade, precis som Yahoo-svaren de kommer ifrån.
  */
-private fun alignSmaToChart(chartTimestamps: List<Long>, smaPoints: List<SmaPoint>): List<Double?> {
-    if (chartTimestamps.isEmpty() || smaPoints.isEmpty()) return List(chartTimestamps.size) { null }
-    val aligned = arrayOfNulls<Double>(chartTimestamps.size)
-    var smaIndex = 0
-    var lastValue: Double? = null
-    for (i in chartTimestamps.indices) {
-        val ts = chartTimestamps[i]
-        while (smaIndex < smaPoints.size && smaPoints[smaIndex].timestamp <= ts) {
-            lastValue = smaPoints[smaIndex].value
-            smaIndex++
+internal fun <T> alignSeriesToChart(
+    chartTimestamps: List<Long>,
+    points: List<T>,
+    timestampOf: (T) -> Long,
+): List<T?> {
+    if (chartTimestamps.isEmpty() || points.isEmpty()) return List(chartTimestamps.size) { null }
+    val aligned = ArrayList<T?>(chartTimestamps.size)
+    var pointIndex = 0
+    var last: T? = null
+    for (ts in chartTimestamps) {
+        while (pointIndex < points.size && timestampOf(points[pointIndex]) <= ts) {
+            last = points[pointIndex]
+            pointIndex++
         }
-        aligned[i] = lastValue
+        aligned.add(last)
     }
-    return aligned.toList()
+    return aligned
+}
+
+/**
+ * Kursgraf med valfria indikatorer: Bollinger ritas i själva grafen, RSI i en egen panel under.
+ * Hårkorset (touchIndex) hissas hit så RSI-panelen kan visa värdet vid samma punkt.
+ * [chartHeight] null betyder att grafen fyller resterande höjd (fullskärm).
+ */
+@Composable
+private fun ColumnScope.ClarityChartWithIndicatorsBody(
+    chartData: IntradayChartData?,
+    isPositive: Boolean,
+    lineColor: Color,
+    selectedPeriod: ChartPeriod,
+    smaLevels: List<SmaChartLevel>,
+    indicatorConfig: ChartIndicatorConfig,
+    bollingerPoints: List<BollingerPoint>,
+    rsiPoints: List<RsiPoint>,
+    chartHeight: androidx.compose.ui.unit.Dp?,
+) {
+    var touchIndex by remember { mutableStateOf<Int?>(null) }
+    LaunchedEffect(chartData, selectedPeriod) { touchIndex = null }
+    val indicatorsAvailable = selectedPeriod.supportsIndicators()
+    val bands = if (indicatorConfig.showBollinger && indicatorsAvailable) bollingerPoints else emptyList()
+    val rsi = if (indicatorConfig.showRsi && indicatorsAvailable) rsiPoints else emptyList()
+
+    ClaritySparkChart(
+        chartData = chartData,
+        isPositive = isPositive,
+        lineColor = lineColor,
+        selectedPeriod = selectedPeriod,
+        smaLevels = smaLevels,
+        bollingerPoints = bands,
+        touchIndex = touchIndex,
+        onTouchIndexChange = { touchIndex = it },
+        modifier = if (chartHeight != null) {
+            Modifier.fillMaxWidth().height(chartHeight)
+        } else {
+            Modifier.fillMaxWidth().weight(1f)
+        },
+    )
+    if (rsi.isNotEmpty() && (chartData?.timestamps?.size ?: 0) >= 2) {
+        ClarityRsiPane(
+            timestamps = chartData?.timestamps.orEmpty(),
+            rsiPoints = rsi,
+            touchIndex = touchIndex,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(if (chartHeight != null) 64.dp else 72.dp)
+                .padding(top = 6.dp),
+        )
+    }
+}
+
+@Composable
+private fun ClarityChartWithIndicators(
+    chartData: IntradayChartData?,
+    isPositive: Boolean,
+    lineColor: Color,
+    selectedPeriod: ChartPeriod,
+    smaLevels: List<SmaChartLevel>,
+    indicatorConfig: ChartIndicatorConfig,
+    bollingerPoints: List<BollingerPoint>,
+    rsiPoints: List<RsiPoint>,
+    modifier: Modifier = Modifier,
+    chartHeight: androidx.compose.ui.unit.Dp? = null,
+) {
+    Column(modifier = modifier) {
+        ClarityChartWithIndicatorsBody(
+            chartData = chartData,
+            isPositive = isPositive,
+            lineColor = lineColor,
+            selectedPeriod = selectedPeriod,
+            smaLevels = smaLevels,
+            indicatorConfig = indicatorConfig,
+            bollingerPoints = bollingerPoints,
+            rsiPoints = rsiPoints,
+            chartHeight = chartHeight,
+        )
+    }
+}
+
+/** RSI-panel (skala 0–100, hjälplinjer vid 30/70) som delar x-axel med kursgrafen. */
+@Composable
+private fun ClarityRsiPane(
+    timestamps: List<Long>,
+    rsiPoints: List<RsiPoint>,
+    touchIndex: Int?,
+    modifier: Modifier = Modifier,
+) {
+    val rsiColor = MaterialTheme.colorScheme.tertiary
+    val guideColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.18f)
+    val crosshairColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.25f)
+    val textMeasurer = rememberTextMeasurer()
+    val aligned = remember(timestamps, rsiPoints) { alignSeriesToChart(timestamps, rsiPoints) { it.timestamp } }
+
+    Canvas(modifier = modifier) {
+        val lastIndex = timestamps.lastIndex.coerceAtLeast(1)
+        val topPadding = size.height * 0.06f
+        val chartHeight = size.height * 0.88f
+        fun xFor(index: Int): Float = index * (size.width / lastIndex.toFloat())
+        fun yFor(value: Double): Float = topPadding + chartHeight * (1f - (value / 100.0).toFloat())
+
+        // Området mellan 30 och 70 ("neutral zon") tonas svagt, ytterlinjerna ritas streckade.
+        drawRect(
+            color = rsiColor.copy(alpha = 0.06f),
+            topLeft = Offset(0f, yFor(70.0)),
+            size = Size(size.width, yFor(30.0) - yFor(70.0)),
+        )
+        val guideStroke = Stroke(
+            width = 1.dp.toPx(),
+            pathEffect = PathEffect.dashPathEffect(floatArrayOf(4.dp.toPx(), 4.dp.toPx()), 0f),
+        )
+        listOf(30.0, 70.0).forEach { level ->
+            drawLine(
+                color = guideColor,
+                start = Offset(0f, yFor(level)),
+                end = Offset(size.width, yFor(level)),
+                strokeWidth = guideStroke.width,
+                pathEffect = guideStroke.pathEffect,
+            )
+        }
+
+        val path = Path()
+        var started = false
+        aligned.forEachIndexed { i, point ->
+            if (point == null) return@forEachIndexed
+            val offset = Offset(xFor(i), yFor(point.value))
+            if (!started) {
+                path.moveTo(offset.x, offset.y)
+                started = true
+            } else {
+                path.lineTo(offset.x, offset.y)
+            }
+        }
+        if (started) {
+            drawPath(
+                path = path,
+                color = rsiColor,
+                style = Stroke(width = 1.6.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round),
+            )
+        }
+
+        if (touchIndex != null && touchIndex in timestamps.indices) {
+            drawLine(
+                color = crosshairColor,
+                start = Offset(xFor(touchIndex), 0f),
+                end = Offset(xFor(touchIndex), size.height),
+                strokeWidth = 1.5.dp.toPx(),
+            )
+        }
+
+        val shownValue = aligned.getOrNull(touchIndex ?: aligned.lastIndex)?.value
+            ?: aligned.lastOrNull { it != null }?.value
+        val label = "RSI ${TechnicalIndicators.DEFAULT_RSI_PERIOD}" +
+            (shownValue?.let { " · ${CurrencyHelper.formatDecimal(it)}" } ?: "")
+        drawText(
+            textMeasurer = textMeasurer,
+            text = label,
+            style = TextStyle(fontSize = 9.sp, color = rsiColor, fontWeight = FontWeight.Bold),
+            topLeft = Offset(4.dp.toPx(), 0f),
+        )
+    }
 }
 
 /**
@@ -586,8 +934,13 @@ fun FullscreenStockChart(
     onClose: () -> Unit,
     modifier: Modifier = Modifier,
     smaLevels: List<SmaChartLevel> = emptyList(),
+    indicatorConfig: ChartIndicatorConfig = ChartIndicatorConfig(),
+    bollingerPoints: List<BollingerPoint> = emptyList(),
+    rsiPoints: List<RsiPoint> = emptyList(),
+    onIndicatorConfigChange: ((ChartIndicatorConfig) -> Unit)? = null,
 ) {
     val colorScheme = MaterialTheme.colorScheme
+    var showSettings by remember { mutableStateOf(false) }
     val periodChange = calculatePeriodChange(
         data = data,
         chartData = chartData,
@@ -636,6 +989,15 @@ fun FullscreenStockChart(
                     DailyChangePill(periodChange = periodChange, changeColor = changeColor)
                 }
             }
+            if (onIndicatorConfigChange != null) {
+                IconButton(onClick = { showSettings = true }) {
+                    Icon(
+                        imageVector = Icons.Filled.Settings,
+                        contentDescription = "Välj indikatorer i grafen",
+                        tint = colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
             IconButton(onClick = onClose) {
                 Icon(
                     imageVector = Icons.Filled.FullscreenExit,
@@ -645,12 +1007,15 @@ fun FullscreenStockChart(
             }
         }
 
-        ClaritySparkChart(
+        ClarityChartWithIndicators(
             chartData = chartData,
             isPositive = isPositive,
             lineColor = changeColor,
             selectedPeriod = selectedPeriod,
             smaLevels = smaLevels,
+            indicatorConfig = indicatorConfig,
+            bollingerPoints = bollingerPoints,
+            rsiPoints = rsiPoints,
             modifier = Modifier
                 .fillMaxWidth()
                 .weight(1f)
@@ -662,6 +1027,14 @@ fun FullscreenStockChart(
             onPeriodSelected = onPeriodSelected,
         )
     }
+    if (showSettings && onIndicatorConfigChange != null) {
+        ChartSettingsDialog(
+            config = indicatorConfig,
+            canShowIndicators = selectedPeriod.supportsIndicators(),
+            onChange = onIndicatorConfigChange,
+            onDismiss = { showSettings = false },
+        )
+    }
 }
 
 @Composable
@@ -671,7 +1044,10 @@ private fun ClarityStockStatsGrid(data: StockDetailData) {
         data.dividendYield != null ||
         data.earningsPerShare != null ||
         data.marketCap != null ||
-        data.returnOnEquity != null
+        data.returnOnEquity != null ||
+        data.priceToBook != null ||
+        data.evToEbitda != null ||
+        data.debtToEquity != null
     val stats = if (hasMetrics) {
         listOf(
             "P/E" to (data.peRatio?.let { CurrencyHelper.formatDecimal(it) } ?: "-"),
@@ -680,6 +1056,9 @@ private fun ClarityStockStatsGrid(data: StockDetailData) {
             "Vinst/aktie" to (data.earningsPerShare?.let { CurrencyHelper.formatPrice(it, data.currency) } ?: "-"),
             "Börsvärde" to (data.marketCap?.let { formatCompactMarketCap(it, data.currency) } ?: "-"),
             "ROE" to (data.returnOnEquity?.let { "${CurrencyHelper.formatDecimal(it)}%" } ?: "-"),
+            "P/B" to (data.priceToBook?.let { CurrencyHelper.formatDecimal(it) } ?: "-"),
+            "EV/EBITDA" to (data.evToEbitda?.let { CurrencyHelper.formatDecimal(it) } ?: "-"),
+            "Skuldsättn." to (data.debtToEquity?.let { "${CurrencyHelper.formatDecimal(it)}%" } ?: "-"),
         )
     } else {
         listOf(

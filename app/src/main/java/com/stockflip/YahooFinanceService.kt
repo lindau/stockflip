@@ -19,7 +19,6 @@ import java.net.CookiePolicy
 import okhttp3.JavaNetCookieJar
 import okhttp3.Request
 import kotlinx.coroutines.delay
-import kotlin.math.abs
 
 interface YahooFinanceApi {
     @GET("v8/finance/chart/{symbol}")
@@ -310,6 +309,19 @@ object YahooFinanceService : MarketDataService {
         return chartMarketDataService.getSmaSeries(symbol, period, chartPeriod)
     }
 
+    override suspend fun getRsiSeries(symbol: String, period: Int, chartPeriod: ChartPeriod): List<RsiPoint>? {
+        return chartMarketDataService.getRsiSeries(symbol, period, chartPeriod)
+    }
+
+    override suspend fun getBollingerSeries(
+        symbol: String,
+        period: Int,
+        stdDevs: Double,
+        chartPeriod: ChartPeriod
+    ): List<BollingerPoint>? {
+        return chartMarketDataService.getBollingerSeries(symbol, period, stdDevs, chartPeriod)
+    }
+
     // Nyckeltal ändras i praktiken högst dagligen men hämtas via det tyngre quoteSummary-anropet
     // (crumb). Utan cache gjordes det om för varje nyckeltalsbevakning vid varje listuppdatering.
     private val keyMetricsCache = SingleFlightCache<String, KeyMetrics>()
@@ -345,39 +357,10 @@ object YahooFinanceService : MarketDataService {
                         .optJSONObject("quoteSummary")
                         ?.optJSONArray("result")
                         ?.optJSONObject(0)
-                    val summaryDetail = result?.optJSONObject("summaryDetail")
-                    val defaultKeyStatistics = result?.optJSONObject("defaultKeyStatistics")
-                    val financialData = result?.optJSONObject("financialData")
-
-                    if (summaryDetail != null || defaultKeyStatistics != null || financialData != null) {
-                        val pe = summaryDetail?.optJSONObject("trailingPE")?.optDouble("raw").takeIf { it != null && !it.isNaN() && it > 0 }
-                            ?: summaryDetail?.optJSONObject("forwardPE")?.optDouble("raw").takeIf { it != null && !it.isNaN() && it > 0 }
-                        val ps = summaryDetail?.optJSONObject("priceToSalesTrailing12Months")?.optDouble("raw").takeIf { it != null && !it.isNaN() && it > 0 }
-                        // Prova dividendYield först, sedan trailingAnnualDividendYield (vanligt för icke-amerikanska aktier)
-                        val yieldRaw = summaryDetail?.optJSONObject("dividendYield")?.optDouble("raw")
-                            ?.takeIf { !it.isNaN() && it > 0 }
-                            ?: summaryDetail?.optJSONObject("trailingAnnualDividendYield")?.optDouble("raw")
-                                ?.takeIf { !it.isNaN() && it > 0 }
-                        val dividendYield = yieldRaw?.let { it * 100 }
-                        val marketCap = summaryDetail?.optJSONObject("marketCap")?.optDouble("raw")
-                            ?.takeIf { !it.isNaN() && it > 0 }
-                        val returnOnEquityRaw = financialData?.optJSONObject("returnOnEquity")?.optDouble("raw")
-                            ?.takeIf { !it.isNaN() }
-                        val returnOnEquity = returnOnEquityRaw?.let { if (abs(it) <= 1.0) it * 100 else it }
-                        val earningsPerShare = defaultKeyStatistics?.optJSONObject("trailingEps")?.optDouble("raw")
-                            ?.takeIf { !it.isNaN() && it > 0 }
-                            ?: defaultKeyStatistics?.optJSONObject("forwardEps")?.optDouble("raw")
-                                ?.takeIf { !it.isNaN() && it > 0 }
-
+                    val metrics = parseKeyMetrics(result)
+                    if (metrics != null) {
                         response.close()
-                        return@withContext KeyMetrics(
-                            peRatio = pe,
-                            psRatio = ps,
-                            dividendYield = dividendYield,
-                            earningsPerShare = earningsPerShare,
-                            marketCap = marketCap,
-                            returnOnEquity = returnOnEquity
-                        )
+                        return@withContext metrics
                     }
                 }
             } else if (response.code == 401) {

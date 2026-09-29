@@ -40,6 +40,13 @@ class YahooMarketDataServiceImpl(
     // tillbaka i tiden serien behöver sträcka sig beror på det.
     private val smaSeriesCache = SingleFlightCache<Triple<String, Int, ChartPeriod>, List<SmaPoint>>(clock)
 
+    // RSI och Bollinger delar dagsstängningar med SMA. Råa closes cachas per symbol och
+    // range-bucket så att flera indikatorer för samma aktie ger ETT nätverksanrop.
+    private val dailyClosesCache = SingleFlightCache<Pair<String, String>, List<Pair<Long, Double>>>(clock)
+    private val rsiSeriesCache = SingleFlightCache<Triple<String, Int, ChartPeriod>, List<RsiPoint>>(clock)
+    private val bollingerSeriesCache =
+        SingleFlightCache<Pair<Triple<String, Int, ChartPeriod>, Double>, List<BollingerPoint>>(clock)
+
     private suspend fun fetchMeta(symbol: String): Meta? {
         return try {
             Log.d(TAG, "Fetching quote data")
@@ -291,6 +298,52 @@ class YahooMarketDataServiceImpl(
             }
         }
 
+    /**
+     * Historisk RSI-serie för [chartPeriod]. Beräknas på dagsstängningar med extra uppvärmning
+     * (Wilders utjämning konvergerar långsamt) som trimmas bort före returen. Null för
+     * intradagsperioder — daglig RSI säger inget om en 2m/15m-graf.
+     */
+    suspend fun getRsiSeries(symbol: String, period: Int, chartPeriod: ChartPeriod): List<RsiPoint>? {
+        if (!chartPeriod.supportsIndicators()) return null
+        return rsiSeriesCache.getOrLoad(Triple(symbol, period, chartPeriod), SMA_TTL_MS) {
+            withContext(Dispatchers.IO) {
+                val visible = visibleTradingDaysFor(chartPeriod)
+                val closes = fetchDailyClosesWithTimestamps(
+                    symbol, visible + TechnicalIndicators.rsiWarmupBars(period)
+                ) ?: return@withContext null
+                val values = TechnicalIndicators.rsi(closes.map { it.second }, period)
+                closes.indices
+                    .mapNotNull { i -> values[i]?.let { RsiPoint(closes[i].first, it) } }
+                    .takeLast(visible)
+                    .takeIf { it.isNotEmpty() }
+            }
+        }
+    }
+
+    /** Historiska Bollinger Bands för [chartPeriod]; null för intradagsperioder (se [getRsiSeries]). */
+    suspend fun getBollingerSeries(
+        symbol: String,
+        period: Int,
+        stdDevs: Double,
+        chartPeriod: ChartPeriod
+    ): List<BollingerPoint>? {
+        if (!chartPeriod.supportsIndicators()) return null
+        return bollingerSeriesCache.getOrLoad(Triple(symbol, period, chartPeriod) to stdDevs, SMA_TTL_MS) {
+            withContext(Dispatchers.IO) {
+                val visible = visibleTradingDaysFor(chartPeriod)
+                val closes = fetchDailyClosesWithTimestamps(symbol, visible + period)
+                    ?: return@withContext null
+                val values = TechnicalIndicators.bollinger(closes.map { it.second }, period, stdDevs)
+                closes.indices
+                    .mapNotNull { i ->
+                        values[i]?.let { BollingerPoint(closes[i].first, it.upper, it.middle, it.lower) }
+                    }
+                    .takeLast(visible)
+                    .takeIf { it.isNotEmpty() }
+            }
+        }
+    }
+
     /** Antal handelsdagar en graf-period ungefär visar — avgör hur långt tillbaka SMA-serien behöver hämtas. */
     private fun visibleTradingDaysFor(chartPeriod: ChartPeriod): Int = when (chartPeriod) {
         ChartPeriod.DAY -> 3
@@ -307,17 +360,21 @@ class YahooMarketDataServiceImpl(
         fetchDailyClosesWithTimestamps(symbol, minBars)?.map { it.second }
 
     /** Som [fetchDailyCloses] men behåller stängningstidpunkten — krävs för att bygga en tidsserie. */
-    private suspend fun fetchDailyClosesWithTimestamps(symbol: String, minBars: Int): List<Pair<Long, Double>>? =
+    private suspend fun fetchDailyClosesWithTimestamps(symbol: String, minBars: Int): List<Pair<Long, Double>>? {
+        val range = when {
+            minBars <= 60 -> "3mo"
+            minBars <= 120 -> "6mo"
+            minBars <= 250 -> "1y"
+            minBars <= 500 -> "2y"
+            else -> "5y"
+        }
+        return dailyClosesCache.getOrLoad(symbol to range, SMA_TTL_MS) { fetchDailyClosesForRange(symbol, range) }
+    }
+
+    private suspend fun fetchDailyClosesForRange(symbol: String, range: String): List<Pair<Long, Double>>? =
         withContext(Dispatchers.IO) {
             try {
-                val range = when {
-                    minBars <= 60 -> "3mo"
-                    minBars <= 120 -> "6mo"
-                    minBars <= 250 -> "1y"
-                    minBars <= 500 -> "2y"
-                    else -> "5y"
-                }
-                Log.d(TAG, "Fetching daily closes for SMA")
+                Log.d(TAG, "Fetching daily closes")
                 val response: YahooFinanceResponse = api.getIntradayChart(symbol, range = range, interval = "1d")
                 if (response.chart?.error != null) {
                     Log.e(TAG, "Yahoo API error while fetching daily closes: ${response.chart.error.description}")

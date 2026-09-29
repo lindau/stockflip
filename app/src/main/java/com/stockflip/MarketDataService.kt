@@ -16,7 +16,7 @@ data class StockDetailSnapshot(
 )
 
 /**
- * Nyckeltal för en aktie (P/E, P/S, Direktavkastning, Vinst/aktie, börsvärde, ROE).
+ * Nyckeltal för en aktie (P/E, P/S, Direktavkastning, Vinst/aktie, börsvärde, ROE, P/B, EV/EBITDA, skuldsättningsgrad).
  */
 data class KeyMetrics(
     val peRatio: Double?,
@@ -24,7 +24,11 @@ data class KeyMetrics(
     val dividendYield: Double?,
     val earningsPerShare: Double? = null,
     val marketCap: Double? = null,
-    val returnOnEquity: Double? = null
+    val returnOnEquity: Double? = null,
+    val priceToBook: Double? = null,
+    val evToEbitda: Double? = null,
+    /** Skulder/eget kapital i procent (Yahoos debtToEquity), t.ex. 45,2 = 45,2 %. */
+    val debtToEquity: Double? = null
 )
 
 /**
@@ -60,4 +64,6 @@ interface MarketDataService {
     suspend fun getNextEarningsReport(symbol: String): NextEarningsInfo?
     suspend fun getSma(symbol: String, period: Int): Double?
     suspend fun getSmaSeries(symbol: String, period: Int, chartPeriod: ChartPeriod): List<SmaPoint>?
+    suspend fun getRsiSeries(symbol: String, period: Int, chartPeriod: ChartPeriod): List<RsiPoint>?
+    suspend fun getBollingerSeries(symbol: String, period: Int, stdDevs: Double, chartPeriod: ChartPeriod): List<BollingerPoint>?
 }

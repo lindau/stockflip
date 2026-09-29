@@ -176,7 +176,10 @@ class StockDetailViewModel(
                                     dividendYield = metrics.dividendYield,
                                     earningsPerShare = metrics.earningsPerShare,
                                     marketCap = metrics.marketCap,
-                                    returnOnEquity = metrics.returnOnEquity
+                                    returnOnEquity = metrics.returnOnEquity,
+                                    priceToBook = metrics.priceToBook,
+                                    evToEbitda = metrics.evToEbitda,
+                                    debtToEquity = metrics.debtToEquity
                                 ))
                             }
                         } catch (e: Exception) {
@@ -471,6 +474,14 @@ class StockDetailViewModel(
     suspend fun getSmaSeries(period: Int, chartPeriod: ChartPeriod): List<SmaPoint>? =
         yahooFinanceService.getSmaSeries(symbol, period, chartPeriod)
 
+    /** Historisk RSI-serie för kursgrafen, se [MarketDataService.getRsiSeries]. */
+    suspend fun getRsiSeries(period: Int, chartPeriod: ChartPeriod): List<RsiPoint>? =
+        yahooFinanceService.getRsiSeries(symbol, period, chartPeriod)
+
+    /** Historiska Bollinger Bands för kursgrafen, se [MarketDataService.getBollingerSeries]. */
+    suspend fun getBollingerSeries(period: Int, stdDevs: Double, chartPeriod: ChartPeriod): List<BollingerPoint>? =
+        yahooFinanceService.getBollingerSeries(symbol, period, stdDevs, chartPeriod)
+
     /**
      * Returnerar true om en aktiv bevakning med exakt samma inställningar redan finns.
      * Combined-bevakningar kontrolleras aldrig.
@@ -758,6 +769,9 @@ data class StockDetailData(
     val earningsPerShare: Double? = null,
     val marketCap: Double? = null,
     val returnOnEquity: Double? = null,
+    val priceToBook: Double? = null,
+    val evToEbitda: Double? = null,
+    val debtToEquity: Double? = null,
     val nextEarnings: NextEarningsInfo? = null,
     val lastUpdatedAt: Long = 0L
 )

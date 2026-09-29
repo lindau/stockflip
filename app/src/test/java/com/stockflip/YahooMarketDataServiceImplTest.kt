@@ -303,6 +303,65 @@ class YahooMarketDataServiceImplTest {
         assertNull(series)
     }
 
+    private fun dailyCloseJson(closes: List<Double>): String {
+        val timestamps = closes.indices.map { it + 1 }.joinToString(", ")
+        return """
+            { "chart": { "result": [ {
+                "meta": { "regularMarketPrice": ${closes.last()} },
+                "timestamp": [$timestamps],
+                "indicators": { "quote": [ { "close": [${closes.joinToString(", ")}] } ] }
+            } ], "error": null } }
+        """.trimIndent()
+    }
+
+    @Test
+    fun `getRsiSeries returns rsi points and drops the warm-up`() = kotlinx.coroutines.runBlocking {
+        mockWebServer.enqueue(okResponse(dailyCloseJson((1..30).map { it.toDouble() })))
+
+        val series = service.getRsiSeries("VOLV-B.ST", period = 3, chartPeriod = ChartPeriod.MONTH)
+
+        assertNotNull(series)
+        // 30 closes ger RSI från index 3 (27 punkter); bara de 23 senaste (MONTH) returneras.
+        assertEquals(23, series!!.size)
+        assertEquals(30L, series.last().timestamp)
+        assertEquals(100.0, series.last().value, 0.0001)
+        assertEquals("/v8/finance/chart/VOLV-B.ST?range=6mo&interval=1d", mockWebServer.takeRequest().path)
+    }
+
+    @Test
+    fun `getRsiSeries and getBollingerSeries return null for intraday periods without a request`() = kotlinx.coroutines.runBlocking {
+        assertNull(service.getRsiSeries("VOLV-B.ST", 14, ChartPeriod.DAY))
+        assertNull(service.getRsiSeries("VOLV-B.ST", 14, ChartPeriod.WEEK))
+        assertNull(service.getBollingerSeries("VOLV-B.ST", 20, 2.0, ChartPeriod.DAY))
+        assertEquals(0, mockWebServer.requestCount)
+    }
+
+    @Test
+    fun `getBollingerSeries returns bands with sma as middle`() = kotlinx.coroutines.runBlocking {
+        mockWebServer.enqueue(okResponse(dailyCloseJson(listOf(2.0, 4.0, 4.0, 4.0, 5.0, 5.0, 7.0, 9.0))))
+
+        val series = service.getBollingerSeries("VOLV-B.ST", period = 8, stdDevs = 2.0, chartPeriod = ChartPeriod.MONTH)
+
+        assertEquals(listOf(BollingerPoint(8, upper = 9.0, middle = 5.0, lower = 1.0)), series)
+    }
+
+    @Test
+    fun `getBollingerSeries returns null when fewer closes are available than the period`() = kotlinx.coroutines.runBlocking {
+        mockWebServer.enqueue(okResponse(dailyCloseJson(listOf(1.0, 2.0))))
+
+        assertNull(service.getBollingerSeries("VOLV-B.ST", period = 20, stdDevs = 2.0, chartPeriod = ChartPeriod.MONTH))
+    }
+
+    @Test
+    fun `sma and bollinger series share one daily closes request`() = kotlinx.coroutines.runBlocking {
+        mockWebServer.enqueue(okResponse(dailyCloseJson((1..30).map { it.toDouble() })))
+
+        assertNotNull(service.getSmaSeries("VOLV-B.ST", 3, ChartPeriod.MONTH))
+        assertNotNull(service.getBollingerSeries("VOLV-B.ST", 20, 2.0, ChartPeriod.MONTH))
+
+        assertEquals(1, mockWebServer.requestCount)
+    }
+
     @Test
     fun `concurrent price requests for the same symbol share one network call`() = kotlinx.coroutines.runBlocking {
         // Svaret fördröjs så att alla fem anropen hinner starta innan det första är klart.

@@ -1,10 +1,12 @@
 package com.stockflip.testutil
 
+import com.stockflip.BollingerPoint
 import com.stockflip.ChartPeriod
 import com.stockflip.IntradayChartData
 import com.stockflip.KeyMetrics
 import com.stockflip.MarketDataService
 import com.stockflip.NextEarningsInfo
+import com.stockflip.RsiPoint
 import com.stockflip.SmaPoint
 import com.stockflip.StockDetailSnapshot
 import com.stockflip.WatchType
@@ -58,6 +60,15 @@ class FakeMarketDataService(
     override suspend fun getSma(symbol: String, period: Int): Double? = smaBySymbolAndPeriod[symbol to period]
 
     override suspend fun getSmaSeries(symbol: String, period: Int, chartPeriod: ChartPeriod): List<SmaPoint>? = null
+
+    override suspend fun getRsiSeries(symbol: String, period: Int, chartPeriod: ChartPeriod): List<RsiPoint>? = null
+
+    override suspend fun getBollingerSeries(
+        symbol: String,
+        period: Int,
+        stdDevs: Double,
+        chartPeriod: ChartPeriod
+    ): List<BollingerPoint>? = null
 
     override suspend fun getStockDetailSnapshot(symbol: String): StockDetailSnapshot? {
         snapshotProvider?.let { return it(symbol) }

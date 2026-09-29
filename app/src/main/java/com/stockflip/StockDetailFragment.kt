@@ -75,6 +75,10 @@ class StockDetailFragment : Fragment() {
     private var latestChartPeriod: ChartPeriod = ChartPeriod.DAY
     private var latestAlerts: List<WatchItemUiState> = emptyList()
     private var latestSmaLevels: List<SmaChartLevel> = emptyList()
+    private var latestBollinger: List<BollingerPoint> = emptyList()
+    private var latestRsi: List<RsiPoint> = emptyList()
+    // Valet av grafindikatorer gäller alla aktier och läses från/sparas till ChartIndicatorSettings.
+    private var indicatorConfig = ChartIndicatorConfig()
     // Avbryts och startas om vid varje ny hämtning så en gammal hämtning (t.ex. för föregående
     // graf-period) inte skriver över resultatet av en nyare — samma mönster som för Job-hantering
     // i övriga ViewModels (se CLAUDE.md).
@@ -221,6 +225,7 @@ class StockDetailFragment : Fragment() {
             }
         }
         viewModel = ViewModelProvider(this, factory)[StockDetailViewModel::class.java]
+        indicatorConfig = ChartIndicatorSettings.load(requireContext())
         
         // Setup stock search ViewModel
         val searchFactory = object : ViewModelProvider.Factory {
@@ -456,7 +461,7 @@ class StockDetailFragment : Fragment() {
                         renderInsiderTransactions()
                         renderTriggerBanner()
                         // SMA-nivåerna ovanpå grafen kommer från live-bevakningsdata, inte chartState.
-                        refreshSmaChartLevels()
+                        refreshChartIndicators()
                         renderClarityStockPanel()
                     }
                     is UiState.Error -> {
@@ -498,7 +503,7 @@ class StockDetailFragment : Fragment() {
                             latestChartData = state.data
                             // SMA-seriens tidsspann beror på graf-perioden, så en bytt period
                             // måste hämta om serien — samma period kan återanvända den redan hämtade.
-                            if (periodChanged) refreshSmaChartLevels()
+                            if (periodChanged) refreshChartIndicators()
                             renderClarityStockPanel()
                         }
                         is UiState.Error -> {
@@ -595,6 +600,10 @@ class StockDetailFragment : Fragment() {
                     onFullscreenToggle = { setChartFullscreen(true) },
                     smaLevels = latestSmaLevels,
                     logoRefreshToken = logoRefreshToken,
+                    indicatorConfig = indicatorConfig,
+                    bollingerPoints = latestBollinger,
+                    rsiPoints = latestRsi,
+                    onIndicatorConfigChange = ::onIndicatorConfigChanged,
                 )
             }
         }
@@ -614,6 +623,10 @@ class StockDetailFragment : Fragment() {
                     onPeriodSelected = { viewModel.selectPeriod(it) },
                     onClose = { setChartFullscreen(false) },
                     smaLevels = latestSmaLevels,
+                    indicatorConfig = indicatorConfig,
+                    bollingerPoints = latestBollinger,
+                    rsiPoints = latestRsi,
+                    onIndicatorConfigChange = ::onIndicatorConfigChanged,
                 )
             }
         }
@@ -635,28 +648,54 @@ class StockDetailFragment : Fragment() {
         return periods.toList()
     }
 
+    private fun onIndicatorConfigChanged(config: ChartIndicatorConfig) {
+        if (config == indicatorConfig) return
+        indicatorConfig = config
+        context?.let { ChartIndicatorSettings.save(it, config) }
+        refreshChartIndicators()
+    }
+
     /**
-     * Hämtar de historiska SMA-serierna att rita ovanpå kursgrafen — en serie per unikt period
-     * från aktivens Pris-vs-SMA/SMA-korsning-bevakningar, tidsspannet avgörs av [latestChartPeriod].
-     * Avbryter en pågående hämtning innan en ny startas (se [smaChartJob]).
+     * Hämtar de indikatorer som är påslagna att rita i kursgrafen: historiska SMA-serier (en per
+     * unik period från aktiens Pris-vs-SMA/SMA-korsning-bevakningar), Bollinger Bands och RSI.
+     * Tidsspannet avgörs av [latestChartPeriod]. Avbryter en pågående hämtning innan en ny
+     * startas (se [smaChartJob]).
      */
-    private fun refreshSmaChartLevels() {
-        val periods = smaPeriodsFromAlerts()
-        if (periods.isEmpty()) {
-            smaChartJob?.cancel()
+    private fun refreshChartIndicators() {
+        smaChartJob?.cancel()
+        val config = indicatorConfig
+        val chartPeriod = latestChartPeriod
+        val smaPeriods = if (config.showSma) smaPeriodsFromAlerts() else emptyList()
+        val fetchBands = config.showBollinger && chartPeriod.supportsIndicators()
+        val fetchRsi = config.showRsi && chartPeriod.supportsIndicators()
+        if (smaPeriods.isEmpty() && !fetchBands && !fetchRsi) {
             latestSmaLevels = emptyList()
+            latestBollinger = emptyList()
+            latestRsi = emptyList()
             renderClarityStockPanel()
             return
         }
-        smaChartJob?.cancel()
-        val chartPeriod = latestChartPeriod
         smaChartJob = viewLifecycleOwner.lifecycleScope.launch {
-            val results = periods.map { period ->
+            val smaResults = smaPeriods.map { period ->
                 async { period to viewModel.getSmaSeries(period, chartPeriod) }
-            }.awaitAll()
-            latestSmaLevels = results
+            }
+            val bands = async {
+                if (fetchBands) {
+                    viewModel.getBollingerSeries(
+                        TechnicalIndicators.DEFAULT_BOLLINGER_PERIOD,
+                        TechnicalIndicators.DEFAULT_BOLLINGER_STD_DEVS,
+                        chartPeriod
+                    )
+                } else null
+            }
+            val rsi = async {
+                if (fetchRsi) viewModel.getRsiSeries(TechnicalIndicators.DEFAULT_RSI_PERIOD, chartPeriod) else null
+            }
+            latestSmaLevels = smaResults.awaitAll()
                 .mapNotNull { (period, points) -> points?.takeIf { it.isNotEmpty() }?.let { SmaChartLevel(period, it) } }
                 .sortedBy { it.period }
+            latestBollinger = bands.await().orEmpty()
+            latestRsi = rsi.await().orEmpty()
             renderClarityStockPanel()
         }
     }
