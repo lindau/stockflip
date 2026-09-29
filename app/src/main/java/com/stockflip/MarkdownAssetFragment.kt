@@ -81,7 +81,7 @@ class MarkdownAssetFragment : Fragment() {
     }
 }
 
-private fun markdownToHtml(markdown: String, darkMode: Boolean): String {
+internal fun markdownToHtml(markdown: String, darkMode: Boolean): String {
     val themeClass = if (darkMode) "dark" else "light"
     return """<!DOCTYPE html>
 <html>

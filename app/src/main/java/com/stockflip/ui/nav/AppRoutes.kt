@@ -19,6 +19,12 @@ object Routes {
     const val STOCK_DETAIL = "stock/{$ARG_SYMBOL}"
 
     fun stockDetail(symbol: String) = "stock/${Uri.encode(symbol)}"
+
+    const val ARG_ASSET = "asset"
+    const val DOCUMENT = "document/{$ARG_ASSET}"
+
+    /** Manual eller ändringslogg (asset-namn, t.ex. `manual.md`). */
+    fun document(asset: String) = "document/${Uri.encode(asset)}"
 }
 
 /** De tre flikarna i nedre navigeringen. */
