@@ -284,6 +284,7 @@ private fun ClarityStockHeroCard(
             canShowIndicators = selectedPeriod.supportsIndicators(),
             onChange = onIndicatorConfigChange,
             onDismiss = { showSettings = false },
+            onEnableUnsupported = { onPeriodSelected(ChartPeriod.MONTH) },
         )
     }
 }
@@ -328,13 +329,18 @@ private fun ChartActionButtons(
     }
 }
 
-/** Dialog med en switch per indikator. Bollinger och RSI är bara valbara för 1M och längre. */
+/**
+ * Dialog med en switch per indikator. Bollinger och RSI beräknas på dagsdata och visas bara för 1M och längre;
+ * switcharna är ändå alltid valbara, och slås de på när grafen står på en kortare period anropas
+ * [onEnableUnsupported] så att anroparen kan byta till en period där de syns.
+ */
 @Composable
 internal fun ChartSettingsDialog(
     config: ChartIndicatorConfig,
     canShowIndicators: Boolean,
     onChange: (ChartIndicatorConfig) -> Unit,
     onDismiss: () -> Unit,
+    onEnableUnsupported: () -> Unit = {},
 ) {
     Dialog(onDismissRequest = onDismiss) {
         Card(shape = RoundedCornerShape(20.dp)) {
@@ -353,18 +359,24 @@ internal fun ChartSettingsDialog(
                 IndicatorSwitchRow(
                     label = "Bollinger Bands (${TechnicalIndicators.DEFAULT_BOLLINGER_PERIOD}, 2σ)",
                     checked = config.showBollinger,
-                    enabled = canShowIndicators,
-                    onCheckedChange = { onChange(config.copy(showBollinger = it)) },
+                    enabled = true,
+                    onCheckedChange = {
+                        onChange(config.copy(showBollinger = it))
+                        if (it && !canShowIndicators) onEnableUnsupported()
+                    },
                 )
                 IndicatorSwitchRow(
                     label = "RSI (${TechnicalIndicators.DEFAULT_RSI_PERIOD})",
                     checked = config.showRsi,
-                    enabled = canShowIndicators,
-                    onCheckedChange = { onChange(config.copy(showRsi = it)) },
+                    enabled = true,
+                    onCheckedChange = {
+                        onChange(config.copy(showRsi = it))
+                        if (it && !canShowIndicators) onEnableUnsupported()
+                    },
                 )
                 if (!canShowIndicators) {
                     Text(
-                        text = "Bollinger och RSI visas för 1M och längre.",
+                        text = "Bollinger och RSI visas för 1M och längre. Slår du på dem byter grafen till 1M.",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -544,7 +556,10 @@ private fun ClaritySparkChart(
         // Etikett vid varje bevakningsnivå ("Bevakning 245"). Nivåer utanför skalan ritas inte som linje utan
         // som en markering med pil i övre/nedre kanten, så att kurslinjen inte plattas ut.
         val labelStyle = TextStyle(fontSize = 11.sp, color = watchLevelColor)
-        watchLevels.distinct().forEach { level ->
+        // Flera nivåer på samma kant staplas så att etiketterna inte ritas över varandra.
+        var topLabels = 0
+        var bottomLabels = 0
+        watchLevels.distinct().sortedDescending().forEach { level ->
             val number = if (level == kotlin.math.floor(level)) com.stockflip.ui.components.formatNumber(level, 0) else com.stockflip.ui.components.formatNumber(level)
             val inside = level in visibleWatchLevels
             val arrow = if (inside) "" else if (level > maxPrice) "\u2191 " else "\u2193 "
@@ -555,8 +570,8 @@ private fun ClaritySparkChart(
                     val lineY = yFor(level)
                     if (lineY - measured.size.height - 2.dp.toPx() >= 0f) lineY - measured.size.height - 2.dp.toPx() else lineY + 2.dp.toPx()
                 }
-                level > maxPrice -> 2.dp.toPx()
-                else -> size.height - measured.size.height - 2.dp.toPx()
+                level > maxPrice -> 2.dp.toPx() + (topLabels++) * (measured.size.height + 2.dp.toPx())
+                else -> size.height - measured.size.height - 2.dp.toPx() - (bottomLabels++) * (measured.size.height + 2.dp.toPx())
             }
             drawText(measured, topLeft = Offset(x, y))
         }
@@ -1089,6 +1104,7 @@ fun FullscreenStockChart(
             canShowIndicators = selectedPeriod.supportsIndicators(),
             onChange = onIndicatorConfigChange,
             onDismiss = { showSettings = false },
+            onEnableUnsupported = { onPeriodSelected(ChartPeriod.MONTH) },
         )
     }
 }

@@ -347,6 +347,7 @@ internal fun StockDetailScreen(
             canShowIndicators = selectedPeriod.supportsIndicators(),
             onChange = onIndicatorConfigChange,
             onDismiss = { showIndicators = false },
+            onEnableUnsupported = { onPeriodSelected(ChartPeriod.MONTH) },
         )
     }
 }

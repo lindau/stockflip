@@ -132,7 +132,7 @@ Uppe till höger i grafen finns två knappar:
 
 Aktiedetaljsidan visar, uppifrån och ned:
 
-- **Toppraden** med tillbaka-pil, tickern i mitten och en **⋯**-meny med `Helskärm`, `Indikatorer` (SMA, Bollinger-band och RSI) samt `Pausa alla bevakningar` / `Aktivera alla bevakningar` för aktien.
+- **Toppraden** med tillbaka-pil, tickern i mitten och en **⋯**-meny med `Helskärm`, `Indikatorer` (SMA, Bollinger-band och RSI; de två sista visas för 1M och längre, så slår du på dem medan grafen står på 1D eller 1V byter den automatiskt till 1M) samt `Pausa alla bevakningar` / `Aktivera alla bevakningar` för aktien.
 - **Kurs och förändring** för vald period, med enhet och belopp, till exempel `248,30 kr  +2,95 (+1,2 %) idag`.
 - **Grafen** med periodval (1D, 1V, 1M, 3M, 6M, 1Å, 5Å och Max). Dina bevakningsnivåer syns som streckade linjer med etiketten `Bevakning 245`. Ligger en nivå långt från kursen ritas den inte som linje, utan som en markering med pil (`↑ Bevakning 500`) i kanten.
 - **Nyckeltal** — 52-veckorsintervall, P/E, direktavkastning med flera, och datum för nästa rapport, till exempel *Rapport om 12 dagar · 23 okt*.
