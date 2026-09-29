@@ -28,8 +28,9 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.StockFlip"
         android:usesCleartextTraffic="false">
+        <!-- Nya Compose-skalet: appens launcher. Notis-deep-links går hit (token-kontrollerade). -->
         <activity
-            android:name=".MainActivity"
+            android:name=".AppActivity"
             android:configChanges="orientation|screenSize|keyboardHidden"
             android:exported="true"
             android:launchMode="singleTop">
@@ -39,11 +40,11 @@
             </intent-filter>
         </activity>
 
-        <!-- Nya Compose-skalet (redesign). Inte launcher förrän Par/Kombinerad/Inställningar/Marknad är portade. -->
+        <!-- Gamla skalet: ej längre launcher; tas bort i fas 6. -->
         <activity
-            android:name=".AppActivity"
+            android:name=".MainActivity"
             android:configChanges="orientation|screenSize|keyboardHidden"
-            android:exported="true"
+            android:exported="false"
             android:launchMode="singleTop" />
 
         <provider

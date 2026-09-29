@@ -101,7 +101,7 @@ class InsiderTransactionWorker(
         val message = "${leadPurchase.reportingOwner} rapporterade att de $verb ${leadPurchase.securityTitle ?: ticker}.$valueText"
 
         val destination = NotificationDestination.Stock(ticker, item.id)
-        val intent = Intent(applicationContext, MainActivity::class.java).apply {
+        val intent = Intent(applicationContext, AppActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
             data = Uri.parse("stockflip://watch/${item.id}")
             putExtra(MainActivity.EXTRA_OPEN_TICKER, ticker)

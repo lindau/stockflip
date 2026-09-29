@@ -91,7 +91,7 @@ class StockPriceUpdateWorker(
         // jämför varken extras eller flags).
         val stableId = watchItemId ?: pairWatchItemId ?: System.currentTimeMillis().toInt()
 
-        val intent = Intent(applicationContext, MainActivity::class.java).apply {
+        val intent = Intent(applicationContext, AppActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
             data = Uri.parse("stockflip://watch/$stableId")
             if (pairWatchItemId != null) {

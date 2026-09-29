@@ -11,6 +11,7 @@ import androidx.work.WorkerParameters
 import com.stockflip.AppUpdateChecker
 import com.stockflip.AppUpdateNotifier
 import com.stockflip.AppUpdateSettings
+import com.stockflip.AppActivity
 import com.stockflip.MainActivity
 import com.stockflip.NotificationDestination
 import com.stockflip.NotificationNavigationSecurity
@@ -48,7 +49,7 @@ class AppUpdateCheckWorker(
         val message = "StockFlip v${release.versionName} kan hämtas."
 
         val destination = NotificationDestination.AppUpdate(release.versionName)
-        val intent = Intent(applicationContext, MainActivity::class.java).apply {
+        val intent = Intent(applicationContext, AppActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
             putExtra(MainActivity.EXTRA_OPEN_UPDATE_VERSION, release.versionName)
             putExtra(MainActivity.EXTRA_TRIGGER_TITLE, title)
