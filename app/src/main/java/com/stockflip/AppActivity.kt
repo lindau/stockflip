@@ -211,15 +211,15 @@ class AppActivity : ComponentActivity() {
      */
     private fun routeFromIntent(intent: Intent?): String? {
         if (intent == null) return null
-        val pairId = intent.getIntExtra(MainActivity.EXTRA_OPEN_PAIR_WATCH_ID, -1)
-        val ticker = intent.getStringExtra(MainActivity.EXTRA_OPEN_TICKER)
-        val watchId = intent.getIntExtra(MainActivity.EXTRA_OPEN_WATCH_ID, -1).takeIf { it > 0 }
-        val updateVersion = intent.getStringExtra(MainActivity.EXTRA_OPEN_UPDATE_VERSION)
+        val pairId = intent.getIntExtra(AppActivity.EXTRA_OPEN_PAIR_WATCH_ID, -1)
+        val ticker = intent.getStringExtra(AppActivity.EXTRA_OPEN_TICKER)
+        val watchId = intent.getIntExtra(AppActivity.EXTRA_OPEN_WATCH_ID, -1).takeIf { it > 0 }
+        val updateVersion = intent.getStringExtra(AppActivity.EXTRA_OPEN_UPDATE_VERSION)
         val protectedIntent = pairId != -1 || ticker != null || watchId != null || updateVersion != null ||
-            intent.hasExtra(MainActivity.EXTRA_TRIGGER_TITLE) || intent.hasExtra(MainActivity.EXTRA_TRIGGER_MESSAGE)
+            intent.hasExtra(AppActivity.EXTRA_TRIGGER_TITLE) || intent.hasExtra(AppActivity.EXTRA_TRIGGER_MESSAGE)
         if (!protectedIntent) return null
 
-        val token = intent.getStringExtra(MainActivity.EXTRA_NOTIFICATION_TOKEN)
+        val token = intent.getStringExtra(AppActivity.EXTRA_NOTIFICATION_TOKEN)
         val destination: NotificationDestination? = when {
             pairId != -1 -> NotificationDestination.PairWatch(pairId)
             ticker != null -> NotificationDestination.Stock(ticker, watchId)
@@ -246,10 +246,31 @@ class AppActivity : ComponentActivity() {
 
     private fun clearProtectedExtras(intent: Intent) {
         listOf(
-            MainActivity.EXTRA_OPEN_PAIR_WATCH_ID, MainActivity.EXTRA_OPEN_TICKER, MainActivity.EXTRA_OPEN_WATCH_ID,
-            MainActivity.EXTRA_OPEN_COMPANY, MainActivity.EXTRA_OPEN_INSIDER_TRANSACTION_ID,
-            MainActivity.EXTRA_OPEN_UPDATE_VERSION, MainActivity.EXTRA_TRIGGER_TITLE,
-            MainActivity.EXTRA_TRIGGER_MESSAGE, MainActivity.EXTRA_NOTIFICATION_TOKEN,
+            AppActivity.EXTRA_OPEN_PAIR_WATCH_ID, AppActivity.EXTRA_OPEN_TICKER, AppActivity.EXTRA_OPEN_WATCH_ID,
+            AppActivity.EXTRA_OPEN_COMPANY, AppActivity.EXTRA_OPEN_INSIDER_TRANSACTION_ID,
+            AppActivity.EXTRA_OPEN_UPDATE_VERSION, AppActivity.EXTRA_TRIGGER_TITLE,
+            AppActivity.EXTRA_TRIGGER_MESSAGE, AppActivity.EXTRA_NOTIFICATION_TOKEN,
         ).forEach(intent::removeExtra)
+    }
+
+    companion object {
+        /** Intent extra: watch item id to open in PairDetailFragment (from pair notification deep link) */
+        const val EXTRA_OPEN_PAIR_WATCH_ID = "extra_open_pair_watch_id"
+        /** Intent extra: ticker to open in StockDetailFragment (from notification deep link) */
+        const val EXTRA_OPEN_TICKER = "extra_open_ticker"
+        /** Intent extra: watch item id for the triggered stock alert */
+        const val EXTRA_OPEN_WATCH_ID = "extra_open_watch_id"
+        /** Intent extra: company name for the ticker (optional, for display) */
+        const val EXTRA_OPEN_COMPANY = "extra_open_company"
+        /** Intent extra: insider transaction id to highlight when opening from an insider notification */
+        const val EXTRA_OPEN_INSIDER_TRANSACTION_ID = "extra_open_insider_transaction_id"
+        /** Intent extra: version name to open the update confirmation dialog for (from update notification deep link) */
+        const val EXTRA_OPEN_UPDATE_VERSION = "extra_open_update_version"
+        /** Intent extra: human-readable trigger title for notification landing */
+        const val EXTRA_TRIGGER_TITLE = "extra_trigger_title"
+        /** Intent extra: human-readable trigger message for notification landing */
+        const val EXTRA_TRIGGER_MESSAGE = "extra_trigger_message"
+        /** Intent extra: one-time token proving the navigation intent came from our own notification PendingIntent */
+        const val EXTRA_NOTIFICATION_TOKEN = "extra_notification_token"
     }
 }

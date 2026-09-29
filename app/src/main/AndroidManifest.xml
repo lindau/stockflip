@@ -40,13 +40,6 @@
             </intent-filter>
         </activity>
 
-        <!-- Gamla skalet: ej längre launcher; tas bort i fas 6. -->
-        <activity
-            android:name=".MainActivity"
-            android:configChanges="orientation|screenSize|keyboardHidden"
-            android:exported="false"
-            android:launchMode="singleTop" />
-
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"

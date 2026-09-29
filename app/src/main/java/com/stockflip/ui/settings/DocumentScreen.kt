@@ -26,7 +26,7 @@ import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
 import com.stockflip.BuildConfig
-import com.stockflip.markdownToHtml
+import com.stockflip.ui.settings.markdownToHtml
 import com.stockflip.ui.theme.Space
 
 /** Tillåtna asset-namn; samma vitlista som `MarkdownAssetFragment`. */

@@ -95,17 +95,17 @@ class StockPriceUpdateWorker(
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
             data = Uri.parse("stockflip://watch/$stableId")
             if (pairWatchItemId != null) {
-                putExtra(MainActivity.EXTRA_OPEN_PAIR_WATCH_ID, pairWatchItemId)
+                putExtra(AppActivity.EXTRA_OPEN_PAIR_WATCH_ID, pairWatchItemId)
             } else if (ticker != null) {
-                putExtra(MainActivity.EXTRA_OPEN_TICKER, ticker)
-                putExtra(MainActivity.EXTRA_OPEN_COMPANY, companyName)
+                putExtra(AppActivity.EXTRA_OPEN_TICKER, ticker)
+                putExtra(AppActivity.EXTRA_OPEN_COMPANY, companyName)
             }
             // Behövs för både stock-highlight och alerts-fallback (Combined utan ticker).
-            watchItemId?.let { putExtra(MainActivity.EXTRA_OPEN_WATCH_ID, it) }
-            putExtra(MainActivity.EXTRA_TRIGGER_TITLE, triggerTitle ?: title)
-            putExtra(MainActivity.EXTRA_TRIGGER_MESSAGE, triggerMessage ?: message)
+            watchItemId?.let { putExtra(AppActivity.EXTRA_OPEN_WATCH_ID, it) }
+            putExtra(AppActivity.EXTRA_TRIGGER_TITLE, triggerTitle ?: title)
+            putExtra(AppActivity.EXTRA_TRIGGER_MESSAGE, triggerMessage ?: message)
             destination?.let {
-                putExtra(MainActivity.EXTRA_NOTIFICATION_TOKEN, NotificationNavigationSecurity.issueToken(it))
+                putExtra(AppActivity.EXTRA_NOTIFICATION_TOKEN, NotificationNavigationSecurity.issueToken(it))
             }
         }
 

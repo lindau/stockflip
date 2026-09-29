@@ -20,15 +20,9 @@ class PriceUpdateReceiver : BroadcastReceiver() {
         }
     }
 
+    /** UI:t (Compose) uppdaterar sig själv via MainViewModel; inget att göra här. */
     private fun handlePricesUpdated(context: Context) {
-        Log.d(TAG, "Handling prices updated notification")
-        if (context is MainActivity) {
-            Log.d(TAG, "Context is MainActivity, refreshing prices")
-            context.refreshPrices()
-            Log.d(TAG, "Successfully triggered price refresh in UI")
-        } else {
-            Log.w(TAG, "Context is not MainActivity, cannot refresh UI")
-        }
+        Log.d(TAG, "Prices updated broadcast received")
     }
 
     companion object {

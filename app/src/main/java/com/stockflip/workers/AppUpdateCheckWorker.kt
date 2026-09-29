@@ -12,7 +12,6 @@ import com.stockflip.AppUpdateChecker
 import com.stockflip.AppUpdateNotifier
 import com.stockflip.AppUpdateSettings
 import com.stockflip.AppActivity
-import com.stockflip.MainActivity
 import com.stockflip.NotificationDestination
 import com.stockflip.NotificationNavigationSecurity
 import com.stockflip.R
@@ -51,10 +50,10 @@ class AppUpdateCheckWorker(
         val destination = NotificationDestination.AppUpdate(release.versionName)
         val intent = Intent(applicationContext, AppActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
-            putExtra(MainActivity.EXTRA_OPEN_UPDATE_VERSION, release.versionName)
-            putExtra(MainActivity.EXTRA_TRIGGER_TITLE, title)
-            putExtra(MainActivity.EXTRA_TRIGGER_MESSAGE, message)
-            putExtra(MainActivity.EXTRA_NOTIFICATION_TOKEN, NotificationNavigationSecurity.issueToken(destination))
+            putExtra(AppActivity.EXTRA_OPEN_UPDATE_VERSION, release.versionName)
+            putExtra(AppActivity.EXTRA_TRIGGER_TITLE, title)
+            putExtra(AppActivity.EXTRA_TRIGGER_MESSAGE, message)
+            putExtra(AppActivity.EXTRA_NOTIFICATION_TOKEN, NotificationNavigationSecurity.issueToken(destination))
         }
 
         val pendingIntent = PendingIntent.getActivity(
