@@ -48,6 +48,9 @@ internal fun WatchlistRoute(
     var sheet by remember { mutableStateOf<WatchSheet?>(null) }
 
     val items: List<WatchItemUiState> = (state as? UiState.Success)?.data.orEmpty()
+    var sparklines by remember { mutableStateOf<Map<String, List<Double>>>(emptyMap()) }
+    val symbols = items.mapNotNull { it.item.ticker?.takeIf { _ -> it.item.watchType !is com.stockflip.WatchType.PricePair } }.distinct()
+    LaunchedEffect(symbols) { if (symbols.isNotEmpty()) sparklines = SparklineStore.load(symbols, com.stockflip.YahooFinanceService) }
     val sections by remember(items, query) { derivedStateOf { sectionsFor(items, query) } }
 
     // Som MainActivity förut: visa sparad data direkt, uppdatera sedan kurserna tyst i bakgrunden.
@@ -83,6 +86,7 @@ internal fun WatchlistRoute(
         onAddWatch = onAddWatch,
         onAddPair = { sheet = WatchSheet.Pair(null) },
         onAddCombined = { sheet = WatchSheet.Combined(null) },
+        sparklines = sparklines,
         lastUpdated = lastUpdatedLabel(items) { SimpleDateFormat("HH:mm", Locale("sv", "SE")).format(Date(it)) },
         modifier = modifier,
     )

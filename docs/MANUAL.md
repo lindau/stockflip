@@ -92,10 +92,10 @@ Index följer sin hemmabörs öppettider, t.ex. `^OMXS30` Stockholm och `^GSPC` 
 Appen har tre flikar längst ned:
 
 - **Bevakningar** — startsidan. En enda platt lista med alla dina bevakningar, både aktier och aktiepar. Utlösta ligger överst under rubriken `Utlösta`, resten under `Väntar`.
-- **Marknad** — sök efter en aktie, ett index eller en kryptovaluta. Tryck på en träff för att öppna aktiens detaljsida. Dina senast öppnade träffar visas när sökfältet är tomt.
+- **Marknad** — sök efter en aktie, ett index eller en kryptovaluta. Tryck på en träff för att öppna aktiens detaljsida. Dina senast öppnade träffar och genvägar till vanliga index (OMXS30, S&P 500, Nasdaq, DAX, FTSE 100, Nikkei 225) visas när sökfältet är tomt.
 - **Inställningar** — tema (System, Ljust eller Mörkt), export och import av bevakningar, kontroll av uppdatering, Hjälp (den här handboken) och ändringsloggen (tryck på versionsraden).
 
-I fliken **Bevakningar** kan du söka bland dina bevakningar med sökfältet högst upp och dra nedåt för att uppdatera kurserna. Tryck på **+** uppe till höger för att skapa en ny bevakning:
+Under rubriken visas när kurserna senast uppdaterades, och varje rad har en liten kurva över den senaste månaden. I fliken **Bevakningar** kan du söka bland dina bevakningar med sökfältet högst upp och dra nedåt för att uppdatera kurserna. Tryck på **+** uppe till höger för att skapa en ny bevakning:
 
 - **Aktie** — öppnar **Marknad** där du söker upp aktien och väljer bevakningstyp på detaljsidan.
 - **Aktiepar** — välj två aktier och en prisskillnad.
@@ -138,7 +138,7 @@ Aktiedetaljsidan visar, uppifrån och ned:
 - **Dina bevakningar** — alla bevakningar på aktien. Tryck på en rad för att redigera den.
 - **Anteckning** — tryck för att skriva eller ändra din anteckning. Töm texten för att ta bort den.
 
-Tryck på knappen **Ny bevakning** nere till höger för att skapa en bevakning. Dra nedåt för att uppdatera. Sektionerna för insideraffärer, poddomnämnanden och analytikernas kursmål finns inte i den nya detaljsidan; insiderköp kan fortfarande bevakas som bevakningstyp.
+Tryck på knappen **Ny bevakning** nere till höger för att skapa en bevakning. Dra nedåt för att uppdatera. Längre ned finns även analytikernas kursmål, de senaste insideraffärerna och poddomnämnanden (när det finns data), samt genvägar till Avanza och Nordnet. Knappen med fyra hörn uppe till höger öppnar grafen i helskärm. När du öppnar sidan från en notis markeras den bevakning eller insideraffär som notisen gällde, och en ruta högst upp låter dig återaktivera eller ta bort bevakningen.
 
 ---
 
@@ -484,7 +484,7 @@ En utlöst bevakning markeras med en liten färgad prick före namnet och ligger
 
 Den här funktionen kräver att telefonen är ansluten till samma Tailscale-nätverk som podcast-pipeline-instansen, en fristående tjänst som analyserar poddavsnitt. Är instansen inte nåbar fungerar resten av appen som vanligt, bara utan poddfunktionerna nedan.
 
-**Obs:** Poddomnämnanden visas inte i det nya gränssnittet; beskrivningen nedan gäller äldre versioner.
+Poddomnämnanden visas på aktiedetaljen under rubriken Poddomnämnanden.
 
 **Sektionen "Poddomnämnanden" på aktiedetaljen:**
 - En egen sektion längst ned på aktiens detaljvy visar mer detaljer, med en **på/av-växel** i sektionsrubriken (av som standard).

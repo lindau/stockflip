@@ -72,6 +72,7 @@ internal fun WatchlistScreen(
     onAddPair: () -> Unit,
     onAddCombined: () -> Unit,
     lastUpdated: String? = null,
+    sparklines: Map<String, List<Double>> = emptyMap(),
     modifier: Modifier = Modifier,
 ) {
     Column(modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
@@ -107,7 +108,7 @@ internal fun WatchlistScreen(
                     EmptyState(loadError, actionLabel = stringResource(R.string.watchlist_forsok_igen), onAction = onRefresh)
                 sections.isEmpty && query.isNotBlank() -> EmptyState("Inga träffar för \"${query.trim()}\".")
                 sections.isEmpty -> EmptyState(stringResource(R.string.watchlist_inga_bevakningar_an), actionLabel = stringResource(R.string.watchlist_ny_bevakning), onAction = onAddWatch)
-                else -> WatchList(sections, onRowClick, onDelete)
+                else -> WatchList(sections, sparklines, onRowClick, onDelete)
             }
         }
     }
@@ -135,6 +136,7 @@ private fun SearchField(query: String, onQueryChange: (String) -> Unit) {
 @Composable
 private fun WatchList(
     sections: WatchListSections,
+    sparklines: Map<String, List<Double>>,
     onRowClick: (WatchRowModel) -> Unit,
     onDelete: (WatchRowModel) -> Unit,
 ) {
@@ -142,13 +144,13 @@ private fun WatchList(
         if (sections.triggered.isNotEmpty()) {
             item(key = "h-triggered") { SectionLabel(stringResource(R.string.watchlist_utlosta), count = sections.triggered.size) }
             items(sections.triggered, key = { it.id }) { row ->
-                SwipeableRow(row, showDivider = row != sections.triggered.first(), onRowClick, onDelete)
+                SwipeableRow(row, showDivider = row != sections.triggered.first(), sparklines[row.symbol], onRowClick, onDelete)
             }
         }
         if (sections.waiting.isNotEmpty()) {
             item(key = "h-waiting") { SectionLabel(stringResource(R.string.watchlist_vantar), count = sections.waiting.size) }
             items(sections.waiting, key = { it.id }) { row ->
-                SwipeableRow(row, showDivider = row != sections.waiting.first(), onRowClick, onDelete)
+                SwipeableRow(row, showDivider = row != sections.waiting.first(), sparklines[row.symbol], onRowClick, onDelete)
             }
         }
         item(key = "end") { Box(Modifier.height(Space.xxl)) }
@@ -160,6 +162,7 @@ private fun WatchList(
 private fun SwipeableRow(
     row: WatchRowModel,
     showDivider: Boolean,
+    sparkline: List<Double>?,
     onRowClick: (WatchRowModel) -> Unit,
     onDelete: (WatchRowModel) -> Unit,
 ) {
@@ -202,6 +205,7 @@ private fun SwipeableRow(
                 triggered = row.triggered,
                 onClick = { onRowClick(row) },
                 showDivider = showDivider,
+                sparkline = sparkline,
             )
         }
     }

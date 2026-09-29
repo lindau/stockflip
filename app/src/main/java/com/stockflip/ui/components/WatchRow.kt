@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
@@ -97,7 +98,7 @@ fun WatchRow(
                 )
             }
             if (sparkline != null) Sparkline(sparkline)
-            Column(horizontalAlignment = Alignment.End) {
+            Column(Modifier.widthIn(min = 76.dp), horizontalAlignment = Alignment.End) {
                 PriceText(
                     text = price,
                     value = priceValue,
