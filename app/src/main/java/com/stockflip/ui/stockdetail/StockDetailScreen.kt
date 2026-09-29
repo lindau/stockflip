@@ -84,6 +84,8 @@ internal fun StockDetailScreen(
     onBack: () -> Unit,
     onAddWatch: () -> Unit,
     onEditAlert: (WatchItemUiState) -> Unit,
+    note: String?,
+    onEditNote: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var showIndicators by remember { mutableStateOf(false) }
@@ -204,6 +206,18 @@ internal fun StockDetailScreen(
                                     highlighted = alert.isTriggeredForDisplay(),
                                 )
                             }
+                        }
+                    }
+                    item(key = "note") {
+                        Column(Modifier.padding(top = Space.lg)) {
+                            SectionLabel("Anteckning")
+                            Text(
+                                note?.takeIf { it.isNotBlank() } ?: "Lägg till en anteckning",
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = if (note.isNullOrBlank()) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.fillMaxWidth().clickable(onClick = onEditNote)
+                                    .padding(horizontal = Space.screenH, vertical = Space.md),
+                            )
                         }
                     }
                     item(key = "end") { Box(Modifier.height(96.dp)) }

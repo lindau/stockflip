@@ -22,6 +22,7 @@ import androidx.core.content.edit
 import androidx.navigation.compose.rememberNavController
 import com.stockflip.repository.StockRepository
 import com.stockflip.ui.market.MarketRoute
+import com.stockflip.ui.pairdetail.PairDetailRoute
 import com.stockflip.ui.settings.DocumentScreen
 import com.stockflip.ui.settings.SettingsRoute
 import com.stockflip.ui.settings.ThemeMode
@@ -115,6 +116,7 @@ class AppActivity : ComponentActivity() {
                             viewModel = viewModel,
                             snackbarHostState = snackbar,
                             onOpenStock = { navController.navigate(Routes.stockDetail(it)) },
+                            onOpenPair = { navController.navigate(Routes.pairDetail(it)) },
                             onAddWatch = { navController.navigateToTab(TopLevelTab.Market) },
                         )
                     },
@@ -134,6 +136,14 @@ class AppActivity : ComponentActivity() {
                             onOpenDocument = { navController.navigate(Routes.document(it)) },
                         )
                     },
+                    pairDetail = { id, onBack ->
+                        PairDetailRoute(
+                            viewModel = pairDetailViewModel(id),
+                            snackbarHostState = snackbar,
+                            onSaveEdit = { viewModel.updateWatchItem(it) },
+                            onBack = onBack,
+                        )
+                    },
                     document = { asset, onBack -> DocumentScreen(asset, onBack) },
                     stockDetail = { symbol, onBack ->
                         StockDetailRoute(
@@ -151,6 +161,17 @@ class AppActivity : ComponentActivity() {
         super.onNewIntent(intent)
         setIntent(intent)
         routeFromIntent(intent)?.let { pendingRoute = it }
+    }
+
+    private fun pairDetailViewModel(watchItemId: Int): PairDetailViewModel {
+        val db = StockPairDatabase.getDatabase(applicationContext)
+        val factory = object : ViewModelProvider.Factory {
+            override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                @Suppress("UNCHECKED_CAST")
+                return PairDetailViewModel(db.watchItemDao(), YahooFinanceService, watchItemId, TriggerHistoryRepository(db.triggerHistoryDao())) as T
+            }
+        }
+        return ViewModelProvider(this, factory)["pair-$watchItemId", PairDetailViewModel::class.java]
     }
 
     private fun saveThemeMode(mode: ThemeMode) {
@@ -214,6 +235,7 @@ class AppActivity : ComponentActivity() {
         }
         return when (destination) {
             is NotificationDestination.Stock -> Routes.stockDetail(destination.ticker)
+            is NotificationDestination.PairWatch -> Routes.pairDetail(destination.pairWatchItemId)
             is NotificationDestination.AppUpdate -> {
                 pendingUpdateCheck = true
                 Routes.SETTINGS

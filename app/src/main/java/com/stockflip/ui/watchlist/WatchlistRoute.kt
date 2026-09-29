@@ -33,6 +33,7 @@ internal fun WatchlistRoute(
     viewModel: MainViewModel,
     snackbarHostState: SnackbarHostState,
     onOpenStock: (symbol: String) -> Unit,
+    onOpenPair: (watchItemId: Int) -> Unit,
     onAddWatch: () -> Unit,
     modifier: androidx.compose.ui.Modifier = androidx.compose.ui.Modifier,
 ) {
@@ -59,7 +60,7 @@ internal fun WatchlistRoute(
         onRowClick = { row ->
             val item = items.firstOrNull { it.item.id == row.id }?.item
             when {
-                item?.watchType is WatchType.PricePair -> sheet = WatchSheet.Pair(item)
+                item?.watchType is WatchType.PricePair -> onOpenPair(item.id)
                 item?.watchType is WatchType.Combined -> {
                     if (decomposeCombined((item.watchType as WatchType.Combined).expression) != null) sheet = WatchSheet.Combined(item)
                     else row.symbol?.let(onOpenStock)

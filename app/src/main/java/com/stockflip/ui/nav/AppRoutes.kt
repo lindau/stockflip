@@ -20,6 +20,11 @@ object Routes {
 
     fun stockDetail(symbol: String) = "stock/${Uri.encode(symbol)}"
 
+    const val ARG_PAIR_ID = "pairId"
+    const val PAIR_DETAIL = "pair/{$ARG_PAIR_ID}"
+
+    fun pairDetail(watchItemId: Int) = "pair/$watchItemId"
+
     const val ARG_ASSET = "asset"
     const val DOCUMENT = "document/{$ARG_ASSET}"
 

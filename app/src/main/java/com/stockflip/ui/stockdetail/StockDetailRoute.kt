@@ -51,6 +51,8 @@ internal fun StockDetailRoute(
     var pullRefreshing by remember { mutableStateOf(false) }
     var sheetOpen by remember { mutableStateOf(false) }
     var editing by remember { mutableStateOf<WatchItemUiState?>(null) }
+    val note by viewModel.noteState.collectAsState()
+    var noteOpen by remember { mutableStateOf(false) }
 
     val alerts: List<WatchItemUiState> = (alertsState as? UiState.Success)?.data.orEmpty()
     val chartData = (chartState as? UiState.Success)?.data
@@ -82,8 +84,17 @@ internal fun StockDetailRoute(
             onBack = onBack,
             onAddWatch = { editing = null; sheetOpen = true },
             onEditAlert = { editing = it; sheetOpen = true },
+            note = note?.note,
+            onEditNote = { noteOpen = true },
             modifier = modifier,
         )
+        if (noteOpen) {
+            NoteDialog(
+                initial = note?.note.orEmpty(),
+                onSave = { viewModel.saveNote(it); noteOpen = false },
+                onDismiss = { noteOpen = false },
+            )
+        }
         if (sheetOpen) {
             val target = editing
             CreateWatchSheet(

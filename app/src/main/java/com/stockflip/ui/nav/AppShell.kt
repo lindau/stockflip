@@ -35,6 +35,7 @@ fun AppShell(
     market: @Composable () -> Unit,
     settings: @Composable () -> Unit,
     stockDetail: @Composable (symbol: String, onBack: () -> Unit) -> Unit,
+    pairDetail: @Composable (watchItemId: Int, onBack: () -> Unit) -> Unit = { _, _ -> },
     document: @Composable (asset: String, onBack: () -> Unit) -> Unit = { _, _ -> },
     navController: NavHostController = rememberNavController(),
     snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
@@ -65,6 +66,12 @@ fun AppShell(
             ) { entry ->
                 val symbol = entry.arguments?.getString(Routes.ARG_SYMBOL).orEmpty()
                 stockDetail(symbol) { navController.popBackStack() }
+            }
+            composable(
+                route = Routes.PAIR_DETAIL,
+                arguments = listOf(navArgument(Routes.ARG_PAIR_ID) { type = NavType.IntType }),
+            ) { entry ->
+                pairDetail(entry.arguments?.getInt(Routes.ARG_PAIR_ID) ?: -1) { navController.popBackStack() }
             }
             composable(
                 route = Routes.DOCUMENT,
