@@ -20,6 +20,8 @@ import com.stockflip.MainViewModel
 import com.stockflip.UiState
 import com.stockflip.WatchItem
 import com.stockflip.WatchItemUiState
+import com.stockflip.ui.stockdetail.AlertAction
+import com.stockflip.toUserMessage
 import com.stockflip.isTriggeredForDisplay
 import com.stockflip.WatchType
 import com.stockflip.repository.StockRepository
@@ -90,6 +92,25 @@ internal fun WatchlistRoute(
         onDelete = { row ->
             val target = items.firstOrNull { it.item.id == row.id }?.item ?: return@WatchlistScreen
             scope.launch { deleteWithUndo(viewModel, snackbarHostState, target, row.title) }
+        },
+        onRowAction = { row, action ->
+            val target = items.firstOrNull { it.item.id == row.id }?.item
+            if (target != null) scope.launch {
+                when (action) {
+                    AlertAction.Reactivate -> {
+                        val result = try { viewModel.reactivateWatchItem(target) } catch (e: Exception) { null }
+                        snackbarHostState.currentSnackbarData?.dismiss()
+                        snackbarHostState.showSnackbar(result?.toUserMessage() ?: "Kunde inte återaktivera bevakningen")
+                    }
+                    AlertAction.Pause, AlertAction.Resume -> {
+                        val activate = action == AlertAction.Resume
+                        if (viewModel.toggleWatchItemActive(target, activate)) {
+                            snackbarHostState.currentSnackbarData?.dismiss()
+                            snackbarHostState.showSnackbar(if (activate) "Bevakningen är aktiv" else "Bevakningen är pausad")
+                        }
+                    }
+                }
+            }
         },
         onAddWatch = onAddWatch,
         onAddPair = { sheet = WatchSheet.Pair(null) },

@@ -7,6 +7,9 @@ import androidx.compose.ui.test.hasStateDescription
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.swipeRight
+import com.stockflip.ui.stockdetail.AlertAction
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -93,6 +96,35 @@ class ComposeUiTests {
         rule.waitForIdle()
         assertEquals(1, deleted?.id)
     }
+
+    private fun swipeRightAction(row: WatchRowModel): AlertAction? {
+        var got: AlertAction? = null
+        rule.setContent {
+            StockFlipTheme {
+                WatchlistScreen(
+                    sections = WatchListSections(triggered = if (row.triggered) listOf(row) else emptyList(), waiting = if (row.triggered) emptyList() else listOf(row)),
+                    isLoading = false, isRefreshing = false, loadError = null, query = "",
+                    onQueryChange = {}, onRefresh = {}, onRowClick = {}, onDelete = {},
+                    onAddWatch = {}, onAddPair = {}, onAddCombined = {},
+                    onRowAction = { _, action -> got = action },
+                )
+            }
+        }
+        rule.onNodeWithText(row.title).performTouchInput { swipeRight() }
+        rule.waitForIdle()
+        return got
+    }
+
+    @Test
+    fun watchlist_swipeRight_pausesActiveRow() = assertEquals(AlertAction.Pause, swipeRightAction(row(1, "Volvo B")))
+
+    @Test
+    fun watchlist_swipeRight_resumesPausedRow() =
+        assertEquals(AlertAction.Resume, swipeRightAction(row(1, "Volvo B").copy(paused = true)))
+
+    @Test
+    fun watchlist_swipeRight_reactivatesTriggeredRow() =
+        assertEquals(AlertAction.Reactivate, swipeRightAction(row(1, "Volvo B", triggered = true).copy(paused = true)))
 
     @Test
     fun watchlist_emptyStateOffersAdd() {

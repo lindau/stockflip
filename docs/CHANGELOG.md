@@ -7,7 +7,7 @@
 - `Marknad` ersätter att lägga till aktier: sök och öppna aktiens detaljsida, med senast sökta
 - `Inställningar` samlar tema, export/import, kontroll av uppdatering, Hjälp och ändringslogg
 - Ett enda skapa-flöde i en nedre panel för bevakningar, med en mening som beskriver vad du bevakar. Aktiepar och kombinerade bevakningar skapas från `+` i Bevakningar
-- Svep en rad åt vänster för att ta bort, med `Ångra`
+- Svep en rad åt vänster för att ta bort, med `Ångra`, och åt höger för att pausa, aktivera eller återaktivera
 - Aktiedetaljen har ren graf med streckade bevakningsnivåer, periodval, nyckeltal och en anteckning
 - Aktiedetaljen har kursmål, insideraffärer, poddomnämnanden, genvägar till Avanza/Nordnet och helskärmsgraf. Bevakningslistan visar senaste uppdatering och en liten kurva per rad, och Marknad har genvägar till index
 - Aktiedetaljen visar kursens förändring i belopp och procent med enhet, en `⋯`-meny (helskärm, indikatorer, pausa alla), etikett på bevakningsnivån i grafen, intervallet `Max` och tvåradiga bevakningar med utlösningstid eller aktuellt värde. Listan visar utlösningstid och rätt valuta

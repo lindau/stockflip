@@ -32,6 +32,7 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -48,6 +49,8 @@ import com.stockflip.ui.components.EmptyState
 import com.stockflip.ui.components.SectionLabel
 import com.stockflip.ui.components.SkeletonRow
 import com.stockflip.ui.components.WatchRow
+import com.stockflip.ui.stockdetail.AlertAction
+import com.stockflip.ui.stockdetail.alertActionFor
 import com.stockflip.ui.theme.Space
 
 /**
@@ -72,6 +75,7 @@ internal fun WatchlistScreen(
     onAddPair: () -> Unit,
     onAddCombined: () -> Unit,
     lastUpdated: String? = null,
+    onRowAction: (WatchRowModel, AlertAction) -> Unit = { _, _ -> },
     sparklines: Map<String, List<Double>> = emptyMap(),
     modifier: Modifier = Modifier,
 ) {
@@ -108,7 +112,7 @@ internal fun WatchlistScreen(
                     EmptyState(loadError, actionLabel = stringResource(R.string.watchlist_forsok_igen), onAction = onRefresh)
                 sections.isEmpty && query.isNotBlank() -> EmptyState("Inga träffar för \"${query.trim()}\".")
                 sections.isEmpty -> EmptyState(stringResource(R.string.watchlist_inga_bevakningar_an), actionLabel = stringResource(R.string.watchlist_ny_bevakning), onAction = onAddWatch)
-                else -> WatchList(sections, sparklines, onRowClick, onDelete)
+                else -> WatchList(sections, sparklines, onRowClick, onDelete, onRowAction)
             }
         }
     }
@@ -139,24 +143,29 @@ private fun WatchList(
     sparklines: Map<String, List<Double>>,
     onRowClick: (WatchRowModel) -> Unit,
     onDelete: (WatchRowModel) -> Unit,
+    onRowAction: (WatchRowModel, AlertAction) -> Unit,
 ) {
     LazyColumn(Modifier.fillMaxSize()) {
         if (sections.triggered.isNotEmpty()) {
             item(key = "h-triggered") { SectionLabel(stringResource(R.string.watchlist_utlosta), count = sections.triggered.size) }
             items(sections.triggered, key = { it.id }) { row ->
-                SwipeableRow(row, showDivider = row != sections.triggered.first(), sparklines[row.symbol], onRowClick, onDelete)
+                SwipeableRow(row, showDivider = row != sections.triggered.first(), sparklines[row.symbol], onRowClick, onDelete, onRowAction)
             }
         }
         if (sections.waiting.isNotEmpty()) {
             item(key = "h-waiting") { SectionLabel(stringResource(R.string.watchlist_vantar), count = sections.waiting.size) }
             items(sections.waiting, key = { it.id }) { row ->
-                SwipeableRow(row, showDivider = row != sections.waiting.first(), sparklines[row.symbol], onRowClick, onDelete)
+                SwipeableRow(row, showDivider = row != sections.waiting.first(), sparklines[row.symbol], onRowClick, onDelete, onRowAction)
             }
         }
         item(key = "end") { Box(Modifier.height(Space.xxl)) }
     }
 }
 
+/**
+ * Svep åt höger = pausa/aktivera/återaktivera (beroende på radens läge, se [alertActionFor]); svep åt vänster = ta bort.
+ * Åtgärden vid höger-svep lämnar raden kvar (den snäpper tillbaka), så listan ändras bara av det som händer i datat.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun SwipeableRow(
@@ -165,34 +174,60 @@ private fun SwipeableRow(
     sparkline: List<Double>?,
     onRowClick: (WatchRowModel) -> Unit,
     onDelete: (WatchRowModel) -> Unit,
+    onRowAction: (WatchRowModel, AlertAction) -> Unit,
 ) {
     val haptics = LocalHapticFeedback.current
     val deleteLabel = stringResource(R.string.watchlist_ta_bort)
+    val action = alertActionFor(triggered = row.triggered, isActive = !row.paused)
+    // confirmValueChange sparas av rememberSwipeToDismissBoxState vid första komponeringen; utan dessa läser den
+    // gamla värden (t.ex. "Pausa" trots att raden redan är pausad).
+    val currentRow by rememberUpdatedState(row)
+    val currentAction by rememberUpdatedState(action)
+    val currentOnDelete by rememberUpdatedState(onDelete)
+    val currentOnRowAction by rememberUpdatedState(onRowAction)
     val state = rememberSwipeToDismissBoxState(
         confirmValueChange = { value ->
-            if (value == SwipeToDismissBoxValue.EndToStart) {
-                haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-                onDelete(row)
-                true
-            } else false
+            when (value) {
+                SwipeToDismissBoxValue.EndToStart -> {
+                    haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                    currentOnDelete(currentRow)
+                    true
+                }
+                SwipeToDismissBoxValue.StartToEnd -> {
+                    haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                    currentOnRowAction(currentRow, currentAction)
+                    false
+                }
+                else -> false
+            }
         },
     )
     SwipeToDismissBox(
         state = state,
-        enableDismissFromStartToEnd = false,
+        enableDismissFromStartToEnd = true,
         backgroundContent = {
+            val toRight = state.dismissDirection == SwipeToDismissBoxValue.StartToEnd
             Box(
-                Modifier.fillMaxSize().background(MaterialTheme.colorScheme.errorContainer).padding(horizontal = Space.screenH),
-                contentAlignment = Alignment.CenterEnd,
+                Modifier.fillMaxSize()
+                    .background(if (toRight) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.errorContainer)
+                    .padding(horizontal = Space.screenH),
+                contentAlignment = if (toRight) Alignment.CenterStart else Alignment.CenterEnd,
             ) {
-                Icon(Icons.Outlined.Delete, contentDescription = stringResource(R.string.watchlist_ta_bort), tint = MaterialTheme.colorScheme.error)
+                if (toRight) {
+                    Text(action.label, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
+                } else {
+                    Icon(Icons.Outlined.Delete, contentDescription = stringResource(R.string.watchlist_ta_bort), tint = MaterialTheme.colorScheme.error)
+                }
             }
         },
     ) {
         Box(
             Modifier.background(MaterialTheme.colorScheme.background).semantics {
-                // Svepgesten har inget tillgängligt alternativ annars.
-                customActions = listOf(CustomAccessibilityAction(deleteLabel) { onDelete(row); true })
+                // Svepgesterna har inget tillgängligt alternativ annars.
+                customActions = listOf(
+                    CustomAccessibilityAction(action.label) { onRowAction(row, action); true },
+                    CustomAccessibilityAction(deleteLabel) { onDelete(row); true },
+                )
             },
         ) {
             WatchRow(

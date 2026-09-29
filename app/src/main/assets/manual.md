@@ -447,7 +447,7 @@ Om du redan har äldre bevakningar av typen **Prisintervall** eller **Kombinerat
 
 ### Pausa och aktivera
 
-På aktiens detaljsida står en knapp till höger om varje bevakning under **Dina bevakningar**: **Pausa** för en aktiv bevakning och **Aktivera** för en pausad. En pausad bevakning kontrolleras inte och skickar inga notiser. Statusen visas som `Väntar`, `Utlöst` eller `Pausad`.
+I **Bevakningar** sveper du raden åt höger för att pausa en aktiv bevakning, aktivera en pausad eller återaktivera en utlöst; raden snäpper tillbaka och en ruta längst ned bekräftar. På aktiens detaljsida står en knapp till höger om varje bevakning under **Dina bevakningar**: **Pausa** för en aktiv bevakning och **Aktivera** för en pausad. En pausad bevakning kontrolleras inte och skickar inga notiser. Statusen visas som `Väntar`, `Utlöst` eller `Pausad`.
 
 ### Återaktivera en triggad bevakning
 
@@ -475,7 +475,7 @@ Kombinerade bevakningar med NOT, flera aktier, SMA eller prisintervall kan inte 
 
 ### Ta bort en bevakning
 
-Svep raden åt vänster i **Bevakningar**. Ett meddelande längst ned visar **Ångra** en kort stund. Ett aktiepar kan också tas bort från pardetaljen.
+Svep raden åt vänster i **Bevakningar**. (Svep åt höger pausar, aktiverar eller återaktiverar bevakningen i stället.) Ett meddelande längst ned visar **Ångra** en kort stund. Ett aktiepar kan också tas bort från pardetaljen.
 
 ### Utlösta bevakningar i listan
 
