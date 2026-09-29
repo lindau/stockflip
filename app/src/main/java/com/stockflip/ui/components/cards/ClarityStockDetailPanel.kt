@@ -73,6 +73,7 @@ import com.stockflip.accessibilityLabel
 import com.stockflip.CountryFlagHelper
 import com.stockflip.CurrencyHelper
 import com.stockflip.IntradayChartData
+import com.stockflip.NextEarningsInfo
 import com.stockflip.SmaChartLevel
 import com.stockflip.SmaPoint
 import com.stockflip.StockDetailData
@@ -239,6 +240,15 @@ private fun ClarityStockHeroCard(
                 DailyChangePill(
                     periodChange = periodChange,
                     changeColor = changeColor,
+                )
+            }
+
+            earningsLabel(data.nextEarnings)?.let { label ->
+                Text(
+                    text = label,
+                    modifier = Modifier.padding(top = 6.dp),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = colorScheme.onSurfaceVariant,
                 )
             }
 
@@ -1400,6 +1410,31 @@ private fun RangeLabel(
         ),
         color = if (emphasized) MaterialTheme.colorScheme.onSurface else LocalTextTertiary.current,
     )
+}
+
+/** Liten rad i hero-kortet, t.ex. "Rapport om 12 dagar · 23 okt". Null om datum saknas eller passerat. */
+private fun earningsLabel(earnings: NextEarningsInfo?): String? {
+    earnings ?: return null
+    return earningsLabel(earnings.reportDateMillis, earnings.isAnnualReport, System.currentTimeMillis())
+}
+
+internal fun earningsLabel(reportDateMillis: Long, isAnnualReport: Boolean, nowMillis: Long): String? {
+    if (reportDateMillis <= 0L) return null
+    fun startOfDay(millis: Long) = java.util.Calendar.getInstance().apply {
+        timeInMillis = millis
+        set(java.util.Calendar.HOUR_OF_DAY, 0); set(java.util.Calendar.MINUTE, 0)
+        set(java.util.Calendar.SECOND, 0); set(java.util.Calendar.MILLISECOND, 0)
+    }.timeInMillis
+    val daysLeft = Math.round((startOfDay(reportDateMillis) - startOfDay(nowMillis)) / 86_400_000.0).toInt()
+    if (daysLeft < 0) return null
+    val noun = if (isAnnualReport) "Bokslut" else "Rapport"
+    val whenText = when (daysLeft) {
+        0 -> "$noun idag"
+        1 -> "$noun i morgon"
+        else -> "$noun om $daysLeft dagar"
+    }
+    val date = SimpleDateFormat("d MMM", Locale("sv", "SE")).format(java.util.Date(reportDateMillis))
+    return "$whenText · $date"
 }
 
 private fun stockMeta(data: StockDetailData): String {

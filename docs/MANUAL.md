@@ -131,7 +131,9 @@ Uppe till höger i grafen finns två knappar:
 Aktiedetaljsidan är uppdelad i sektioner så att den inte blir för lång:
 
 - **Bevakningar** — dina nivåer, alla bevakningar för bolaget och knappen **+ Ny bevakning**. Öppen som standard.
-- **Mer om bolaget** — nästa rapport, **Senaste insideraffärer**, **Poddomnämnanden** (om funktionen finns i din version) och **Anteckningar**. Insider, podd och anteckningar är hopfällda som standard.
+- **Mer om bolaget** — **Senaste insideraffärer**, **Poddomnämnanden** (om funktionen finns i din version) och **Anteckningar**. Insider, podd och anteckningar är hopfällda som standard.
+
+Datum för nästa rapport visas som en liten rad under kursen i toppkortet, till exempel *Rapport om 12 dagar · 23 okt*.
 
 Tryck på en rubrik (eller pilen till höger) för att fälla ut eller ihop sektionen. När en sektion är hopfälld visas en kort sammanfattning bredvid rubriken, till exempel *4 aktiva · 1 triggad* eller *3 köp · 1 sälj*. Ditt val sparas och gäller alla aktier. Sektioner utan innehåll, till exempel insideraffärer för en aktie utan sådana, visas inte alls.
 
