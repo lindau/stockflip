@@ -43,7 +43,7 @@ fun SegmentedControl(
             Box(
                 modifier = Modifier
                     .weight(1f)
-                    .height(Space.touch - 8.dp)
+                    .height(Space.touch)
                     .clip(shape)
                     .then(
                         if (selected) Modifier

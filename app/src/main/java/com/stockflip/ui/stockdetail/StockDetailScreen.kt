@@ -1,5 +1,8 @@
 package com.stockflip.ui.stockdetail
 
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.foundation.layout.heightIn
 import com.stockflip.R
 import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.background
@@ -154,7 +157,10 @@ internal fun StockDetailScreen(
                             rsiPoints = rsiPoints,
                             chartHeight = 200.dp,
                             watchLevels = levels.map { it.price },
-                            modifier = Modifier.padding(horizontal = Space.screenH, vertical = Space.md),
+                            modifier = Modifier.padding(horizontal = Space.screenH, vertical = Space.md).semantics {
+                                contentDescription = "Kursgraf, ${periodWord(selectedPeriod)}" +
+                                    (changePercent?.let { ", ${formatSignedPercent(it)}" } ?: "")
+                            },
                         )
                     }
                     item(key = "periods") {
@@ -196,7 +202,7 @@ internal fun StockDetailScreen(
                         items(alerts, key = { it.item.id }) { alert ->
                             val row = alert.toRowModel()
                             Row(
-                                Modifier.fillMaxWidth().clickable { onEditAlert(alert) }
+                                Modifier.fillMaxWidth().heightIn(min = Space.touch).clickable { onEditAlert(alert) }
                                     .padding(horizontal = Space.screenH, vertical = 12.dp),
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically,

@@ -30,6 +30,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.Layout
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -80,6 +82,7 @@ fun KeyValueRow(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
+                .semantics(mergeDescendants = true) {}
                 .padding(horizontal = Space.screenH, vertical = 11.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.Bottom,
@@ -116,6 +119,9 @@ fun RangeBar(
         modifier
             .fillMaxWidth()
             .padding(horizontal = Space.screenH, vertical = Space.sm)
+            .semantics(mergeDescendants = true) {
+                contentDescription = "$label: från $low till $high, kursen ligger på ${(fraction.coerceIn(0f, 1f) * 100).toInt()} procent av intervallet"
+            }
     ) {
         Text(
             text = label,

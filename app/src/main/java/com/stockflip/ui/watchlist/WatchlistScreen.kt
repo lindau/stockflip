@@ -40,6 +40,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.semantics.CustomAccessibilityAction
+import androidx.compose.ui.semantics.customActions
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.stockflip.ui.components.EmptyState
 import com.stockflip.ui.components.SectionLabel
@@ -156,6 +159,7 @@ private fun SwipeableRow(
     onDelete: (WatchRowModel) -> Unit,
 ) {
     val haptics = LocalHapticFeedback.current
+    val deleteLabel = stringResource(R.string.watchlist_ta_bort)
     val state = rememberSwipeToDismissBoxState(
         confirmValueChange = { value ->
             if (value == SwipeToDismissBoxValue.EndToStart) {
@@ -177,7 +181,12 @@ private fun SwipeableRow(
             }
         },
     ) {
-        Box(Modifier.background(MaterialTheme.colorScheme.background)) {
+        Box(
+            Modifier.background(MaterialTheme.colorScheme.background).semantics {
+                // Svepgesten har inget tillgängligt alternativ annars.
+                customActions = listOf(CustomAccessibilityAction(deleteLabel) { onDelete(row); true })
+            },
+        ) {
             WatchRow(
                 title = row.title,
                 subtitle = row.subtitle,
