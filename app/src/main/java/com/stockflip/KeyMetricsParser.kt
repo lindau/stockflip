@@ -39,6 +39,16 @@ internal fun parseKeyMetrics(result: JSONObject?): KeyMetrics? {
     // Yahoos debtToEquity anges redan i procent (45,2 = 45,2 %) — ingen omräkning.
     val debtToEquity = financialData?.rawOrNull("debtToEquity")
 
+    val targetMeanPrice = financialData?.rawOrNull("targetMeanPrice")?.takeIf { it > 0 }
+    val targetHighPrice = financialData?.rawOrNull("targetHighPrice")?.takeIf { it > 0 }
+    val targetLowPrice = financialData?.rawOrNull("targetLowPrice")?.takeIf { it > 0 }
+    val analystCount = financialData?.rawOrNull("numberOfAnalystOpinions")?.toInt()?.takeIf { it > 0 }
+    // Yahoo skickar "none" när rekommendation saknas.
+    val recommendationKey = financialData?.optString("recommendationKey")
+        ?.trim()?.lowercase()?.takeIf { it.isNotEmpty() && it != "none" && it != "null" }
+    val financialCurrency = financialData?.optString("financialCurrency")
+        ?.trim()?.takeIf { it.isNotEmpty() && it != "null" }
+
     return KeyMetrics(
         peRatio = pe,
         psRatio = ps,
@@ -48,7 +58,13 @@ internal fun parseKeyMetrics(result: JSONObject?): KeyMetrics? {
         returnOnEquity = returnOnEquity,
         priceToBook = priceToBook,
         evToEbitda = evToEbitda,
-        debtToEquity = debtToEquity
+        debtToEquity = debtToEquity,
+        targetMeanPrice = targetMeanPrice,
+        targetHighPrice = targetHighPrice,
+        targetLowPrice = targetLowPrice,
+        analystCount = analystCount,
+        recommendationKey = recommendationKey,
+        financialCurrency = financialCurrency
     )
 }
 

@@ -16,7 +16,7 @@ data class StockDetailSnapshot(
 )
 
 /**
- * Nyckeltal för en aktie (P/E, P/S, Direktavkastning, Vinst/aktie, börsvärde, ROE, P/B, EV/EBITDA, skuldsättningsgrad).
+ * Nyckeltal för en aktie (P/E, P/S, Direktavkastning, Vinst/aktie, börsvärde, ROE, P/B, EV/EBITDA, skuldsättningsgrad, analytikernas kursmål och rekommendation).
  */
 data class KeyMetrics(
     val peRatio: Double?,
@@ -28,7 +28,15 @@ data class KeyMetrics(
     val priceToBook: Double? = null,
     val evToEbitda: Double? = null,
     /** Skulder/eget kapital i procent (Yahoos debtToEquity), t.ex. 45,2 = 45,2 %. */
-    val debtToEquity: Double? = null
+    val debtToEquity: Double? = null,
+    /** Analytikernas kursmål (Yahoo financialData), i [financialCurrency]. */
+    val targetMeanPrice: Double? = null,
+    val targetHighPrice: Double? = null,
+    val targetLowPrice: Double? = null,
+    val analystCount: Int? = null,
+    /** Yahoos recommendationKey i gemener: strong_buy, buy, hold, underperform, sell. Null om saknas. */
+    val recommendationKey: String? = null,
+    val financialCurrency: String? = null
 )
 
 /**

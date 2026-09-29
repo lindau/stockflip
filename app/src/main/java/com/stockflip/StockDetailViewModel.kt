@@ -179,7 +179,13 @@ class StockDetailViewModel(
                                     returnOnEquity = metrics.returnOnEquity,
                                     priceToBook = metrics.priceToBook,
                                     evToEbitda = metrics.evToEbitda,
-                                    debtToEquity = metrics.debtToEquity
+                                    debtToEquity = metrics.debtToEquity,
+                                    targetMeanPrice = metrics.targetMeanPrice,
+                                    targetHighPrice = metrics.targetHighPrice,
+                                    targetLowPrice = metrics.targetLowPrice,
+                                    analystCount = metrics.analystCount,
+                                    recommendationKey = metrics.recommendationKey,
+                                    financialCurrency = metrics.financialCurrency
                                 ))
                             }
                         } catch (e: Exception) {
@@ -772,6 +778,13 @@ data class StockDetailData(
     val priceToBook: Double? = null,
     val evToEbitda: Double? = null,
     val debtToEquity: Double? = null,
+    val targetMeanPrice: Double? = null,
+    val targetHighPrice: Double? = null,
+    val targetLowPrice: Double? = null,
+    val analystCount: Int? = null,
+    val recommendationKey: String? = null,
+    /** Valutan kursmålen anges i; kan skilja sig från handelsvalutan [currency]. */
+    val financialCurrency: String? = null,
     val nextEarnings: NextEarningsInfo? = null,
     val lastUpdatedAt: Long = 0L
 )

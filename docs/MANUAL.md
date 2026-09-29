@@ -45,6 +45,8 @@ StockFlip låter dig bevaka aktier och kryptovalutor och få notiser när dina e
 | **Vinst/aktie** | Bolagets vinst per aktie, ofta kallat EPS. |
 | **P/B-tal** (Price/Book) | Börsvärdet delat med bolagets bokförda egna kapital (substansvärde). Under 1 betyder att bolaget värderas lägre än det egna kapitalet i balansräkningen. |
 | **EV/EBITDA** | Företagsvärdet (börsvärde + nettoskuld) delat med rörelseresultat före avskrivningar. Ett värderingsmått som tar hänsyn till bolagets skulder och därför fungerar bättre än P/E när bolag är olika skuldsatta. |
+| **Kursmål** | Analytikernas genomsnittliga bedömning av vad aktien bör kosta om ett år (tidshorisonten anges inte av Yahoo och varierar mellan analytiker). Visas tillsammans med lägsta och högsta kursmål och antalet analytiker bakom siffrorna. |
+| **Analytikerrekommendation** | Sammanvägd rekommendation från analytikerna: Starkt köp, Köp, Behåll, Minska eller Sälj. Visas som en etikett på kortet Analytikernas kursmål. |
 | **Skuldsättningsgrad** | Bolagets skulder i procent av det egna kapitalet. I appens statistikruta står den förkortad som "Skuldsättn.". |
 | **Aktiepar** | En bevakning som jämför prisskillnaden mellan två aktier. |
 | **Kombinerat larm** | En bevakning som kombinerar flera villkor med logiska operatorer (OCH/ELLER/INTE). |
@@ -564,6 +566,10 @@ StockFlip distribueras inte via Play Store, så appen håller själv koll på om
 
 **Kan jag bevaka index?**
 - Ja. Sök på t.ex. "OMX", "S&P" eller "Nasdaq". Index har `^` framför symbolen (`^OMXS30`, `^GSPC`, `^IXIC`). Målpris, dagsrörelse, drawdown, aktiepar, SMA-bevakning, SMA-korsning och kombinerade larm fungerar som för aktier. Nyckeltal och insideraffärer finns inte för index, så de knapparna visas inte.
+
+**Var kommer kursmålen ifrån?**
+- Kortet "Analytikernas kursmål" på aktiens detaljsida hämtar snitt, lägsta och högsta kursmål, antal analytiker och rekommendation från Yahoo Finance. Kursmålet visas även som en ruta i statistiken. Uppsidan är skillnaden mellan snittkursmålet och aktuell kurs och visas bara när kursmålet anges i samma valuta som aktien handlas i.
+- För mindre bolag baserar sig siffrorna ofta på bara en eller två analytiker (se antalet på kortet), och för många små svenska bolag saknas kursmål helt. Yahoo visar inte när kursmålen senast uppdaterades, så de kan vara gamla. Kursmål är analytikernas bedömningar, inte en garanti för hur kursen utvecklas.
 
 **Varför saknas P/B, EV/EBITDA eller skuldsättningsgrad för en aktie?**
 - Värdena hämtas från Yahoo Finance och finns inte för alla bolag. De saknas ofta för banker, försäkrings- och fastighetsbolag (särskilt EV/EBITDA och skuldsättningsgrad), samt för mindre bolag. Saknade värden visas som "-". Negativa värden är möjliga, till exempel negativt EV/EBITDA när bolaget går med förlust.

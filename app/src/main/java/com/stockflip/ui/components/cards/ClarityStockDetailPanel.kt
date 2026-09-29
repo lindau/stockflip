@@ -123,6 +123,7 @@ fun ClarityStockDetailPanel(
             onIndicatorConfigChange = onIndicatorConfigChange,
         )
         ClarityStockStatsGrid(data = data)
+        ClarityAnalystTargetCard(data = data)
         ClarityWeekRangeCard(data = data)
     }
 }
@@ -1047,7 +1048,8 @@ private fun ClarityStockStatsGrid(data: StockDetailData) {
         data.returnOnEquity != null ||
         data.priceToBook != null ||
         data.evToEbitda != null ||
-        data.debtToEquity != null
+        data.debtToEquity != null ||
+        data.targetMeanPrice != null
     val stats = if (hasMetrics) {
         listOf(
             "P/E" to (data.peRatio?.let { CurrencyHelper.formatDecimal(it) } ?: "-"),
@@ -1059,6 +1061,7 @@ private fun ClarityStockStatsGrid(data: StockDetailData) {
             "P/B" to (data.priceToBook?.let { CurrencyHelper.formatDecimal(it) } ?: "-"),
             "EV/EBITDA" to (data.evToEbitda?.let { CurrencyHelper.formatDecimal(it) } ?: "-"),
             "Skuldsättn." to (data.debtToEquity?.let { "${CurrencyHelper.formatDecimal(it)}%" } ?: "-"),
+            "Kursmål" to (data.targetMeanPrice?.let { CurrencyHelper.formatPrice(it, data.financialCurrency ?: data.currency) } ?: "-"),
         )
     } else {
         listOf(
@@ -1204,6 +1207,181 @@ private fun ClarityWeekRangeCard(data: StockDetailData) {
             }
         }
     }
+}
+
+/**
+ * Analytikernas kursmål: spann lågt–högt med nuvarande kurs och snittmål markerade, antal
+ * analytiker, uppsida mot kursen och rekommendation som etikett. Visas bara om något finns.
+ */
+@Composable
+private fun ClarityAnalystTargetCard(data: StockDetailData) {
+    val mean = data.targetMeanPrice
+    val low = data.targetLowPrice
+    val high = data.targetHighPrice
+    val label = recommendationLabel(data.recommendationKey)
+    if (mean == null && low == null && high == null && label == null) return
+
+    val colorScheme = MaterialTheme.colorScheme
+    val currency = data.financialCurrency ?: data.currency
+    val price = data.lastPrice
+    val hasSpan = low != null && high != null && high > low
+    fun fractionOf(value: Double?): Float? =
+        if (hasSpan && value != null) ((value - low!!) / (high!! - low)).coerceIn(0.0, 1.0).toFloat() else null
+    // Kursen kan ligga utanför analytikernas spann — markören klämms då till kanten.
+    val priceFraction = fractionOf(price?.takeIf { data.financialCurrency == null || sameCurrency(data.financialCurrency, data.currency) })
+    val meanFraction = fractionOf(mean)
+    val upside = analystUpsidePercent(mean, price, data.financialCurrency, data.currency)
+    val recommendationColor = recommendationColor(data.recommendationKey)
+    val meanTickColor = colorScheme.onSurfaceVariant
+    val markerColor = colorScheme.primary
+    val markerInnerColor = colorScheme.surface
+
+    fun fmt(value: Double?): String = value?.let { CurrencyHelper.formatPrice(it, currency) } ?: "-"
+    val analystText = data.analystCount?.let { "Baserat på $it analytiker" }
+    val upsideText = upside?.let {
+        val sign = if (it >= 0) "+" else ""
+        "$sign${CurrencyHelper.formatDecimal(it)} % mot kursen"
+    }
+    val summary = listOfNotNull(analystText, upsideText).joinToString(" · ")
+    val description = buildString {
+        append("Analytikernas kursmål")
+        if (mean != null) append(", snitt ${fmt(mean)}")
+        if (low != null) append(", lägsta ${fmt(low)}")
+        if (high != null) append(", högsta ${fmt(high)}")
+        if (summary.isNotEmpty()) append(", $summary")
+        if (label != null) append(", rekommendation $label")
+    }
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .semantics(mergeDescendants = true) { contentDescription = description },
+        colors = CardDefaults.cardColors(containerColor = colorScheme.surface),
+        shape = RoundedCornerShape(18.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        border = BorderStroke(1.dp, LocalCardBorder.current),
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = "ANALYTIKERNAS KURSMÅL",
+                    modifier = Modifier.weight(1f),
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontSize = 11.sp,
+                        lineHeight = 14.sp,
+                        fontWeight = FontWeight.Medium,
+                        letterSpacing = 0.3.sp,
+                    ),
+                    color = LocalTextTertiary.current,
+                )
+                if (label != null) {
+                    Text(
+                        text = label,
+                        modifier = Modifier
+                            .background(recommendationColor.copy(alpha = 0.14f), RoundedCornerShape(8.dp))
+                            .padding(horizontal = 8.dp, vertical = 3.dp),
+                        style = MaterialTheme.typography.labelMedium.copy(
+                            fontSize = 12.sp,
+                            lineHeight = 16.sp,
+                            fontWeight = FontWeight.SemiBold,
+                        ),
+                        color = recommendationColor,
+                    )
+                }
+            }
+            if (hasSpan) {
+                Canvas(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(22.dp)
+                        .padding(top = 12.dp),
+                ) {
+                    val trackHeight = 8.dp.toPx()
+                    val top = (size.height - trackHeight) / 2f
+                    val radius = trackHeight / 2f
+                    drawRoundRect(
+                        color = Color.Gray.copy(alpha = 0.16f),
+                        topLeft = Offset(0f, top),
+                        size = Size(size.width, trackHeight),
+                        cornerRadius = CornerRadius(radius, radius),
+                    )
+                    if (meanFraction != null) {
+                        val tickX = size.width * meanFraction
+                        drawLine(
+                            color = meanTickColor,
+                            start = Offset(tickX, top - 3.dp.toPx()),
+                            end = Offset(tickX, top + trackHeight + 3.dp.toPx()),
+                            strokeWidth = 2.dp.toPx(),
+                        )
+                    }
+                    if (priceFraction != null) {
+                        val markerX = size.width * priceFraction
+                        drawCircle(color = markerColor, radius = 7.dp.toPx(), center = Offset(markerX, size.height / 2f))
+                        drawCircle(color = markerInnerColor, radius = 3.dp.toPx(), center = Offset(markerX, size.height / 2f))
+                    }
+                }
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 10.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                ) {
+                    RangeLabel(fmt(low))
+                    RangeLabel(fmt(mean), emphasized = true)
+                    RangeLabel(fmt(high))
+                }
+            } else if (mean != null) {
+                RangeLabel(fmt(mean), emphasized = true)
+            }
+            if (summary.isNotEmpty()) {
+                Text(
+                    text = summary,
+                    modifier = Modifier.padding(top = 8.dp),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = LocalTextTertiary.current,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun recommendationColor(key: String?): Color = when (key?.trim()?.lowercase()) {
+    "strong_buy", "buy" -> LocalPriceUp.current
+    "underperform", "sell" -> LocalPriceDown.current
+    else -> MaterialTheme.colorScheme.onSurfaceVariant
+}
+
+/** Svensk etikett för Yahoos recommendationKey, eller null om den saknas ("none") eller är okänd. */
+internal fun recommendationLabel(key: String?): String? = when (key?.trim()?.lowercase()) {
+    "strong_buy" -> "Starkt köp"
+    "buy" -> "Köp"
+    "hold" -> "Behåll"
+    "underperform" -> "Minska"
+    "sell" -> "Sälj"
+    else -> null
+}
+
+private fun sameCurrency(a: String?, b: String?): Boolean =
+    a != null && b != null && a.equals(b, ignoreCase = true)
+
+/**
+ * Uppsida i procent från [lastPrice] till snittkursmålet. Null om något saknas, om kursen inte
+ * är positiv eller om kursmålets valuta ([financialCurrency]) skiljer sig från handelsvalutan.
+ * Saknas [financialCurrency] antas valutorna vara lika.
+ */
+internal fun analystUpsidePercent(
+    targetMean: Double?,
+    lastPrice: Double?,
+    financialCurrency: String?,
+    tradingCurrency: String?,
+): Double? {
+    if (targetMean == null || lastPrice == null || lastPrice <= 0.0) return null
+    if (financialCurrency != null && !sameCurrency(financialCurrency, tradingCurrency)) return null
+    return (targetMean / lastPrice - 1.0) * 100.0
 }
 
 @Composable

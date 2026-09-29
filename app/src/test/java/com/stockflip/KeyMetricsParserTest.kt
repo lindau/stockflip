@@ -87,4 +87,57 @@ class KeyMetricsParserTest {
         assertNull(parseKeyMetrics(result("{}")))
         assertNull(parseKeyMetrics(null))
     }
+
+    @Test
+    fun `parses analyst target fields`() {
+        val metrics = parseKeyMetrics(result("""
+            {
+              "financialData": {
+                "targetMeanPrice": { "raw": 250.5 },
+                "targetHighPrice": { "raw": 320.0 },
+                "targetLowPrice": { "raw": 180.0 },
+                "numberOfAnalystOpinions": { "raw": 24 },
+                "recommendationKey": "Strong_Buy",
+                "financialCurrency": "SEK"
+              }
+            }
+        """.trimIndent()))!!
+
+        assertEquals(250.5, metrics.targetMeanPrice!!, 0.0001)
+        assertEquals(320.0, metrics.targetHighPrice!!, 0.0001)
+        assertEquals(180.0, metrics.targetLowPrice!!, 0.0001)
+        assertEquals(24, metrics.analystCount)
+        assertEquals("strong_buy", metrics.recommendationKey)
+        assertEquals("SEK", metrics.financialCurrency)
+    }
+
+    @Test
+    fun `none recommendation, zero analysts and blank currency become null`() {
+        val metrics = parseKeyMetrics(result("""
+            {
+              "financialData": {
+                "targetMeanPrice": { "raw": 0 },
+                "numberOfAnalystOpinions": { "raw": 0 },
+                "recommendationKey": "none",
+                "financialCurrency": "  "
+              }
+            }
+        """.trimIndent()))!!
+
+        assertNull(metrics.targetMeanPrice)
+        assertNull(metrics.analystCount)
+        assertNull(metrics.recommendationKey)
+        assertNull(metrics.financialCurrency)
+    }
+
+    @Test
+    fun `missing analyst fields give null`() {
+        val metrics = parseKeyMetrics(result("""{ "financialData": { "debtToEquity": { "raw": 10.0 } } }"""))!!
+
+        assertNull(metrics.targetMeanPrice)
+        assertNull(metrics.targetHighPrice)
+        assertNull(metrics.targetLowPrice)
+        assertNull(metrics.analystCount)
+        assertNull(metrics.recommendationKey)
+    }
 }

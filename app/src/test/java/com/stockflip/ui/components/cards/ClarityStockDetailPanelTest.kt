@@ -62,6 +62,48 @@ class ClarityStockDetailPanelTest {
         assertNull(change.percent)
     }
 
+    @Test
+    fun `upside is computed from last price to mean target`() {
+        assertEquals(25.0, analystUpsidePercent(125.0, 100.0, "SEK", "SEK")!!, 0.0001)
+        assertEquals(-10.0, analystUpsidePercent(90.0, 100.0, "SEK", "SEK")!!, 0.0001)
+    }
+
+    @Test
+    fun `upside is null when data is missing`() {
+        assertNull(analystUpsidePercent(null, 100.0, "SEK", "SEK"))
+        assertNull(analystUpsidePercent(125.0, null, "SEK", "SEK"))
+        assertNull(analystUpsidePercent(125.0, 0.0, "SEK", "SEK"))
+    }
+
+    @Test
+    fun `upside is null when target currency differs from trading currency`() {
+        assertNull(analystUpsidePercent(125.0, 100.0, "USD", "SEK"))
+    }
+
+    @Test
+    fun `upside currency comparison ignores case and assumes equal when unknown`() {
+        assertEquals(25.0, analystUpsidePercent(125.0, 100.0, "sek", "SEK")!!, 0.0001)
+        assertEquals(25.0, analystUpsidePercent(125.0, 100.0, null, "SEK")!!, 0.0001)
+    }
+
+    @Test
+    fun `recommendation label maps all yahoo keys to swedish`() {
+        assertEquals("Starkt köp", recommendationLabel("strong_buy"))
+        assertEquals("Köp", recommendationLabel("buy"))
+        assertEquals("Behåll", recommendationLabel("hold"))
+        assertEquals("Minska", recommendationLabel("underperform"))
+        assertEquals("Sälj", recommendationLabel("sell"))
+        assertEquals("Köp", recommendationLabel(" BUY "))
+    }
+
+    @Test
+    fun `recommendation label is null for none, blank, null and unknown keys`() {
+        assertNull(recommendationLabel("none"))
+        assertNull(recommendationLabel(""))
+        assertNull(recommendationLabel(null))
+        assertNull(recommendationLabel("moon"))
+    }
+
     private fun stockData(
         lastPrice: Double?,
         previousClose: Double?,
