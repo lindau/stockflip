@@ -33,6 +33,9 @@
     <string name="stock_detail_alerts_load_failed">%1$s. Dra nedåt för att försöka igen.</string>
     <string name="watch_items_load_failed_title">Kunde inte visa bevakningar</string>
 
+    <string name="nav_watchlist">Bevakningar</string>
+    <string name="nav_market">Marknad</string>
+    <string name="nav_settings">Inställningar</string>
     <string name="tab_stocks">Översikt</string>
     <string name="tab_pairs">Par</string>
     <string name="tab_alerts">Bevakningar</string>
