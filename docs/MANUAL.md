@@ -8,7 +8,7 @@ StockFlip låter dig bevaka aktier och kryptovalutor och få notiser när dina e
 - [Hur appen fungerar i bakgrunden](#hur-appen-fungerar-i-bakgrunden)
 - [Navigering i appen](#navigering-i-appen)
 - [Kursgrafen och indikatorer](#kursgrafen-och-indikatorer)
-- [Aktiedetaljsidan: kollapsa och expandera](#aktiedetaljsidan-kollapsa-och-expandera)
+- [Aktiedetaljsidan](#aktiedetaljsidan)
 - [Bevakningstyperna](#bevakningstyperna)
   - [1. Målpris](#1-malpris)
   - [2. Dagsrörelse](#2-dagsrorelse)
@@ -47,7 +47,7 @@ StockFlip låter dig bevaka aktier och kryptovalutor och få notiser när dina e
 | **P/B-tal** (Price/Book) | Börsvärdet delat med bolagets bokförda egna kapital (substansvärde). Under 1 betyder att bolaget värderas lägre än det egna kapitalet i balansräkningen. |
 | **EV/EBITDA** | Företagsvärdet (börsvärde + nettoskuld) delat med rörelseresultat före avskrivningar. Ett värderingsmått som tar hänsyn till bolagets skulder och därför fungerar bättre än P/E när bolag är olika skuldsatta. |
 | **Kursmål** | Analytikernas genomsnittliga bedömning av vad aktien bör kosta om ett år (tidshorisonten anges inte av Yahoo och varierar mellan analytiker). Visas tillsammans med lägsta och högsta kursmål och antalet analytiker bakom siffrorna. |
-| **Analytikerrekommendation** | Sammanvägd rekommendation från analytikerna: Starkt köp, Köp, Behåll, Minska eller Sälj. Visas som en etikett på kortet Analytikernas kursmål. |
+| **Analytikerrekommendation** | Sammanvägd rekommendation från analytikerna: Starkt köp, Köp, Behåll, Minska eller Sälj. Visades tidigare som en etikett vid analytikernas kursmål. |
 | **Skuldsättningsgrad** | Bolagets skulder i procent av det egna kapitalet. I appens statistikruta står den förkortad som "Skuldsättn.". |
 | **Aktiepar** | En bevakning som jämför prisskillnaden mellan två aktier. |
 | **Kombinerat larm** | En bevakning som kombinerar flera villkor med logiska operatorer (OCH/ELLER/INTE). |
@@ -128,18 +128,17 @@ Uppe till höger i grafen finns två knappar:
 
 ---
 
-## Aktiedetaljsidan: kollapsa och expandera
+## Aktiedetaljsidan
 
-Aktiedetaljsidan är uppdelad i sektioner så att den inte blir för lång:
+Aktiedetaljsidan visar, uppifrån och ned:
 
-- **Bevakningar** — dina nivåer, alla bevakningar för bolaget och den runda **+**-knappen nere till höger som alltid ligger kvar när du scrollar. Öppen som standard.
-- **Mer om bolaget** — **Senaste insideraffärer**, **Poddomnämnanden** (om funktionen finns i din version) och **Anteckningar**. Insider, podd och anteckningar är hopfällda som standard.
+- **Kurs och förändring** för vald period, med bolagsnamn, ticker, börs och valuta.
+- **Grafen** med periodval (1D, 1V, 1M och så vidare). Dina bevakningsnivåer syns som streckade linjer. Knappen uppe till höger (reglage) öppnar **Indikatorer** där du slår på SMA, Bollinger-band och RSI.
+- **Nyckeltal** — 52-veckorsintervall, P/E, direktavkastning med flera, och datum för nästa rapport, till exempel *Rapport om 12 dagar · 23 okt*.
+- **Dina bevakningar** — alla bevakningar på aktien. Tryck på en rad för att redigera den.
+- **Anteckning** — tryck för att skriva eller ändra din anteckning. Töm texten för att ta bort den.
 
-Datum för nästa rapport visas som en liten rad under kursen i toppkortet, till exempel *Rapport om 12 dagar · 23 okt*.
-
-Tryck på en rubrik (eller pilen till höger) för att fälla ut eller ihop sektionen. När en sektion är hopfälld visas en kort sammanfattning bredvid rubriken, till exempel *4 aktiva · 1 triggad* eller *3 köp · 1 sälj*. Ditt val sparas och gäller alla aktier. Sektioner utan innehåll, till exempel insideraffärer för en aktie utan sådana, visas inte alls.
-
-Tryck på **+**-knappen för att välja bevakningstyp. Nyckeltal och insideraffärer visas bara för aktier som stöder dem. Längst ned finns genvägar till Avanza och Nordnet.
+Tryck på knappen **Ny bevakning** nere till höger för att skapa en bevakning. Dra nedåt för att uppdatera. Sektionerna för insideraffärer, poddomnämnanden och analytikernas kursmål finns inte i den nya detaljsidan; insiderköp kan fortfarande bevakas som bevakningstyp.
 
 ---
 
@@ -156,8 +155,8 @@ Tryck på **+**-knappen för att välja bevakningstyp. Nyckeltal och insideraff�
 - Om nuvarande pris är *lägre* än målpriset → väntar på att priset ska stiga **över** målet.
 
 **Skapa en prismålsbevakning:**
-1. Sök upp aktien eller tryck på en befintlig bevakningskort för att öppna aktiedetaljvyn.
-2. Tryck på **+**-knappen nere till höger och välj **Målpris**.
+1. Sök upp aktien i **Marknad** eller tryck på en aktie i **Bevakningar** för att öppna aktiedetaljvyn.
+2. Tryck på **Ny bevakning** nere till höger och välj **Målpris**.
 3. Ange målpriset.
 4. Tryck **Spara**.
 
@@ -181,7 +180,7 @@ Tryck på **+**-knappen för att välja bevakningstyp. Nyckeltal och insideraff�
 
 **Skapa en dagsrörelsebevakning:**
 1. Öppna aktiedetaljvyn.
-2. Tryck på **+**-knappen nere till höger och välj **Dagsrörelse**.
+2. Tryck på **Ny bevakning** nere till höger och välj **Dagsrörelse**.
 3. Ange tröskelprocent (t.ex. 5).
 4. Välj riktning: Upp / Ned / Båda håll.
 5. Tryck **Spara**.
@@ -205,7 +204,7 @@ Tryck på **+**-knappen för att välja bevakningstyp. Nyckeltal och insideraff�
 
 **Skapa en drawdown-bevakning:**
 1. Öppna aktiedetaljvyn (visar aktuell drawdown i headern).
-2. Tryck på **+**-knappen nere till höger och välj **Drawdown**.
+2. Tryck på **Ny bevakning** nere till höger och välj **Drawdown**.
 3. Välj Procent eller Kronor.
 4. Ange hur mycket nedgång som ska trigga larmet.
 5. Tryck **Spara**.
@@ -234,7 +233,7 @@ Tryck på **+**-knappen för att välja bevakningstyp. Nyckeltal och insideraff�
 
 **Skapa en nyckeltalbevakning:**
 1. Öppna aktiedetaljvyn.
-2. Tryck på **+**-knappen nere till höger och välj **Nyckeltal**.
+2. Tryck på **Ny bevakning** nere till höger och välj **Nyckeltal**.
 3. Välj vilket nyckeltal (P/E, P/S, Direktavkastning, Vinst/aktie).
 4. Ange målvärdet.
 5. Tryck **Spara**.
@@ -253,7 +252,7 @@ Tryck på **+**-knappen för att välja bevakningstyp. Nyckeltal och insideraff�
 
 **Skapa en bevakning för insideraffärer:**
 1. Öppna aktiedetaljvyn för en aktie med insiderstöd.
-2. Tryck på **+**-knappen nere till höger och välj **Insideraffärer**.
+2. Tryck på **Ny bevakning** nere till höger och välj **Insideraffärer**.
 3. Tryck **Spara**.
 
 **Vad händer när den utlöses:**
@@ -274,7 +273,7 @@ Tryck på **+**-knappen för att välja bevakningstyp. Nyckeltal och insideraff�
 - **Notis när lika** — utlöses när priserna är praktiskt taget identiska (skiljer sig med mindre än 0,01)
 
 **Skapa en aktiepar-bevakning:**
-1. Tryck på **+**-knappen i **Par**-fliken.
+1. Gå till **Bevakningar**, tryck på **+** uppe till höger och välj **Aktiepar**.
 2. Sök upp och välj den första aktien.
 3. Sök upp och välj den andra aktien.
 4. Ange prisskillnad om önskat, och/eller aktivera "Notis när lika".
@@ -292,7 +291,7 @@ Tryck på **+**-knappen för att välja bevakningstyp. Nyckeltal och insideraff�
 
 **Typ:** Återkommande.
 
-**Viktigt i nuvarande version:** Prisintervall finns fortfarande som bevakningstyp och kan redigeras om du redan har en sådan bevakning, men det finns ingen tydlig skapa-knapp för den i dagens huvudflöde.
+**Viktigt i nuvarande version:** Prisintervall finns fortfarande som bevakningstyp och utvärderas som förut, men den kan varken skapas eller redigeras i det nya gränssnittet.
 
 **Redigera en befintlig prisintervall-bevakning:**
 1. Öppna bevakningen från listan.
@@ -339,7 +338,7 @@ Tryck på **+**-knappen för att välja bevakningstyp. Nyckeltal och insideraff�
 
 **Skapa en SMA-bevakning:**
 1. Öppna aktiedetaljvyn.
-2. Tryck på **+**-knappen nere till höger och välj **SMA-bevakning**.
+2. Tryck på **Ny bevakning** nere till höger och välj **SMA-bevakning**.
 3. Ange antal dagar för det glidande medelvärdet, eller välj en snabbknapp (20, 50, 100 eller 200 dagar).
 4. Tryck **Spara**.
 
@@ -370,7 +369,7 @@ Vill du bevaka båda hållen (både nästa golden cross och nästa death cross) 
 
 **Skapa en SMA-korsningsbevakning:**
 1. Öppna aktiedetaljvyn.
-2. Tryck på **+**-knappen nere till höger och välj **SMA-korsning**.
+2. Tryck på **Ny bevakning** nere till höger och välj **SMA-korsning**.
 3. Ange antal dagar för det korta SMA:t (t.ex. 20 eller 50) och det långa SMA:t (t.ex. 100 eller 200), eller använd snabbknapparna.
 4. Tryck **Spara**.
 
@@ -386,9 +385,9 @@ Vill du bevaka båda hållen (både nästa golden cross och nästa death cross) 
 
 Situation: Du vill köpa Volvo B om den faller till 220 kr (nuvarande pris: 260 kr).
 
-1. Gå till **Bevakningar** och tryck på `+`.
+1. Gå till **Marknad**.
 2. Sök efter "VOLV-B" och öppna aktiedetaljvyn.
-3. Tryck på **+**-knappen nere till höger och välj **Målpris**.
+3. Tryck på **Ny bevakning** nere till höger och välj **Målpris**.
 4. Ange `220` som målpris.
 5. Tryck **Spara**.
 6. Appen sätter automatiskt riktningen till "under 220 kr" och skickar en notis om priset faller till 220 kr eller lägre.
@@ -425,7 +424,7 @@ Situation: Du vill veta om Investor AB:s P/E-tal stiger över 25 (tecken på hö
 
 Situation: Du äger Handelsbanken och SEB och vill veta när prisskillnaden blir minst 5 kr, oavsett vilken aktie som ligger högst.
 
-1. Tryck **+** i Par-fliken.
+1. Gå till **Bevakningar**, tryck på **+** och välj **Aktiepar**.
 2. Välj **SHB-A** som aktie 1.
 3. Välj **SEB-A** som aktie 2.
 4. Ange `5` som prisskillnadsgräns.
@@ -485,7 +484,7 @@ En utlöst bevakning markeras med en liten färgad prick före namnet och ligger
 
 Den här funktionen kräver att telefonen är ansluten till samma Tailscale-nätverk som podcast-pipeline-instansen, en fristående tjänst som analyserar poddavsnitt. Är instansen inte nåbar fungerar resten av appen som vanligt, bara utan poddfunktionerna nedan.
 
-**Mikrofon-ikon på aktiekortet:** På aktiekortet i **Översikt → Aktier** kan en liten mikrofon-ikon visas till vänster om texten som anger antal bevakningar. Den betyder att bolaget nyligen nämnts i ett poddavsnitt.
+**Obs:** Poddomnämnanden visas inte i det nya gränssnittet; beskrivningen nedan gäller äldre versioner.
 
 **Sektionen "Poddomnämnanden" på aktiedetaljen:**
 - En egen sektion längst ned på aktiens detaljvy visar mer detaljer, med en **på/av-växel** i sektionsrubriken (av som standard).
@@ -551,14 +550,14 @@ StockFlip distribueras inte via Play Store, så appen håller själv koll på om
 **Varför inaktiverades min bevakning automatiskt?**
 - Målpris, Drawdown, SMA-bevakning och SMA-korsning inaktiveras automatiskt när de utlöses. Det är avsiktligt för att undvika upprepade notiser för samma händelse.
 
-**Vad betyder "Kunde inte uppdateras" på ett kort?**
-- Appen lyckades inte hämta nya kurser för bevakningen, till exempel på grund av dålig uppkoppling. Kortet visar då de senast kända värdena och vilken tid de hämtades. Raden försvinner av sig själv när nästa uppdatering lyckas, eller när du drar nedåt för att uppdatera.
+**Vad händer om en uppdatering misslyckas?**
+- Appen visar de senast kända värdena och ett kort meddelande längst ned. Dra nedåt för att försöka igen.
 
 **Vad händer om en vy inte kan laddas?**
-- Om **Översikt**, aktie- eller aktiepardetaljen, eller listorna i **Par** och **Bevakningar**, inte kan laddas första gången visas ett felmeddelande med knappen **Försök igen**. Kan grafen på aktiedetaljen inte hämtas står det i grafytan — tryck på den valda perioden (eller dra nedåt) för att försöka igen. Kan bevakningarna på aktiedetaljen inte läsas in visas det i avsnittet Bevakningar. Om vyn redan visar data och en uppdatering misslyckas ligger de senast kända värdena kvar, och ett kort meddelande visas längst ned.
+- Om en vy inte kan laddas första gången visas ett felmeddelande med knappen **Försök igen**. Om vyn redan visar data och en uppdatering misslyckas ligger de senast kända värdena kvar, och ett kort meddelande visas längst ned.
 
-**Varför stängs inte dialogen när jag trycker Skapa eller Uppdatera?**
-- Om ett värde saknas eller är ogiltigt, om en likadan bevakning redan finns, eller om bevakningen inte kunde sparas, ligger dialogen kvar och felet visas direkt under fältet. Det du har skrivit finns kvar, så att du kan rätta och försöka igen. Tal kan skrivas med komma eller punkt, och med eller utan mellanslag mellan tusental (t.ex. `1 234,50`).
+**Varför stängs inte panelen när jag trycker Spara?**
+- Om ett värde saknas eller är ogiltigt, om en likadan bevakning redan finns, eller om bevakningen inte kunde sparas, ligger panelen kvar och felet visas i texten under fälten. Det du har skrivit finns kvar, så att du kan rätta och försöka igen. Tal kan skrivas med komma eller punkt, och med eller utan mellanslag mellan tusental (t.ex. `1 234,50`).
 
 **Kan jag ha flera bevakningar på samma aktie?**
 - Ja, du kan ha hur många bevakningar du vill på samma aktie, av olika eller samma typ.
@@ -574,7 +573,7 @@ StockFlip distribueras inte via Play Store, så appen håller själv koll på om
 
 **Var kommer kursmålen ifrån?**
 - Kortet "Analytikernas kursmål" på aktiens detaljsida hämtar snitt, lägsta och högsta kursmål, antal analytiker och rekommendation från Yahoo Finance. Uppsidan är skillnaden mellan snittkursmålet och aktuell kurs och visas bara när kursmålet anges i samma valuta som aktien handlas i.
-- För mindre bolag baserar sig siffrorna ofta på bara en eller två analytiker (se antalet på kortet), och för många små svenska bolag saknas kursmål helt. Yahoo visar inte när kursmålen senast uppdaterades, så de kan vara gamla. Kursmål är analytikernas bedömningar, inte en garanti för hur kursen utvecklas.
+- För mindre bolag baserar sig siffrorna ofta på bara en eller två analytiker (se antalet analytiker), och för många små svenska bolag saknas kursmål helt. Yahoo visar inte när kursmålen senast uppdaterades, så de kan vara gamla. Kursmål är analytikernas bedömningar, inte en garanti för hur kursen utvecklas.
 
 **Varför saknas P/B, EV/EBITDA eller skuldsättningsgrad för en aktie?**
 - Värdena hämtas från Yahoo Finance och finns inte för alla bolag. De saknas ofta för banker, försäkrings- och fastighetsbolag (särskilt EV/EBITDA och skuldsättningsgrad), samt för mindre bolag. Saknade värden visas som "-". Negativa värden är möjliga, till exempel negativt EV/EBITDA när bolaget går med förlust.
