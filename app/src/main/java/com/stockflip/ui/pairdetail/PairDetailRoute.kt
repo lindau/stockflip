@@ -41,7 +41,6 @@ import com.stockflip.repository.StockRepository
 import com.stockflip.toUserMessage
 import com.stockflip.ui.components.EmptyState
 import com.stockflip.ui.components.SkeletonRow
-import com.stockflip.ui.components.cards.ClarityPairDetailPanel
 import com.stockflip.ui.createwatch.PairWatchSheet
 import com.stockflip.ui.theme.Space
 import kotlinx.coroutines.launch
@@ -92,8 +91,9 @@ internal fun PairDetailRoute(
                         Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = Space.md),
                         verticalArrangement = Arrangement.spacedBy(Space.md),
                     ) {
-                        if (data.watchItem.isTriggered) {
-                            Row(horizontalArrangement = Arrangement.spacedBy(Space.sm)) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(Space.sm)) {
+                            OutlinedButton(onClick = { editing = true }) { Text("Redigera") }
+                            if (data.watchItem.isTriggered) {
                                 Button(onClick = {
                                     scope.launch {
                                         val result = try { viewModel.reactivateAndReturnResult() } catch (e: Exception) { null }
@@ -103,14 +103,13 @@ internal fun PairDetailRoute(
                                 OutlinedButton(onClick = { confirmDelete = true }) { Text(stringResource(R.string.pairdetail_ta_bort)) }
                             }
                         }
-                        ClarityPairDetailPanel(
+                        PairDetailScreen(
                             data = data,
                             chartData = (chartState as? UiState.Success)?.data,
                             selectedPeriod = period,
                             history = history,
                             onPeriodSelected = viewModel::selectPeriod,
-                            onEdit = { editing = true },
-                        )
+                                        )
                         TextButton(onClick = { confirmDelete = true }) { Text(stringResource(R.string.pairdetail_ta_bort_aktiepar), color = MaterialTheme.colorScheme.error) }
                     }
                 }

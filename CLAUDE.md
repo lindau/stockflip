@@ -79,7 +79,7 @@ Hela UI:t är **Jetpack Compose** (Material 3), med `AppActivity` som enda Activ
 - Varje skärm är en tillståndslös `*Screen` plus en `*Route` som kopplar mot ViewModel: `ui/watchlist`, `ui/market`, `ui/settings`, `ui/stockdetail`, `ui/pairdetail`, `ui/createwatch` (bottom sheets för skapa/redigera: pris m.fl., aktiepar, kombinerad).
 - Delade komponenter i `ui/components/`; tema (färg, Inter, former, spacing) i `ui/theme/`. Tema-val (`ThemeMode`) sparas i `settings/night_mode`.
 - Notis-deep-links (`AppActivity.EXTRA_*` + HMAC-token, `NotificationNavigationSecurity`) tolkas i `AppActivity.routeFromIntent`.
-- Pardetaljens panel (`ClarityPairDetailPanel`) är fortfarande i äldre kortstil.
+- Pardetaljen (`ui/pairdetail/PairDetailScreen`) är i samma platta stil; `PairPerformanceChart` (grafen) är oförändrad.
 
 ### Key Conventions
 
