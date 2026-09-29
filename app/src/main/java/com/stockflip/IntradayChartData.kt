@@ -69,7 +69,8 @@ enum class ChartPeriod(val label: String, val range: String, val interval: Strin
     THREE_MONTHS("3M", "3mo", "1d"),
     SIX_MONTHS("6M", "6mo", "1d"),
     YEAR("1Å", "1y", "1wk"),
-    FIVE_YEARS("5Å", "5y", "1mo")
+    FIVE_YEARS("5Å", "5y", "1mo"),
+    MAX("Max", "max", "3mo")
 }
 
 /** Uppläsningstext för skärmläsare — "1D"/"1Å" läses annars upp bokstav för bokstav. */
@@ -81,6 +82,7 @@ fun ChartPeriod.accessibilityLabel(): String = when (this) {
     ChartPeriod.SIX_MONTHS -> "6 månader"
     ChartPeriod.YEAR -> "1 år"
     ChartPeriod.FIVE_YEARS -> "5 år"
+    ChartPeriod.MAX -> "hela historiken"
 }
 
 /** RSI/Bollinger beräknas på dagsdata och är bara meningsfulla när grafen själv är daglig eller grövre. */

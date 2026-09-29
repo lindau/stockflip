@@ -10,6 +10,7 @@
 - Svep en rad åt vänster för att ta bort, med `Ångra`
 - Aktiedetaljen har ren graf med streckade bevakningsnivåer, periodval, nyckeltal och en anteckning
 - Aktiedetaljen har kursmål, insideraffärer, poddomnämnanden, genvägar till Avanza/Nordnet och helskärmsgraf. Bevakningslistan visar senaste uppdatering och en liten kurva per rad, och Marknad har genvägar till index
+- Aktiedetaljen visar kursens förändring i belopp och procent med enhet, en `⋯`-meny (helskärm, indikatorer, pausa alla), etikett på bevakningsnivån i grafen, intervallet `Max` och tvåradiga bevakningar med utlösningstid eller aktuellt värde. Listan visar utlösningstid och rätt valuta
 - Notiser öppnar aktiedetaljen med den utlösta bevakningen markerad; målprisnotiser har en lugnare text ("Volvo B under 245 kr")
 - Masshantering (markeringsläge) finns inte längre. Pausa, aktivera och återaktivera görs med en knapp vid varje bevakning på aktiens detaljsida
 

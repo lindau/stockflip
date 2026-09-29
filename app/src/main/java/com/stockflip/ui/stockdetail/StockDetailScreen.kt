@@ -20,7 +20,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.Add
-import androidx.compose.material.icons.outlined.Fullscreen
+import androidx.compose.material.icons.outlined.MoreHoriz
 import androidx.compose.material.icons.outlined.Tune
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
@@ -92,6 +92,8 @@ internal fun StockDetailScreen(
     onAddWatch: () -> Unit,
     onEditAlert: (WatchItemUiState) -> Unit,
     onAlertAction: (WatchItemUiState, AlertAction) -> Unit,
+    onToggleAll: (active: Boolean) -> Unit,
+    triggerTimes: Map<Int, Long>,
     insiderTransactions: List<com.stockflip.InsiderTransactionEntity>,
     insiderHighlightId: String?,
     podcastObservations: List<com.stockflip.PodcastObservationEntity>,
@@ -126,9 +128,29 @@ internal fun StockDetailScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
                 IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = stringResource(R.string.stockdetail_tillbaka)) }
-                Row {
-                IconButton(onClick = { showFullscreen = true }) { Icon(Icons.Outlined.Fullscreen, contentDescription = "Helskärm") }
-                IconButton(onClick = { showIndicators = true }) { Icon(Icons.Outlined.Tune, contentDescription = stringResource(R.string.stockdetail_indikatorer)) }
+                Text(
+                    data.symbol,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                )
+                Box {
+                    var menuOpen by remember { mutableStateOf(false) }
+                    IconButton(onClick = { menuOpen = true }) { Icon(Icons.Outlined.MoreHoriz, contentDescription = "Mer") }
+                    androidx.compose.material3.DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+                        androidx.compose.material3.DropdownMenuItem(text = { Text("Helskärm") }, onClick = { menuOpen = false; showFullscreen = true })
+                        androidx.compose.material3.DropdownMenuItem(
+                            text = { Text(stringResource(R.string.stockdetail_indikatorer)) },
+                            onClick = { menuOpen = false; showIndicators = true },
+                        )
+                        if (alerts.isNotEmpty()) {
+                            val anyActive = alerts.any { it.item.isActive }
+                            androidx.compose.material3.DropdownMenuItem(
+                                text = { Text(if (anyActive) "Pausa alla bevakningar" else "Aktivera alla bevakningar") },
+                                onClick = { menuOpen = false; onToggleAll(!anyActive) },
+                            )
+                        }
+                    }
                 }
             }
             PullToRefreshBox(isRefreshing = isRefreshing, onRefresh = onRefresh, modifier = Modifier.fillMaxSize()) {
@@ -169,9 +191,16 @@ internal fun StockDetailScreen(
                                     value = data.lastPrice ?: 0.0,
                                     style = NumericStyle.copy(fontSize = 44.sp, lineHeight = 48.sp),
                                 )
-                                if (changePercent != null) {
+                                Text(
+                                    com.stockflip.CurrencyHelper.getCurrencySymbol(data.currency),
+                                    style = MaterialTheme.typography.titleMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.padding(bottom = 6.dp),
+                                )
+                                val changeText = heroChangeText(change.delta, changePercent)
+                                if (changeText != null) {
                                     Text(
-                                        "${formatSignedPercent(changePercent)} ${periodWord(selectedPeriod)}",
+                                        "$changeText ${periodWord(selectedPeriod)}",
                                         style = MaterialTheme.typography.bodyMedium,
                                         color = changeColor,
                                         modifier = Modifier.padding(bottom = 6.dp),
@@ -244,8 +273,16 @@ internal fun StockDetailScreen(
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
-                                Text(row.subtitle.substringBefore(" · utlöst").substringBefore(" · pausad"),
-                                    style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
+                                val (line1, line2) = alertLines(alert, triggerTimes[alert.item.id])
+                                Column(Modifier.weight(1f)) {
+                                    Text(line1, style = MaterialTheme.typography.bodyLarge)
+                                    if (line2 != null) Text(
+                                        line2,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.padding(top = 3.dp),
+                                    )
+                                }
                                 val triggered = alert.isTriggeredForDisplay()
                                 PillStatus(
                                     text = alertStatusLabel(triggered, alert.item.isActive),
@@ -322,4 +359,5 @@ private fun periodWord(period: ChartPeriod): String = when (period) {
     ChartPeriod.SIX_MONTHS -> "6 mån"
     ChartPeriod.YEAR -> "1 år"
     ChartPeriod.FIVE_YEARS -> "5 år"
+    ChartPeriod.MAX -> "totalt"
 }

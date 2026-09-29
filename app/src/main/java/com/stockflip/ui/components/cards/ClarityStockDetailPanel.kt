@@ -541,6 +541,26 @@ private fun ClaritySparkChart(
             )
         }
 
+        // Etikett vid varje bevakningsnivå ("Bevakning 245"). Nivåer utanför skalan ritas inte som linje utan
+        // som en markering med pil i övre/nedre kanten, så att kurslinjen inte plattas ut.
+        val labelStyle = TextStyle(fontSize = 11.sp, color = watchLevelColor)
+        watchLevels.distinct().forEach { level ->
+            val number = if (level == kotlin.math.floor(level)) com.stockflip.ui.components.formatNumber(level, 0) else com.stockflip.ui.components.formatNumber(level)
+            val inside = level in visibleWatchLevels
+            val arrow = if (inside) "" else if (level > maxPrice) "\u2191 " else "\u2193 "
+            val measured = textMeasurer.measure("${arrow}Bevakning $number", labelStyle)
+            val x = (size.width - measured.size.width).coerceAtLeast(0f)
+            val y = when {
+                inside -> {
+                    val lineY = yFor(level)
+                    if (lineY - measured.size.height - 2.dp.toPx() >= 0f) lineY - measured.size.height - 2.dp.toPx() else lineY + 2.dp.toPx()
+                }
+                level > maxPrice -> 2.dp.toPx()
+                else -> size.height - measured.size.height - 2.dp.toPx()
+            }
+            drawText(measured, topLeft = Offset(x, y))
+        }
+
         // Bollinger Bands ritas under kurslinjen: ifyllt band mellan övre/undre, streckade
         // ytterlinjer och en tunn mittlinje (SMA). Samma carry-forward som för SMA-linjerna.
         if (bollingerPoints.isNotEmpty()) {
@@ -919,7 +939,8 @@ private fun crosshairDateFormat(period: ChartPeriod): SimpleDateFormat = when (p
     ChartPeriod.THREE_MONTHS -> SimpleDateFormat("d MMM", Locale("sv", "SE"))
     ChartPeriod.SIX_MONTHS,
     ChartPeriod.YEAR,
-    ChartPeriod.FIVE_YEARS -> SimpleDateFormat("MMM yyyy", Locale("sv", "SE"))
+    ChartPeriod.FIVE_YEARS,
+    ChartPeriod.MAX -> SimpleDateFormat("MMM yyyy", Locale("sv", "SE"))
 }
 
 @Composable

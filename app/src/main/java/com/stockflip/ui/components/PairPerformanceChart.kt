@@ -441,7 +441,8 @@ private fun chartTimeFormat(selectedPeriod: ChartPeriod): SimpleDateFormat = whe
     ChartPeriod.THREE_MONTHS -> SimpleDateFormat("d MMM", Locale.getDefault())
     ChartPeriod.SIX_MONTHS -> SimpleDateFormat("MMM", Locale.getDefault())
     ChartPeriod.YEAR -> SimpleDateFormat("MMM yy", Locale.getDefault())
-    ChartPeriod.FIVE_YEARS -> SimpleDateFormat("yyyy", Locale.getDefault())
+    ChartPeriod.FIVE_YEARS,
+    ChartPeriod.MAX -> SimpleDateFormat("yyyy", Locale.getDefault())
 }
 
 private fun formatSignedDecimal(value: Double): String {

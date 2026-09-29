@@ -95,7 +95,7 @@ Appen har tre flikar längst ned:
 - **Marknad** — sök efter en aktie, ett index eller en kryptovaluta. Tryck på en träff för att öppna aktiens detaljsida. Dina senast öppnade träffar och genvägar till vanliga index (OMXS30, S&P 500, Nasdaq, DAX, FTSE 100, Nikkei 225) visas när sökfältet är tomt.
 - **Inställningar** — tema (System, Ljust eller Mörkt), export och import av bevakningar, kontroll av uppdatering, Hjälp (den här handboken) och ändringsloggen (tryck på versionsraden).
 
-Under rubriken visas när kurserna senast uppdaterades, och varje rad har en liten kurva över den senaste månaden. I fliken **Bevakningar** kan du söka bland dina bevakningar med sökfältet högst upp och dra nedåt för att uppdatera kurserna. Tryck på **+** uppe till höger för att skapa en ny bevakning:
+Under rubriken visas när kurserna senast uppdaterades. Varje rad har en liten kurva över den senaste månaden, och en utlöst bevakning visar när den utlöstes (`utlöst 09:14`, `utlöst igår`). Priser och nivåer visas i aktiens valuta (`kr`, `$`, `€`). I fliken **Bevakningar** kan du söka bland dina bevakningar med sökfältet högst upp och dra nedåt för att uppdatera kurserna. Tryck på **+** uppe till höger för att skapa en ny bevakning:
 
 - **Aktie** — öppnar **Marknad** där du söker upp aktien och väljer bevakningstyp på detaljsidan.
 - **Aktiepar** — välj två aktier och en prisskillnad.
@@ -132,10 +132,11 @@ Uppe till höger i grafen finns två knappar:
 
 Aktiedetaljsidan visar, uppifrån och ned:
 
-- **Kurs och förändring** för vald period, med bolagsnamn, ticker, börs och valuta.
-- **Grafen** med periodval (1D, 1V, 1M och så vidare). Dina bevakningsnivåer syns som streckade linjer. Knappen uppe till höger (reglage) öppnar **Indikatorer** där du slår på SMA, Bollinger-band och RSI.
+- **Toppraden** med tillbaka-pil, tickern i mitten och en **⋯**-meny med `Helskärm`, `Indikatorer` (SMA, Bollinger-band och RSI) samt `Pausa alla bevakningar` / `Aktivera alla bevakningar` för aktien.
+- **Kurs och förändring** för vald period, med enhet och belopp, till exempel `248,30 kr  +2,95 (+1,2 %) idag`.
+- **Grafen** med periodval (1D, 1V, 1M, 3M, 6M, 1Å, 5Å och Max). Dina bevakningsnivåer syns som streckade linjer med etiketten `Bevakning 245`. Ligger en nivå långt från kursen ritas den inte som linje, utan som en markering med pil (`↑ Bevakning 500`) i kanten.
 - **Nyckeltal** — 52-veckorsintervall, P/E, direktavkastning med flera, och datum för nästa rapport, till exempel *Rapport om 12 dagar · 23 okt*.
-- **Dina bevakningar** — alla bevakningar på aktien. Tryck på en rad för att redigera den.
+- **Dina bevakningar** — varje bevakning har två rader: villkoret, och en statusrad (`Utlöst idag 09:14`, `Nu −14,3 %` eller `Pausad`). Knappen till höger är `Återaktivera`, `Pausa` eller `Aktivera`. Tryck på raden för att redigera den.
 - **Anteckning** — tryck för att skriva eller ändra din anteckning. Töm texten för att ta bort den.
 
 Tryck på knappen **Ny bevakning** nere till höger för att skapa en bevakning. Dra nedåt för att uppdatera. Längre ned finns även analytikernas kursmål, de senaste insideraffärerna och poddomnämnanden (när det finns data), samt genvägar till Avanza och Nordnet. Knappen med fyra hörn uppe till höger öppnar grafen i helskärm. När du öppnar sidan från en notis markeras den bevakning eller insideraffär som notisen gällde, och en ruta högst upp låter dig återaktivera eller ta bort bevakningen.

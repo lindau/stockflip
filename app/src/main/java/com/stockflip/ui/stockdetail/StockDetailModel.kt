@@ -1,5 +1,8 @@
 package com.stockflip.ui.stockdetail
 
+import com.stockflip.isTriggeredForDisplay
+import com.stockflip.ui.components.detailText
+import com.stockflip.ui.watchlist.toRowModel
 import com.stockflip.StockDetailData
 import com.stockflip.WatchItemUiState
 import com.stockflip.WatchType
@@ -81,3 +84,46 @@ internal data class DetailBanner(val title: String?, val message: String?, val c
 internal fun detailBannerFor(title: String?, message: String?, watchTriggered: Boolean?): DetailBanner? =
     if (title.isNullOrBlank() && message.isNullOrBlank()) null
     else DetailBanner(title, message, canAct = watchTriggered == true)
+
+private fun signedNumber(v: Double): String =
+    (if (v > 0) "+" else if (v < 0) com.stockflip.ui.components.MINUS else "") + com.stockflip.ui.components.formatNumber(kotlin.math.abs(v))
+
+/** Heroraden: "+2,95 (+1,2 %)"; bara procent eller bara belopp om det andra saknas, `null` om inget finns. */
+internal fun heroChangeText(delta: Double?, percent: Double?): String? = when {
+    delta == null && percent == null -> null
+    delta == null -> com.stockflip.ui.components.formatSignedPercent(percent!!)
+    percent == null -> signedNumber(delta)
+    else -> "${signedNumber(delta)} (${com.stockflip.ui.components.formatSignedPercent(percent)})"
+}
+
+/**
+ * Två rader för en bevakning på aktiedetaljen: villkoret, och (om det finns) status:
+ * "Utlöst idag 09:14" för utlösta, annars aktuellt värde ("Nu −14,3 %"), eller "Pausad".
+ */
+internal fun alertLines(
+    alert: com.stockflip.WatchItemUiState,
+    triggerMillis: Long?,
+    now: Long = System.currentTimeMillis(),
+): Pair<String, String?> {
+    val first = alert.toRowModel(triggerMillis, now).subtitle.substringBefore(" · utlöst").substringBefore(" · pausad")
+    val unit = com.stockflip.ui.watchlist.currencyUnit(alert.item.ticker)
+    val triggered = alert.isTriggeredForDisplay()
+    val live = alert.live
+    val second = when {
+        triggered -> com.stockflip.ui.components.triggerWhen(triggerMillis, alert.item.lastTriggeredDate, now)?.detailText() ?: "Utlöst"
+        !alert.item.isActive -> "Pausad"
+        else -> when (val wt = alert.item.watchType) {
+            is com.stockflip.WatchType.PriceTarget -> live.currentPrice.takeIf { it > 0 }?.let { "Nu ${com.stockflip.ui.components.formatNumber(it)} $unit" }
+            is com.stockflip.WatchType.ATHBased -> when (wt.dropType) {
+                com.stockflip.WatchType.DropType.PERCENTAGE -> live.currentDropPercentage.takeIf { it > 0 }
+                    ?.let { "Nu ${com.stockflip.ui.components.MINUS}${com.stockflip.ui.components.formatNumber(it, 1)} %" }
+                com.stockflip.WatchType.DropType.ABSOLUTE -> live.currentDropAbsolute.takeIf { it > 0 }
+                    ?.let { "Nu ${com.stockflip.ui.components.MINUS}${com.stockflip.ui.components.formatNumber(it)} $unit" }
+            }
+            is com.stockflip.WatchType.KeyMetrics -> live.currentMetricValue.takeIf { it > 0 }?.let { "Nu ${com.stockflip.ui.components.formatNumber(it, 1)}" }
+            is com.stockflip.WatchType.DailyMove -> live.currentDailyChangePercent?.let { "Nu ${com.stockflip.ui.components.formatSignedPercent(it)}" }
+            else -> null
+        }
+    }
+    return first to second
+}

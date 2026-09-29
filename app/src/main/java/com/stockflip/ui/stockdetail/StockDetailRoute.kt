@@ -66,6 +66,7 @@ internal fun StockDetailRoute(
     var sheetOpen by remember { mutableStateOf(false) }
     var editing by remember { mutableStateOf<WatchItemUiState?>(null) }
     val note by viewModel.noteState.collectAsState()
+    val triggerHistory by viewModel.triggerHistoryState.collectAsState()
     val insiders by viewModel.insiderTransactionsState.collectAsState()
     val podcasts by viewModel.podcastObservationsState.collectAsState()
     val avanza = remember { AvanzaStockLinkService() }
@@ -132,6 +133,8 @@ internal fun StockDetailRoute(
                 alerts.firstOrNull { it.item.id == launch.watchId }?.let { viewModel.deleteAlert(it.item); bannerDismissed = true }
             },
             onBannerDismiss = { bannerDismissed = true },
+            onToggleAll = { active -> viewModel.toggleAllAlerts(active) },
+            triggerTimes = triggerHistory.mapValues { (_, v) -> v.maxOrNull() ?: 0L }.filterValues { it > 0L },
             onAlertAction = { alert, action ->
                 scope.launch {
                     when (action) {

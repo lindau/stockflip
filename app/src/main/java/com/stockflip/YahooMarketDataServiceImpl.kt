@@ -353,6 +353,7 @@ class YahooMarketDataServiceImpl(
         ChartPeriod.SIX_MONTHS -> 132
         ChartPeriod.YEAR -> 253
         ChartPeriod.FIVE_YEARS -> 1260
+        ChartPeriod.MAX -> 5040
     }
 
     /** Hämtar dagsstängningar, senaste först utelämnat (kronologisk ordning), minst [minBars] om tillgängligt. */
