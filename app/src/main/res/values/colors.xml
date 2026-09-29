@@ -1,53 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Nordisk Precision — Light palette (View-lager) -->
-    <color name="pine_primary">#1F8A7A</color>
-    <color name="pine_on_primary">#FFFFFF</color>
-    <color name="pine_primary_container">#D8ECE8</color>
-    <color name="pine_on_primary_container">#10202E</color>
-
-    <color name="sand_secondary">#5E7FA3</color>
-    <color name="sand_on_secondary">#FFFFFF</color>
-    <color name="sand_secondary_container">#EAF1F6</color>
-    <color name="sand_on_secondary_container">#10202E</color>
-
-    <color name="pine_background">#F5F8FB</color>
-    <color name="pine_on_background">#10202E</color>
-
-    <color name="pine_surface">#FFFFFF</color>
-    <color name="pine_on_surface">#10202E</color>
-    <color name="pine_surface_variant">#F0F4F8</color>
-    <color name="pine_on_surface_variant">#516273</color>
-
-    <color name="pine_outline">#D5DEE7</color>
-    <color name="pine_error">#B94A5A</color>
-    <color name="pine_on_error">#FFFFFF</color>
-    <color name="pine_error_container">#F9E0E3</color>
-    <color name="pine_on_error_container">#10202E</color>
-
-    <!-- Nordisk Precision — Dark palette (View-lager) -->
-    <color name="pine_primary_dark">#3AB7A4</color>
-    <color name="pine_on_primary_dark">#09111D</color>
-    <color name="pine_primary_container_dark">#1B3C44</color>
-    <color name="pine_on_primary_container_dark">#3AB7A4</color>
-
-    <color name="sand_secondary_dark">#7FA8C9</color>
-    <color name="sand_on_secondary_dark">#09111D</color>
-    <color name="sand_secondary_container_dark">#132131</color>
-    <color name="sand_on_secondary_container_dark">#B5C0CB</color>
-
-    <color name="pine_background_dark">#09111D</color>
-    <color name="pine_on_background_dark">#F2F5F7</color>
-
-    <color name="pine_surface_dark">#101A27</color>
-    <color name="pine_on_surface_dark">#F2F5F7</color>
-    <color name="pine_surface_variant_dark">#152233</color>
-    <color name="pine_on_surface_variant_dark">#B5C0CB</color>
-
-    <color name="pine_outline_dark">#263648</color>
-    <color name="pine_error_dark">#E06C75</color>
-    <color name="pine_on_error_dark">#09111D</color>
-    <color name="pine_error_container_dark">#3D1A1D</color>
-    <color name="pine_on_error_container_dark">#E06C75</color>
-
+    <!-- Enda XML-färgen: bakgrund för fönster/statusfält innan Compose ritat (samma som tokens i ui/theme/Color.kt). -->
+    <color name="sf_background">#FAFAFB</color>
 </resources>
