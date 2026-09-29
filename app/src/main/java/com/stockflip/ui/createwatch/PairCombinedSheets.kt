@@ -222,7 +222,7 @@ internal fun CombinedWatchSheet(
                 Text(stringResource(R.string.createwatch_lagg_till_villkor))
             }
 
-            val message = error ?: (preview as? CombinedResult.Ok)?.expression?.getDescription()
+            val message = error ?: (preview as? CombinedResult.Ok)?.expression?.let { "Notis när ${stock?.name ?: "aktien"}: ${describeExpression(it).replaceFirstChar { c -> c.lowercase() }}." }
             if (message != null) Text(message, style = MaterialTheme.typography.bodyMedium,
                 color = if (error != null) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant)
             Button(

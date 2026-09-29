@@ -162,6 +162,7 @@
     <string name="stockdetail_anteckning">Anteckning</string>
     <string name="stockdetail_spara">Spara</string>
     <string name="stockdetail_avbryt">Avbryt</string>
+    <string name="pairdetail_redigera">Redigera</string>
     <string name="pairdetail_ateraktivera">Återaktivera</string>
     <string name="pairdetail_ta_bort">Ta bort</string>
     <string name="pairdetail_ta_bort_aktiepar">Ta bort aktiepar</string>

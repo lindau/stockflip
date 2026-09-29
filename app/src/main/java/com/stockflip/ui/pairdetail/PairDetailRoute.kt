@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -80,6 +81,8 @@ internal fun PairDetailRoute(
     Column(modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         Row(Modifier.fillMaxWidth().padding(horizontal = Space.xs), verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = stringResource(R.string.pairdetail_tillbaka)) }
+            Spacer(Modifier.weight(1f))
+            if (pairState is UiState.Success) TextButton(onClick = { editing = true }) { Text(stringResource(R.string.pairdetail_redigera)) }
         }
         when (val state = pairState) {
             UiState.Loading -> Column { repeat(4) { SkeletonRow() } }
@@ -92,7 +95,6 @@ internal fun PairDetailRoute(
                         verticalArrangement = Arrangement.spacedBy(Space.md),
                     ) {
                         Row(horizontalArrangement = Arrangement.spacedBy(Space.sm)) {
-                            OutlinedButton(onClick = { editing = true }) { Text("Redigera") }
                             if (data.watchItem.isTriggered) {
                                 Button(onClick = {
                                     scope.launch {

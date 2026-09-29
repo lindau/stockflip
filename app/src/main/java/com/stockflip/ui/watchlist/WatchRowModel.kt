@@ -2,6 +2,7 @@ package com.stockflip.ui.watchlist
 
 import com.stockflip.WatchItemUiState
 import com.stockflip.WatchType
+import com.stockflip.ui.createwatch.describeExpression
 import com.stockflip.isTriggeredForDisplay
 import com.stockflip.ui.components.MINUS
 import com.stockflip.ui.components.formatNumber
@@ -126,7 +127,7 @@ private fun WatchItemUiState.conditionText(triggered: Boolean): String = when (v
         "SMA ${wt.shortPeriod} $dir SMA ${wt.longPeriod}"
     }
     is WatchType.InsiderBuy -> "Insiderköp"
-    is WatchType.Combined -> "Kombinerad bevakning"
+    is WatchType.Combined -> describeExpression(wt.expression)
 }
 
 /** Heltal utan decimaler, annars två decimaler. */

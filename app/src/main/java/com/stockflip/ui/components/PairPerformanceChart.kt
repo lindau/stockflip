@@ -9,9 +9,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -57,17 +54,11 @@ fun PairPerformanceChart(
     modifier: Modifier = Modifier
 ) {
     Column(modifier = modifier.padding(horizontal = 12.dp)) {
-        SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-            ChartPeriod.entries.forEachIndexed { index, period ->
-                SegmentedButton(
-                    selected = period == selectedPeriod,
-                    onClick = { onPeriodSelected(period) },
-                    shape = SegmentedButtonDefaults.itemShape(index = index, count = ChartPeriod.entries.size),
-                    label = { Text(text = period.label, style = MaterialTheme.typography.labelSmall) },
-                    icon = {}
-                )
-            }
-        }
+        SegmentedControl(
+            options = ChartPeriod.entries.map { it.label },
+            selectedIndex = ChartPeriod.entries.indexOf(selectedPeriod),
+            onSelect = { onPeriodSelected(ChartPeriod.entries[it]) },
+        )
 
         if (data.spread.prices.isEmpty() || data.spread.timestamps.isEmpty()) {
             EmptyChartState(
