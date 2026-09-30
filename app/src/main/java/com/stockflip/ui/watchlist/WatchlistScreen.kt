@@ -203,6 +203,7 @@ private fun StockRow(row: WatchRowModel, showDivider: Boolean, sparkline: List<D
         staleLabel = row.staleLabel,
         hasNote = row.hasNote,
         hasPodcast = row.hasPodcast,
+        logoSymbol = row.symbol,
     )
 }
 
@@ -333,6 +334,7 @@ private fun SwipeableRow(
                 staleLabel = row.staleLabel,
                 hasNote = row.hasNote,
                 hasPodcast = row.hasPodcast,
+                logoSymbol = row.symbol,
             )
         }
     }

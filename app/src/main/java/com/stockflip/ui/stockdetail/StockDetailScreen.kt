@@ -50,6 +50,7 @@ import com.stockflip.SmaChartLevel
 import com.stockflip.StockDetailData
 import com.stockflip.WatchItemUiState
 import com.stockflip.isTriggeredForDisplay
+import com.stockflip.ui.components.CompanyLogoAvatar
 import com.stockflip.ui.components.KeyValueRow
 import com.stockflip.ui.components.PillStatus
 import com.stockflip.ui.components.PriceText
@@ -181,12 +182,17 @@ internal fun StockDetailScreen(
                     }
                     item(key = "hero") {
                         Column(Modifier.padding(horizontal = Space.screenH)) {
-                            Text(data.companyName, style = MaterialTheme.typography.headlineMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
-                            Text(
-                                listOfNotNull(data.symbol, data.exchange, data.currency).joinToString(" · "),
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Space.md)) {
+                                CompanyLogoAvatar(symbol = data.symbol, size = 48.dp)
+                                Column(Modifier.weight(1f)) {
+                                    Text(data.companyName, style = MaterialTheme.typography.headlineMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                                    Text(
+                                        listOfNotNull(data.symbol, data.exchange, data.currency).joinToString(" · "),
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                }
+                            }
                             Row(
                                 Modifier.padding(top = Space.md),
                                 horizontalArrangement = Arrangement.spacedBy(Space.sm),

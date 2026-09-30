@@ -60,6 +60,7 @@ fun WatchRow(
     hasNote: Boolean = false,
     hasPodcast: Boolean = false,
     statusSuffix: String? = null,
+    logoSymbol: String? = null,
 ) {
     val triggeredLabel = "Utlöst"
     Column(modifier.fillMaxWidth()) {
@@ -81,6 +82,7 @@ fun WatchRow(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(Space.md),
         ) {
+            if (logoSymbol != null) CompanyLogoAvatar(symbol = logoSymbol, size = 36.dp)
             Column(Modifier.weight(1f)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     if (triggered) {
