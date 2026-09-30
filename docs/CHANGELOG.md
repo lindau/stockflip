@@ -17,6 +17,7 @@
 - Masshantering (markeringsläge) finns inte längre. Pausa, aktivera och återaktivera görs med en knapp vid varje bevakning på aktiens detaljsida
 
 - Bolagsloggor visas nu i översikten och på aktiedetaljen, med flagga som sekundär info
+- Ny knapp `Återaktivera alla` över `Utlösta`: återställer alla utlösta bevakningar så att de löses ut på nytt vid nästa kontroll (efter börsöppning om marknaden är stängd). Insideraffärer är alltid igång och behöver inte återaktiveras
 - Insideraffärer kontrolleras nu var 6:e timme istället för en gång per dag
 - Ny huvudnavigation med `Översikt`, `Par` och `Mina case`
 - `Översikt` byggd som läsläge med sammanfattningskort och sektioner för `Nytt och triggade`, `Nära att triggas`, `Aktiva case` och `Inaktiva`

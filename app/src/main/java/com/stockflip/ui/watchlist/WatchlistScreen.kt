@@ -27,6 +27,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.SwipeToDismissBox
@@ -86,6 +87,7 @@ internal fun WatchlistScreen(
     onAddCombined: () -> Unit,
     lastUpdated: String? = null,
     onRowAction: (WatchRowModel, AlertAction) -> Unit = { _, _ -> },
+    onReactivateAll: () -> Unit = {},
     sparklines: Map<String, List<Double>> = emptyMap(),
     modifier: Modifier = Modifier,
 ) {
@@ -138,7 +140,7 @@ internal fun WatchlistScreen(
                 listEmpty && query.isNotBlank() -> EmptyState("Inga träffar för \"${query.trim()}\".")
                 listEmpty -> EmptyState(stringResource(R.string.watchlist_inga_bevakningar_an), actionLabel = stringResource(R.string.watchlist_ny_bevakning), onAction = onAddWatch)
                 view == WatchView.STOCKS -> StockList(stockSections, sparklines, onRowClick)
-                else -> WatchList(sections, sparklines, onRowClick, onDelete, onRowAction)
+                else -> WatchList(sections, sparklines, onRowClick, onDelete, onRowAction, onReactivateAll)
             }
         }
     }
@@ -233,10 +235,21 @@ private fun WatchList(
     onRowClick: (WatchRowModel) -> Unit,
     onDelete: (WatchRowModel) -> Unit,
     onRowAction: (WatchRowModel, AlertAction) -> Unit,
+    onReactivateAll: () -> Unit,
 ) {
     LazyColumn(Modifier.fillMaxSize()) {
         if (sections.triggered.isNotEmpty()) {
-            item(key = "h-triggered") { SectionLabel(stringResource(R.string.watchlist_utlosta), count = sections.triggered.size) }
+            item(key = "h-triggered") {
+                Box(Modifier.fillMaxWidth()) {
+                    SectionLabel(stringResource(R.string.watchlist_utlosta), count = sections.triggered.size)
+                    if (sections.triggered.any { it.reactivatable }) {
+                        TextButton(
+                            onClick = onReactivateAll,
+                            modifier = Modifier.align(Alignment.BottomEnd).padding(end = Space.sm),
+                        ) { Text(stringResource(R.string.watchlist_aterstall_alla)) }
+                    }
+                }
+            }
             items(sections.triggered, key = { it.id }) { row ->
                 SwipeableRow(row, showDivider = row != sections.triggered.first(), sparklines[row.symbol], onRowClick, onDelete, onRowAction)
             }

@@ -160,6 +160,7 @@ class MainViewModel(
             }
             // Bevakningar kan ha ändrats (t.ex. återaktiverats) medan hämtningen pågick.
             val updatedItems = withFreshItems(results.map { it!! })
+            RecheckAfterReset.prune(updatedItems.map { it.item })
 
             Log.d(TAG, "Refresh complete, built ${updatedItems.size} WatchItemUiState objects")
 
@@ -263,6 +264,33 @@ class MainViewModel(
             Log.e(TAG, "Error reactivating watch items: ${e.message}")
             syncWatchItemsAfterMutation()
             throw e
+        }
+    }
+
+    /**
+     * Återställer alla utlösta bevakningar (utom insider, som alltid är igång) helt: ingen
+     * spärr till nästa handelsdag, så de kan lösa ut på nytt vid nästa kontroll om villkoret
+     * fortfarande gäller. Enda undantaget är stängd marknad inom notisfönstret efter stängning —
+     * då behålls dagens spärr så att inget löses ut förrän marknaden öppnar nästa gång.
+     * @return antal återställda bevakningar
+     */
+    suspend fun reactivateAllTriggered(): Int {
+        val targets = watchItemDao.getAllWatchItems().filter { it.isManuallyReactivatable }
+        if (targets.isEmpty()) return 0
+        try {
+            val reset = targets.map { item ->
+                val keepGuard = item.lastTriggeredDate == WatchItem.getTodayDateString() &&
+                    !isMarketOpenForReactivation(item)
+                item.reactivate(
+                    currentPrice = currentPriceForReactivation(item),
+                    keepLastTriggeredDate = keepGuard
+                )
+            }
+            reset.forEach { watchItemDao.update(it) }
+            RecheckAfterReset.mark(reset)
+            return reset.size
+        } finally {
+            syncWatchItemsAfterMutation()
         }
     }
 

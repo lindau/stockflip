@@ -40,12 +40,12 @@ data class WatchItemUiState(
 
 fun WatchItemUiState.isTriggeredForDisplay(): Boolean {
     if (item.hasPendingNextTradingDayGuard()) return false
-    return item.isTriggered || hasLiveTriggerCondition()
+    return item.isTriggered || (hasLiveTriggerCondition() && !RecheckAfterReset.isAwaiting(item))
 }
 
 fun WatchItemUiState.isTriggeredTodayForDisplay(today: String): Boolean {
     if (item.hasPendingNextTradingDayGuard(today)) return false
-    return hasLiveTriggerCondition() || (item.isTriggered && item.lastTriggeredDate == today)
+    return (hasLiveTriggerCondition() && !RecheckAfterReset.isAwaiting(item)) || (item.isTriggered && item.lastTriggeredDate == today)
 }
 
 internal fun WatchItemUiState.hasLiveTriggerCondition(): Boolean {

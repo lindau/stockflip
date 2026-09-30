@@ -141,6 +141,20 @@ internal fun WatchlistRoute(
                 }
             }
         },
+        onReactivateAll = {
+            scope.launch {
+                val count = try { viewModel.reactivateAllTriggered() } catch (e: Exception) { -1 }
+                snackbarHostState.currentSnackbarData?.dismiss()
+                snackbarHostState.showSnackbar(
+                    when {
+                        count < 0 -> "Kunde inte återaktivera bevakningarna"
+                        count == 0 -> "Inga utlösta bevakningar att återaktivera"
+                        count == 1 -> "1 bevakning återställd"
+                        else -> "$count bevakningar återställda"
+                    }
+                )
+            }
+        },
         onAddWatch = onAddWatch,
         onAddPair = { sheet = WatchSheet.Pair(null) },
         onAddCombined = { sheet = WatchSheet.Combined(null) },

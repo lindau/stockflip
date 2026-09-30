@@ -465,6 +465,10 @@ Samma regel gäller alla bevakningstyper vid återaktivering: är den berörda b
 När spärren behålls visas detta i listor som **Nästa handelsdag**, och återaktiveringsmeddelandet säger att bevakningen kan trigga först nästa handelsdag.
 
 
+### Återaktivera alla
+
+Över listan **Utlösta** i **Bevakningar** finns knappen **Återaktivera alla**. Den återställer alla utlösta bevakningar på en gång: de flyttas till **Väntar** och löses ut på nytt vid nästa kontroll om villkoret fortfarande är uppfyllt. Är börsen stängd löses inget ut förrän den öppnar nästa gång. Engångslarm (Målpris) räknar om riktningen från aktuell kurs. Insideraffärer är alltid igång och behöver aldrig återaktiveras.
+
 ### Redigera en bevakning
 
 1. Öppna aktiens detaljsida och tryck på bevakningen under **Dina bevakningar**. För ett aktiepar eller en kombinerad bevakning trycker du på raden i **Bevakningar** (aktiepar öppnar pardetaljen, där du trycker **Redigera**).

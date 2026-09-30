@@ -41,6 +41,8 @@ internal data class WatchRowModel(
     val statusSuffix: String? = null,
     /** Dagsförändring i procent för sortering; `null` för par och okänt. */
     val changeValue: Double? = null,
+    /** Kan återaktiveras manuellt; `false` för insideraffärer som alltid är igång. */
+    val reactivatable: Boolean = true,
 )
 
 /** Sorteringsordning för bevakningslistan; gäller inom varje sektion (Utlösta / Väntar). */
@@ -104,6 +106,7 @@ internal fun WatchItemUiState.toRowModel(
             else -> null
         },
         triggered = triggered,
+        reactivatable = item.watchType !is WatchType.InsiderBuy,
         paused = !item.isActive,
         isPair = isPair,
         symbol = if (isPair) null else item.ticker,

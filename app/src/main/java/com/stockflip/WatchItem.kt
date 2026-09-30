@@ -95,7 +95,7 @@ data class WatchItem(
      * visas för användaren). Gäller alla larmtyper som kan vara markerade som triggade.
      */
     val isManuallyReactivatable: Boolean
-        get() = isTriggered
+        get() = isTriggered && watchType !is WatchType.InsiderBuy // insider är alltid igång
 
     /**
      * Kontrollerar om alerten kan trigga baserat på spam-skydd.

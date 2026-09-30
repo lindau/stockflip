@@ -137,6 +137,7 @@
     <string name="watchlist_forsok_igen">Försök igen</string>
     <string name="watchlist_inga_bevakningar_an">Inga bevakningar än.</string>
     <string name="watchlist_utlosta">Utlösta</string>
+    <string name="watchlist_aterstall_alla">Återaktivera alla</string>
     <string name="watchlist_vantar">Väntar</string>
     <string name="watchlist_sortera">Sortera</string>
     <string name="watchlist_sort_skapad">Skapad (standard)</string>
