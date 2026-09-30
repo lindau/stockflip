@@ -299,6 +299,11 @@ internal fun StockDetailScreen(
                             }
                         }
                     }
+                    item(key = "analyst") { AnalystSection(data) }
+                    item(key = "insider") { InsiderSection(insiderTransactions, insiderHighlightId) }
+                    item(key = "podcast") {
+                        PodcastSection(podcastConfigured, podcastEnabled, podcastObservations, podcastSyncSummary, podcastSyncing, onPodcastToggle, onPodcastSync)
+                    }
                     item(key = "note") {
                         Column(Modifier.padding(top = Space.lg)) {
                             SectionLabel(stringResource(R.string.stockdetail_anteckning))
@@ -310,11 +315,6 @@ internal fun StockDetailScreen(
                                     .padding(horizontal = Space.screenH, vertical = Space.md),
                             )
                         }
-                    }
-                    item(key = "analyst") { AnalystSection(data) }
-                    item(key = "insider") { InsiderSection(insiderTransactions, insiderHighlightId) }
-                    item(key = "podcast") {
-                        PodcastSection(podcastConfigured, podcastEnabled, podcastObservations, podcastSyncSummary, podcastSyncing, onPodcastToggle, onPodcastSync)
                     }
                     item(key = "broker") { BrokerLinks(onOpenAvanza, onOpenNordnet) }
                     item(key = "end") { Box(Modifier.height(96.dp)) }
