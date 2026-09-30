@@ -39,7 +39,20 @@ internal data class WatchRowModel(
     val condition: String = subtitle,
     /** Status efter villkoret, t.ex. "utlöst 09:14" eller "utlöst igår · pausad"; `null` när inget att visa. */
     val statusSuffix: String? = null,
+    /** Dagsförändring i procent för sortering; `null` för par och okänt. */
+    val changeValue: Double? = null,
 )
+
+/** Sorteringsordning för bevakningslistan; gäller inom varje sektion (Utlösta / Väntar). */
+internal enum class WatchSort { CREATED, NAME, CHANGE_DESC, CHANGE_ASC, PRICE_DESC }
+
+private fun List<WatchRowModel>.sortedBy(sort: WatchSort): List<WatchRowModel> = when (sort) {
+    WatchSort.CREATED -> this
+    WatchSort.NAME -> sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER) { it.title })
+    WatchSort.CHANGE_DESC -> sortedWith(compareByDescending<WatchRowModel> { it.changeValue != null }.thenByDescending { it.changeValue })
+    WatchSort.CHANGE_ASC -> sortedWith(compareByDescending<WatchRowModel> { it.changeValue != null }.thenBy { it.changeValue })
+    WatchSort.PRICE_DESC -> sortedByDescending { it.priceValue }
+}
 
 internal data class WatchListSections(
     val triggered: List<WatchRowModel>,
@@ -100,6 +113,7 @@ internal fun WatchItemUiState.toRowModel(
         hasPodcast = !isPair && item.ticker != null && item.ticker.uppercase() in mentionedTickers,
         condition = conditionOnly,
         statusSuffix = statusSuffix,
+        changeValue = dailyChange,
     )
 }
 
@@ -164,7 +178,7 @@ private fun number(v: Double): String = formatNumber(v, if (v == floor(v)) 0 els
 
 /**
  * Delar upp raderna i "Utlösta" (överst) och "Väntar". [query] filtrerar på titel och symbol.
- * Ordningen inom varje grupp behålls som den kom in.
+ * Ordningen inom varje grupp följer [sort] (standard: som den kom in).
  */
 internal fun sectionsFor(
     items: List<WatchItemUiState>,
@@ -173,13 +187,14 @@ internal fun sectionsFor(
     now: Long = System.currentTimeMillis(),
     notedTickers: Set<String> = emptySet(),
     mentionedTickers: Set<String> = emptySet(),
+    sort: WatchSort = WatchSort.CREATED,
 ): WatchListSections {
     val q = query.trim()
     val rows = items.map { it.toRowModel(triggerTimes[it.item.id], now, notedTickers, mentionedTickers) }
         .filter { q.isEmpty() || it.title.contains(q, ignoreCase = true) || it.symbol?.contains(q, ignoreCase = true) == true }
     return WatchListSections(
-        triggered = rows.filter { it.triggered },
-        waiting = rows.filterNot { it.triggered },
+        triggered = rows.filter { it.triggered }.sortedBy(sort),
+        waiting = rows.filterNot { it.triggered }.sortedBy(sort),
     )
 }
 

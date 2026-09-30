@@ -17,7 +17,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Refresh
+import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material.icons.outlined.SwapVert
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -68,6 +70,8 @@ internal fun WatchlistScreen(
     loadError: String?,
     query: String,
     onQueryChange: (String) -> Unit,
+    sort: WatchSort = WatchSort.CREATED,
+    onSortChange: (WatchSort) -> Unit = {},
     onRefresh: () -> Unit,
     onRowClick: (WatchRowModel) -> Unit,
     onDelete: (WatchRowModel) -> Unit,
@@ -88,6 +92,19 @@ internal fun WatchlistScreen(
             Text(stringResource(R.string.watchlist_bevakningar), style = MaterialTheme.typography.headlineMedium)
             Row(verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = onRefresh) { Icon(Icons.Outlined.Refresh, contentDescription = stringResource(R.string.watchlist_uppdatera)) }
+                var sortOpen by remember { mutableStateOf(false) }
+                Box {
+                    IconButton(onClick = { sortOpen = true }) { Icon(Icons.Outlined.SwapVert, contentDescription = stringResource(R.string.watchlist_sortera)) }
+                    DropdownMenu(expanded = sortOpen, onDismissRequest = { sortOpen = false }) {
+                        WatchSort.entries.forEach { option ->
+                            DropdownMenuItem(
+                                text = { Text(stringResource(option.labelRes())) },
+                                trailingIcon = { if (option == sort) Icon(Icons.Outlined.Check, contentDescription = null) },
+                                onClick = { sortOpen = false; onSortChange(option) },
+                            )
+                        }
+                    }
+                }
                 var menuOpen by remember { mutableStateOf(false) }
                 Box {
                     IconButton(onClick = { menuOpen = true }) { Icon(Icons.Outlined.Add, contentDescription = stringResource(R.string.watchlist_ny_bevakning)) }
@@ -116,6 +133,14 @@ internal fun WatchlistScreen(
             }
         }
     }
+}
+
+private fun WatchSort.labelRes(): Int = when (this) {
+    WatchSort.CREATED -> R.string.watchlist_sort_skapad
+    WatchSort.NAME -> R.string.watchlist_sort_namn
+    WatchSort.CHANGE_DESC -> R.string.watchlist_sort_uppgang
+    WatchSort.CHANGE_ASC -> R.string.watchlist_sort_nedgang
+    WatchSort.PRICE_DESC -> R.string.watchlist_sort_pris
 }
 
 @Composable

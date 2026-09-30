@@ -136,6 +136,12 @@
     <string name="watchlist_inga_bevakningar_an">Inga bevakningar än.</string>
     <string name="watchlist_utlosta">Utlösta</string>
     <string name="watchlist_vantar">Väntar</string>
+    <string name="watchlist_sortera">Sortera</string>
+    <string name="watchlist_sort_skapad">Skapad (standard)</string>
+    <string name="watchlist_sort_namn">Namn A–Ö</string>
+    <string name="watchlist_sort_uppgang">Dagsutveckling, störst uppgång</string>
+    <string name="watchlist_sort_nedgang">Dagsutveckling, störst nedgång</string>
+    <string name="watchlist_sort_pris">Pris, högst först</string>
     <string name="createwatch_avancerat">Avancerat</string>
     <string name="createwatch_langt_sma_dagar">Långt SMA (dagar)</string>
     <string name="createwatch_procent">Procent</string>

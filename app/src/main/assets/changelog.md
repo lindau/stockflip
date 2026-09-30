@@ -13,6 +13,7 @@
 - Aktiedetaljen visar kursens förändring i belopp och procent med enhet, en `⋯`-meny (helskärm, indikatorer, pausa alla), etikett på bevakningsnivån i grafen, intervallet `Max` och tvåradiga bevakningar med utlösningstid eller aktuellt värde. Listan visar utlösningstid och rätt valuta
 - Bevakningslistan visar små ikoner för aktier med anteckning och för bolag som nämnts i ett poddavsnitt
 - Notiser öppnar aktiedetaljen med den utlösta bevakningen markerad; målprisnotiser har en lugnare text ("Volvo B under 245 kr")
+- Bevakningslistan kan sorteras (skapad, namn, dagsutveckling, pris) med en knapp bredvid `+`
 - Masshantering (markeringsläge) finns inte längre. Pausa, aktivera och återaktivera görs med en knapp vid varje bevakning på aktiens detaljsida
 
 - Bolagsloggor visas nu i översikten och på aktiedetaljen, med flagga som sekundär info

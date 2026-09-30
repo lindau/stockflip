@@ -105,4 +105,18 @@ class WatchRowModelTest {
         assertEquals(listOf(2), sectionsFor(items, "volv-b").triggered.map { it.id })
         assertTrue(sectionsFor(items, "xyz").isEmpty)
     }
+
+    @Test
+    fun `sortering ordnar inom sektionerna och lägger okänd förändring sist`() {
+        val items = listOf(
+            target(100.0, 300.0, WatchType.PriceDirection.ABOVE, name = "Volvo", id = 1, daily = 1.0),
+            target(100.0, 300.0, WatchType.PriceDirection.ABOVE, name = "abb", id = 2, daily = -2.0),
+            target(100.0, 300.0, WatchType.PriceDirection.ABOVE, name = "Nokia", id = 3, daily = null),
+            target(100.0, 300.0, WatchType.PriceDirection.ABOVE, name = "Sand", id = 4, daily = 3.0),
+        )
+        assertEquals(listOf(1, 2, 3, 4), sectionsFor(items).waiting.map { it.id })
+        assertEquals(listOf(2, 3, 4, 1), sectionsFor(items, sort = WatchSort.NAME).waiting.map { it.id })
+        assertEquals(listOf(4, 1, 2, 3), sectionsFor(items, sort = WatchSort.CHANGE_DESC).waiting.map { it.id })
+        assertEquals(listOf(2, 1, 4, 3), sectionsFor(items, sort = WatchSort.CHANGE_ASC).waiting.map { it.id })
+    }
 }

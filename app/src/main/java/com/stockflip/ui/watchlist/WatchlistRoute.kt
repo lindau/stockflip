@@ -67,8 +67,14 @@ internal fun WatchlistRoute(
     val podcastActive = com.stockflip.BuildConfig.PODCAST_ANALYSIS_BASE_URL.isNotBlank() &&
         com.stockflip.PodcastObservationSettings.isEnabled(context)
     val mentioned = if (podcastActive) mentionedAll else emptySet()
-    val sections by remember(items, query, triggerTimes, noted, mentioned) {
-        derivedStateOf { sectionsFor(items, query, triggerTimes, notedTickers = noted, mentionedTickers = mentioned) }
+    val prefs = remember { context.getSharedPreferences("settings", android.content.Context.MODE_PRIVATE) }
+    var sort by remember {
+        mutableStateOf(
+            try { WatchSort.valueOf(prefs.getString("watchlist_sort", null) ?: "") } catch (e: Exception) { WatchSort.CREATED }
+        )
+    }
+    val sections by remember(items, query, triggerTimes, noted, mentioned, sort) {
+        derivedStateOf { sectionsFor(items, query, triggerTimes, notedTickers = noted, mentionedTickers = mentioned, sort = sort) }
     }
 
     // Som MainActivity förut: visa sparad data direkt, uppdatera sedan kurserna tyst i bakgrunden.
@@ -85,6 +91,8 @@ internal fun WatchlistRoute(
         loadError = (state as? UiState.Error)?.message,
         query = query,
         onQueryChange = { query = it },
+        sort = sort,
+        onSortChange = { sort = it; prefs.edit().putString("watchlist_sort", it.name).apply() },
         onRefresh = { scope.launch { viewModel.refreshWatchItems(showLoading = false) } },
         onRowClick = { row ->
             val item = items.firstOrNull { it.item.id == row.id }?.item
