@@ -442,6 +442,29 @@ private fun DailyChangePill(
     }
 }
 
+/**
+ * Placerar etiketter (sorterade uppifrån och ned efter [desired]) så att de inte överlappar:
+ * först skjuts överlappande etiketter nedåt, därefter uppåt om den sista går förbi [maxBottom].
+ */
+internal fun resolveLabelOffsets(
+    desired: List<Float>,
+    heights: List<Float>,
+    gap: Float,
+    maxBottom: Float,
+): List<Float> {
+    if (desired.isEmpty()) return emptyList()
+    val pos = desired.toMutableList()
+    for (i in 1 until pos.size) {
+        pos[i] = maxOf(pos[i], pos[i - 1] + heights[i - 1] + gap)
+    }
+    val last = pos.lastIndex
+    pos[last] = minOf(pos[last], maxBottom - heights[last])
+    for (i in last - 1 downTo 0) {
+        pos[i] = minOf(pos[i], pos[i + 1] - gap - heights[i])
+    }
+    return pos.map { it.coerceAtLeast(0f) }
+}
+
 @Composable
 private fun ClaritySparkChart(
     chartData: IntradayChartData?,
@@ -559,19 +582,45 @@ private fun ClaritySparkChart(
         // Flera nivåer på samma kant staplas så att etiketterna inte ritas över varandra.
         var topLabels = 0
         var bottomLabels = 0
-        watchLevels.distinct().sortedDescending().forEach { level ->
+        val labelGap = 2.dp.toPx()
+        val sortedLevels = watchLevels.distinct().sortedDescending()
+        val labelTexts = sortedLevels.map { level ->
             val number = if (level == kotlin.math.floor(level)) com.stockflip.ui.components.formatNumber(level, 0) else com.stockflip.ui.components.formatNumber(level)
             val inside = level in visibleWatchLevels
             val arrow = if (inside) "" else if (level > maxPrice) "\u2191 " else "\u2193 "
-            val measured = textMeasurer.measure("${arrow}Bevakning $number", labelStyle)
+            textMeasurer.measure("${arrow}Bevakning $number", labelStyle)
+        }
+        // Etiketter för nivåer i skalan skjuts isär när nivåerna ligger nära varandra (annars överlappar de).
+        val insideIdx = sortedLevels.indices.filter { sortedLevels[it] in visibleWatchLevels }
+        val desiredTops = insideIdx.map { i ->
+            val measured = labelTexts[i]
+            val lineY = yFor(sortedLevels[i])
+            if (lineY - measured.size.height - labelGap >= 0f) lineY - measured.size.height - labelGap else lineY + labelGap
+        }
+        val insideTops = resolveLabelOffsets(
+            desired = desiredTops,
+            heights = insideIdx.map { labelTexts[it].size.height.toFloat() },
+            gap = labelGap,
+            maxBottom = size.height,
+        )
+        sortedLevels.forEachIndexed { i, level ->
+            val measured = labelTexts[i]
             val x = (size.width - measured.size.width).coerceAtLeast(0f)
+            val insidePos = insideIdx.indexOf(i)
             val y = when {
-                inside -> {
-                    val lineY = yFor(level)
-                    if (lineY - measured.size.height - 2.dp.toPx() >= 0f) lineY - measured.size.height - 2.dp.toPx() else lineY + 2.dp.toPx()
-                }
-                level > maxPrice -> 2.dp.toPx() + (topLabels++) * (measured.size.height + 2.dp.toPx())
-                else -> size.height - measured.size.height - 2.dp.toPx() - (bottomLabels++) * (measured.size.height + 2.dp.toPx())
+                insidePos >= 0 -> insideTops[insidePos]
+                level > maxPrice -> 2.dp.toPx() + (topLabels++) * (measured.size.height + labelGap)
+                else -> size.height - measured.size.height - labelGap - (bottomLabels++) * (measured.size.height + labelGap)
+            }
+            if (insidePos >= 0 && abs(y - desiredTops[insidePos]) > labelGap) {
+                // Etiketten har knuffats bort från sin linje: ledtråd från etikettens mitt till nivåns linje.
+                val tickX = size.width - 1.dp.toPx()
+                drawLine(
+                    color = watchLevelColor,
+                    start = Offset(tickX, y + measured.size.height / 2f),
+                    end = Offset(tickX, yFor(level)),
+                    strokeWidth = 1.dp.toPx(),
+                )
             }
             drawText(measured, topLeft = Offset(x, y))
         }
