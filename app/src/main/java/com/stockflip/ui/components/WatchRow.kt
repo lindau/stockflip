@@ -12,6 +12,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.Notes
+import androidx.compose.material.icons.outlined.Mic
+import androidx.compose.material3.Icon
+import androidx.compose.ui.res.stringResource
+import com.stockflip.R
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -51,6 +57,8 @@ fun WatchRow(
     sparkline: List<Double>? = null,
     showDivider: Boolean = true,
     staleLabel: String? = null,
+    hasNote: Boolean = false,
+    hasPodcast: Boolean = false,
 ) {
     val triggeredLabel = "Utlöst"
     Column(modifier.fillMaxWidth()) {
@@ -88,7 +96,25 @@ fun WatchRow(
                         color = MaterialTheme.colorScheme.onSurface,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f, fill = false),
                     )
+                    // Små, dämpade markeringar: anteckning och poddomnämnande (som på gamla aktiekortet).
+                    if (hasNote) {
+                        Icon(
+                            Icons.AutoMirrored.Outlined.Notes,
+                            contentDescription = stringResource(R.string.watchrow_har_anteckning),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(start = 6.dp).size(14.dp),
+                        )
+                    }
+                    if (hasPodcast) {
+                        Icon(
+                            Icons.Outlined.Mic,
+                            contentDescription = stringResource(R.string.watchrow_omnamnd_i_poddavsnitt),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(start = 6.dp).size(14.dp),
+                        )
+                    }
                 }
                 Text(
                     text = subtitle,

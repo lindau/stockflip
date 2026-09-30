@@ -31,6 +31,10 @@ internal data class WatchRowModel(
     val symbol: String?,
     /** "Kunde inte uppdateras · visar värden från 14:32" när senaste kursuppdateringen misslyckades, annars null. */
     val staleLabel: String? = null,
+    /** Aktien har en anteckning. */
+    val hasNote: Boolean = false,
+    /** Bolaget har nämnts i ett poddavsnitt. */
+    val hasPodcast: Boolean = false,
 )
 
 internal data class WatchListSections(
@@ -42,7 +46,12 @@ internal data class WatchListSections(
 
 private const val DASH = "–"
 
-internal fun WatchItemUiState.toRowModel(triggerMillis: Long? = null, now: Long = System.currentTimeMillis()): WatchRowModel {
+internal fun WatchItemUiState.toRowModel(
+    triggerMillis: Long? = null,
+    now: Long = System.currentTimeMillis(),
+    notedTickers: Set<String> = emptySet(),
+    mentionedTickers: Set<String> = emptySet(),
+): WatchRowModel {
     val wt = item.watchType
     val isPair = wt is WatchType.PricePair
     val triggered = isTriggeredForDisplay()
@@ -80,6 +89,9 @@ internal fun WatchItemUiState.toRowModel(triggerMillis: Long? = null, now: Long 
         isPair = isPair,
         symbol = if (isPair) null else item.ticker,
         staleLabel = updateFailedLabel(live),
+        // Par har ingen enskild aktie och får därför inga ikoner. Podd-tickers jämförs i versaler (som i MainViewModel).
+        hasNote = !isPair && item.ticker != null && item.ticker in notedTickers,
+        hasPodcast = !isPair && item.ticker != null && item.ticker.uppercase() in mentionedTickers,
     )
 }
 
@@ -151,9 +163,11 @@ internal fun sectionsFor(
     query: String = "",
     triggerTimes: Map<Int, Long> = emptyMap(),
     now: Long = System.currentTimeMillis(),
+    notedTickers: Set<String> = emptySet(),
+    mentionedTickers: Set<String> = emptySet(),
 ): WatchListSections {
     val q = query.trim()
-    val rows = items.map { it.toRowModel(triggerTimes[it.item.id], now) }
+    val rows = items.map { it.toRowModel(triggerTimes[it.item.id], now, notedTickers, mentionedTickers) }
         .filter { q.isEmpty() || it.title.contains(q, ignoreCase = true) || it.symbol?.contains(q, ignoreCase = true) == true }
     return WatchListSections(
         triggered = rows.filter { it.triggered },

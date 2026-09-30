@@ -170,4 +170,6 @@
     <string name="pairdetail_avbryt">Avbryt</string>
     <string name="pairdetail_tillbaka">Tillbaka</string>
     <string name="pairdetail_forsok_igen">Försök igen</string>
+    <string name="watchrow_har_anteckning">Har anteckning</string>
+    <string name="watchrow_omnamnd_i_poddavsnitt">Omnämnd i poddavsnitt</string>
 </resources>

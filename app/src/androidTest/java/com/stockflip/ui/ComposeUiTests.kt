@@ -5,6 +5,7 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.hasStateDescription
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTouchInput
@@ -52,6 +53,26 @@ class ComposeUiTests {
         rule.onNodeWithText("+1,2 %").assertIsDisplayed()
         rule.onNodeWithText("Volvo B").performClick()
         assertEquals(1, clicks)
+    }
+
+    @Test
+    fun watchRow_showsNoteAndPodcastIcons() {
+        rule.setContent {
+            StockFlipTheme {
+                WatchRow("Volvo B", "x", "1", 1.0, null, null, triggered = false, onClick = {}, hasNote = true, hasPodcast = true)
+            }
+        }
+        rule.onNodeWithContentDescription("Har anteckning").assertIsDisplayed()
+        rule.onNodeWithContentDescription("Omnämnd i poddavsnitt").assertIsDisplayed()
+    }
+
+    @Test
+    fun watchRow_withoutFlags_hasNoIcons() {
+        rule.setContent {
+            StockFlipTheme { WatchRow("Volvo B", "x", "1", 1.0, null, null, triggered = false, onClick = {}) }
+        }
+        rule.onNodeWithContentDescription("Har anteckning").assertDoesNotExist()
+        rule.onNodeWithContentDescription("Omnämnd i poddavsnitt").assertDoesNotExist()
     }
 
     @Test

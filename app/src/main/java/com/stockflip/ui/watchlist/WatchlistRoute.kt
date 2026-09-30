@@ -61,7 +61,15 @@ internal fun WatchlistRoute(
             com.stockflip.StockPairDatabase.getDatabase(context).triggerHistoryDao().getLatestPerWatchItem().associate { it.watchItemId to it.triggeredAt }
         } catch (e: Exception) { emptyMap() }
     }
-    val sections by remember(items, query, triggerTimes) { derivedStateOf { sectionsFor(items, query, triggerTimes) } }
+    val noted by viewModel.notedTickers.collectAsState()
+    val mentionedAll by viewModel.mentionedTickers.collectAsState()
+    // Poddikonen visas bara när poddfunktionen är konfigurerad och påslagen (som poddsektionen på aktiedetaljen).
+    val podcastActive = com.stockflip.BuildConfig.PODCAST_ANALYSIS_BASE_URL.isNotBlank() &&
+        com.stockflip.PodcastObservationSettings.isEnabled(context)
+    val mentioned = if (podcastActive) mentionedAll else emptySet()
+    val sections by remember(items, query, triggerTimes, noted, mentioned) {
+        derivedStateOf { sectionsFor(items, query, triggerTimes, notedTickers = noted, mentionedTickers = mentioned) }
+    }
 
     // Som MainActivity förut: visa sparad data direkt, uppdatera sedan kurserna tyst i bakgrunden.
     LaunchedEffect(Unit) {

@@ -101,7 +101,7 @@ Under rubriken visas när kurserna senast uppdaterades. Varje rad har en liten k
 - **Aktiepar** — välj två aktier och en prisskillnad.
 - **Kombinerad** — välj en aktie och lägg till flera villkor som kopplas med OCH/ELLER.
 
-Tryck på en aktie i listan för att öppna detaljsidan, eller på ett aktiepar för att öppna pardetaljen.
+En liten ikon efter aktienamnet visar att aktien har en anteckning (rader-ikon) eller att bolaget nämnts i ett poddavsnitt (mikrofon; bara när poddanalysen är påslagen). Tryck på en aktie i listan för att öppna detaljsidan, eller på ett aktiepar för att öppna pardetaljen.
 
 ---
 

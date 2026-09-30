@@ -242,6 +242,8 @@ private fun SwipeableRow(
                 showDivider = showDivider,
                 sparkline = sparkline,
                 staleLabel = row.staleLabel,
+                hasNote = row.hasNote,
+                hasPodcast = row.hasPodcast,
             )
         }
     }
