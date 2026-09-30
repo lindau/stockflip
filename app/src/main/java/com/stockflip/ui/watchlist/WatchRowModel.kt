@@ -35,6 +35,10 @@ internal data class WatchRowModel(
     val hasNote: Boolean = false,
     /** Bolaget har nämnts i ett poddavsnitt. */
     val hasPodcast: Boolean = false,
+    /** Bara villkoret ("Över 245 kr"), utan status. [subtitle] = villkor + [statusSuffix]. */
+    val condition: String = subtitle,
+    /** Status efter villkoret, t.ex. "utlöst 09:14" eller "utlöst igår · pausad"; `null` när inget att visa. */
+    val statusSuffix: String? = null,
 )
 
 internal data class WatchListSections(
@@ -65,11 +69,13 @@ internal fun WatchItemUiState.toRowModel(
     val hasPrice = if (isPair) live.currentPrice1 > 0 && live.currentPrice2 > 0 else live.currentPrice > 0
     val dailyChange = if (isPair) null else live.currentDailyChangePercent
 
-    val subtitle = buildString {
-        append(conditionText(triggered))
-        if (triggered) append(" · ").append(triggerWhen(triggerMillis, item.lastTriggeredDate, now)?.listText() ?: "utlöst")
-        if (!item.isActive) append(" · pausad")
+    val conditionOnly = conditionText(triggered)
+    val statusParts = buildList {
+        if (triggered) add(triggerWhen(triggerMillis, item.lastTriggeredDate, now)?.listText() ?: "utlöst")
+        if (!item.isActive) add("pausad")
     }
+    val statusSuffix = statusParts.takeIf { it.isNotEmpty() }?.joinToString(" · ")
+    val subtitle = if (statusSuffix == null) conditionOnly else "$conditionOnly · $statusSuffix"
 
     return WatchRowModel(
         id = item.id,
@@ -92,6 +98,8 @@ internal fun WatchItemUiState.toRowModel(
         // Par har ingen enskild aktie och får därför inga ikoner. Podd-tickers jämförs i versaler (som i MainViewModel).
         hasNote = !isPair && item.ticker != null && item.ticker in notedTickers,
         hasPodcast = !isPair && item.ticker != null && item.ticker.uppercase() in mentionedTickers,
+        condition = conditionOnly,
+        statusSuffix = statusSuffix,
     )
 }
 

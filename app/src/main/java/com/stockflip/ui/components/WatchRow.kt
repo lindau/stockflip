@@ -59,6 +59,7 @@ fun WatchRow(
     staleLabel: String? = null,
     hasNote: Boolean = false,
     hasPodcast: Boolean = false,
+    statusSuffix: String? = null,
 ) {
     val triggeredLabel = "Utlöst"
     Column(modifier.fillMaxWidth()) {
@@ -116,14 +117,35 @@ fun WatchRow(
                         )
                     }
                 }
-                Text(
-                    text = subtitle,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.padding(top = 3.dp),
-                )
+                if (statusSuffix != null) {
+                    // Villkoret får kortas med ellips, men "utlöst 09:14" / "pausad" ska alltid synas.
+                    Row(Modifier.padding(top = 3.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = subtitle,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f, fill = false),
+                        )
+                        Text(
+                            text = " · $statusSuffix",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            softWrap = false,
+                        )
+                    }
+                } else {
+                    Text(
+                        text = subtitle,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.padding(top = 3.dp),
+                    )
+                }
                 if (staleLabel != null) {
                     Text(
                         text = staleLabel,

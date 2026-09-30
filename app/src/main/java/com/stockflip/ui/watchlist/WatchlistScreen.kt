@@ -232,7 +232,8 @@ private fun SwipeableRow(
         ) {
             WatchRow(
                 title = row.title,
-                subtitle = row.subtitle,
+                subtitle = row.condition,
+                statusSuffix = row.statusSuffix,
                 price = row.price,
                 priceValue = row.priceValue,
                 change = row.change,

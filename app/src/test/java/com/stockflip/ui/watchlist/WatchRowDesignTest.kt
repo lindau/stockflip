@@ -38,4 +38,23 @@ class WatchRowDesignTest {
         assertTrue(item.toRowModel(null, now).subtitle.endsWith("utlöst idag"))
         assertTrue(sectionsFor(listOf(item), "", mapOf(1 to at), now).triggered.single().subtitle.endsWith("utlöst 09:14"))
     }
+
+    @Test
+    fun `villkor och status delas så att utlösningstiden kan hållas synlig`() {
+        val zone = TimeZone.getDefault()
+        val fmt = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.US).apply { timeZone = zone }
+        val now = fmt.parse("2026-09-29 15:00")!!.time
+        val at = fmt.parse("2026-09-29 09:14")!!.time
+        val hit = target("VOLV-B.ST", 245.0, 250.0, triggered = true, date = "2026-09-29").toRowModel(at, now)
+        assertEquals("Över 245 kr", hit.condition)
+        assertEquals("utlöst 09:14", hit.statusSuffix)
+        assertEquals("Över 245 kr · utlöst 09:14", hit.subtitle)
+
+        val waiting = target("VOLV-B.ST", 245.0, 244.0).toRowModel()
+        assertEquals(null, waiting.statusSuffix)
+        assertEquals(waiting.condition, waiting.subtitle)
+
+        val paused = target("VOLV-B.ST", 245.0, 244.0).let { it.copy(item = it.item.copy(isActive = false)) }.toRowModel()
+        assertEquals("pausad", paused.statusSuffix)
+    }
 }
