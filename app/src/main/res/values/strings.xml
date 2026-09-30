@@ -126,6 +126,8 @@
     <string name="market_sok_pa_namn_eller_ticker_t_ex_volvo_aapl">Sök på namn eller ticker, t.ex. Volvo, AAPL eller BTC.</string>
     <string name="watchlist_bevakningar">Bevakningar</string>
     <string name="watchlist_aktie_sok_i_marknad">Aktie (sök i Marknad)</string>
+    <string name="watchlist_vy_bevakningar">Bevakningar</string>
+    <string name="watchlist_vy_aktier">Aktier</string>
     <string name="watchlist_aktiepar">Aktiepar</string>
     <string name="watchlist_kombinerad">Kombinerad</string>
     <string name="watchlist_sok_bland_bevakningar">Sök bland bevakningar</string>

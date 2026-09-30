@@ -73,6 +73,14 @@ internal fun WatchlistRoute(
             try { WatchSort.valueOf(prefs.getString("watchlist_sort", null) ?: "") } catch (e: Exception) { WatchSort.CREATED }
         )
     }
+    var view by remember {
+        mutableStateOf(
+            try { WatchView.valueOf(prefs.getString("watchlist_view", null) ?: "") } catch (e: Exception) { WatchView.WATCHES }
+        )
+    }
+    val stockSections by remember(items, query, triggerTimes, noted, mentioned, sort) {
+        derivedStateOf { stockSectionsFor(items, query, triggerTimes, notedTickers = noted, mentionedTickers = mentioned, sort = sort) }
+    }
     val sections by remember(items, query, triggerTimes, noted, mentioned, sort) {
         derivedStateOf { sectionsFor(items, query, triggerTimes, notedTickers = noted, mentionedTickers = mentioned, sort = sort) }
     }
@@ -86,6 +94,9 @@ internal fun WatchlistRoute(
 
     WatchlistScreen(
         sections = sections,
+        stockSections = stockSections,
+        view = view,
+        onViewChange = { view = it; prefs.edit().putString("watchlist_view", it.name).apply() },
         isLoading = state is UiState.Loading,
         isRefreshing = refreshing,
         loadError = (state as? UiState.Error)?.message,
@@ -97,6 +108,8 @@ internal fun WatchlistRoute(
         onRowClick = { row ->
             val item = items.firstOrNull { it.item.id == row.id }?.item
             when {
+                // Aktieraden representerar flera bevakningar: öppna alltid aktiedetaljen.
+                view == WatchView.STOCKS && !row.isPair -> row.symbol?.let(onOpenStock)
                 item?.watchType is WatchType.PricePair -> onOpenPair(item.id)
                 item?.watchType is WatchType.Combined -> {
                     if (decomposeCombined((item.watchType as WatchType.Combined).expression) != null) sheet = WatchSheet.Combined(item)

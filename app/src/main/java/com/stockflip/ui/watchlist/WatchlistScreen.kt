@@ -26,6 +26,9 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.SwipeToDismissBox
 import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
@@ -65,6 +68,9 @@ import com.stockflip.ui.theme.Space
 @Composable
 internal fun WatchlistScreen(
     sections: WatchListSections,
+    stockSections: StockListSections = StockListSections(emptyList(), emptyList()),
+    view: WatchView = WatchView.WATCHES,
+    onViewChange: (WatchView) -> Unit = {},
     isLoading: Boolean,
     isRefreshing: Boolean,
     loadError: String?,
@@ -120,15 +126,18 @@ internal fun WatchlistScreen(
             Text(it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(horizontal = Space.screenH))
         }
+        ViewSwitcher(view, onViewChange)
         SearchField(query, onQueryChange)
+        val listEmpty = if (view == WatchView.WATCHES) sections.isEmpty else stockSections.isEmpty
 
         PullToRefreshBox(isRefreshing = isRefreshing, onRefresh = onRefresh, modifier = Modifier.fillMaxSize()) {
             when {
-                isLoading && sections.isEmpty -> Column { repeat(6) { SkeletonRow() } }
-                sections.isEmpty && loadError != null ->
+                isLoading && listEmpty -> Column { repeat(6) { SkeletonRow() } }
+                listEmpty && loadError != null ->
                     EmptyState(loadError, actionLabel = stringResource(R.string.watchlist_forsok_igen), onAction = onRefresh)
-                sections.isEmpty && query.isNotBlank() -> EmptyState("Inga träffar för \"${query.trim()}\".")
-                sections.isEmpty -> EmptyState(stringResource(R.string.watchlist_inga_bevakningar_an), actionLabel = stringResource(R.string.watchlist_ny_bevakning), onAction = onAddWatch)
+                listEmpty && query.isNotBlank() -> EmptyState("Inga träffar för \"${query.trim()}\".")
+                listEmpty -> EmptyState(stringResource(R.string.watchlist_inga_bevakningar_an), actionLabel = stringResource(R.string.watchlist_ny_bevakning), onAction = onAddWatch)
+                view == WatchView.STOCKS -> StockList(stockSections, sparklines, onRowClick)
                 else -> WatchList(sections, sparklines, onRowClick, onDelete, onRowAction)
             }
         }
@@ -141,6 +150,60 @@ private fun WatchSort.labelRes(): Int = when (this) {
     WatchSort.CHANGE_DESC -> R.string.watchlist_sort_uppgang
     WatchSort.CHANGE_ASC -> R.string.watchlist_sort_nedgang
     WatchSort.PRICE_DESC -> R.string.watchlist_sort_pris
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ViewSwitcher(view: WatchView, onViewChange: (WatchView) -> Unit) {
+    val options = listOf(WatchView.WATCHES to R.string.watchlist_vy_bevakningar, WatchView.STOCKS to R.string.watchlist_vy_aktier)
+    SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth().padding(horizontal = Space.screenH, vertical = Space.sm)) {
+        options.forEachIndexed { index, (option, label) ->
+            SegmentedButton(
+                selected = view == option,
+                onClick = { onViewChange(option) },
+                shape = SegmentedButtonDefaults.itemShape(index, options.size),
+            ) { Text(stringResource(label)) }
+        }
+    }
+}
+
+/** Aktievyn: en rad per aktie (tryck öppnar aktiedetaljen), sedan aktiepar (öppnar pardetaljen). */
+@Composable
+private fun StockList(
+    sections: StockListSections,
+    sparklines: Map<String, List<Double>>,
+    onRowClick: (WatchRowModel) -> Unit,
+) {
+    LazyColumn(Modifier.fillMaxSize()) {
+        if (sections.stocks.isNotEmpty()) {
+            item(key = "h-stocks") { SectionLabel(stringResource(R.string.watchlist_vy_aktier), count = sections.stocks.size) }
+            items(sections.stocks, key = { "s-${it.symbol}" }) { row -> StockRow(row, row != sections.stocks.first(), sparklines[row.symbol], onRowClick) }
+        }
+        if (sections.pairs.isNotEmpty()) {
+            item(key = "h-pairs") { SectionLabel(stringResource(R.string.watchlist_aktiepar), count = sections.pairs.size) }
+            items(sections.pairs, key = { "p-${it.id}" }) { row -> StockRow(row, row != sections.pairs.first(), null, onRowClick) }
+        }
+        item(key = "end") { Box(Modifier.height(Space.xxl)) }
+    }
+}
+
+@Composable
+private fun StockRow(row: WatchRowModel, showDivider: Boolean, sparkline: List<Double>?, onRowClick: (WatchRowModel) -> Unit) {
+    WatchRow(
+        title = row.title,
+        subtitle = row.subtitle,
+        price = row.price,
+        priceValue = row.priceValue,
+        change = row.change,
+        changePositive = row.changePositive,
+        triggered = row.triggered,
+        onClick = { onRowClick(row) },
+        showDivider = showDivider,
+        sparkline = sparkline,
+        staleLabel = row.staleLabel,
+        hasNote = row.hasNote,
+        hasPodcast = row.hasPodcast,
+    )
 }
 
 @Composable

@@ -198,6 +198,60 @@ internal fun sectionsFor(
     )
 }
 
+/** Vilken vy bevakningssidan visar: bevakningar (Utlösta/Väntar) eller en rad per aktie. */
+internal enum class WatchView { WATCHES, STOCKS }
+
+internal data class StockListSections(
+    val stocks: List<WatchRowModel>,
+    val pairs: List<WatchRowModel>,
+) {
+    val isEmpty: Boolean get() = stocks.isEmpty() && pairs.isEmpty()
+}
+
+/**
+ * Aktievyn: en rad per aktie som har minst en bevakning (aktier utan bevakning finns inte), plus aktiepar
+ * som egna rader. Aktier med utlösta bevakningar ligger överst; därefter följer ordningen [sort].
+ * Kurs, förändring och ikoner hämtas från aktiens första bevakning med giltig kurs.
+ */
+internal fun stockSectionsFor(
+    items: List<WatchItemUiState>,
+    query: String = "",
+    triggerTimes: Map<Int, Long> = emptyMap(),
+    now: Long = System.currentTimeMillis(),
+    notedTickers: Set<String> = emptySet(),
+    mentionedTickers: Set<String> = emptySet(),
+    sort: WatchSort = WatchSort.CREATED,
+): StockListSections {
+    val q = query.trim()
+    fun matches(row: WatchRowModel) =
+        q.isEmpty() || row.title.contains(q, ignoreCase = true) || row.symbol?.contains(q, ignoreCase = true) == true
+
+    val (pairItems, stockItems) = items.partition { it.item.watchType is WatchType.PricePair }
+
+    val stocks = stockItems.filter { it.item.ticker != null }.groupBy { it.item.ticker!! }.map { (_, group) ->
+        val rows = group.map { it.toRowModel(triggerTimes[it.item.id], now, notedTickers, mentionedTickers) }
+        val base = rows.firstOrNull { it.priceValue > 0 } ?: rows.first()
+        val triggeredCount = rows.count { it.triggered }
+        val count = rows.size
+        val countText = if (count == 1) "1 bevakning" else "$count bevakningar"
+        base.copy(
+            subtitle = listOfNotNull(countText, triggeredCount.takeIf { it > 0 }?.let { "$it utlöst" }).joinToString(" · "),
+            condition = countText,
+            statusSuffix = null,
+            triggered = triggeredCount > 0,
+            paused = rows.all { it.paused },
+            staleLabel = base.staleLabel,
+        )
+    }.filter(::matches)
+
+    val pairs = pairItems.map { it.toRowModel(triggerTimes[it.item.id], now, notedTickers, mentionedTickers) }.filter(::matches)
+
+    return StockListSections(
+        stocks = stocks.filter { it.triggered }.sortedBy(sort) + stocks.filterNot { it.triggered }.sortedBy(sort),
+        pairs = pairs.sortedBy(sort),
+    )
+}
+
 /** "Uppdaterad 14:32" utifrån den senaste lyckade kursuppdateringen i listan, eller null om ingen hämtats. */
 internal fun lastUpdatedLabel(items: List<WatchItemUiState>, format: (Long) -> String): String? {
     val latest = items.filter { !it.live.updateFailed }.maxOfOrNull { it.live.lastUpdatedAt } ?: 0L
