@@ -7,6 +7,7 @@
 - Sortering av bevakningar är omgjord: `Skapad`, `Namn`, `Dagsutveckling` och `Närmast aktivering`, alla i båda riktningarna. Tryck på den valda sorteringen igen för att vända den; knappen får accentfärg och pil när en annan sortering än standard är vald. Sortering på pris är borttagen
 - Pausade bevakningar hamnar sist när du sorterar på `Närmast aktivering`
 - Manuell återaktivering gäller nu alltid direkt: bevakningen utvärderas vid nästa kursuppdatering och kan då utlösas igen även om villkoret fortfarande är uppfyllt, i stället för att vänta till nästa handelsdag
+- Rättar bygget för 1.3.1 (Börsen idag och Trendar)
 
 ## 1.2
 

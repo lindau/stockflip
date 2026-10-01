@@ -41,7 +41,12 @@ internal fun MarketRoute(
     }
     LaunchedEffect(moverMarket, moverList) {
         // Skydd mot en sparad kombination som inte finns (t.ex. Sverige + Trendar).
-        if (!moverList.isAvailableFor(moverMarket)) { moverList = MoverList.GAINERS; return@LaunchedEffect } moversViewModel.load(moverMarket, moverList) }
+        if (!moverList.isAvailableFor(moverMarket)) {
+            moverList = MoverList.GAINERS
+            return@LaunchedEffect
+        }
+        moversViewModel.load(moverMarket, moverList)
+    }
 
     LaunchedEffect(query) {
         delay(SEARCH_DEBOUNCE_MS)

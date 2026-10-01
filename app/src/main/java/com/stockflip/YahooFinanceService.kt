@@ -661,7 +661,7 @@ object YahooFinanceService : MarketDataService, MarketMoversService {
             result
         }
 
-    private fun fetchUsMovers(list: MoverList, count: Int): List<MarketMover>? {
+    private suspend fun fetchUsMovers(list: MoverList, count: Int): List<MarketMover>? {
         val id = when (list) {
             MoverList.GAINERS -> "day_gainers"
             MoverList.LOSERS -> "day_losers"
