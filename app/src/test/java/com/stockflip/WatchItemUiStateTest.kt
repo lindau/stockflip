@@ -62,4 +62,31 @@ class WatchItemUiStateTest {
         assertFalse(item.hasPendingNextTradingDayGuard("2024-01-03"))
         assertTrue(uiState.isTriggeredForDisplay())
     }
+
+    @Test
+    fun `DailyMove alert marked for recheck is not shown as triggered until it triggers again`() {
+        RecheckAfterReset.clear()
+        try {
+            val item = WatchItem(
+                id = 4711,
+                watchType = WatchType.DailyMove(5.0, WatchType.DailyMoveDirection.UP),
+                ticker = "AAPL",
+                isTriggered = false,
+                lastTriggeredDate = null,
+                isActive = true
+            )
+            val live = LiveWatchData(currentDailyChangePercent = 7.5, lastUpdatedAt = 1L)
+            assertTrue(WatchItemUiState(item, live).isTriggeredForDisplay())
+
+            RecheckAfterReset.mark(listOf(item))
+            assertFalse(WatchItemUiState(item, live).isTriggeredForDisplay())
+
+            // Löser ut på nytt → markeringen släpps och bevakningen visas som utlöst.
+            val retriggered = item.markAsTriggered("2024-01-03")
+            RecheckAfterReset.prune(listOf(retriggered))
+            assertTrue(WatchItemUiState(retriggered, live).isTriggeredForDisplay())
+        } finally {
+            RecheckAfterReset.clear()
+        }
+    }
 }

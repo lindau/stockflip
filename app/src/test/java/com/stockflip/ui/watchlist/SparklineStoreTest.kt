@@ -19,4 +19,16 @@ class SparklineStoreTest {
         assertEquals(99.0, d.last(), 0.0)
         assertEquals(d.sorted(), d)
     }
+
+    @Test
+    fun `live-kurs ersätter sista punkten`() {
+        assertEquals(listOf(1.0, 2.0, 9.5), SparklineStore.withLivePrice(listOf(1.0, 2.0, 3.0), 9.5))
+    }
+
+    @Test
+    fun `saknad kurs eller serie lämnas orörd`() {
+        val v = listOf(1.0, 2.0, 3.0)
+        assertEquals(v, SparklineStore.withLivePrice(v, 0.0))
+        assertEquals(null, SparklineStore.withLivePrice(null, 5.0))
+    }
 }

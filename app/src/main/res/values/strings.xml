@@ -145,6 +145,7 @@
     <string name="watchlist_sort_uppgang">Dagsutveckling, störst uppgång</string>
     <string name="watchlist_sort_nedgang">Dagsutveckling, störst nedgång</string>
     <string name="watchlist_sort_pris">Pris, högst först</string>
+    <string name="watchlist_sort_narmast">Närmast utlösning</string>
     <string name="createwatch_avancerat">Avancerat</string>
     <string name="createwatch_langt_sma_dagar">Långt SMA (dagar)</string>
     <string name="createwatch_procent">Procent</string>
@@ -168,6 +169,8 @@
     <string name="stockdetail_indikatorer">Indikatorer</string>
     <string name="stockdetail_nyckeltal">Nyckeltal</string>
     <string name="stockdetail_dina_bevakningar">Dina bevakningar</string>
+    <string name="stockdetail_utlosta">Utlösta</string>
+    <string name="stockdetail_vantar_och_pausade">Väntar och pausade</string>
     <string name="stockdetail_anteckning">Anteckning</string>
     <string name="stockdetail_spara">Spara</string>
     <string name="stockdetail_avbryt">Avbryt</string>

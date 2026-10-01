@@ -41,12 +41,14 @@ internal data class WatchRowModel(
     val statusSuffix: String? = null,
     /** Dagsförändring i procent för sortering; `null` för par och okänt. */
     val changeValue: Double? = null,
+    /** Hur nära villkoret är att utlösas: 0.0 = utlöst nu, 1.0 = långt kvar; `null` när det inte kan beräknas. */
+    val proximity: Double? = null,
     /** Kan återaktiveras manuellt; `false` för insideraffärer som alltid är igång. */
     val reactivatable: Boolean = true,
 )
 
 /** Sorteringsordning för bevakningslistan; gäller inom varje sektion (Utlösta / Väntar). */
-internal enum class WatchSort { CREATED, NAME, CHANGE_DESC, CHANGE_ASC, PRICE_DESC }
+internal enum class WatchSort { CREATED, NAME, CHANGE_DESC, CHANGE_ASC, PRICE_DESC, NEAREST }
 
 private fun List<WatchRowModel>.sortedBy(sort: WatchSort): List<WatchRowModel> = when (sort) {
     WatchSort.CREATED -> this
@@ -54,6 +56,8 @@ private fun List<WatchRowModel>.sortedBy(sort: WatchSort): List<WatchRowModel> =
     WatchSort.CHANGE_DESC -> sortedWith(compareByDescending<WatchRowModel> { it.changeValue != null }.thenByDescending { it.changeValue })
     WatchSort.CHANGE_ASC -> sortedWith(compareByDescending<WatchRowModel> { it.changeValue != null }.thenBy { it.changeValue })
     WatchSort.PRICE_DESC -> sortedByDescending { it.priceValue }
+    // Närmast utlösning först; rader utan beräkningsbar närhet (t.ex. par, insider) sist.
+    WatchSort.NEAREST -> sortedWith(compareBy<WatchRowModel> { it.proximity == null }.thenBy { it.proximity })
 }
 
 internal data class WatchListSections(
@@ -117,6 +121,7 @@ internal fun WatchItemUiState.toRowModel(
         condition = conditionOnly,
         statusSuffix = statusSuffix,
         changeValue = dailyChange,
+        proximity = triggerProximity(),
     )
 }
 
@@ -244,6 +249,7 @@ internal fun stockSectionsFor(
             triggered = triggeredCount > 0,
             paused = rows.all { it.paused },
             staleLabel = base.staleLabel,
+            proximity = rows.mapNotNull { it.proximity }.minOrNull(),
         )
     }.filter(::matches)
 

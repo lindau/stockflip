@@ -276,6 +276,7 @@ class StockDetailViewModel(
                     val inactiveItems = items.filter { !it.isActive }.map { WatchItemUiState(it) }
                     val updatedAlerts = sortAlertsForStockPage(activeItems + inactiveItems)
                     _alertsState.value = UiState.Success(updatedAlerts)
+                    RecheckAfterReset.prune(updatedAlerts.map { it.item })
                     val history = items.associate { item ->
                         item.id to triggerHistoryRepository.getLatest(item.id)
                     }
@@ -562,6 +563,8 @@ class StockDetailViewModel(
             keepLastTriggeredDate = keepLastTriggeredDate
         )
         watchItemDao.update(updated)
+        // Visa som väntande tills nästa kontroll även om live-villkoret fortfarande är uppfyllt.
+        RecheckAfterReset.mark(listOf(updated))
         Log.d(TAG, "Reactivated alert ${watchItem.id}")
         return WatchReactivationResult(
             watchItem = updated,

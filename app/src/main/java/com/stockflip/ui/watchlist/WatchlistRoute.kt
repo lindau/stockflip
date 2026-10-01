@@ -104,7 +104,7 @@ internal fun WatchlistRoute(
         onQueryChange = { query = it },
         sort = sort,
         onSortChange = { sort = it; prefs.edit().putString("watchlist_sort", it.name).apply() },
-        onRefresh = { scope.launch { viewModel.refreshWatchItems(showLoading = false) } },
+        onRefresh = { scope.launch { viewModel.refreshWatchItems(showLoading = false, userInitiated = true) } },
         onRowClick = { row ->
             val item = items.firstOrNull { it.item.id == row.id }?.item
             when {

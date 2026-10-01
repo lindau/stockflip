@@ -18,6 +18,7 @@ import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.Check
+import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.SwapVert
 import androidx.compose.material3.DropdownMenu
@@ -152,6 +153,7 @@ private fun WatchSort.labelRes(): Int = when (this) {
     WatchSort.CHANGE_DESC -> R.string.watchlist_sort_uppgang
     WatchSort.CHANGE_ASC -> R.string.watchlist_sort_nedgang
     WatchSort.PRICE_DESC -> R.string.watchlist_sort_pris
+    WatchSort.NEAREST -> R.string.watchlist_sort_narmast
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -201,7 +203,7 @@ private fun StockRow(row: WatchRowModel, showDivider: Boolean, sparkline: List<D
         triggered = row.triggered,
         onClick = { onRowClick(row) },
         showDivider = showDivider,
-        sparkline = sparkline,
+        sparkline = SparklineStore.withLivePrice(sparkline, row.priceValue),
         staleLabel = row.staleLabel,
         hasNote = row.hasNote,
         hasPodcast = row.hasPodcast,
@@ -217,6 +219,13 @@ private fun SearchField(query: String, onQueryChange: (String) -> Unit) {
         singleLine = true,
         placeholder = { Text(stringResource(R.string.watchlist_sok_bland_bevakningar)) },
         leadingIcon = { Icon(Icons.Outlined.Search, contentDescription = null) },
+        trailingIcon = {
+            if (query.isNotEmpty()) {
+                IconButton(onClick = { onQueryChange("") }) {
+                    Icon(Icons.Outlined.Close, contentDescription = stringResource(R.string.market_rensa_sokning))
+                }
+            }
+        },
         shape = MaterialTheme.shapes.small,
         colors = TextFieldDefaults.colors(
             focusedContainerColor = MaterialTheme.colorScheme.surfaceContainer,
@@ -343,7 +352,7 @@ private fun SwipeableRow(
                 triggered = row.triggered,
                 onClick = { onRowClick(row) },
                 showDivider = showDivider,
-                sparkline = sparkline,
+                sparkline = SparklineStore.withLivePrice(sparkline, row.priceValue),
                 staleLabel = row.staleLabel,
                 hasNote = row.hasNote,
                 hasPodcast = row.hasPodcast,

@@ -66,3 +66,10 @@
 - Aktiedetaljen visar senast kända kurs direkt när du öppnar den från en lista, i stället för `Laddar`
 - Manuell återaktivering av en triggad bevakning följer nu samma regel oavsett larmtyp: är villkoret fortfarande uppfyllt eller börsen stängd behålls dagens trigger-spärr som förut, men är villkoret inte längre uppfyllt och börsen öppen kan bevakningen trigga igen redan vid nästa kurskontroll i stället för att alltid vänta till nästa handelsdag
 - Bevakningsetiketter i aktiedetaljens graf ligger inte längre ovanpå varandra när nivåerna är nära varandra
+- Uppdateringsindikatorn (dra-för-att-uppdatera) visas inte längre i flera sekunder efter flikbyte; den visas nu bara när du själv drar för att uppdatera
+- Den lilla kurvan på bevakningsraderna slutar nu på aktuell kurs
+- Aktieparets graf har en fast linjefärg; statusen (nära/utlöst) visas av bandet, målnivåerna och märket
+- Sökfältet i `Bevakningar` har en knapp för att rensa sökningen
+- Att återaktivera en utlöst dagsrörelsebevakning visar den nu som väntande i stället för att den direkt står kvar som utlöst
+- Ny sortering i `Bevakningar`: närmast utlösning
+- Aktiedetaljen visar utlösta bevakningar i en egen sektion `Utlösta` överst i bevakningslistan, likadant oavsett om du kommer från en notis eller själv

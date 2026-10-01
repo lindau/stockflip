@@ -22,6 +22,10 @@ internal object SparklineStore {
         return List(max) { i -> values[(i.toLong() * (values.size - 1) / (max - 1)).toInt()] }
     }
 
+    /** Ersätter sista punkten med aktuell kurs så att kurvans slut stämmer med raden; oförändrad om kurs saknas. */
+    fun withLivePrice(series: List<Double>?, price: Double): List<Double>? =
+        if (series == null || series.size < 2 || price <= 0.0) series else series.dropLast(1) + price
+
     fun cached(symbol: String, now: Long = System.currentTimeMillis()): List<Double>? =
         cache[symbol]?.takeIf { now - it.at < TTL_MS }?.values
 

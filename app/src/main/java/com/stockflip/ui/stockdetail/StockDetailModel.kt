@@ -78,6 +78,14 @@ internal fun alertStatusLabel(triggered: Boolean, isActive: Boolean): String = w
     else -> "Väntar"
 }
 
+/** Bevakningarna på aktiedetaljen uppdelade i utlösta (nyast först) och övriga (ordningen bibehålls). */
+internal data class AlertGroups(val triggered: List<com.stockflip.WatchItemUiState>, val rest: List<com.stockflip.WatchItemUiState>)
+
+internal fun splitAlertsForDisplay(alerts: List<com.stockflip.WatchItemUiState>, triggerTimes: Map<Int, Long>): AlertGroups {
+    val (triggered, rest) = alerts.partition { it.isTriggeredForDisplay() }
+    return AlertGroups(triggered.sortedByDescending { triggerTimes[it.item.id] ?: 0L }, rest)
+}
+
 /** Banderoll högst upp när detaljen öppnats från en notis. [canAct] = bevakningen finns och är utlöst. */
 internal data class DetailBanner(val title: String?, val message: String?, val canAct: Boolean)
 

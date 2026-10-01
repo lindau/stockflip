@@ -37,6 +37,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -275,34 +276,20 @@ internal fun StockDetailScreen(
                             )
                         }
                     } else {
-                        items(alerts, key = { it.item.id }) { alert ->
-                            val row = alert.toRowModel()
-                            Row(
-                                Modifier.fillMaxWidth().heightIn(min = Space.touch)
-                                    .then(if (alert.item.id == highlightWatchId) Modifier.background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f)) else Modifier)
-                                    .clickable { onEditAlert(alert) }
-                                    .padding(horizontal = Space.screenH, vertical = 12.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
-                                val (line1, line2) = alertLines(alert, triggerTimes[alert.item.id])
-                                Column(Modifier.weight(1f)) {
-                                    Text(line1, style = MaterialTheme.typography.bodyLarge)
-                                    if (line2 != null) Text(
-                                        line2,
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        modifier = Modifier.padding(top = 3.dp),
-                                    )
-                                }
-                                val triggered = alert.isTriggeredForDisplay()
-                                PillStatus(
-                                    text = alertStatusLabel(triggered, alert.item.isActive),
-                                    highlighted = triggered,
-                                )
-                                val action = alertActionFor(triggered, alert.item.isActive)
-                                TextButton(onClick = { onAlertAction(alert, action) }) { Text(action.label) }
+                        val groups = splitAlertsForDisplay(alerts, triggerTimes)
+                        if (groups.triggered.isNotEmpty()) {
+                            item(key = "alerts-triggered-h") {
+                                SectionLabel(stringResource(R.string.stockdetail_utlosta), count = groups.triggered.size)
                             }
+                            items(groups.triggered, key = { it.item.id }) { alert ->
+                                AlertRow(alert, triggerTimes[alert.item.id], alert.item.id == highlightWatchId, onEditAlert, onAlertAction)
+                            }
+                            if (groups.rest.isNotEmpty()) item(key = "alerts-rest-h") {
+                                SectionLabel(stringResource(R.string.stockdetail_vantar_och_pausade), count = groups.rest.size)
+                            }
+                        }
+                        items(groups.rest, key = { it.item.id }) { alert ->
+                            AlertRow(alert, triggerTimes[alert.item.id], alert.item.id == highlightWatchId, onEditAlert, onAlertAction)
                         }
                     }
                     item(key = "analyst") { AnalystSection(data) }
@@ -375,4 +362,53 @@ private fun periodWord(period: ChartPeriod): String = when (period) {
     ChartPeriod.YEAR -> "1 år"
     ChartPeriod.FIVE_YEARS -> "5 år"
     ChartPeriod.MAX -> "totalt"
+}
+
+/** En bevakningsrad på aktiedetaljen. Utlösta rader får accentkant och ton; raden från en notis tonas extra. */
+@Composable
+private fun AlertRow(
+    alert: com.stockflip.WatchItemUiState,
+    triggerMillis: Long?,
+    highlighted: Boolean,
+    onEditAlert: (com.stockflip.WatchItemUiState) -> Unit,
+    onAlertAction: (com.stockflip.WatchItemUiState, AlertAction) -> Unit,
+) {
+    val triggered = alert.isTriggeredForDisplay()
+    val container = MaterialTheme.colorScheme.primaryContainer
+    val accent = MaterialTheme.colorScheme.primary
+    Row(
+        Modifier.fillMaxWidth().heightIn(min = Space.touch)
+            .then(
+                when {
+                    highlighted -> Modifier.background(container.copy(alpha = 0.45f))
+                    triggered -> Modifier.background(container.copy(alpha = 0.22f))
+                    else -> Modifier
+                }
+            )
+            .then(
+                if (triggered) Modifier.drawBehind { drawRect(accent, size = androidx.compose.ui.geometry.Size(3.dp.toPx(), size.height)) }
+                else Modifier
+            )
+            .clickable { onEditAlert(alert) }
+            .padding(horizontal = Space.screenH, vertical = 12.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        val (line1, line2) = alertLines(alert, triggerMillis)
+        Column(Modifier.weight(1f)) {
+            Text(line1, style = MaterialTheme.typography.bodyLarge)
+            if (line2 != null) Text(
+                line2,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 3.dp),
+            )
+        }
+        PillStatus(
+            text = alertStatusLabel(triggered, alert.item.isActive),
+            highlighted = triggered,
+        )
+        val action = alertActionFor(triggered, alert.item.isActive)
+        TextButton(onClick = { onAlertAction(alert, action) }) { Text(action.label) }
+    }
 }

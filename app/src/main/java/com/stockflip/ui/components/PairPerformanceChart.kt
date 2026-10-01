@@ -30,8 +30,6 @@ import androidx.compose.ui.unit.sp
 import com.stockflip.ChartPeriod
 import com.stockflip.CurrencyHelper
 import com.stockflip.PairChartData
-import com.stockflip.ui.theme.LocalPriceDown
-import com.stockflip.ui.theme.LocalPriceUp
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -118,7 +116,8 @@ private fun PairPriceDifferenceChart(
     val gridColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.22f)
     val tertiaryColor = MaterialTheme.colorScheme.tertiary
     val labelStyle = TextStyle(fontSize = 9.sp, color = labelColor)
-    val lineColor = if ((data.currentSpread ?: 0.0) >= 0.0) LocalPriceUp.current else LocalPriceDown.current
+    // Linjen har fast accentfärg; status visas bara av bandet, målnivåerna och märket.
+    val lineColor = tertiaryColor
     val baselineColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
     val equalLineColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
     val surfaceColor = MaterialTheme.colorScheme.surface
@@ -266,11 +265,11 @@ private fun PairPriceDifferenceChart(
             lineTo(xFor(0), chartBottom)
             close()
         }
-        drawPath(fillPath, color = statusColor.copy(alpha = 0.14f))
+        drawPath(fillPath, color = lineColor.copy(alpha = 0.14f))
 
         drawSeries(
             values = prices,
-            color = statusColor,
+            color = lineColor,
             chartLeft = chartLeft,
             chartTop = chartTop,
             chartBottom = chartBottom,
@@ -287,7 +286,7 @@ private fun PairPriceDifferenceChart(
             center = Offset(latestX, latestY)
         )
         drawCircle(
-            color = statusColor,
+            color = lineColor,
             radius = 4.dp.toPx(),
             center = Offset(latestX, latestY)
         )

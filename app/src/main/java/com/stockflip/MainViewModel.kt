@@ -110,7 +110,8 @@ class MainViewModel(
         }
     }
 
-    suspend fun refreshWatchItems(showLoading: Boolean = true) {
+    /** [userInitiated] styr pull-to-refresh-spinnern; tysta uppdateringar (flikbyte, autorefresh) visar den inte. */
+    suspend fun refreshWatchItems(showLoading: Boolean = true, userInitiated: Boolean = showLoading) {
         // Prevent concurrent refresh calls
         if (isRefreshing) {
             Log.d(TAG, "Refresh already in progress, skipping duplicate call")
@@ -118,7 +119,7 @@ class MainViewModel(
         }
         
         isRefreshing = true
-        _watchItemsRefreshing.value = true
+        if (userInitiated) _watchItemsRefreshing.value = true
         try {
             Log.d(TAG, "=== START refreshWatchItems() ===")
             // Senast kända värden per bevakning — visas (markerade som inaktuella) om hämtningen misslyckas.
@@ -302,6 +303,7 @@ class MainViewModel(
             keepLastTriggeredDate = keepLastTriggeredDate
         )
         watchItemDao.update(updatedWatchItem)
+        RecheckAfterReset.mark(listOf(updatedWatchItem))
         return WatchReactivationResult(
             watchItem = updatedWatchItem,
             sameDayTriggerGuarded = keepLastTriggeredDate
