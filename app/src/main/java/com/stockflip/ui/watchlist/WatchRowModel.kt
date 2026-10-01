@@ -8,6 +8,7 @@ import com.stockflip.ui.components.listText
 import com.stockflip.ui.components.triggerWhen
 import com.stockflip.ui.createwatch.describeExpression
 import com.stockflip.isTriggeredForDisplay
+import com.stockflip.triggerProximity
 import com.stockflip.ui.components.MINUS
 import com.stockflip.ui.components.formatNumber
 import com.stockflip.ui.components.formatSignedPercent

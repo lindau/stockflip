@@ -73,3 +73,4 @@
 - Att återaktivera en utlöst dagsrörelsebevakning visar den nu som väntande i stället för att den direkt står kvar som utlöst
 - Ny sortering i `Bevakningar`: närmast utlösning
 - Aktiedetaljen visar utlösta bevakningar i en egen sektion `Utlösta` överst i bevakningslistan, likadant oavsett om du kommer från en notis eller själv
+- Rättar bygget för 1.2.226 (saknad import av närhetsberäkningen för sorteringen)
