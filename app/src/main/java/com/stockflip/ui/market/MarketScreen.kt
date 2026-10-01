@@ -75,6 +75,7 @@ internal fun MarketScreen(
     onRetry: () -> Unit,
     onClearRecent: () -> Unit,
     modifier: Modifier = Modifier,
+    movers: MoversUi? = null,
 ) {
     Column(modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         Text(
@@ -105,12 +106,12 @@ internal fun MarketScreen(
             modifier = Modifier.fillMaxWidth().padding(horizontal = Space.screenH, vertical = Space.sm),
         )
         when (content) {
-            MarketContent.Hint -> ResultsWithIndex(emptyList(), onResultClick, onClearRecent)
+            MarketContent.Hint -> ResultsWithIndex(emptyList(), onResultClick, onClearRecent, movers)
             MarketContent.Loading -> Column { repeat(5) { SkeletonRow() } }
             MarketContent.NoResults -> EmptyState("Inga träffar för \"${query.trim()}\".")
             is MarketContent.Failed -> EmptyState(content.message, actionLabel = stringResource(R.string.market_forsok_igen), onAction = onRetry)
             is MarketContent.Results -> ResultList(content.items, header = null, onResultClick, onAction = null)
-            is MarketContent.Recent -> ResultsWithIndex(content.items, onResultClick, onClearRecent)
+            is MarketContent.Recent -> ResultsWithIndex(content.items, onResultClick, onClearRecent, movers)
         }
     }
 }
@@ -166,7 +167,7 @@ private fun ResultRow(result: StockSearchResult, showDivider: Boolean, onClick: 
                     overflow = TextOverflow.Ellipsis,
                 )
                 Text(
-                    result.symbol,
+                    if (result.isEtf) "${result.symbol} · ETF" else result.symbol,
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(top = 3.dp),
@@ -191,6 +192,7 @@ private fun ResultsWithIndex(
     recent: List<StockSearchResult>,
     onClick: (StockSearchResult) -> Unit,
     onClearRecent: () -> Unit,
+    movers: MoversUi? = null,
 ) {
     LazyColumn(Modifier.fillMaxSize()) {
         if (recent.isNotEmpty()) {
@@ -203,6 +205,10 @@ private fun ResultsWithIndex(
             itemsIndexed(recent, key = { _, it -> "r-" + it.symbol }) { index, result ->
                 ResultRow(result, showDivider = index > 0, onClick = { onClick(result) })
             }
+        }
+        if (movers != null) {
+            item(key = "movers-h") { SectionLabel(stringResource(R.string.market_heta_just_nu)) }
+            item(key = "movers") { MoversContent(movers) }
         }
         item(key = "index-h") { SectionLabel("Index") }
         itemsIndexed(INDEX_SHORTCUTS, key = { _, it -> "i-" + it.symbol }) { index, result ->

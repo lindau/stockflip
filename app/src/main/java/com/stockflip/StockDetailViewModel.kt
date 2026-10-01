@@ -557,10 +557,11 @@ class StockDetailViewModel(
     }
 
     suspend fun reactivateAlertAndReturnResult(watchItem: WatchItem): WatchReactivationResult {
-        val keepLastTriggeredDate = shouldGuardAgainstImmediateRetrigger(watchItem)
+        // Manuell återaktivering gäller direkt, utan datumspärr: bevakningen utvärderas vid nästa
+        // kursuppdatering och får då utlösas igen även om villkoret fortfarande är uppfyllt.
         val updated = watchItem.reactivate(
             currentPrice = currentPriceForReactivation(watchItem),
-            keepLastTriggeredDate = keepLastTriggeredDate
+            keepLastTriggeredDate = false
         )
         watchItemDao.update(updated)
         // Visa som väntande tills nästa kontroll även om live-villkoret fortfarande är uppfyllt.
@@ -568,7 +569,7 @@ class StockDetailViewModel(
         Log.d(TAG, "Reactivated alert ${watchItem.id}")
         return WatchReactivationResult(
             watchItem = updated,
-            sameDayTriggerGuarded = keepLastTriggeredDate
+            sameDayTriggerGuarded = false
         )
     }
 

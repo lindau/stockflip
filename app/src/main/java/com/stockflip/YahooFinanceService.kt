@@ -18,6 +18,8 @@ import java.net.CookieManager
 import java.net.CookiePolicy
 import okhttp3.JavaNetCookieJar
 import okhttp3.Request
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.RequestBody.Companion.toRequestBody
 import kotlinx.coroutines.delay
 
 interface YahooFinanceApi {
@@ -78,7 +80,7 @@ data class Quote(
     val close: List<Double?>? = null
 )
 
-object YahooFinanceService : MarketDataService {
+object YahooFinanceService : MarketDataService, MarketMoversService {
     private const val TAG = "YahooFinanceService"
     private const val BASE_URL = "https://query1.finance.yahoo.com/"
     private const val SEARCH_URL = "https://query1.finance.yahoo.com/v1/finance/search"
@@ -571,6 +573,227 @@ object YahooFinanceService : MarketDataService {
         return results
     }
 
+    /** Söker börshandlade fonder (ETF). Vanliga fonder (MUTUALFUND) tas inte med. */
+    @JvmStatic
+    suspend fun searchEtfs(query: String): List<StockSearchResult> = withContext(Dispatchers.IO) {
+        try {
+            if (query.length < 2) return@withContext emptyList()
+
+            val encodedQuery = URLEncoder.encode(query, "UTF-8")
+            val url = "$SEARCH_URL?q=$encodedQuery" +
+                "&quotesCount=20" +
+                "&lang=en" +
+                "&region=SE" +
+                "&enableFuzzyQuery=false" +
+                "&type=etf" +
+                "&newsCount=0" +
+                "&enableEnhancedTrivialQuery=false" +
+                "&fields=symbol,shortname,exchange,quoteType,longname,typeDisp,market"
+
+            val request = okhttp3.Request.Builder()
+                .url(url)
+                .addHeader("User-Agent", "Mozilla/5.0")
+                .build()
+
+            val response = client.newCall(request).execute()
+            if (!response.isSuccessful) {
+                Log.e(TAG, "API Error: ${response.code} - ${response.message}")
+                return@withContext emptyList()
+            }
+            val responseBody = response.body?.string() ?: return@withContext emptyList()
+            parseEtfSearchResults(responseBody)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error searching ETFs: ${e.message}", e)
+            emptyList()
+        }
+    }
+
+    internal fun parseEtfSearchResults(responseBody: String): List<StockSearchResult> {
+        val quotes = JSONObject(responseBody).optJSONArray("quotes") ?: return emptyList()
+        val results = mutableListOf<StockSearchResult>()
+        for (i in 0 until quotes.length()) {
+            val quote = quotes.getJSONObject(i)
+            if (!quote.has("symbol")) continue
+            val symbol = quote.getString("symbol")
+            if (quote.optString("quoteType", "") != "ETF") continue
+            if (symbol.contains("^") || symbol.contains("=")) continue
+            val name = quote.optString("shortname").ifEmpty { quote.optString("longname").ifEmpty { symbol } }
+            val exchange = quote.optString("exchange", "")
+            results.add(
+                StockSearchResult(
+                    symbol = symbol,
+                    name = buildDisplayName(name, exchange, quote.optString("market", "")),
+                    isSwedish = symbol.endsWith(".ST") || exchange == "STO",
+                    isEtf = true
+                )
+            )
+        }
+        Log.d(TAG, "Found ${results.size} ETF search results")
+        return results
+    }
+
+    private const val MOVERS_CACHE_TTL_MS = 2L * 60L * 1000L
+    private const val MOVERS_MIN_MARKET_CAP = 1_000_000_000L
+    private val moversCache = java.util.concurrent.ConcurrentHashMap<Pair<MoverMarket, MoverList>, Pair<Long, List<MarketMover>>>()
+
+    /**
+     * Heta aktier just nu. USA: Yahoos färdiga skannerlistor. Sverige: Yahoos skanner med
+     * `exchange=STO` och marknadsvärde över 1 miljard (annars dominerar warranter och småbolag).
+     * Returnerar `null` vid fel; resultat cachas kort.
+     */
+    override suspend fun getMarketMovers(market: MoverMarket, list: MoverList, count: Int): List<MarketMover>? =
+        withContext(Dispatchers.IO) {
+            val key = market to list
+            val now = System.currentTimeMillis()
+            moversCache[key]?.takeIf { now - it.first < MOVERS_CACHE_TTL_MS }?.let { return@withContext it.second }
+            val result = try {
+                when (market) {
+                    MoverMarket.US -> fetchUsMovers(list, count)
+                    MoverMarket.SWEDEN -> fetchSwedishMovers(list, count)
+                }
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Log.w(TAG, "Error fetching market movers: ${e.message}")
+                null
+            }
+            if (result != null) moversCache[key] = System.currentTimeMillis() to result
+            result
+        }
+
+    private fun fetchUsMovers(list: MoverList, count: Int): List<MarketMover>? {
+        val id = when (list) {
+            MoverList.GAINERS -> "day_gainers"
+            MoverList.LOSERS -> "day_losers"
+            MoverList.MOST_ACTIVE -> "most_actives"
+            MoverList.TRENDING -> return fetchUsTrending(count)
+        }
+        val request = Request.Builder()
+            .url("https://query1.finance.yahoo.com/v1/finance/screener/predefined/saved?scrIds=$id&count=$count")
+            .addHeader("User-Agent", "Mozilla/5.0")
+            .build()
+        client.newCall(request).execute().use { response ->
+            if (!response.isSuccessful) return null
+            return parseMovers(response.body?.string() ?: return null)
+        }
+    }
+
+    /** USA "trendar nu": Yahoos trending-lista ger bara symboler, så kurserna hämtas med ett samlat quote-anrop. */
+    private suspend fun fetchUsTrending(count: Int): List<MarketMover>? {
+        val trendingRequest = Request.Builder()
+            .url("https://query1.finance.yahoo.com/v1/finance/trending/US?count=$count")
+            .addHeader("User-Agent", "Mozilla/5.0")
+            .build()
+        val symbols = client.newCall(trendingRequest).execute().use { response ->
+            if (!response.isSuccessful) return null
+            parseTrendingSymbols(response.body?.string() ?: return null)
+        }
+        if (symbols.isEmpty()) return emptyList()
+
+        repeat(2) {
+            ensureCrumb()
+            val currentCrumb = crumb ?: return null
+            val request = Request.Builder()
+                .url("https://query1.finance.yahoo.com/v7/finance/quote?symbols=${symbols.joinToString(",")}&crumb=${URLEncoder.encode(currentCrumb, "UTF-8")}")
+                .addHeader("User-Agent", "Mozilla/5.0")
+                .build()
+            client.newCall(request).execute().use { response ->
+                when {
+                    response.isSuccessful -> {
+                        val quotes = parseQuoteResponse(response.body?.string() ?: return null)
+                        // Behåll Yahoos trendordning.
+                        return quotes.sortedBy { symbols.indexOf(it.symbol).takeIf { i -> i >= 0 } ?: Int.MAX_VALUE }
+                    }
+                    response.code == 401 -> { crumb = null }
+                    else -> return null
+                }
+            }
+        }
+        return null
+    }
+
+    internal fun parseTrendingSymbols(responseBody: String): List<String> {
+        val quotes = JSONObject(responseBody)
+            .optJSONObject("finance")
+            ?.optJSONArray("result")
+            ?.optJSONObject(0)
+            ?.optJSONArray("quotes") ?: return emptyList()
+        return (0 until quotes.length()).mapNotNull { quotes.optJSONObject(it)?.optString("symbol")?.takeIf { s -> s.isNotEmpty() } }
+    }
+
+    /** Läser `quoteResponse.result[]` från v7-quote-anropet. */
+    internal fun parseQuoteResponse(responseBody: String): List<MarketMover> {
+        val quotes = JSONObject(responseBody).optJSONObject("quoteResponse")?.optJSONArray("result") ?: return emptyList()
+        return parseQuoteArray(quotes)
+    }
+
+    private suspend fun fetchSwedishMovers(list: MoverList, count: Int): List<MarketMover>? {
+        val (sortField, sortType) = when (list) {
+            MoverList.GAINERS -> "percentchange" to "DESC"
+            MoverList.LOSERS -> "percentchange" to "ASC"
+            MoverList.MOST_ACTIVE -> "dayvolume" to "DESC"
+            MoverList.TRENDING -> return emptyList() // finns inte för Sverige
+        }
+        val body = swedishScreenerBody(sortField, sortType, count)
+        repeat(2) {
+            ensureCrumb()
+            val currentCrumb = crumb ?: return null
+            val request = Request.Builder()
+                .url("https://query1.finance.yahoo.com/v1/finance/screener?crumb=${URLEncoder.encode(currentCrumb, "UTF-8")}&lang=en-US&region=US&formatted=false")
+                .addHeader("User-Agent", "Mozilla/5.0")
+                .post(body.toRequestBody("application/json".toMediaType()))
+                .build()
+            client.newCall(request).execute().use { response ->
+                when {
+                    response.isSuccessful -> return parseMovers(response.body?.string() ?: return null)
+                    response.code == 401 -> { crumb = null } // ogiltig crumb: hämta ny och försök en gång till
+                    else -> return null
+                }
+            }
+        }
+        return null
+    }
+
+    internal fun swedishScreenerBody(sortField: String, sortType: String, count: Int): String =
+        JSONObject(
+            """
+            {"size":$count,"offset":0,"sortField":"$sortField","sortType":"$sortType","quoteType":"EQUITY",
+             "query":{"operator":"AND","operands":[
+               {"operator":"EQ","operands":["exchange","STO"]},
+               {"operator":"GT","operands":["intradaymarketcap",$MOVERS_MIN_MARKET_CAP]}]},
+             "userId":"","userIdType":"guid"}
+            """.trimIndent()
+        ).toString()
+
+    /** Läser `finance.result[0].quotes` från Yahoos skannersvar (både predefined och POST). */
+    internal fun parseMovers(responseBody: String): List<MarketMover> {
+        val quotes = JSONObject(responseBody)
+            .optJSONObject("finance")
+            ?.optJSONArray("result")
+            ?.optJSONObject(0)
+            ?.optJSONArray("quotes") ?: return emptyList()
+        return parseQuoteArray(quotes)
+    }
+
+    private fun parseQuoteArray(quotes: org.json.JSONArray): List<MarketMover> {
+        val movers = mutableListOf<MarketMover>()
+        for (i in 0 until quotes.length()) {
+            val quote = quotes.optJSONObject(i) ?: continue
+            val symbol = quote.optString("symbol", "")
+            if (symbol.isEmpty() || !quote.has("regularMarketPrice")) continue
+            val quoteType = quote.optString("quoteType", "")
+            if (quoteType.isNotEmpty() && quoteType != "EQUITY") continue
+            val price = quote.optDouble("regularMarketPrice", Double.NaN)
+            if (price.isNaN() || price <= 0.0) continue
+            val name = quote.optString("shortName").ifEmpty { quote.optString("longName").ifEmpty { symbol } }
+            val change = quote.optDouble("regularMarketChangePercent", Double.NaN).takeUnless { it.isNaN() }
+            val volume = if (quote.has("regularMarketVolume")) quote.optLong("regularMarketVolume") else null
+            val currency = quote.optString("currency").ifEmpty { if (symbol.endsWith(".ST")) "SEK" else "USD" }
+            movers.add(MarketMover(symbol, name, price, change, volume, currency))
+        }
+        return movers
+    }
+
     @JvmStatic
     suspend fun searchStocks(query: String, includeCrypto: Boolean = true): List<StockSearchResult> = withContext(Dispatchers.IO) {
         try {
@@ -580,10 +803,12 @@ object YahooFinanceService : MarketDataService {
             val allResults = coroutineScope {
                 val equityDeferred = async { searchEquities(query) }
                 val indexDeferred = async { searchIndices(query) }
+                val etfDeferred = async { searchEtfs(query) }
                 val cryptoDeferred = if (includeCrypto) async { searchCrypto(query) } else null
                 val results = mutableListOf<StockSearchResult>()
                 results.addAll(equityDeferred.await())
                 results.addAll(indexDeferred.await())
+                results.addAll(etfDeferred.await())
                 cryptoDeferred?.let { results.addAll(it.await()) }
                 results
             }

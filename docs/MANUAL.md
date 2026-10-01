@@ -92,10 +92,10 @@ Index följer sin hemmabörs öppettider, t.ex. `^OMXS30` Stockholm och `^GSPC` 
 Appen har tre flikar längst ned:
 
 - **Bevakningar** — startsidan. En enda platt lista med alla dina bevakningar, både aktier och aktiepar. Utlösta ligger överst under rubriken `Utlösta`, resten under `Väntar`.
-- **Marknad** — sök efter en aktie, ett index eller en kryptovaluta. Tryck på en träff för att öppna aktiens detaljsida. Dina senast öppnade träffar och genvägar till vanliga index (OMXS30, S&P 500, Nasdaq, DAX, FTSE 100, Nikkei 225) visas när sökfältet är tomt.
+- **Marknad** — sök efter en aktie, en börshandlad fond (ETF), ett index eller en kryptovaluta. ETF:er markeras med `ETF` under namnet. Tryck på en träff för att öppna aktiens detaljsida. Dina senast öppnade träffar och genvägar till vanliga index (OMXS30, S&P 500, Nasdaq, DAX, FTSE 100, Nikkei 225) visas när sökfältet är tomt. Där visas också **Börsen idag**: växla mellan **Sverige** och **USA** och välj **Uppgång**, **Nedgång** eller **Omsatta** (störst uppgång, störst nedgång eller mest omsatta idag). För USA finns även **Trendar**, aktier som många söker efter eller tittar på just nu (Yahoo har ingen sådan lista för Sverige). Tryck på en rad för att öppna aktiens detaljsida. Listorna kommer från Yahoo Finance, kan vara fördröjda och är inte garanterade; för Sverige visas bara bolag med marknadsvärde över 1 miljard kronor. Dina val sparas.
 - **Inställningar** — tema (System, Ljust eller Mörkt), export och import av bevakningar, kontroll av uppdatering, Hjälp (den här handboken) och ändringsloggen (tryck på versionsraden).
 
-Under rubriken visas när kurserna senast uppdaterades. Varje rad har en liten kurva över den senaste månaden, och en utlöst bevakning visar när den utlöstes (`utlöst 09:14`, `utlöst igår`). Priser och nivåer visas i aktiens valuta (`kr`, `$`, `€`). I fliken **Bevakningar** kan du växla mellan vyerna **Bevakningar** och **Aktier** med knapparna under rubriken. Aktievyn visar en rad per aktie du har minst en bevakning på (med antal bevakningar och hur många som utlösts, utlösta aktier överst) samt dina aktiepar under egen rubrik; tryck på en rad för att öppna aktiens eller parets detaljsida. Valet sparas tills du ändrar det. Du kan söka bland dina bevakningar med sökfältet högst upp, sortera dem med knappen bredvid **+** (skapad, namn A–Ö, dagsutveckling, pris eller närmast utlösning; sorteringen gäller inom Utlösta respektive Väntar och sparas tills du ändrar den) och dra nedåt för att uppdatera kurserna. Tryck på **+** uppe till höger för att skapa en ny bevakning:
+Under rubriken visas när kurserna senast uppdaterades. Varje rad har en liten kurva över den senaste månaden, och en utlöst bevakning visar när den utlöstes (`utlöst 09:14`, `utlöst igår`). Priser och nivåer visas i aktiens valuta (`kr`, `$`, `€`). I fliken **Bevakningar** kan du växla mellan vyerna **Bevakningar** och **Aktier** med knapparna under rubriken. Aktievyn visar en rad per aktie du har minst en bevakning på (med antal bevakningar och hur många som utlösts, utlösta aktier överst) samt dina aktiepar under egen rubrik; tryck på en rad för att öppna aktiens eller parets detaljsida. Valet sparas tills du ändrar det. Du kan söka bland dina bevakningar med sökfältet högst upp, sortera dem med knappen bredvid **+** (skapad, namn, dagsutveckling eller närmast aktivering; tryck på den valda sorteringen igen för att vända riktningen, t.ex. A–Ö till Ö–A. Är en annan sortering än standard vald får knappen accentfärg och en pil som visar riktningen. Sorteringen gäller inom Utlösta respektive Väntar, pausade bevakningar och bevakningar utan värde hamnar sist, och valet sparas tills du ändrar det) och dra nedåt för att uppdatera kurserna. Tryck på **+** uppe till höger för att skapa en ny bevakning:
 
 - **Aktie** — öppnar **Marknad** där du söker upp aktien och väljer bevakningstyp på detaljsidan.
 - **Aktiepar** — välj två aktier och en prisskillnad.
@@ -458,11 +458,7 @@ Engångslarm (Målpris och Drawdown) inaktiveras automatiskt efter utlösning oc
 
 Bevakningen är nu aktiv igen. För målpris räknar appen om riktningen från aktuell kurs: om kursen ligger över målpriset bevakas nästa passage ned under nivån, och om kursen ligger under målpriset bevakas nästa passage upp över nivån.
 
-Samma regel gäller alla bevakningstyper vid återaktivering: är den berörda börsen stängd, eller är villkoret fortfarande uppfyllt just nu (kursen ligger till exempel kvar över målpriset, aktien är kvar i drawdown, eller dagsrörelsen är fortfarande över tröskeln), behåller appen dagens trigger-spärr. Bevakningen visas som aktiv igen, men kan inte skicka en ny notis förrän nästa handelsdag — då utvärderas den på nytt.
-
-Är börsen däremot öppen och villkoret inte längre uppfyllt när du återaktiverar, släpps spärren direkt — bevakningen kan då trigga igen redan vid nästa kurskontroll samma dag, i stället för att behöva vänta till börsstängning eller nästa dag.
-
-När spärren behålls visas detta i listor som **Nästa handelsdag**, och återaktiveringsmeddelandet säger att bevakningen kan trigga först nästa handelsdag.
+En manuell återaktivering gäller alltid direkt, för alla bevakningstyper: bevakningen blir aktiv och visas som `Väntar`, även om villkoret fortfarande är uppfyllt (kursen ligger till exempel kvar på målpriset) eller börsen är stängd. Appen utvärderar den vid nästa kursuppdatering, och är villkoret då fortfarande uppfyllt får den utlösas och skicka en ny notis. Bekräftelsen säger `Utvärderas vid nästa kursuppdatering`. Notiser skickas som vanligt bara medan marknaden är öppen (och upp till 30 minuter efter stängning).
 
 
 ### Återaktivera alla
@@ -571,7 +567,7 @@ StockFlip distribueras inte via Play Store, så appen håller själv koll på om
 - Via Yahoo Finance. Nyckeltal kan ibland saknas för ovanliga aktier eftersom appen inte använder någon separat klientnyckelbaserad fallback.
 
 **Vilka aktier kan jag bevaka?**
-- Alla aktier som finns på Yahoo Finance: svenska (OMX), amerikanska (NASDAQ/NYSE), krypto och mer. Svenska aktier söks med tickersuffix `.ST` (t.ex. `VOLV-B.ST`).
+- Alla aktier som finns på Yahoo Finance: svenska (OMX), amerikanska (NASDAQ/NYSE), börshandlade fonder (ETF), krypto och mer. Vanliga fonder (som inte handlas på börs) går inte att söka fram. ETF:er har kurs, dagsförändring och graf, men oftast inga nyckeltal, analytikerdata eller insiderhandel, så nyckeltalsbevakningar passar bäst för aktier. Svenska aktier söks med tickersuffix `.ST` (t.ex. `VOLV-B.ST`).
 
 **Kan jag bevaka index?**
 - Ja. Sök på t.ex. "OMX", "S&P" eller "Nasdaq". Index har `^` framför symbolen (`^OMXS30`, `^GSPC`, `^IXIC`). Målpris, dagsrörelse, drawdown, aktiepar, SMA-bevakning, SMA-korsning och kombinerade larm fungerar som för aktier. Nyckeltal och insideraffärer finns inte för index, så de knapparna visas inte.

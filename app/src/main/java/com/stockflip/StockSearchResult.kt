@@ -5,7 +5,8 @@ data class StockSearchResult(
     val name: String,
     val isSwedish: Boolean = false,
     val isCrypto: Boolean = false,
-    val isIndex: Boolean = false
+    val isIndex: Boolean = false,
+    val isEtf: Boolean = false
 ) {
     companion object {
         /**

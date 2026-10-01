@@ -151,6 +151,8 @@ data class WatchItem(
      * om villkoret fortfarande är uppfyllt (eller inte går att avgöra) vid återaktiveringen,
      * eller om marknaden är stängd — annars släpps den så att larmet kan trigga igen redan
      * vid nästa prissynk samma dag.
+     * Manuell återaktivering av en enskild bevakning använder inte spärren (anropar med false):
+     * bevakningen utvärderas vid nästa kursuppdatering och får då utlösas igen.
      * @return Ny WatchItem med isTriggered = false och isActive = true
      */
     fun reactivate(

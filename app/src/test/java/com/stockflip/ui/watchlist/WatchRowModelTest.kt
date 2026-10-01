@@ -115,13 +115,13 @@ class WatchRowModelTest {
             target(100.0, 300.0, WatchType.PriceDirection.ABOVE, name = "Sand", id = 4, daily = 3.0),
         )
         assertEquals(listOf(1, 2, 3, 4), sectionsFor(items).waiting.map { it.id })
-        assertEquals(listOf(2, 3, 4, 1), sectionsFor(items, sort = WatchSort.NAME).waiting.map { it.id })
-        assertEquals(listOf(4, 1, 2, 3), sectionsFor(items, sort = WatchSort.CHANGE_DESC).waiting.map { it.id })
-        assertEquals(listOf(2, 1, 4, 3), sectionsFor(items, sort = WatchSort.CHANGE_ASC).waiting.map { it.id })
+        assertEquals(listOf(2, 3, 4, 1), sectionsFor(items, sort = WatchSort(WatchSortKey.NAME)).waiting.map { it.id })
+        assertEquals(listOf(4, 1, 2, 3), sectionsFor(items, sort = WatchSort(WatchSortKey.CHANGE, descending = true)).waiting.map { it.id })
+        assertEquals(listOf(2, 1, 4, 3), sectionsFor(items, sort = WatchSort(WatchSortKey.CHANGE)).waiting.map { it.id })
     }
 
     @Test
-    fun `sortering efter närmast utlösning lägger närmast först och ej beräkningsbara sist`() {
+    fun `sortering efter närmast aktivering lägger närmast först och ej beräkningsbara sist`() {
         val pair = WatchItemUiState(
             item = WatchItem(id = 4, watchType = WatchType.PricePair(10.0, false), ticker1 = "A", ticker2 = "B", companyName1 = "A", companyName2 = "B"),
             live = LiveWatchData(currentPrice1 = 100.0, currentPrice2 = 90.0),
@@ -132,6 +132,48 @@ class WatchRowModelTest {
             pair,
             target(250.0, 300.0, WatchType.PriceDirection.ABOVE, id = 3),
         )
-        assertEquals(listOf(2, 3, 1, 4), sectionsFor(items, sort = WatchSort.NEAREST).waiting.map { it.id })
+        assertEquals(listOf(2, 3, 1, 4), sectionsFor(items, sort = WatchSort(WatchSortKey.PROXIMITY)).waiting.map { it.id })
+    }
+
+    @Test
+    fun `pausade bevakningar rankas inte vid sortering efter närmast aktivering`() {
+        val paused = target(299.0, 300.0, WatchType.PriceDirection.ABOVE, id = 1).let {
+            it.copy(item = it.item.copy(isActive = false))
+        }
+        val items = listOf(paused, target(100.0, 300.0, WatchType.PriceDirection.ABOVE, id = 2))
+        assertEquals(listOf(2, 1), sectionsFor(items, sort = WatchSort(WatchSortKey.PROXIMITY)).waiting.map { it.id })
+        assertNull(sectionsFor(items).waiting.first { it.id == 1 }.proximity)
+    }
+
+    @Test
+    fun `alla sorteringar har båda riktningarna och okänt värde ligger sist`() {
+        val items = listOf(
+            target(100.0, 300.0, WatchType.PriceDirection.ABOVE, name = "Volvo", id = 1, daily = 1.0),
+            target(100.0, 300.0, WatchType.PriceDirection.ABOVE, name = "abb", id = 2, daily = -2.0),
+            target(100.0, 300.0, WatchType.PriceDirection.ABOVE, name = "Nokia", id = 3, daily = null),
+            target(100.0, 300.0, WatchType.PriceDirection.ABOVE, name = "Sand", id = 4, daily = 3.0),
+        )
+        fun ids(key: WatchSortKey, desc: Boolean) = sectionsFor(items, sort = WatchSort(key, desc)).waiting.map { it.id }
+        assertEquals(listOf(1, 2, 3, 4), ids(WatchSortKey.CREATED, false))
+        assertEquals(listOf(4, 3, 2, 1), ids(WatchSortKey.CREATED, true))
+        assertEquals(listOf(2, 3, 4, 1), ids(WatchSortKey.NAME, false))
+        assertEquals(listOf(1, 4, 3, 2), ids(WatchSortKey.NAME, true))
+        assertEquals(listOf(4, 1, 2, 3), ids(WatchSortKey.CHANGE, true))
+        assertEquals(listOf(2, 1, 4, 3), ids(WatchSortKey.CHANGE, false))
+    }
+
+    @Test
+    fun `närmast aktivering kan vändas och ej beräkningsbara ligger sist i båda riktningarna`() {
+        val pair = WatchItemUiState(
+            item = WatchItem(id = 4, watchType = WatchType.PricePair(10.0, false), ticker1 = "A", ticker2 = "B", companyName1 = "A", companyName2 = "B"),
+            live = LiveWatchData(currentPrice1 = 100.0, currentPrice2 = 90.0),
+        )
+        val items = listOf(
+            target(100.0, 300.0, WatchType.PriceDirection.ABOVE, id = 1),
+            target(290.0, 300.0, WatchType.PriceDirection.ABOVE, id = 2),
+            pair,
+            target(250.0, 300.0, WatchType.PriceDirection.ABOVE, id = 3),
+        )
+        assertEquals(listOf(1, 3, 2, 4), sectionsFor(items, sort = WatchSort(WatchSortKey.PROXIMITY, descending = true)).waiting.map { it.id })
     }
 }

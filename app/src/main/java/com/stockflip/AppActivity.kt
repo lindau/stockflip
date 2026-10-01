@@ -28,6 +28,7 @@ import com.stockflip.ui.settings.SettingsRoute
 import com.stockflip.ui.settings.ThemeMode
 import com.stockflip.ui.settings.UpdateDialog
 import com.stockflip.ui.settings.UpdateFlow
+import com.stockflip.viewmodel.MoversViewModel
 import com.stockflip.viewmodel.StockSearchViewModel
 import com.stockflip.repository.MetricHistoryRepository
 import com.stockflip.repository.TriggerHistoryRepository
@@ -61,6 +62,15 @@ class AppActivity : ComponentActivity() {
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
                 @Suppress("UNCHECKED_CAST")
                 return StockSearchViewModel(StockRepository()) as T
+            }
+        }
+    }
+
+    private val moversViewModel: MoversViewModel by viewModels {
+        object : ViewModelProvider.Factory {
+            override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                @Suppress("UNCHECKED_CAST")
+                return MoversViewModel(YahooFinanceService) as T
             }
         }
     }
@@ -137,6 +147,7 @@ class AppActivity : ComponentActivity() {
                     market = {
                         MarketRoute(
                             viewModel = searchViewModel,
+                            moversViewModel = moversViewModel,
                             onOpenStock = { navController.navigate(Routes.stockDetail(it)) },
                         )
                     },

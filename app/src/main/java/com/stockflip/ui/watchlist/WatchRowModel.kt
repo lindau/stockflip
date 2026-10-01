@@ -42,23 +42,59 @@ internal data class WatchRowModel(
     val statusSuffix: String? = null,
     /** Dagsförändring i procent för sortering; `null` för par och okänt. */
     val changeValue: Double? = null,
-    /** Hur nära villkoret är att utlösas: 0.0 = utlöst nu, 1.0 = långt kvar; `null` när det inte kan beräknas. */
+    /** Hur nära villkoret är att utlösas: 0.0 = utlöst nu, 1.0 = långt kvar; `null` när det inte kan beräknas eller bevakningen är pausad. */
     val proximity: Double? = null,
     /** Kan återaktiveras manuellt; `false` för insideraffärer som alltid är igång. */
     val reactivatable: Boolean = true,
 )
 
-/** Sorteringsordning för bevakningslistan; gäller inom varje sektion (Utlösta / Väntar). */
-internal enum class WatchSort { CREATED, NAME, CHANGE_DESC, CHANGE_ASC, PRICE_DESC, NEAREST }
+/** Vad listan sorteras på. [defaultDescending] = riktningen när sorteringen väljs första gången. */
+internal enum class WatchSortKey(val defaultDescending: Boolean) {
+    CREATED(false),
+    NAME(false),
+    /** Dagsutveckling; fallande = störst uppgång först. */
+    CHANGE(true),
+    /** Närmast aktivering; stigande = närmast först. */
+    PROXIMITY(false),
+}
 
-private fun List<WatchRowModel>.sortedBy(sort: WatchSort): List<WatchRowModel> = when (sort) {
-    WatchSort.CREATED -> this
-    WatchSort.NAME -> sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER) { it.title })
-    WatchSort.CHANGE_DESC -> sortedWith(compareByDescending<WatchRowModel> { it.changeValue != null }.thenByDescending { it.changeValue })
-    WatchSort.CHANGE_ASC -> sortedWith(compareByDescending<WatchRowModel> { it.changeValue != null }.thenBy { it.changeValue })
-    WatchSort.PRICE_DESC -> sortedByDescending { it.priceValue }
-    // Närmast utlösning först; rader utan beräkningsbar närhet (t.ex. par, insider) sist.
-    WatchSort.NEAREST -> sortedWith(compareBy<WatchRowModel> { it.proximity == null }.thenBy { it.proximity })
+/** Sorteringsordning för bevakningslistan; gäller inom varje sektion (Utlösta / Väntar). */
+internal data class WatchSort(val key: WatchSortKey = WatchSortKey.CREATED, val descending: Boolean = false) {
+    /** Standardsorteringen (skapad, äldst först) — då visas sorteringsikonen neutral. */
+    val isDefault: Boolean get() = key == WatchSortKey.CREATED && !descending
+
+    /** Tryck på [tapped]: samma sortering vänder riktningen, en annan väljs med sin standardriktning. */
+    fun tapped(tapped: WatchSortKey): WatchSort =
+        if (tapped == key) copy(descending = !descending) else WatchSort(tapped, tapped.defaultDescending)
+
+    companion object {
+        /** Läser sparat val; förstår även de gamla enumnamnen. Okänt värde ger standardsorteringen. */
+        fun fromPrefs(name: String?, descending: Boolean): WatchSort = when (name) {
+            "CREATED", "NAME", "CHANGE", "PROXIMITY" -> WatchSort(WatchSortKey.valueOf(name), descending)
+            "CHANGE_DESC" -> WatchSort(WatchSortKey.CHANGE, true)
+            "CHANGE_ASC" -> WatchSort(WatchSortKey.CHANGE, false)
+            "NEAREST" -> WatchSort(WatchSortKey.PROXIMITY, false)
+            else -> WatchSort()
+        }
+    }
+}
+
+private fun List<WatchRowModel>.sortedFor(sort: WatchSort): List<WatchRowModel> {
+    // Rader utan värde (okänd förändring/närhet, pausade, par) ligger sist oavsett riktning.
+    fun <T : Comparable<T>> List<WatchRowModel>.byNullable(value: (WatchRowModel) -> T?): List<WatchRowModel> {
+        val (known, unknown) = partition { value(it) != null }
+        val sorted = if (sort.descending) known.sortedByDescending { value(it) } else known.sortedBy { value(it) }
+        return sorted + unknown
+    }
+    return when (sort.key) {
+        WatchSortKey.CREATED -> if (sort.descending) reversed() else this
+        WatchSortKey.NAME -> sortedWith(
+            if (sort.descending) compareByDescending(String.CASE_INSENSITIVE_ORDER) { it.title }
+            else compareBy(String.CASE_INSENSITIVE_ORDER) { it.title }
+        )
+        WatchSortKey.CHANGE -> byNullable { it.changeValue }
+        WatchSortKey.PROXIMITY -> byNullable { it.proximity }
+    }
 }
 
 internal data class WatchListSections(
@@ -122,7 +158,7 @@ internal fun WatchItemUiState.toRowModel(
         condition = conditionOnly,
         statusSuffix = statusSuffix,
         changeValue = dailyChange,
-        proximity = triggerProximity(),
+        proximity = if (item.isActive) triggerProximity() else null,
     )
 }
 
@@ -196,14 +232,14 @@ internal fun sectionsFor(
     now: Long = System.currentTimeMillis(),
     notedTickers: Set<String> = emptySet(),
     mentionedTickers: Set<String> = emptySet(),
-    sort: WatchSort = WatchSort.CREATED,
+    sort: WatchSort = WatchSort(),
 ): WatchListSections {
     val q = query.trim()
     val rows = items.map { it.toRowModel(triggerTimes[it.item.id], now, notedTickers, mentionedTickers) }
         .filter { q.isEmpty() || it.title.contains(q, ignoreCase = true) || it.symbol?.contains(q, ignoreCase = true) == true }
     return WatchListSections(
-        triggered = rows.filter { it.triggered }.sortedBy(sort),
-        waiting = rows.filterNot { it.triggered }.sortedBy(sort),
+        triggered = rows.filter { it.triggered }.sortedFor(sort),
+        waiting = rows.filterNot { it.triggered }.sortedFor(sort),
     )
 }
 
@@ -229,7 +265,7 @@ internal fun stockSectionsFor(
     now: Long = System.currentTimeMillis(),
     notedTickers: Set<String> = emptySet(),
     mentionedTickers: Set<String> = emptySet(),
-    sort: WatchSort = WatchSort.CREATED,
+    sort: WatchSort = WatchSort(),
 ): StockListSections {
     val q = query.trim()
     fun matches(row: WatchRowModel) =
@@ -257,8 +293,8 @@ internal fun stockSectionsFor(
     val pairs = pairItems.map { it.toRowModel(triggerTimes[it.item.id], now, notedTickers, mentionedTickers) }.filter(::matches)
 
     return StockListSections(
-        stocks = stocks.filter { it.triggered }.sortedBy(sort) + stocks.filterNot { it.triggered }.sortedBy(sort),
-        pairs = pairs.sortedBy(sort),
+        stocks = stocks.filter { it.triggered }.sortedFor(sort) + stocks.filterNot { it.triggered }.sortedFor(sort),
+        pairs = pairs.sortedFor(sort),
     )
 }
 

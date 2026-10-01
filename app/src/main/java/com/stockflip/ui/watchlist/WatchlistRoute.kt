@@ -70,7 +70,7 @@ internal fun WatchlistRoute(
     val prefs = remember { context.getSharedPreferences("settings", android.content.Context.MODE_PRIVATE) }
     var sort by remember {
         mutableStateOf(
-            try { WatchSort.valueOf(prefs.getString("watchlist_sort", null) ?: "") } catch (e: Exception) { WatchSort.CREATED }
+            try { WatchSort.fromPrefs(prefs.getString("watchlist_sort", null), prefs.getBoolean("watchlist_sort_desc", false)) } catch (e: Exception) { WatchSort() }
         )
     }
     var view by remember {
@@ -103,7 +103,7 @@ internal fun WatchlistRoute(
         query = query,
         onQueryChange = { query = it },
         sort = sort,
-        onSortChange = { sort = it; prefs.edit().putString("watchlist_sort", it.name).apply() },
+        onSortChange = { sort = it; prefs.edit().putString("watchlist_sort", it.key.name).putBoolean("watchlist_sort_desc", it.descending).apply() },
         onRefresh = { scope.launch { viewModel.refreshWatchItems(showLoading = false, userInitiated = true) } },
         onRowClick = { row ->
             val item = items.firstOrNull { it.item.id == row.id }?.item

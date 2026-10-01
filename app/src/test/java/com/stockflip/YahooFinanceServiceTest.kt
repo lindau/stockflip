@@ -241,4 +241,18 @@ class YahooFinanceServiceTest {
             println("⚠ P/E ratio not available for $symbol")
         }
     }
-} 
+
+    @Test
+    fun `getMarketMovers returns lists for Sweden and US`() = runBlocking {
+        for (market in MoverMarket.entries) {
+            for (list in MoverList.entries) {
+                if (!list.isAvailableFor(market)) continue
+                val movers = YahooFinanceService.getMarketMovers(market, list, count = 10)
+                println("--- $market / $list: ${movers?.size ?: "FEL"} träffar")
+                movers?.forEach { println("${it.symbol}\t${it.name}\t${it.price} ${it.currency}\t${it.changePercent}%\tvol=${it.volume}") }
+                assertNotNull("$market/$list ska inte ge fel", movers)
+                assertFalse("$market/$list ska inte vara tom", movers!!.isEmpty())
+            }
+        }
+    }
+}

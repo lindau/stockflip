@@ -171,7 +171,7 @@ class StockDetailViewModelTest {
     }
 
     @Test
-    fun `reactivateAlertAndReturnResult keeps lastTriggeredDate lock for DailyMove triggered today`() = runTest {
+    fun `reactivateAlertAndReturnResult clears lastTriggeredDate lock directly for DailyMove triggered today`() = runTest {
         val symbol = "VOLV-B.ST"
         val today = WatchItem.getTodayDateString()
         val triggeredItem = WatchItem(
@@ -194,14 +194,14 @@ class StockDetailViewModelTest {
         // Ingen advanceUntilIdle() — se CLAUDE.md: observeAlerts() håller en oändlig loop.
         // reactivateAlertAndReturnResult är ett direkt suspend-anrop som körs klart synkront
         // under UnconfinedTestDispatcher. Fejktjänsten saknar previousCloseBySymbol för
-        // symbolen, så dagsrörelsevillkoret går inte att avgöra (null) — ReactivationGuard
-        // behåller då spärren konservativt, se WatchConditionChecker.isConditionCurrentlyMet.
+        // symbolen. Manuell återaktivering använder ingen datumspärr: bevakningen utvärderas
+        // vid nästa kursuppdatering och får då utlösas igen.
         viewModel.reactivateAlertAndReturnResult(triggeredItem)
 
         val updated = watchItemDao.getWatchItemById(1)!!
         assertTrue(updated.isActive)
         assertEquals(false, updated.isTriggered)
-        assertEquals(today, updated.lastTriggeredDate)
+        assertEquals(null, updated.lastTriggeredDate)
     }
 
     @Test

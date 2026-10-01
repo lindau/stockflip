@@ -234,6 +234,37 @@ class MainViewModelRefreshWatchItemsTest {
     }
 
     @Test
+    fun `reactivateWatchItem arms a price target directly even when price equals target and it triggered today`() = runBlocking {
+        val today = WatchItem.getTodayDateString()
+        val triggeredItem = WatchItem(
+            id = 1,
+            watchType = WatchType.PriceTarget(targetPrice = 100.0, direction = WatchType.PriceDirection.ABOVE),
+            ticker = "VOLV-B.ST",
+            companyName = "Volvo B",
+            isActive = false,
+            isTriggered = true,
+            lastTriggeredDate = today
+        )
+        val watchItemDao = InMemoryWatchItemDao(listOf(triggeredItem))
+        val viewModel = MainViewModel(
+            stockPairDao = InMemoryStockPairDao(emptyList()),
+            watchItemDao = watchItemDao,
+            yahooFinanceService = FakeMarketDataService(pricesBySymbol = mapOf("VOLV-B.ST" to 100.0)),
+            stockNoteDao = InMemoryStockNoteDao(),
+            podcastObservationDao = InMemoryPodcastObservationDao()
+        )
+
+        val result = viewModel.reactivateWatchItem(triggeredItem)
+
+        val updated = watchItemDao.getWatchItemById(1)!!
+        assertTrue(updated.isActive)
+        assertFalse(updated.isTriggered)
+        assertEquals(null, updated.lastTriggeredDate)
+        assertTrue(updated.canTrigger(today))
+        assertFalse(result.sameDayTriggerGuarded)
+    }
+
+    @Test
     fun `reactivateWatchItem recalculates price target direction from current price`() = runBlocking {
         val triggeredItem = WatchItem(
             id = 1,
@@ -264,7 +295,7 @@ class MainViewModelRefreshWatchItemsTest {
     }
 
     @Test
-    fun `reactivateWatchItem keeps lastTriggeredDate lock for DailyMove triggered today`() = runBlocking {
+    fun `reactivateWatchItem clears lastTriggeredDate lock directly for DailyMove triggered today`() = runBlocking {
         val today = WatchItem.getTodayDateString()
         val triggeredItem = WatchItem(
             id = 1,
@@ -289,8 +320,8 @@ class MainViewModelRefreshWatchItemsTest {
         val updated = watchItemDao.getWatchItemById(1)!!
         assertTrue(updated.isActive)
         assertFalse(updated.isTriggered)
-        assertEquals(today, updated.lastTriggeredDate)
-        assertTrue(updated.hasPendingNextTradingDayGuard())
+        assertEquals(null, updated.lastTriggeredDate)
+        assertTrue(updated.canTrigger(today))
     }
 
     @Test
@@ -329,7 +360,7 @@ class MainViewModelRefreshWatchItemsTest {
     }
 
     @Test
-    fun `reactivateWatchItem keeps lastTriggeredDate lock for ATHBased triggered today`() = runBlocking {
+    fun `reactivateWatchItem clears lastTriggeredDate lock directly for ATHBased triggered today`() = runBlocking {
         val today = WatchItem.getTodayDateString()
         val triggeredItem = WatchItem(
             id = 1,
@@ -354,8 +385,8 @@ class MainViewModelRefreshWatchItemsTest {
         val updated = watchItemDao.getWatchItemById(1)!!
         assertTrue(updated.isActive)
         assertFalse(updated.isTriggered)
-        assertEquals(today, updated.lastTriggeredDate)
-        assertTrue(updated.hasPendingNextTradingDayGuard())
+        assertEquals(null, updated.lastTriggeredDate)
+        assertTrue(updated.canTrigger(today))
     }
 
     @Test

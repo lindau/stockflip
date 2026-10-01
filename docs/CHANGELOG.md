@@ -1,5 +1,13 @@
 # Ändringslogg
 
+## 1.3
+
+- `Marknad` har en ny sektion `Börsen idag` (när sökfältet är tomt): växla mellan Sverige och USA och välj `Uppgång`, `Nedgång` eller `Omsatta`. För USA finns även `Trendar`, aktier som många tittar på just nu
+- Börshandlade fonder (ETF) går nu att söka fram och bevaka, och markeras med `ETF`
+- Sortering av bevakningar är omgjord: `Skapad`, `Namn`, `Dagsutveckling` och `Närmast aktivering`, alla i båda riktningarna. Tryck på den valda sorteringen igen för att vända den; knappen får accentfärg och pil när en annan sortering än standard är vald. Sortering på pris är borttagen
+- Pausade bevakningar hamnar sist när du sorterar på `Närmast aktivering`
+- Manuell återaktivering gäller nu alltid direkt: bevakningen utvärderas vid nästa kursuppdatering och kan då utlösas igen även om villkoret fortfarande är uppfyllt, i stället för att vänta till nästa handelsdag
+
 ## 1.2
 
 - Ny design: lugnare, platt gränssnitt med en accentfärg och tabulära siffror. Hela appen är nu byggd i Jetpack Compose

@@ -2,6 +2,7 @@ package com.stockflip.ui.pairdetail
 
 import com.stockflip.CurrencyHelper
 import com.stockflip.PairDetailData
+import com.stockflip.RecheckAfterReset
 import com.stockflip.WatchType
 import com.stockflip.hasPendingNextTradingDayGuard
 import com.stockflip.pairSpreadDirectionLabel
@@ -27,7 +28,9 @@ internal fun PairDetailData.toModel(): PairDetailModel? {
     val current = spread?.let { abs(it) }
     val target = pair.priceDifference.takeIf { it > 0.0 }
     val waiting = watchItem.hasPendingNextTradingDayGuard()
-    val triggered = !waiting && (
+    // Nyss återaktiverad: visas som aktiv tills nästa kursuppdatering, även om spreadvillkoret fortfarande gäller.
+    val awaitingRecheck = RecheckAfterReset.isAwaiting(watchItem)
+    val triggered = !waiting && !awaitingRecheck && (
         watchItem.isTriggered ||
             (current != null && target != null && current >= target) ||
             (pair.notifyWhenEqual && current != null && current < 0.01)

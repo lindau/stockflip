@@ -297,16 +297,16 @@ class MainViewModel(
 
     private suspend fun reactivateInDb(watchItem: WatchItem): WatchReactivationResult {
         val currentPrice = currentPriceForReactivation(watchItem)
-        val keepLastTriggeredDate = shouldGuardAgainstImmediateRetrigger(watchItem, currentPrice)
+        // Gäller direkt, utan datumspärr: utvärderas vid nästa kursuppdatering (se RecheckAfterReset).
         val updatedWatchItem = watchItem.reactivate(
             currentPrice = currentPrice,
-            keepLastTriggeredDate = keepLastTriggeredDate
+            keepLastTriggeredDate = false
         )
         watchItemDao.update(updatedWatchItem)
         RecheckAfterReset.mark(listOf(updatedWatchItem))
         return WatchReactivationResult(
             watchItem = updatedWatchItem,
-            sameDayTriggerGuarded = keepLastTriggeredDate
+            sameDayTriggerGuarded = false
         )
     }
 

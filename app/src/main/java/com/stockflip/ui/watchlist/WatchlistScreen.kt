@@ -15,6 +15,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.ArrowDownward
+import androidx.compose.material.icons.outlined.ArrowUpward
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.Check
@@ -78,7 +80,7 @@ internal fun WatchlistScreen(
     loadError: String?,
     query: String,
     onQueryChange: (String) -> Unit,
-    sort: WatchSort = WatchSort.CREATED,
+    sort: WatchSort = WatchSort(),
     onSortChange: (WatchSort) -> Unit = {},
     onRefresh: () -> Unit,
     onRowClick: (WatchRowModel) -> Unit,
@@ -103,13 +105,45 @@ internal fun WatchlistScreen(
                 IconButton(onClick = onRefresh) { Icon(Icons.Outlined.Refresh, contentDescription = stringResource(R.string.watchlist_uppdatera)) }
                 var sortOpen by remember { mutableStateOf(false) }
                 Box {
-                    IconButton(onClick = { sortOpen = true }) { Icon(Icons.Outlined.SwapVert, contentDescription = stringResource(R.string.watchlist_sortera)) }
+                    // Standardsorteringen: neutral ikon. Annars accentfärg och pil som visar riktningen.
+                    IconButton(onClick = { sortOpen = true }) {
+                        if (sort.isDefault) {
+                            Icon(Icons.Outlined.SwapVert, contentDescription = stringResource(R.string.watchlist_sortera))
+                        } else {
+                            Icon(
+                                if (sort.descending) Icons.Outlined.ArrowDownward else Icons.Outlined.ArrowUpward,
+                                contentDescription = stringResource(
+                                    R.string.watchlist_sortera_nu,
+                                    stringResource(sort.key.labelRes()),
+                                    stringResource(sort.key.directionLabelRes(sort.descending)),
+                                ),
+                                tint = MaterialTheme.colorScheme.primary,
+                            )
+                        }
+                    }
                     DropdownMenu(expanded = sortOpen, onDismissRequest = { sortOpen = false }) {
-                        WatchSort.entries.forEach { option ->
+                        WatchSortKey.entries.forEach { key ->
+                            val selected = key == sort.key
                             DropdownMenuItem(
-                                text = { Text(stringResource(option.labelRes())) },
-                                trailingIcon = { if (option == sort) Icon(Icons.Outlined.Check, contentDescription = null) },
-                                onClick = { sortOpen = false; onSortChange(option) },
+                                text = { Text(stringResource(key.labelRes())) },
+                                trailingIcon = if (selected) {
+                                    {
+                                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Space.xs)) {
+                                            Text(
+                                                stringResource(key.directionLabelRes(sort.descending)),
+                                                style = MaterialTheme.typography.labelMedium,
+                                                color = MaterialTheme.colorScheme.primary,
+                                            )
+                                            Icon(
+                                                if (sort.descending) Icons.Outlined.ArrowDownward else Icons.Outlined.ArrowUpward,
+                                                contentDescription = null,
+                                                tint = MaterialTheme.colorScheme.primary,
+                                            )
+                                        }
+                                    }
+                                } else null,
+                                // Tryck på vald sortering vänder riktningen; en annan väljs med sin standardriktning.
+                                onClick = { sortOpen = false; onSortChange(sort.tapped(key)) },
                             )
                         }
                     }
@@ -147,13 +181,18 @@ internal fun WatchlistScreen(
     }
 }
 
-private fun WatchSort.labelRes(): Int = when (this) {
-    WatchSort.CREATED -> R.string.watchlist_sort_skapad
-    WatchSort.NAME -> R.string.watchlist_sort_namn
-    WatchSort.CHANGE_DESC -> R.string.watchlist_sort_uppgang
-    WatchSort.CHANGE_ASC -> R.string.watchlist_sort_nedgang
-    WatchSort.PRICE_DESC -> R.string.watchlist_sort_pris
-    WatchSort.NEAREST -> R.string.watchlist_sort_narmast
+private fun WatchSortKey.labelRes(): Int = when (this) {
+    WatchSortKey.CREATED -> R.string.watchlist_sort_skapad
+    WatchSortKey.NAME -> R.string.watchlist_sort_namn
+    WatchSortKey.CHANGE -> R.string.watchlist_sort_dagsutveckling
+    WatchSortKey.PROXIMITY -> R.string.watchlist_sort_narmast
+}
+
+private fun WatchSortKey.directionLabelRes(descending: Boolean): Int = when (this) {
+    WatchSortKey.CREATED -> if (descending) R.string.watchlist_sort_nyast_forst else R.string.watchlist_sort_aldst_forst
+    WatchSortKey.NAME -> if (descending) R.string.watchlist_sort_o_a else R.string.watchlist_sort_a_o
+    WatchSortKey.CHANGE -> if (descending) R.string.watchlist_sort_storst_uppgang else R.string.watchlist_sort_storst_nedgang
+    WatchSortKey.PROXIMITY -> if (descending) R.string.watchlist_sort_langst_bort_forst else R.string.watchlist_sort_narmast_forst
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

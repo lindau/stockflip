@@ -80,20 +80,15 @@ class PairDetailViewModel(
 
     suspend fun reactivateAndReturnResult(): WatchReactivationResult? {
         val current = (_pairState.value as? UiState.Success)?.data?.watchItem ?: return null
-        val keepLastTriggeredDate = shouldGuardAgainstImmediateRetrigger(
-            watchItem = current,
-            conditionCurrentlyMet = { conditionCurrentlyMet() },
-            isMarketOpen = { isMarketOpenForReactivation(current) }
-        )
-        val updated = current.reactivate(
-            keepLastTriggeredDate = keepLastTriggeredDate
-        )
+        // Gäller direkt, utan datumspärr: utvärderas vid nästa kursuppdatering (se RecheckAfterReset).
+        val updated = current.reactivate(keepLastTriggeredDate = false)
         watchItemDao.update(updated)
+        RecheckAfterReset.mark(listOf(updated))
         loadPair()
         loadHistory()
         return WatchReactivationResult(
             watchItem = updated,
-            sameDayTriggerGuarded = keepLastTriggeredDate
+            sameDayTriggerGuarded = false
         )
     }
 
@@ -120,42 +115,6 @@ class PairDetailViewModel(
                 _historyState.value = triggerHistoryRepository.getLatest(watchItemId)
             } catch (e: Exception) {
                 Log.e(TAG, "Error loading trigger history: ${e.message}", e)
-            }
-        }
-    }
-
-    /**
-     * Läser av om spreadvillkoret fortfarande är uppfyllt just nu, baserat på senast laddade
-     * priser. Se [shouldGuardAgainstImmediateRetrigger] i ReactivationGuard.kt.
-     */
-    private fun conditionCurrentlyMet(): Boolean? {
-        val data = (_pairState.value as? UiState.Success)?.data ?: return null
-        val watchType = data.watchItem.watchType as? WatchType.PricePair ?: return null
-        val priceA = data.stockA.lastPrice?.takeIf { it > 0.0 } ?: return null
-        val priceB = data.stockB.lastPrice?.takeIf { it > 0.0 } ?: return null
-        return PairTriggerEvaluator.evaluate(
-            priceA = priceA,
-            priceB = priceB,
-            spreadTarget = watchType.priceDifference,
-            notifyWhenEqual = watchType.notifyWhenEqual
-        ) != null
-    }
-
-    private suspend fun isMarketOpenForReactivation(watchItem: WatchItem): Boolean {
-        val tickers = listOfNotNull(watchItem.ticker1, watchItem.ticker2)
-        if (tickers.isEmpty()) return true
-
-        return tickers.any { ticker ->
-            if (StockSearchResult.isCryptoSymbol(ticker)) {
-                true
-            } else {
-                val exchange = try {
-                    marketDataService.getExchange(ticker)
-                } catch (e: Exception) {
-                    Log.w(TAG, "Could not fetch exchange for reactivation guard: ${e.message}")
-                    null
-                }
-                StockMarketScheduler.isMarketOpenForSymbol(ticker, exchange)
             }
         }
     }

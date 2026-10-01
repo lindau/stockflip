@@ -26,7 +26,7 @@ fun WatchReactivationResult.toUserMessage(currency: String? = null): String {
     return if (sameDayTriggerGuarded) {
         "$base. Kan trigga först nästa handelsdag."
     } else {
-        base
+        "$base. Utvärderas vid nästa kursuppdatering."
     }
 }
 
