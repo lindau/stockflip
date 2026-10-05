@@ -59,6 +59,13 @@ interface MarketDataService {
     suspend fun getStockPrice(symbol: String): Double?
     suspend fun getPreviousClose(symbol: String): Double?
     suspend fun getDailyChangePercent(symbol: String): Double?
+
+    /**
+     * Är kursen från senaste handelsdagen (se [StockMarketScheduler.isQuoteFromLatestSession])?
+     * false = aktien har inte handlats sedan en tidigare dag, så dagsrörelsen är gammal.
+     * null = okänt.
+     */
+    suspend fun isQuoteFromToday(symbol: String): Boolean? = null
     suspend fun getATH(symbol: String): Double?
     suspend fun getAllTimeHigh(symbol: String): Double?
     suspend fun get52WeekLow(symbol: String): Double?

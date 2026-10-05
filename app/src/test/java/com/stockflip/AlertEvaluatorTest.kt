@@ -282,6 +282,22 @@ class AlertEvaluatorTest {
     }
 
     @Test
+    fun `evaluate SingleDailyMove does not trigger on a stale quote from an earlier day`() {
+        val rule = AlertRule.SingleDailyMove(
+            symbol = "PLEJD.ST",
+            percentThreshold = 3.0,
+            direction = AlertRule.DailyMoveDirection.BOTH
+        )
+        val snapshot = MarketSnapshot.forSingleStock(
+            lastPrice = 935.0,
+            previousClose = 967.5, // -3,4 % men från gammal kurs
+            quoteIsFromToday = false
+        )
+
+        assertFalse(AlertEvaluator.evaluate(rule, snapshot))
+    }
+
+    @Test
     fun `evaluate SingleDailyMove UP should return false when daily change is below threshold`() {
         // Given
         val rule = AlertRule.SingleDailyMove(

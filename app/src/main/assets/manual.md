@@ -179,6 +179,8 @@ Tryck på knappen **Ny bevakning** nere till höger för att skapa en bevakning.
 - **Ned** — utlöses om daglig förändring ≤ −X %
 - **Båda håll** — utlöses om |daglig förändring| ≥ X %
 
+**Kräver färsk kurs:** Dagsrörelsen räknas bara när aktien har handlats under den aktuella handelsdagen. För en aktie som inte handlats idag (till exempel en illikvid småbolagsaktie eller en helgdag) visas ingen dagsförändring och bevakningen utlöses inte, så en gammal kursrörelse tolkas aldrig som dagens.
+
 **Skapa en dagsrörelsebevakning:**
 1. Öppna aktiedetaljvyn.
 2. Tryck på **Ny bevakning** nere till höger och välj **Dagsrörelse**.
@@ -249,7 +251,9 @@ Tryck på knappen **Ny bevakning** nere till höger för att skapa en bevakning.
 
 **Vad det gör:** Skickar en notis när nya insideraffärer (både köp och försäljningar) rapporteras för en aktie där appen har stöd för insiderdata.
 
-**Typ:** Återkommande — kontrolleras var 6:e timme och kan utlösas igen nästa handelsdag.
+**Typ:** Återkommande — kontrolleras var 6:e timme.
+
+**Alltid igång:** En insiderbevakning är aktiv tills du själv pausar eller tar bort den. Den markeras aldrig som utlöst, hamnar inte under **Utlösta** och du får ingen fråga om att återaktivera den efter en affär – varje ny affär ger en ny notis.
 
 **Skapa en bevakning för insideraffärer:**
 1. Öppna aktiedetaljvyn för en aktie med insiderstöd.
@@ -459,6 +463,8 @@ Engångslarm (Målpris och Drawdown) inaktiveras automatiskt efter utlösning oc
 Bevakningen är nu aktiv igen. För målpris räknar appen om riktningen från aktuell kurs: om kursen ligger över målpriset bevakas nästa passage ned under nivån, och om kursen ligger under målpriset bevakas nästa passage upp över nivån.
 
 En manuell återaktivering gäller alltid direkt, för alla bevakningstyper: bevakningen blir aktiv och visas som `Väntar`, även om villkoret fortfarande är uppfyllt (kursen ligger till exempel kvar på målpriset) eller börsen är stängd. Appen utvärderar den vid nästa kursuppdatering, och är villkoret då fortfarande uppfyllt får den utlösas och skicka en ny notis. Bekräftelsen säger `Utvärderas vid nästa kursuppdatering`. Notiser skickas som vanligt bara medan marknaden är öppen (och upp till 30 minuter efter stängning).
+
+Återaktiverar du en bevakning medan börsen är stängd (eller strax efter öppning, innan de första kurserna hunnit komma in) väntar bevakningen på första färska kursen: den kan inte utlösas av gårdagens stängningskurs. På Stockholmsbörsen, som öppnar 09:00 men där appen får kurser först ca 09:15, kan bevakningen alltså tidigast utlösas 09:15. Spärren gäller alla bevakningstyper utom insider och släpps av sig själv när tiden passerat. Helgdagar när börsen är stängd känner appen inte till.
 
 
 ### Återaktivera alla

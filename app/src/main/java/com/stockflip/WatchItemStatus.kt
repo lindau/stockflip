@@ -10,6 +10,7 @@ data class WatchReactivationResult(
 fun WatchItem.hasPendingNextTradingDayGuard(
     today: String = WatchItem.getTodayDateString()
 ): Boolean {
+    if (watchType is WatchType.InsiderBuy) return false
     return isActive && !isTriggered && lastTriggeredDate == today
 }
 

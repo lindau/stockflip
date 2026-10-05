@@ -30,7 +30,10 @@ data class WatchItem(
     val lastPairTriggerSide: String? = null,
     val activePairTriggerSide: String? = null,
     val isTriggered: Boolean = false, // Markerad som triggad, kräver manuell återaktivering
-    val isActive: Boolean = true // Om alerten är aktiv (kan inaktiveras manuellt)
+    val isActive: Boolean = true, // Om alerten är aktiv (kan inaktiveras manuellt)
+    // Epoch ms. Satt vid återaktivering när börsen är stängd: bevakningen får inte utlösas före
+    // första färska kursen efter nästa öppning (gamla stängningskurser ska inte utlösa den).
+    val triggerBlockedUntil: Long? = null
 ) {
     fun getDisplayName(): String {
         return when (watchType) {
@@ -104,8 +107,13 @@ data class WatchItem(
      * @param today Datum i format "YYYY-MM-DD"
      * @return true om alerten kan trigga, false annars
      */
-    fun canTrigger(today: String, pairTriggerSide: PairTriggerSide? = null): Boolean {
+    fun canTrigger(
+        today: String,
+        pairTriggerSide: PairTriggerSide? = null,
+        nowMillis: Long = System.currentTimeMillis()
+    ): Boolean {
         if (!isActive) return false
+        if (triggerBlockedUntil != null && nowMillis < triggerBlockedUntil) return false
         if (watchType is WatchType.PricePair && pairTriggerSide != null) {
             if (lastTriggeredDate != today) return true
             val activeSide = activePairTriggerSide
@@ -131,7 +139,8 @@ data class WatchItem(
             lastTriggeredDate = today,
             lastPairTriggerSide = if (watchType is WatchType.PricePair) pairTriggerSide?.name else null,
             activePairTriggerSide = if (watchType is WatchType.PricePair) pairTriggerSide?.name else null,
-            isTriggered = true
+            isTriggered = true,
+            triggerBlockedUntil = null
         )
     }
 
@@ -153,11 +162,14 @@ data class WatchItem(
      * vid nästa prissynk samma dag.
      * Manuell återaktivering av en enskild bevakning använder inte spärren (anropar med false):
      * bevakningen utvärderas vid nästa kursuppdatering och får då utlösas igen.
+     * @param triggerBlockedUntil Epoch ms före vilken bevakningen inte får utlösas, se
+     * [StockMarketScheduler.triggerBlockedUntil]. Null = ingen spärr.
      * @return Ny WatchItem med isTriggered = false och isActive = true
      */
     fun reactivate(
         currentPrice: Double? = null,
-        keepLastTriggeredDate: Boolean = false
+        keepLastTriggeredDate: Boolean = false,
+        triggerBlockedUntil: Long? = null
     ): WatchItem {
         val updatedWatchType = when (val type = watchType) {
             is WatchType.PriceTarget -> {
@@ -182,7 +194,8 @@ data class WatchItem(
             lastTriggeredDate = if (keepLastTriggeredDate) lastTriggeredDate else null,
             lastPairTriggerSide = if (keepLastTriggeredDate) lastPairTriggerSide else null,
             activePairTriggerSide = if (keepLastTriggeredDate) activePairTriggerSide else null,
-            isActive = true
+            isActive = true,
+            triggerBlockedUntil = triggerBlockedUntil
         )
     }
 

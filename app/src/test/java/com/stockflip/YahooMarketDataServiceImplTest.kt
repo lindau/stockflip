@@ -74,10 +74,22 @@ class YahooMarketDataServiceImplTest {
 
     @Test
     fun `getDailyChangePercent calculates change percent from single chart response`() = kotlinx.coroutines.runBlocking {
-        mockWebServer.enqueue(okResponse(readResource("yahoo/chart_VOLV-B.ST.json")))
+        // Fixturens kurstid (2023) görs aktuell: gammal kurs ger medvetet null, se testet nedan.
+        val fresh = readResource("yahoo/chart_VOLV-B.ST.json")
+            .replace("1700000000", (System.currentTimeMillis() / 1000).toString())
+        mockWebServer.enqueue(okResponse(fresh))
         val actualChangePercent: Double? = service.getDailyChangePercent("VOLV-B.ST")
         val expectedChangePercent: Double = ((300.12 - 295.0) / 295.0) * 100.0
         assertEquals(expectedChangePercent, actualChangePercent!!, 0.0001)
+    }
+
+    @Test
+    fun `getDailyChangePercent is null when the quote is from an earlier trading day`() = kotlinx.coroutines.runBlocking {
+        // Illikvid aktie: Yahoo behåller en gammal dagsrörelse (-3,36 %) med gammal kurstid.
+        mockWebServer.enqueue(okResponse(readResource("yahoo/chart_VOLV-B.ST.json")))
+
+        assertNull(service.getDailyChangePercent("VOLV-B.ST"))
+        assertEquals(false, service.isQuoteFromToday("VOLV-B.ST"))
     }
 
     @Test

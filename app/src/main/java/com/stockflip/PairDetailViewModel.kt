@@ -81,7 +81,14 @@ class PairDetailViewModel(
     suspend fun reactivateAndReturnResult(): WatchReactivationResult? {
         val current = (_pairState.value as? UiState.Success)?.data?.watchItem ?: return null
         // Gäller direkt, utan datumspärr: utvärderas vid nästa kursuppdatering (se RecheckAfterReset).
-        val updated = current.reactivate(keepLastTriggeredDate = false)
+        val blockedUntil = triggerBlockedUntilForReactivation(current) { symbol ->
+            try {
+                marketDataService.getExchange(symbol)
+            } catch (e: Exception) {
+                null
+            }
+        }
+        val updated = current.reactivate(keepLastTriggeredDate = false, triggerBlockedUntil = blockedUntil)
         watchItemDao.update(updated)
         RecheckAfterReset.mark(listOf(updated))
         loadPair()

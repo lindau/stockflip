@@ -135,4 +135,15 @@ class MarketSnapshotTest {
         assertNotNull("Should calculate daily change percent even for zero change", changePercent)
         assertEquals(0.0, changePercent!!, 0.01)
     }
+
+    @Test
+    fun `daily change is null when quote is not from today`() {
+        val stale = MarketSnapshot.forSingleStock(
+            lastPrice = 935.0, previousClose = 967.5, quoteIsFromToday = false
+        )
+        assertNull(stale.getDailyChangePercent())
+
+        val unknown = MarketSnapshot.forSingleStock(lastPrice = 935.0, previousClose = 967.5)
+        assertNotNull(unknown.getDailyChangePercent())
+    }
 }

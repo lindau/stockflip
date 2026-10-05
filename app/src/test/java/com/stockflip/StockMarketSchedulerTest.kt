@@ -1,7 +1,9 @@
 package com.stockflip
 
 import java.time.Instant
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -110,5 +112,64 @@ class StockMarketSchedulerTest {
         assertTrue(StockSearchResult.isNonEquitySymbol("^GSPC"))
         assertTrue(StockSearchResult.isNonEquitySymbol("BTC-USD"))
         assertFalse(StockSearchResult.isNonEquitySymbol("AAPL"))
+    }
+
+    private fun stoMillis(date: String, time: String): Long =
+        java.time.LocalDateTime.parse("${date}T$time")
+            .atZone(java.time.ZoneId.of("Europe/Stockholm")).toInstant().toEpochMilli()
+
+    private fun stoInstant(date: String, time: String) =
+        java.time.Instant.ofEpochMilli(stoMillis(date, time))
+
+    @Test
+    fun `triggerBlockedUntil evening blocks until next weekday 0915`() {
+        // Tisdag 2026-10-06 kväll → onsdag 09:15
+        val blocked = StockMarketScheduler.triggerBlockedUntil("VOLV-B.ST", instant = stoInstant("2026-10-06", "20:00"))
+        assertEquals(stoMillis("2026-10-07", "09:15"), blocked)
+    }
+
+    @Test
+    fun `triggerBlockedUntil Friday evening blocks until Monday 0915`() {
+        val blocked = StockMarketScheduler.triggerBlockedUntil("VOLV-B.ST", instant = stoInstant("2026-10-09", "20:00"))
+        assertEquals(stoMillis("2026-10-12", "09:15"), blocked)
+    }
+
+    @Test
+    fun `triggerBlockedUntil before open and between open and first quote blocks until 0915 same day`() {
+        assertEquals(stoMillis("2026-10-07", "09:15"),
+            StockMarketScheduler.triggerBlockedUntil("VOLV-B.ST", instant = stoInstant("2026-10-07", "07:30")))
+        assertEquals(stoMillis("2026-10-07", "09:15"),
+            StockMarketScheduler.triggerBlockedUntil("VOLV-B.ST", instant = stoInstant("2026-10-07", "09:05")))
+    }
+
+    @Test
+    fun `triggerBlockedUntil is null while trading, for crypto and unknown exchange`() {
+        assertNull(StockMarketScheduler.triggerBlockedUntil("VOLV-B.ST", instant = stoInstant("2026-10-07", "11:00")))
+        assertNull(StockMarketScheduler.triggerBlockedUntil("BTC-USD", instant = stoInstant("2026-10-07", "03:00")))
+        assertNull(StockMarketScheduler.triggerBlockedUntil("XYZ", instant = stoInstant("2026-10-07", "03:00")))
+    }
+
+    private fun stoSeconds(date: String, time: String): Long = stoMillis(date, time) / 1000
+
+    @Test
+    fun `isQuoteFromLatestSession compares quote day with latest expected session`() {
+        val mondayNoon = stoInstant("2026-10-05", "12:00")
+        // Illikvid aktie: senaste affär onsdagen innan → gammal.
+        assertEquals(false, StockMarketScheduler.isQuoteFromLatestSession(
+            "PLEJD.ST", null, null, stoSeconds("2026-09-30", "17:29"), mondayNoon))
+        // Affär idag → aktuell.
+        assertEquals(true, StockMarketScheduler.isQuoteFromLatestSession(
+            "PLEJD.ST", null, null, stoSeconds("2026-10-05", "11:55"), mondayNoon))
+        // Måndag 09:05 (första kursen ej kommen): fredagens kurs räknas som aktuell.
+        assertEquals(true, StockMarketScheduler.isQuoteFromLatestSession(
+            "VOLV-B.ST", null, null, stoSeconds("2026-10-02", "17:29"), stoInstant("2026-10-05", "09:05")))
+        // Söndag: fredagens kurs är aktuell, torsdagens inte.
+        assertEquals(true, StockMarketScheduler.isQuoteFromLatestSession(
+            "VOLV-B.ST", null, null, stoSeconds("2026-10-02", "17:29"), stoInstant("2026-10-04", "12:00")))
+        assertEquals(false, StockMarketScheduler.isQuoteFromLatestSession(
+            "VOLV-B.ST", null, null, stoSeconds("2026-10-01", "17:29"), stoInstant("2026-10-04", "12:00")))
+        // Krypto alltid aktuell; okänd börs → null.
+        assertEquals(true, StockMarketScheduler.isQuoteFromLatestSession("BTC-USD", null, null, 0L, mondayNoon))
+        assertNull(StockMarketScheduler.isQuoteFromLatestSession("XYZ", null, null, 0L, mondayNoon))
     }
 }

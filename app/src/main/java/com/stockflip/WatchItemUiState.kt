@@ -39,11 +39,14 @@ data class WatchItemUiState(
 )
 
 fun WatchItemUiState.isTriggeredForDisplay(): Boolean {
+    // Insiderbevakning är aktiv tills man stänger av den: aldrig "utlöst", inget att återaktivera.
+    if (item.watchType is WatchType.InsiderBuy) return false
     if (item.hasPendingNextTradingDayGuard()) return false
     return item.isTriggered || (hasLiveTriggerCondition() && !RecheckAfterReset.isAwaiting(item))
 }
 
 fun WatchItemUiState.isTriggeredTodayForDisplay(today: String): Boolean {
+    if (item.watchType is WatchType.InsiderBuy) return false
     if (item.hasPendingNextTradingDayGuard(today)) return false
     return (hasLiveTriggerCondition() && !RecheckAfterReset.isAwaiting(item)) || (item.isTriggered && item.lastTriggeredDate == today)
 }

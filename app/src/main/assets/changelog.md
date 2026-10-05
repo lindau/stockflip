@@ -8,6 +8,9 @@
 - Pausade bevakningar hamnar sist när du sorterar på `Närmast aktivering`
 - Manuell återaktivering gäller nu alltid direkt: bevakningen utvärderas vid nästa kursuppdatering och kan då utlösas igen även om villkoret fortfarande är uppfyllt, i stället för att vänta till nästa handelsdag
 - Rättar bygget för 1.3.1 (Börsen idag och Trendar)
+- Dagsrörelse utlöses inte längre av gamla kurser: för en aktie som inte handlats idag (till exempel en illikvid småbolagsaktie) visas ingen dagsförändring, i stället för gårdagens rörelse
+- Återaktiverar du en bevakning medan börsen är stängd kan den inte utlösas av gårdagens kurser: den väntar på första färska kursen efter öppning (Stockholm ca 09:15)
+- Insiderbevakningar är alltid igång: de markeras aldrig som utlösta och du får ingen fråga om att återaktivera dem
 
 ## 1.2
 

@@ -284,7 +284,8 @@ class MainViewModel(
                     !isMarketOpenForReactivation(item)
                 item.reactivate(
                     currentPrice = currentPriceForReactivation(item),
-                    keepLastTriggeredDate = keepGuard
+                    keepLastTriggeredDate = keepGuard,
+                    triggerBlockedUntil = triggerBlockedUntilFor(item)
                 )
             }
             reset.forEach { watchItemDao.update(it) }
@@ -300,7 +301,8 @@ class MainViewModel(
         // Gäller direkt, utan datumspärr: utvärderas vid nästa kursuppdatering (se RecheckAfterReset).
         val updatedWatchItem = watchItem.reactivate(
             currentPrice = currentPrice,
-            keepLastTriggeredDate = false
+            keepLastTriggeredDate = false,
+            triggerBlockedUntil = triggerBlockedUntilFor(watchItem)
         )
         watchItemDao.update(updatedWatchItem)
         RecheckAfterReset.mark(listOf(updatedWatchItem))
@@ -318,7 +320,8 @@ class MainViewModel(
             watchItemDao.update(
                 watchItem.reactivate(
                     currentPrice = currentPrice,
-                    keepLastTriggeredDate = keepLastTriggeredDate
+                    keepLastTriggeredDate = keepLastTriggeredDate,
+                    triggerBlockedUntil = triggerBlockedUntilFor(watchItem)
                 )
             )
             syncWatchItemsAfterMutation()
@@ -344,6 +347,16 @@ class MainViewModel(
             conditionCurrentlyMet = { conditionCurrentlyMet(watchItem, currentPrice) },
             isMarketOpen = { isMarketOpenForReactivation(watchItem) }
         )
+
+    private suspend fun triggerBlockedUntilFor(watchItem: WatchItem): Long? =
+        triggerBlockedUntilForReactivation(watchItem) { symbol ->
+            try {
+                yahooFinanceService.getExchange(symbol)
+            } catch (e: Exception) {
+                Log.w(TAG, "Could not fetch exchange for trigger block: ${e.message}")
+                null
+            }
+        }
 
     private suspend fun isMarketOpenForReactivation(watchItem: WatchItem): Boolean {
         val ticker = watchItem.ticker ?: watchItem.ticker1 ?: return true

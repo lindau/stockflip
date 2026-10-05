@@ -107,8 +107,21 @@ class YahooMarketDataServiceImpl(
         previousClose
     }
 
+    /** null = okänt (saknad kurstid/börs), false = senaste affären var en tidigare handelsdag. */
+    private fun Meta.isFromLatestSession(symbol: String): Boolean? {
+        val quoteTime = regularMarketTime ?: return null
+        return StockMarketScheduler.isQuoteFromLatestSession(symbol, exchangeName, currency, quoteTime)
+    }
+
+    suspend fun isQuoteFromToday(symbol: String): Boolean? = withContext(Dispatchers.IO) {
+        quoteMeta(symbol)?.isFromLatestSession(symbol)
+    }
+
     suspend fun getDailyChangePercent(symbol: String): Double? = withContext(Dispatchers.IO) {
         val meta = quoteMeta(symbol) ?: return@withContext null
+        // Gammal kurs (t.ex. illikvid aktie som inte handlats idag): Yahoos dagsrörelse gäller en
+        // tidigare dag och får inte visas eller utlösa larm som "idag".
+        if (meta.isFromLatestSession(symbol) == false) return@withContext null
         val directChangePercent = meta.regularMarketChangePercent?.takeIf { !it.isNaN() }
         if (directChangePercent != null) {
             return@withContext directChangePercent
@@ -187,6 +200,7 @@ class YahooMarketDataServiceImpl(
         val previousClose = (meta.regularMarketPreviousClose ?: meta.chartPreviousClose)
             ?.takeIf { !it.isNaN() && it > 0.0 }
         val changePercent = meta.regularMarketChangePercent?.takeIf { !it.isNaN() }
+            ?.takeIf { meta.isFromLatestSession(symbol) != false }
         StockDetailSnapshot(
             lastPrice = meta.regularMarketPrice?.takeIf { !it.isNaN() && it > 0.0 },
             previousClose = previousClose,

@@ -561,7 +561,8 @@ class StockDetailViewModel(
         // kursuppdatering och får då utlösas igen även om villkoret fortfarande är uppfyllt.
         val updated = watchItem.reactivate(
             currentPrice = currentPriceForReactivation(watchItem),
-            keepLastTriggeredDate = false
+            keepLastTriggeredDate = false,
+            triggerBlockedUntil = triggerBlockedUntilFor(watchItem)
         )
         watchItemDao.update(updated)
         // Visa som väntande tills nästa kontroll även om live-villkoret fortfarande är uppfyllt.
@@ -611,6 +612,18 @@ class StockDetailViewModel(
             conditionCurrentlyMet = { conditionCurrentlyMet(watchItem) },
             isMarketOpen = { isMarketOpenForReactivation(watchItem) }
         )
+
+    private suspend fun triggerBlockedUntilFor(watchItem: WatchItem): Long? =
+        triggerBlockedUntilForReactivation(watchItem) { ticker ->
+            val cached = (_stockDataState.value as? UiState.Success<StockDetailData>)
+                ?.data?.takeIf { it.symbol == ticker }?.exchange
+            cached ?: try {
+                yahooFinanceService.getExchange(ticker)
+            } catch (e: Exception) {
+                Log.w(TAG, "Could not fetch exchange for trigger block: ${e.message}")
+                null
+            }
+        }
 
     private suspend fun isMarketOpenForReactivation(watchItem: WatchItem): Boolean {
         val ticker = watchItem.ticker ?: watchItem.ticker1 ?: symbol
@@ -679,7 +692,8 @@ class StockDetailViewModel(
             watchItemDao.update(
                 watchItem.reactivate(
                     currentPrice = currentPriceForReactivation(watchItem),
-                    keepLastTriggeredDate = keepLastTriggeredDate
+                    keepLastTriggeredDate = keepLastTriggeredDate,
+                    triggerBlockedUntil = triggerBlockedUntilFor(watchItem)
                 )
             )
             Log.d(TAG, "Updated alert ${watchItem.id}")

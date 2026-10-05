@@ -247,7 +247,8 @@ class StockPriceUpdateWorker(
                     week52High = week52High,
                     keyMetrics = metricsMap,
                     allTimeHigh = allTimeHigh,
-                    smaValues = smaMap
+                    smaValues = smaMap,
+                    quoteIsFromToday = marketDataService.isQuoteFromToday(ticker)
                 )
             } catch (e: Exception) {
                 Log.w(TAG, "Failed to fetch market snapshot: ${e.message}")

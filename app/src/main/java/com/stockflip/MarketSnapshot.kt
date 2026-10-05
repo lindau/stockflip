@@ -47,12 +47,19 @@ data class MarketSnapshot(
      * Beräknade SMA-värden (used för PriceVsSma/SmaCrossover-bevakning).
      * Nyckel är antal dagar (period), värde är det beräknade glidande medelvärdet.
      */
-    val smaValues: Map<Int, Double> = emptyMap()
+    val smaValues: Map<Int, Double> = emptyMap(),
+
+    /**
+     * false = kursen är från en tidigare handelsdag (aktien har inte handlats idag), så
+     * dagsförändringen är inte aktuell. null = okänt (behandlas som aktuell).
+     */
+    val quoteIsFromToday: Boolean? = null
 ) {
     /**
      * Beräknar dagsförändring i procent.
      */
     fun getDailyChangePercent(): Double? {
+        if (quoteIsFromToday == false) return null
         val current = lastPrice ?: return null
         val previous = previousCloseOrPriceB ?: return null
         
@@ -73,7 +80,8 @@ data class MarketSnapshot(
             week52High: Double? = null,
             keyMetrics: Map<AlertRule.KeyMetricType, Double> = emptyMap(),
             allTimeHigh: Double? = null,
-            smaValues: Map<Int, Double> = emptyMap()
+            smaValues: Map<Int, Double> = emptyMap(),
+            quoteIsFromToday: Boolean? = null
         ): MarketSnapshot {
             return MarketSnapshot(
                 lastPrice = lastPrice,
@@ -81,7 +89,8 @@ data class MarketSnapshot(
                 week52High = week52High,
                 allTimeHigh = allTimeHigh,
                 keyMetrics = keyMetrics,
-                smaValues = smaValues
+                smaValues = smaValues,
+                quoteIsFromToday = quoteIsFromToday
             )
         }
         

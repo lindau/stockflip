@@ -11,9 +11,6 @@ import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.stockflip.repository.TriggerHistoryRepository
 import kotlinx.coroutines.delay
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
 class InsiderTransactionWorker(
     context: Context,
@@ -27,12 +24,10 @@ class InsiderTransactionWorker(
         val triggerHistoryRepository = TriggerHistoryRepository(database.triggerHistoryDao())
         val secService = SecInsiderTransactionService()
         val fiService = FiInsiderTransactionService()
-        val today = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())
 
         val insiderWatchItems = watchItemDao.getAllWatchItems()
             .filter { item ->
                 item.isActive &&
-                    item.canTrigger(today) &&
                     item.watchType is WatchType.InsiderBuy &&
                     item.ticker != null
             }
@@ -66,7 +61,8 @@ class InsiderTransactionWorker(
                 if (newPurchases.isEmpty()) return@forEachIndexed
 
                 showInsiderTransactionNotification(item, newPurchases)
-                watchItemDao.update(item.markAsTriggered(today))
+                // Insiderbevakningen är aktiv tills användaren stänger av den: den markeras
+                // inte som utlöst och har ingen dagsspärr (nya affärer dedupas via id ovan).
                 triggerHistoryRepository.record(item.id)
             } catch (e: Exception) {
                 Log.w(TAG, "Failed to check insider transactions: ${e.message}")

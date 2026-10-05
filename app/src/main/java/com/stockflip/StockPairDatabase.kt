@@ -22,7 +22,7 @@ import java.io.File
         InsiderTransactionEntity::class,
         PodcastObservationEntity::class
     ],
-    version = 15,
+    version = 16,
     exportSchema = true
 )
 @TypeConverters(WatchTypeConverter::class, StringListConverter::class)
@@ -184,6 +184,12 @@ abstract class StockPairDatabase : RoomDatabase() {
             }
         }
 
+        private val MIGRATION_15_16 = object : Migration(15, 16) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE watch_items ADD COLUMN triggerBlockedUntil INTEGER")
+            }
+        }
+
         private val MIGRATION_8_9 = object : Migration(8, 9) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("""
@@ -288,7 +294,8 @@ abstract class StockPairDatabase : RoomDatabase() {
                 MIGRATION_11_12,
                 MIGRATION_12_13,
                 MIGRATION_13_14,
-                MIGRATION_14_15
+                MIGRATION_14_15,
+                MIGRATION_15_16
             ).fallbackToDestructiveMigrationOnDowngrade(false)
 
             if (encrypted) {

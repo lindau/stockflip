@@ -89,4 +89,20 @@ class WatchItemUiStateTest {
             RecheckAfterReset.clear()
         }
     }
+
+    @Test
+    fun `insider watch is never shown as triggered, even if flagged in the database`() {
+        val today = WatchItem.getTodayDateString()
+        val item = WatchItem(
+            watchType = WatchType.InsiderBuy(),
+            ticker = "AAPL",
+            isTriggered = true,
+            lastTriggeredDate = today
+        )
+        val uiState = WatchItemUiState(item = item)
+
+        assertFalse(uiState.isTriggeredForDisplay())
+        assertFalse(uiState.isTriggeredTodayForDisplay(today))
+        assertFalse(item.hasPendingNextTradingDayGuard(today))
+    }
 }

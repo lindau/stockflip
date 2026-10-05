@@ -295,6 +295,10 @@ object YahooFinanceService : MarketDataService, MarketMoversService {
         return chartMarketDataService.getDailyChangePercent(symbol)
     }
 
+    override suspend fun isQuoteFromToday(symbol: String): Boolean? {
+        return chartMarketDataService.isQuoteFromToday(symbol)
+    }
+
     override suspend fun getStockDetailSnapshot(symbol: String): StockDetailSnapshot? {
         return chartMarketDataService.getStockDetailSnapshot(symbol)
     }

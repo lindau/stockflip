@@ -296,4 +296,19 @@ class WatchItemTest {
         assertEquals(null, updated.lastTriggeredDate)
         assertTrue(updated.canTrigger("2024-01-01"))
     }
+
+    @Test
+    fun `canTrigger is blocked until triggerBlockedUntil and reactivate sets it`() {
+        val item = WatchItem(
+            watchType = WatchType.DailyMove(5.0, WatchType.DailyMoveDirection.BOTH),
+            ticker = "VOLV-B.ST",
+            isTriggered = true,
+            lastTriggeredDate = "2026-10-06"
+        ).reactivate(triggerBlockedUntil = 1_000L)
+
+        assertEquals(1_000L, item.triggerBlockedUntil)
+        assertFalse(item.canTrigger("2026-10-07", nowMillis = 999L))
+        assertTrue(item.canTrigger("2026-10-07", nowMillis = 1_000L))
+        assertEquals(null, item.markAsTriggered("2026-10-07").triggerBlockedUntil)
+    }
 }

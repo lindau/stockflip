@@ -19,6 +19,9 @@ object StockMarketScheduler {
      */
     const val NOTIFICATION_GRACE_MINUTES = 30L
 
+    /** Fördröjning från börsöppning tills appen får första färska kursen (09:00 → ca 09:15). */
+    const val QUOTE_DELAY_MINUTES = 15L
+
     fun shouldRetry(attempt: Int, error: Exception): Boolean {
         val shouldRetry = attempt < MAX_RETRY_ATTEMPTS
         Log.d(TAG, "Price update failed (attempt $attempt): ${error.message}. Will${if (!shouldRetry) " not" else ""} retry")
@@ -94,28 +97,18 @@ object StockMarketScheduler {
         }
     }
 
-    private fun evaluateExchangeWindow(
-        exchange: String?,
-        instant: Instant,
-        graceMinutes: Long
-    ): Boolean {
-        if (exchange == null) {
-            return false
-        }
+    private data class Session(val zone: ZoneId, val opensAt: LocalTime, val closesAt: LocalTime)
 
+    /** Handelspass (tidszon, öppning, stängning) per börs. Null för krypto (alltid öppet) och null-börs. */
+    private fun sessionFor(exchange: String?): Session? {
+        if (exchange == null) return null
         val exchangeUpper = exchange.uppercase()
-
-        // Krypto är alltid öppet
-        if (exchangeUpper.contains("CRYPTO", ignoreCase = true)) {
-            return true
-        }
-
+        if (exchangeUpper.contains("CRYPTO", ignoreCase = true)) return null
         return when {
             // Svenska börsen (Stockholm)
-            exchangeUpper == "STO" || exchangeUpper.contains("STOCKHOLM", ignoreCase = true) -> {
-                isOpenInZone(instant, ZoneId.of("Europe/Stockholm"), LocalTime.of(9, 0), LocalTime.of(17, 30), graceMinutes)
-            }
-            // Amerikanska börser (NASDAQ, NYSE, etc.)
+            exchangeUpper == "STO" || exchangeUpper.contains("STOCKHOLM", ignoreCase = true) ->
+                Session(ZoneId.of("Europe/Stockholm"), LocalTime.of(9, 0), LocalTime.of(17, 30))
+            // Amerikanska börser (NASDAQ, NYSE, etc.): 09:30 - 16:00 ET
             exchangeUpper.contains("NASDAQ", ignoreCase = true) ||
             exchangeUpper == "NMS" ||
             exchangeUpper == "NCM" ||
@@ -129,31 +122,100 @@ object StockMarketScheduler {
             exchangeUpper == "DJI" ||
             exchangeUpper == "WCB" ||
             exchangeUpper == "CXI" ||
-            exchangeUpper.contains("AMERICAN", ignoreCase = true) -> {
-                // USA börser: 09:30 - 16:00 ET
-                isOpenInZone(instant, ZoneId.of("America/New_York"), LocalTime.of(9, 30), LocalTime.of(16, 0), graceMinutes)
-            }
+            exchangeUpper.contains("AMERICAN", ignoreCase = true) ->
+                Session(ZoneId.of("America/New_York"), LocalTime.of(9, 30), LocalTime.of(16, 0))
             // Storbritannien (LSE)
-            exchangeUpper == "LSE" || exchangeUpper == "FGI" || exchangeUpper.contains("LONDON", ignoreCase = true) -> {
-                isOpenInZone(instant, ZoneId.of("Europe/London"), LocalTime.of(8, 0), LocalTime.of(16, 30), graceMinutes)
-            }
+            exchangeUpper == "LSE" || exchangeUpper == "FGI" || exchangeUpper.contains("LONDON", ignoreCase = true) ->
+                Session(ZoneId.of("Europe/London"), LocalTime.of(8, 0), LocalTime.of(16, 30))
             // Tyskland (XETR, XFRA)
-            exchangeUpper == "XETR" || exchangeUpper == "XFRA" || exchangeUpper == "GER" || exchangeUpper.contains("XETRA", ignoreCase = true) -> {
-                isOpenInZone(instant, ZoneId.of("Europe/Berlin"), LocalTime.of(9, 0), LocalTime.of(17, 30), graceMinutes)
-            }
+            exchangeUpper == "XETR" || exchangeUpper == "XFRA" || exchangeUpper == "GER" || exchangeUpper.contains("XETRA", ignoreCase = true) ->
+                Session(ZoneId.of("Europe/Berlin"), LocalTime.of(9, 0), LocalTime.of(17, 30))
             // Japan (TSE)
-            exchangeUpper == "TSE" || exchangeUpper.contains("TOKYO", ignoreCase = true) -> {
-                isOpenInZone(instant, ZoneId.of("Asia/Tokyo"), LocalTime.of(9, 0), LocalTime.of(15, 0), graceMinutes)
-            }
+            exchangeUpper == "TSE" || exchangeUpper.contains("TOKYO", ignoreCase = true) ->
+                Session(ZoneId.of("Asia/Tokyo"), LocalTime.of(9, 0), LocalTime.of(15, 0))
             // Norge (OSE - Oslo Stock Exchange)
-            exchangeUpper == "OSE" || exchangeUpper.contains("OSLO", ignoreCase = true) -> {
-                isOpenInZone(instant, ZoneId.of("Europe/Oslo"), LocalTime.of(9, 0), LocalTime.of(16, 25), graceMinutes)
-            }
+            exchangeUpper == "OSE" || exchangeUpper.contains("OSLO", ignoreCase = true) ->
+                Session(ZoneId.of("Europe/Oslo"), LocalTime.of(9, 0), LocalTime.of(16, 25))
             // Default: använd svensk börstid
-            else -> {
-                isOpenInZone(instant, ZoneId.of("Europe/Stockholm"), LocalTime.of(9, 0), LocalTime.of(17, 30), graceMinutes)
-            }
+            else -> Session(ZoneId.of("Europe/Stockholm"), LocalTime.of(9, 0), LocalTime.of(17, 30))
         }
+    }
+
+    private fun evaluateExchangeWindow(
+        exchange: String?,
+        instant: Instant,
+        graceMinutes: Long
+    ): Boolean {
+        if (exchange == null) return false
+        // Krypto är alltid öppet
+        if (exchange.contains("CRYPTO", ignoreCase = true)) return true
+        val session = sessionFor(exchange) ?: return false
+        return isOpenInZone(instant, session.zone, session.opensAt, session.closesAt, graceMinutes)
+    }
+
+    /**
+     * Tidpunkt (epoch ms) före vilken en återaktiverad bevakning inte får utlösas, eller null
+     * om ingen spärr behövs. Spärr behövs när börsen är stängd just nu: kurserna är då
+     * gamla (föregående stängning) och kommer först [QUOTE_DELAY_MINUTES] minuter efter nästa
+     * öppning (börsen öppnar 09:00 men appen får första kursen ca 09:15). Öppen börs, krypto
+     * och okänd börs ger null.
+     */
+    fun triggerBlockedUntil(
+        symbol: String?,
+        exchange: String? = null,
+        currency: String? = null,
+        instant: Instant = Instant.now()
+    ): Long? {
+        if (symbol != null && StockSearchResult.isCryptoSymbol(symbol)) return null
+        val resolved = symbol?.let(StockSearchResult::indexExchange)
+            ?: exchange ?: inferExchangeFromSymbol(symbol, currency) ?: return null
+        val session = sessionFor(resolved) ?: return null
+        val now = LocalDateTime.ofInstant(instant, session.zone)
+        var day = now.toLocalDate()
+        fun isWeekend(d: java.time.LocalDate) = d.dayOfWeek == DayOfWeek.SATURDAY || d.dayOfWeek == DayOfWeek.SUNDAY
+        val firstQuoteToday = day.atTime(session.opensAt).plusMinutes(QUOTE_DELAY_MINUTES)
+        if (!isWeekend(day) && now.isBefore(firstQuoteToday)) {
+            // Före öppning, eller 09:00–09:15 då kurserna fortfarande är gamla: spärra till idag 09:15.
+        } else if (isOpenInZone(instant, session.zone, session.opensAt, session.closesAt, 0L)) {
+            return null
+        } else {
+            day = day.plusDays(1)
+            while (isWeekend(day)) day = day.plusDays(1)
+        }
+        return day.atTime(session.opensAt).plusMinutes(QUOTE_DELAY_MINUTES)
+            .atZone(session.zone).toInstant().toEpochMilli()
+    }
+
+    /**
+     * Är kursen (senaste affärens tid, [quoteEpochSeconds]) från den senaste handelsdag som
+     * borde ha kurser? Förväntad dag är idag om börsen öppnat och första kursen hunnit komma
+     * ([QUOTE_DELAY_MINUTES] efter öppning), annars föregående vardag. En aktie som inte
+     * handlats sedan en tidigare dag (illikvid, eller helgdag) ger false: Yahoo behåller då
+     * gårdagens eller äldre dagsrörelse i svaret, och den får inte tolkas som "idag".
+     *
+     * @return null om börsen är okänd (fail-open); krypto är alltid true.
+     */
+    fun isQuoteFromLatestSession(
+        symbol: String?,
+        exchange: String?,
+        currency: String?,
+        quoteEpochSeconds: Long,
+        instant: Instant = Instant.now()
+    ): Boolean? {
+        if (symbol != null && StockSearchResult.isCryptoSymbol(symbol)) return true
+        val resolved = symbol?.let(StockSearchResult::indexExchange)
+            ?: exchange ?: inferExchangeFromSymbol(symbol, currency) ?: return null
+        if (resolved.contains("CRYPTO", ignoreCase = true)) return true
+        val session = sessionFor(resolved) ?: return null
+        val now = LocalDateTime.ofInstant(instant, session.zone)
+        var expected = now.toLocalDate()
+        fun isWeekend(d: java.time.LocalDate) = d.dayOfWeek == DayOfWeek.SATURDAY || d.dayOfWeek == DayOfWeek.SUNDAY
+        val firstQuoteToday = expected.atTime(session.opensAt).plusMinutes(QUOTE_DELAY_MINUTES)
+        if (isWeekend(expected) || now.isBefore(firstQuoteToday)) {
+            do { expected = expected.minusDays(1) } while (isWeekend(expected))
+        }
+        val quoteDate = Instant.ofEpochSecond(quoteEpochSeconds).atZone(session.zone).toLocalDate()
+        return !quoteDate.isBefore(expected)
     }
 
     private fun isOpenInZone(
