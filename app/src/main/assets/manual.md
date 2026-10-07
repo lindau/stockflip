@@ -181,6 +181,8 @@ Tryck på knappen **Ny bevakning** nere till höger för att skapa en bevakning.
 
 **Kräver färsk kurs:** Dagsrörelsen räknas bara när aktien har handlats under den aktuella handelsdagen. För en aktie som inte handlats idag (till exempel en illikvid småbolagsaktie eller en helgdag) visas ingen dagsförändring och bevakningen utlöses inte, så en gammal kursrörelse tolkas aldrig som dagens.
 
+**Gammal kurs:** Ibland slutar Yahoo uppdatera kursen för ett enskilt svenskt bolag, så att kursen står kvar på en tidigare handelsdag. Då hämtar appen i stället senaste kursen från Avanza. Går det inte visas texten **Gammal kurs (datum)** under priset på aktiens detaljsida, och bevakningar utlöses inte på den gamla kursen.
+
 **Skapa en dagsrörelsebevakning:**
 1. Öppna aktiedetaljvyn.
 2. Tryck på **Ny bevakning** nere till höger och välj **Dagsrörelse**.

@@ -33,7 +33,7 @@ class YahooMarketDataServiceImplTest {
             .addConverterFactory(GsonConverterFactory.create())
             .build()
         api = retrofit.create(YahooFinanceApi::class.java)
-        service = YahooMarketDataServiceImpl(api)
+        service = YahooMarketDataServiceImpl(api, avanza = FakeAvanza(null))
     }
 
     @After
@@ -402,7 +402,7 @@ class YahooMarketDataServiceImplTest {
     @Test
     fun `chart is cached per symbol and period and expires after its ttl`() = kotlinx.coroutines.runBlocking {
         var now = 1_000_000L
-        val cachedService = YahooMarketDataServiceImpl(api, clock = { now })
+        val cachedService = YahooMarketDataServiceImpl(api, clock = { now }, avanza = FakeAvanza(null))
         repeat(3) { mockWebServer.enqueue(okResponse(CHART_JSON)) }
 
         assertNotNull(cachedService.getIntradayChart("VOLV-B.ST", ChartPeriod.YEAR))
@@ -415,6 +415,47 @@ class YahooMarketDataServiceImplTest {
         now += 16 * 60_000L // efter 15 min livslängd för YEAR
         assertNotNull(cachedService.getIntradayChart("VOLV-B.ST", ChartPeriod.YEAR))
         assertEquals(3, mockWebServer.requestCount)
+    }
+
+    @Test
+    fun `stale Yahoo quote for Swedish stock is replaced by Avanza quote`() = kotlinx.coroutines.runBlocking {
+        val avanza = FakeAvanza(AvanzaQuote(price = 923.5, epochSeconds = System.currentTimeMillis() / 1000, previousClose = 937.0))
+        val svc = YahooMarketDataServiceImpl(api, avanza = avanza)
+        mockWebServer.enqueue(okResponse(readResource("yahoo/chart_VOLV-B.ST.json")))
+        val snapshot = svc.getStockDetailSnapshot("VOLV-B.ST")!!
+        assertEquals(923.5, snapshot.lastPrice!!, 0.0001)
+        assertEquals(937.0, snapshot.previousClose!!, 0.0001)
+        assertEquals(false, snapshot.quoteIsStale)
+        assertEquals((923.5 - 937.0) / 937.0 * 100, svc.getDailyChangePercent("VOLV-B.ST")!!, 0.0001)
+        assertEquals(true, svc.isQuoteFromToday("VOLV-B.ST"))
+        assertEquals(1, avanza.calls)
+    }
+
+    @Test
+    fun `stale Yahoo quote without Avanza quote is flagged stale and keeps Yahoo price`() = kotlinx.coroutines.runBlocking {
+        val avanza = FakeAvanza(null)
+        val svc = YahooMarketDataServiceImpl(api, avanza = avanza)
+        mockWebServer.enqueue(okResponse(readResource("yahoo/chart_VOLV-B.ST.json")))
+        val snapshot = svc.getStockDetailSnapshot("VOLV-B.ST")!!
+        assertEquals(300.12, snapshot.lastPrice!!, 0.0001)
+        assertEquals(true, snapshot.quoteIsStale)
+        assertEquals(1700000000L, snapshot.quoteEpochSeconds)
+        assertNull(snapshot.dailyChangePercent)
+    }
+
+    @Test
+    fun `fresh Yahoo quote never calls Avanza`() = kotlinx.coroutines.runBlocking {
+        val avanza = FakeAvanza(AvanzaQuote(1.0, System.currentTimeMillis() / 1000, 1.0))
+        val svc = YahooMarketDataServiceImpl(api, avanza = avanza)
+        val nowSeconds = System.currentTimeMillis() / 1000
+        mockWebServer.enqueue(okResponse(readResource("yahoo/chart_VOLV-B.ST.json").replace("1700000000", nowSeconds.toString())))
+        assertEquals(300.12, svc.getStockPrice("VOLV-B.ST")!!, 0.0001)
+        assertEquals(0, avanza.calls)
+    }
+
+    private class FakeAvanza(private val quote: AvanzaQuote?) : AvanzaQuoteService() {
+        var calls = 0
+        override suspend fun latestQuote(yahooSymbol: String): AvanzaQuote? { calls++; return quote }
     }
 
     private fun okResponse(body: String): MockResponse {

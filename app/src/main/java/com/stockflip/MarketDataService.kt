@@ -12,7 +12,10 @@ data class StockDetailSnapshot(
     val week52Low: Double?,
     val currency: String?,
     val exchangeName: String?,
-    val companyName: String?
+    val companyName: String?,
+    /** Kursen är äldre än senaste handelsdag (källan har fastnat) och ingen reservkälla gav färskare. */
+    val quoteIsStale: Boolean = false,
+    val quoteEpochSeconds: Long? = null
 )
 
 /**

@@ -114,7 +114,7 @@ class StockDetailViewModel(
                 val exchange: String? = snapshot.exchangeName
                 val companyName: String = snapshot.companyName ?: symbol
                 val dailyChangePercent: Double? = snapshot.dailyChangePercent
-                    ?: if (lastPrice != null && previousClose != null && previousClose > 0) {
+                    ?: if (!snapshot.quoteIsStale && lastPrice != null && previousClose != null && previousClose > 0) {
                         ((lastPrice - previousClose) / previousClose) * 100
                     } else null
                 val drawdownPercent: Double? = if (lastPrice != null && week52High != null && week52High > 0) {
@@ -133,7 +133,8 @@ class StockDetailViewModel(
                     exchange = exchange,
                     dailyChangePercent = dailyChangePercent,
                     drawdownPercent = drawdownPercent,
-                    lastUpdatedAt = System.currentTimeMillis()
+                    lastUpdatedAt = System.currentTimeMillis(),
+                    quoteStaleSince = snapshot.quoteEpochSeconds?.takeIf { snapshot.quoteIsStale }
                 )
                 _stockDataState.value = UiState.Success(stockData)
                 Log.d(TAG, "Loaded stock data for $symbol")
@@ -795,6 +796,8 @@ data class StockDetailData(
     val week52Low: Double?,
     val currency: String = "SEK",
     val exchange: String? = null,
+    /** Epoch-sekunder för kursens tidpunkt när den är äldre än senaste handelsdag (källan har fastnat), annars null. */
+    val quoteStaleSince: Long? = null,
     val dailyChangePercent: Double?,
     val drawdownPercent: Double?,
     val allTimeHigh: Double? = null,

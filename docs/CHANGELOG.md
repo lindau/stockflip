@@ -11,6 +11,7 @@
 - Dagsrörelse utlöses inte längre av gamla kurser: för en aktie som inte handlats idag (till exempel en illikvid småbolagsaktie) visas ingen dagsförändring, i stället för gårdagens rörelse
 - Återaktiverar du en bevakning medan börsen är stängd kan den inte utlösas av gårdagens kurser: den väntar på första färska kursen efter öppning (Stockholm ca 09:15)
 - Insiderbevakningar är alltid igång: de markeras aldrig som utlösta och du får ingen fråga om att återaktivera dem
+- Står Yahoos kurs för en svensk aktie still på en tidigare handelsdag hämtas senaste kursen i stället från Avanza, så att kursen och dagsförändringen blir rätt. Går det inte visas `Gammal kurs (datum)` under priset på aktiens detaljsida
 
 ## 1.2
 

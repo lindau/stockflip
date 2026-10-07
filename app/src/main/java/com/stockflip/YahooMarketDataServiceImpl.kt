@@ -12,7 +12,8 @@ import kotlinx.coroutines.withContext
  */
 class YahooMarketDataServiceImpl(
     private val api: YahooFinanceApi,
-    private val clock: () -> Long = System::currentTimeMillis
+    private val clock: () -> Long = System::currentTimeMillis,
+    private val avanza: AvanzaQuoteService = AvanzaQuoteService()
 ) {
     // De flesta metoderna nedan svarar på frågor som alla besvaras av samma
     // v8/finance/chart/{symbol}-anrop (pris, valuta, börs, föregående stängning,
@@ -26,7 +27,24 @@ class YahooMarketDataServiceImpl(
     private val quoteMetaCache = SingleFlightCache<String, Meta>(clock)
 
     private suspend fun quoteMeta(symbol: String): Meta? =
-        quoteMetaCache.getOrLoad(symbol, QUOTE_META_TTL_MS) { fetchMeta(symbol) }
+        quoteMetaCache.getOrLoad(symbol, QUOTE_META_TTL_MS) { fetchMeta(symbol)?.let { withFreshQuote(symbol, it) } }
+
+    /**
+     * Yahoos realtidsfeed kan fastna för enskilda svenska bolag (kursen står kvar på en tidigare handelsdag).
+     * Då hämtas senaste kursen från Avanza i stället. Om reserven saknas behålls Yahoos meta oförändrad.
+     */
+    private suspend fun withFreshQuote(symbol: String, meta: Meta): Meta {
+        if (meta.isFromLatestSession(symbol) != false) return meta
+        val quote = avanza.latestQuote(symbol) ?: return meta
+        if (quote.epochSeconds <= (meta.regularMarketTime ?: 0L)) return meta
+        Log.w(TAG, "Yahoo quote is stale; using fallback quote")
+        return meta.copy(
+            regularMarketPrice = quote.price,
+            regularMarketTime = quote.epochSeconds,
+            regularMarketPreviousClose = quote.previousClose ?: meta.regularMarketPreviousClose,
+            regularMarketChangePercent = null
+        )
+    }
 
     // Grafdata per symbol och period — byte tillbaka till en period eller återbesök på en aktie
     // visar grafen direkt i stället för att hämta om den.
@@ -209,7 +227,9 @@ class YahooMarketDataServiceImpl(
             week52Low = meta.fiftyTwoWeekLow?.takeIf { !it.isNaN() && it > 0.0 },
             currency = currency?.takeIf { it.isNotBlank() } ?: CurrencyHelper.getCurrencyFromSymbol(symbol),
             exchangeName = meta.exchangeName?.takeIf { it.isNotBlank() },
-            companyName = meta.longName ?: meta.shortName ?: meta.symbol
+            companyName = meta.longName ?: meta.shortName ?: meta.symbol,
+            quoteIsStale = meta.isFromLatestSession(symbol) == false,
+            quoteEpochSeconds = meta.regularMarketTime
         )
     }
 

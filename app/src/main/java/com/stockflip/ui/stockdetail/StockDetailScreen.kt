@@ -220,6 +220,17 @@ internal fun StockDetailScreen(
                                     )
                                 }
                             }
+                            data.quoteStaleSince?.let { since ->
+                                Text(
+                                    stringResource(
+                                        R.string.stockdetail_gammal_kurs,
+                                        java.text.SimpleDateFormat("d MMM", java.util.Locale("sv", "SE")).format(java.util.Date(since * 1000L)),
+                                    ),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.padding(top = Space.xs),
+                                )
+                            }
                         }
                     }
                     item(key = "chart") {

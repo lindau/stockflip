@@ -179,6 +179,7 @@
     <string name="createwatch_lagg_till_villkor">Lägg till villkor</string>
     <string name="createwatch_ta_bort_villkor">Ta bort villkor</string>
     <string name="stockdetail_inga_bevakningar_pa_den_har_aktien_an">Inga bevakningar på den här aktien än.</string>
+    <string name="stockdetail_gammal_kurs">Gammal kurs (%1$s)</string>
     <string name="stockdetail_ny_bevakning">Ny bevakning</string>
     <string name="stockdetail_tillbaka">Tillbaka</string>
     <string name="stockdetail_indikatorer">Indikatorer</string>
