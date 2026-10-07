@@ -1,10 +1,15 @@
 package com.stockflip.ui.market
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SegmentedButton
@@ -53,7 +58,7 @@ internal fun MoverList.labelRes(): Int = when (this) {
 internal fun MoversContent(ui: MoversUi) {
     Column(Modifier.fillMaxWidth()) {
         SegmentedChoice(MoverMarket.entries, ui.market, { stringResource(it.labelRes()) }, ui.onMarketChange)
-        SegmentedChoice(MoverList.entries.filter { it.isAvailableFor(ui.market) }, ui.list, { stringResource(it.labelRes()) }, ui.onListChange)
+        ChipChoice(MoverList.entries.filter { it.isAvailableFor(ui.market) }, ui.list, { stringResource(it.labelRes()) }, ui.onListChange)
         when (val state = ui.state) {
             UiState.Loading -> Column { repeat(5) { SkeletonRow() } }
             is UiState.Error -> {
@@ -108,6 +113,25 @@ private fun <T> SegmentedChoice(options: List<T>, selected: T, label: @Composabl
                 onClick = { onSelect(option) },
                 shape = SegmentedButtonDefaults.itemShape(index, options.size),
             ) { Text(label(option)) }
+        }
+    }
+}
+
+/** Alternativ i en scrollbar rad: hamnar alltid på en rad, även med fyra val eller stor systemtext. */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun <T> ChipChoice(options: List<T>, selected: T, label: @Composable (T) -> String, onSelect: (T) -> Unit) {
+    LazyRow(
+        contentPadding = PaddingValues(horizontal = Space.screenH, vertical = Space.sm),
+        horizontalArrangement = Arrangement.spacedBy(Space.sm),
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        items(options) { option ->
+            FilterChip(
+                selected = option == selected,
+                onClick = { onSelect(option) },
+                label = { Text(label(option), maxLines = 1, softWrap = false) },
+            )
         }
     }
 }
