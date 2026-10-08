@@ -638,6 +638,7 @@ object YahooFinanceService : MarketDataService, MarketMoversService {
 
     private const val MOVERS_CACHE_TTL_MS = 2L * 60L * 1000L
     private const val MOVERS_MIN_MARKET_CAP = 1_000_000_000L
+    private const val MOVERS_SV_MOST_ACTIVE_COUNT = 10
     private val moversCache = java.util.concurrent.ConcurrentHashMap<Pair<MoverMarket, MoverList>, Pair<Long, List<MarketMover>>>()
 
     /**
@@ -738,7 +739,8 @@ object YahooFinanceService : MarketDataService, MarketMoversService {
             MoverList.MOST_ACTIVE -> "dayvolume" to "DESC"
             MoverList.TRENDING -> return emptyList() // finns inte för Sverige
         }
-        val body = swedishScreenerBody(sortField, sortType, count)
+        val listCount = if (list == MoverList.MOST_ACTIVE) MOVERS_SV_MOST_ACTIVE_COUNT else count
+        val body = swedishScreenerBody(sortField, sortType, listCount)
         repeat(2) {
             ensureCrumb()
             val currentCrumb = crumb ?: return null
