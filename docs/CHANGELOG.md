@@ -12,6 +12,7 @@
 - Återaktiverar du en bevakning medan börsen är stängd kan den inte utlösas av gårdagens kurser: den väntar på första färska kursen efter öppning (Stockholm ca 09:15)
 - Insiderbevakningar är alltid igång: de markeras aldrig som utlösta och du får ingen fråga om att återaktivera dem
 - Står Yahoos kurs för en svensk aktie still på en tidigare handelsdag hämtas senaste kursen i stället från Avanza, så att kursen och dagsförändringen blir rätt. Går det inte visas `Gammal kurs (datum)` under priset på aktiens detaljsida
+- Listorna i `Börsen idag` (`Uppgång`, `Nedgång`, `Omsatta` och `Trendar`) visar 10 aktier i stället för 15
 
 ## 1.2
 
