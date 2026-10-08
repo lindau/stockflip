@@ -25,5 +25,5 @@ data class MarketMover(
 
 /** Källa för listor över heta aktier. Returnerar `null` när hämtningen misslyckas (tom lista = inga träffar). */
 interface MarketMoversService {
-    suspend fun getMarketMovers(market: MoverMarket, list: MoverList, count: Int = 15): List<MarketMover>?
+    suspend fun getMarketMovers(market: MoverMarket, list: MoverList, count: Int = 10): List<MarketMover>?
 }
