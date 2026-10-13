@@ -41,6 +41,10 @@ class StockDetailViewModel(
     private val _stockDataState = MutableStateFlow<UiState<StockDetailData>>(UiState.Loading)
     val stockDataState: StateFlow<UiState<StockDetailData>> = _stockDataState.asStateFlow()
     private var stockDataJob: Job? = null
+    private var pullRefreshJob: Job? = null
+    private val _pullRefreshing = MutableStateFlow(false)
+    /** Sant tills dra-för-att-uppdatera är klar (även vid fel eller oförändrad data), minst [MIN_REFRESH_SPINNER_MS]. */
+    val pullRefreshing: StateFlow<Boolean> = _pullRefreshing.asStateFlow()
 
     // Engångshändelse: en uppdatering misslyckades men senast kända data visas fortfarande.
     private val _refreshFailed = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
@@ -749,12 +753,27 @@ class StockDetailViewModel(
      */
     fun refresh() {
         loadStockData()
+        pullRefreshJob?.cancel()
+        pullRefreshJob = viewModelScope.launch {
+            _pullRefreshing.value = true
+            try {
+                val startedAt = System.currentTimeMillis()
+                stockDataJob?.join()
+                val rest = MIN_REFRESH_SPINNER_MS - (System.currentTimeMillis() - startedAt)
+                if (rest > 0) delay(rest)
+            } finally {
+                _pullRefreshing.value = false
+            }
+        }
         loadChartData()
         loadInsiderTransactions()
         loadPodcastObservations()
         loadAlerts()
     }
 }
+
+/** Kortaste tid dra-för-att-uppdatera-spinnern visas, så att den inte bara blinkar till vid snabb/cachad hämtning. */
+internal const val MIN_REFRESH_SPINNER_MS: Long = 600L
 
 
 internal const val CHART_LOAD_FAILED_MESSAGE: String =

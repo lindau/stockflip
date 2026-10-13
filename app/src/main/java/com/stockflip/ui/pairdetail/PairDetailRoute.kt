@@ -66,7 +66,7 @@ internal fun PairDetailRoute(
     val history by viewModel.historyState.collectAsState()
     val scope = rememberCoroutineScope()
     val repository = remember { StockRepository() }
-    var refreshing by remember { mutableStateOf(false) }
+    val refreshing by viewModel.pullRefreshing.collectAsState()
     var editing by remember { mutableStateOf(false) }
     var confirmDelete by remember { mutableStateOf(false) }
 
@@ -74,8 +74,7 @@ internal fun PairDetailRoute(
     val reactivateFailed = stringResource(R.string.pair_reactivate_failed)
     val deletedText = stringResource(R.string.pair_deleted)
 
-    // Pull-to-refresh nollställs i både Success och Error (projektregel).
-    LaunchedEffect(pairState) { if (pairState !is UiState.Loading) refreshing = false }
+    // Pull-to-refresh-flaggen ägs av ViewModel och nollställs när hämtningen är klar, oavsett Success/Error.
     LaunchedEffect(Unit) { viewModel.refreshFailed.collect { snackbarHostState.showSnackbar("Kunde inte uppdatera. Visar senast kända data.") } }
 
     Column(modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
@@ -89,7 +88,7 @@ internal fun PairDetailRoute(
             is UiState.Error -> EmptyState(state.message, actionLabel = stringResource(R.string.pairdetail_forsok_igen), onAction = viewModel::refresh)
             is UiState.Success -> {
                 val data = state.data
-                PullToRefreshBox(isRefreshing = refreshing, onRefresh = { refreshing = true; viewModel.refresh() }, modifier = Modifier.fillMaxSize()) {
+                PullToRefreshBox(isRefreshing = refreshing, onRefresh = viewModel::refresh, modifier = Modifier.fillMaxSize()) {
                     Column(
                         Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = Space.md),
                         verticalArrangement = Arrangement.spacedBy(Space.md),

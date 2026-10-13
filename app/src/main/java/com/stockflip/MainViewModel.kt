@@ -115,9 +115,12 @@ class MainViewModel(
         // Prevent concurrent refresh calls
         if (isRefreshing) {
             Log.d(TAG, "Refresh already in progress, skipping duplicate call")
+            // Dra-för-att-uppdatera under en pågående tyst uppdatering: visa spinnern tills den blir klar
+            // (dess finally nollställer flaggan). Annars fastnar indikatorn som en stillastående cirkel.
+            if (userInitiated) _watchItemsRefreshing.value = true
             return
         }
-        
+
         isRefreshing = true
         if (userInitiated) _watchItemsRefreshing.value = true
         try {

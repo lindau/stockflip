@@ -60,7 +60,7 @@ internal fun StockDetailRoute(
     val alertsState by viewModel.alertsState.collectAsState()
     val period by viewModel.selectedPeriod.collectAsState()
     var config by remember { mutableStateOf(ChartIndicatorSettings.load(context)) }
-    var pullRefreshing by remember { mutableStateOf(false) }
+    val pullRefreshing by viewModel.pullRefreshing.collectAsState()
     val scope = rememberCoroutineScope()
     var bannerDismissed by rememberSaveable { mutableStateOf(false) }
     var dismissedIds by rememberSaveable { mutableStateOf(emptyList<Int>()) }
@@ -80,8 +80,7 @@ internal fun StockDetailRoute(
     val chartData = (chartState as? UiState.Success)?.data
 
     // Pull-to-refresh nollställs i både Success och Error (projektregel).
-    LaunchedEffect(stockState) { if (stockState !is UiState.Loading) pullRefreshing = false }
-    LaunchedEffect(Unit) { viewModel.refreshFailed.collect { snackbarHostState.showSnackbar("Kunde inte uppdatera. Visar senast kända data.") } }
+        LaunchedEffect(Unit) { viewModel.refreshFailed.collect { snackbarHostState.showSnackbar("Kunde inte uppdatera. Visar senast kända data.") } }
 
     var indicators by remember { mutableStateOf(Indicators()) }
     LaunchedEffect(period, config, alerts.map { it.item.watchType }) {
@@ -109,7 +108,7 @@ internal fun StockDetailRoute(
             indicatorConfig = config,
             onIndicatorConfigChange = { config = it; ChartIndicatorSettings.save(context, it) },
             onPeriodSelected = viewModel::selectPeriod,
-            onRefresh = { pullRefreshing = true; viewModel.refresh() },
+            onRefresh = viewModel::refresh,
             onBack = onBack,
             onAddWatch = { editing = null; sheetOpen = true },
             onEditAlert = { alert ->

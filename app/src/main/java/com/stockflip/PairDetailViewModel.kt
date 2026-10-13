@@ -42,6 +42,10 @@ class PairDetailViewModel(
     private val _pairState = MutableStateFlow<UiState<PairDetailData>>(UiState.Loading)
     val pairState: StateFlow<UiState<PairDetailData>> = _pairState.asStateFlow()
     private var pairJob: Job? = null
+    private var pullRefreshJob: Job? = null
+    private val _pullRefreshing = MutableStateFlow(false)
+    /** Sant tills dra-för-att-uppdatera är klar (även vid fel eller oförändrad data). */
+    val pullRefreshing: StateFlow<Boolean> = _pullRefreshing.asStateFlow()
 
     // Engångshändelse: en uppdatering misslyckades men senast kända data visas fortfarande.
     private val _refreshFailed = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
@@ -58,7 +62,10 @@ class PairDetailViewModel(
     val historyState: StateFlow<List<Long>> = _historyState.asStateFlow()
 
     init {
-        refresh()
+        // Första laddningen visar skelett; spinnern (pullRefreshing) är bara till för dra-för-att-uppdatera.
+        loadPair()
+        loadChart()
+        loadHistory()
     }
 
     fun selectPeriod(period: ChartPeriod) {
@@ -68,6 +75,18 @@ class PairDetailViewModel(
 
     fun refresh() {
         loadPair()
+        pullRefreshJob?.cancel()
+        pullRefreshJob = viewModelScope.launch {
+            _pullRefreshing.value = true
+            try {
+                val startedAt = System.currentTimeMillis()
+                pairJob?.join()
+                val rest = MIN_REFRESH_SPINNER_MS - (System.currentTimeMillis() - startedAt)
+                if (rest > 0) kotlinx.coroutines.delay(rest)
+            } finally {
+                _pullRefreshing.value = false
+            }
+        }
         loadChart()
         loadHistory()
     }
