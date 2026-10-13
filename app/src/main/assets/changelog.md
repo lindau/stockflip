@@ -16,6 +16,7 @@
 - Dra för att uppdatera: spinnern visas nu alltid tills uppdateringen är klar, i stället för att ibland bli en stillastående cirkel med en prick
 - Aktiesidans plusknapp är nu bara en ikon och öppnar samma meny som i `Bevakningar`: `Bevakning`, `Aktiepar` och `Kombinerad` (med aktien ifylld). Kombinerade bevakningar kan redigeras från aktiesidan precis som från `Bevakningar`
 - Rubrikerna `Bevakningar`, `Marknad` och `Inställningar` ligger nu på samma höjd
+- Versionsnumret på `Inställningar` visas nu som liten, centrerad text längst ned. Ändringsloggen öppnas via raden `Ändringslogg`
 
 ## 1.2
 

@@ -20,6 +20,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.stockflip.ui.components.SectionLabel
 import com.stockflip.ui.components.SegmentedControl
@@ -42,12 +43,8 @@ internal fun SettingsScreen(
     onOpenChangelog: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Column(
-        modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-            .verticalScroll(rememberScrollState()),
-    ) {
+    Column(modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+    Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
         com.stockflip.ui.components.TabTitle(stringResource(R.string.settings_installningar))
         if (busy) LinearProgressIndicator(Modifier.fillMaxWidth().padding(top = Space.sm))
 
@@ -66,7 +63,15 @@ internal fun SettingsScreen(
         SectionLabel(stringResource(R.string.settings_om_stockflip))
         SettingsRow("Kolla efter uppdatering", null, onCheckUpdate, showDivider = false)
         SettingsRow("Hjälp", "Användarhandbok", onOpenHelp)
-        SettingsRow("Version $versionName", "Visa ändringslogg", onOpenChangelog)
+        SettingsRow("Ändringslogg", "Vad som är nytt", onOpenChangelog)
+    }
+    Text(
+        "Version $versionName",
+        style = MaterialTheme.typography.labelSmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        textAlign = TextAlign.Center,
+        modifier = Modifier.fillMaxWidth().padding(vertical = Space.md),
+    )
     }
 }
 
