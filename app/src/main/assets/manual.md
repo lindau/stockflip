@@ -136,10 +136,10 @@ Aktiedetaljsidan visar, uppifrån och ned:
 - **Kurs och förändring** för vald period, med enhet och belopp, till exempel `248,30 kr  +2,95 (+1,2 %) idag`.
 - **Grafen** med periodval (1D, 1V, 1M, 3M, 6M, 1Å, 5Å och Max). Dina bevakningsnivåer syns som streckade linjer med etiketten `Bevakning 245`. Ligger en nivå långt från kursen ritas den inte som linje, utan som en markering med pil (`↑ Bevakning 500`) i kanten.
 - **Nyckeltal** — 52-veckorsintervall, P/E, direktavkastning med flera, och datum för nästa rapport, till exempel *Rapport om 12 dagar · 23 okt*.
-- **Dina bevakningar** — varje bevakning har två rader: villkoret, och en statusrad (`Utlöst idag 09:14`, `Nu −14,3 %` eller `Pausad`). Knappen till höger är `Återaktivera`, `Pausa` eller `Aktivera`. Tryck på raden för att redigera den. Utlösta bevakningar ligger överst under rubriken **Utlösta** (nyast först, med accentkant), och övriga under **Väntar och pausade**; det ser likadant ut oavsett om du kommer in från en notis eller själv. Kommer du från en notis visas dessutom en ruta överst med notisens text.
+- **Dina bevakningar** — varje bevakning har två rader: villkoret, och en statusrad (`Utlöst idag 09:14`, `Nu −14,3 %` eller `Pausad`). Knappen till höger är `Återaktivera`, `Pausa` eller `Aktivera`. Tryck på raden för att redigera den. Utlösta bevakningar ligger överst under rubriken **Utlösta** (nyast först, med accentkant), och övriga under **Väntar och pausade**. Finns det utlösta bevakningar visas dessutom alltid en ruta längst upp på sidan med en av dem i taget (med räknare, till exempel `1/3`, när flera är utlösta). Välj **Återaktivera**, **Ta bort** eller **Stäng**, så visas nästa utlösta bevakning. **Stäng** döljer bara rutan för den bevakningen tills du lämnar sidan; bevakningen ligger kvar under **Utlösta**. Kommer du från en notis visas den bevakningen först, med notisens text.
 - **Anteckning** — tryck för att skriva eller ändra din anteckning. Töm texten för att ta bort den.
 
-Tryck på knappen **Ny bevakning** nere till höger för att skapa en bevakning. Dra nedåt för att uppdatera. Längre ned finns även analytikernas kursmål, de senaste insideraffärerna och poddomnämnanden (när det finns data), samt genvägar till Avanza och Nordnet. Knappen med fyra hörn uppe till höger öppnar grafen i helskärm. När du öppnar sidan från en notis markeras den bevakning eller insideraffär som notisen gällde, och en ruta högst upp låter dig återaktivera eller ta bort bevakningen.
+Tryck på knappen **Ny bevakning** nere till höger för att skapa en bevakning. Dra nedåt för att uppdatera. Längre ned finns även analytikernas kursmål, de senaste insideraffärerna och poddomnämnanden (när det finns data), samt genvägar till Avanza och Nordnet. Knappen med fyra hörn uppe till höger öppnar grafen i helskärm. När du öppnar sidan från en notis markeras den bevakning eller insideraffär som notisen gällde, och rutan högst upp visar den utlösta bevakningen först så att du kan återaktivera eller ta bort den.
 
 ---
 
@@ -459,7 +459,7 @@ I **Bevakningar** sveper du raden åt höger för att pausa en aktiv bevakning, 
 
 Engångslarm (Målpris och Drawdown) inaktiveras automatiskt efter utlösning och kräver alltid manuell återaktivering. Återkommande larm (Dagsrörelse, Nyckeltal, Aktiepar, Prisintervall, Kombinerat) återaktiveras normalt automatiskt nästa handelsdag, men du kan även återaktivera dem manuellt tidigare — till exempel för att slippa se "Triggad"-märket resten av dagen.
 
-- Hitta bevakningen under **Utlösta** i listan.
+- Hitta bevakningen under **Utlösta** i listan, eller i rutan högst upp på aktiens detaljsida.
 - Öppna aktiens detaljsida och tryck **Återaktivera** vid bevakningen (för ett aktiepar öppnar du pardetaljen och trycker **Återaktivera** där).
 
 Bevakningen är nu aktiv igen. För målpris räknar appen om riktningen från aktuell kurs: om kursen ligger över målpriset bevakas nästa passage ned under nivån, och om kursen ligger under målpriset bevakas nästa passage upp över nivån.
@@ -517,8 +517,7 @@ Utan notisbehörighet kan appen inte meddela dig när en bevakning utlöses — 
 - Notisen visar vad som faktiskt triggade, till exempel att ett målpris nåtts, att drawdown-nivån nåtts eller att ett nyckeltal passerat din nivå.
 - Trycker du på notisen öppnas StockFlip direkt på detaljvyn för den berörda aktien, eller pardetaljen för ett aktiepar.
 - Ett **kombinerat larm** som inte är knutet till en enskild aktie öppnar i stället **Bevakningar**-fliken och visar trigger-texten kort på skärmen.
-- Du möts av en tydlig trigger-banner högst upp med varför du hamnade där och kan direkt **återaktivera** eller **ta bort** bevakningen.
-- En trigger markeras som sedd först när du öppnar bevakningen eller detaljvyn, inte bara när listan visas.
+- Du möts av rutan högst upp med notisens text och kan direkt **återaktivera**, **ta bort** eller **stänga** bevakningen. Finns fler utlösta bevakningar visas nästa när du valt.
 - För **insideraffärer** öppnas aktiedetaljvyn vid sektionen **Senaste insideraffärer**. Den aktuella transaktionen markeras och visas även i ett detaljfönster som du stänger med **Stäng**.
 - Notisen fungerar även om du trycker på den långt senare, till exempel dagen efter, och du kan trycka på samma notis flera gånger.
 

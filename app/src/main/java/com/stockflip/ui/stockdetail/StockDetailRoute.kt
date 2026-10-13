@@ -63,6 +63,7 @@ internal fun StockDetailRoute(
     var pullRefreshing by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     var bannerDismissed by rememberSaveable { mutableStateOf(false) }
+    var dismissedIds by rememberSaveable { mutableStateOf(emptyList<Int>()) }
     var sheetOpen by remember { mutableStateOf(false) }
     var editing by remember { mutableStateOf<WatchItemUiState?>(null) }
     val note by viewModel.noteState.collectAsState()
@@ -85,6 +86,13 @@ internal fun StockDetailRoute(
     var indicators by remember { mutableStateOf(Indicators()) }
     LaunchedEffect(period, config, alerts.map { it.item.watchType }) {
         indicators = loadIndicators(viewModel, config, period.supportsIndicators(), period, smaPeriodsOf(alerts))
+    }
+
+    val triggerTimes = remember(triggerHistory) { triggerHistory.mapValues { (_, v) -> v.maxOrNull() ?: 0L }.filterValues { it > 0L } }
+    val triggeredCard = triggeredCardsFor(alerts, triggerTimes, dismissedIds.toSet(), launch.watchId, launch.title, launch.message).firstOrNull()
+    suspend fun reactivate(alert: WatchItemUiState) {
+        val result = try { viewModel.reactivateAlertAndReturnResult(alert.item) } catch (e: Exception) { null }
+        snackbarHostState.showSnackbar(result?.toUserMessage() ?: "Kunde inte återaktivera bevakningen")
     }
 
     when (val state = stockState) {
@@ -136,33 +144,20 @@ internal fun StockDetailRoute(
             },
             onOpenAvanza = { scope.launch { openAvanza(context, avanza, state.data.symbol) } },
             onOpenNordnet = { openNordnet(context) },
-            banner = if (bannerDismissed) null else detailBannerFor(
-                launch.title, launch.message,
-                alerts.firstOrNull { it.item.id == launch.watchId }?.isTriggeredForDisplay(),
-            ),
+            // Meddelanderuta bara för notiser utan utlöst bevakning (insiderköp); utlösta bevakningar visas i triggeredCard.
+            banner = if (bannerDismissed || launch.insiderId == null) null else detailBannerFor(launch.title, launch.message),
+            triggeredCard = triggeredCard,
             highlightWatchId = launch.watchId,
-            onBannerReactivate = {
-                alerts.firstOrNull { it.item.id == launch.watchId }?.let { alert ->
-                    scope.launch {
-                        val result = try { viewModel.reactivateAlertAndReturnResult(alert.item) } catch (e: Exception) { null }
-                        snackbarHostState.showSnackbar(result?.toUserMessage() ?: "Kunde inte återaktivera bevakningen")
-                        bannerDismissed = true
-                    }
-                }
-            },
-            onBannerDelete = {
-                alerts.firstOrNull { it.item.id == launch.watchId }?.let { viewModel.deleteAlert(it.item); bannerDismissed = true }
-            },
+            onCardReactivate = { alert -> scope.launch { reactivate(alert) } },
+            onCardDelete = { alert -> viewModel.deleteAlert(alert.item) },
+            onCardDismiss = { alert -> dismissedIds = dismissedIds + alert.item.id },
             onBannerDismiss = { bannerDismissed = true },
             onToggleAll = { active -> viewModel.toggleAllAlerts(active) },
-            triggerTimes = triggerHistory.mapValues { (_, v) -> v.maxOrNull() ?: 0L }.filterValues { it > 0L },
+            triggerTimes = triggerTimes,
             onAlertAction = { alert, action ->
                 scope.launch {
                     when (action) {
-                        AlertAction.Reactivate -> {
-                            val result = try { viewModel.reactivateAlertAndReturnResult(alert.item) } catch (e: Exception) { null }
-                            snackbarHostState.showSnackbar(result?.toUserMessage() ?: "Kunde inte återaktivera bevakningen")
-                        }
+                        AlertAction.Reactivate -> reactivate(alert)
                         AlertAction.Pause, AlertAction.Resume -> {
                             viewModel.toggleAlert(alert.item)
                             snackbarHostState.showSnackbar(if (action == AlertAction.Pause) "Bevakningen är pausad" else "Bevakningen är aktiv")

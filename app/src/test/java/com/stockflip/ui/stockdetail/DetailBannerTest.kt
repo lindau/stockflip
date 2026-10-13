@@ -6,15 +6,13 @@ import org.junit.Test
 
 class DetailBannerTest {
     @Test
-    fun `ingen banderoll utan text`() {
-        assertNull(detailBannerFor(null, null, true))
-        assertNull(detailBannerFor(" ", "", false))
+    fun `ingen ruta utan text`() {
+        assertNull(detailBannerFor(null, null))
+        assertNull(detailBannerFor(" ", ""))
     }
 
     @Test
-    fun `knappar bara för en utlöst bevakning som finns`() {
-        assertEquals(true, detailBannerFor("Volvo B över 460 kr", "Målpris nått", true)!!.canAct)
-        assertEquals(false, detailBannerFor("Volvo B över 460 kr", null, false)!!.canAct)
-        assertEquals(false, detailBannerFor("Volvo B över 460 kr", null, null)!!.canAct)
+    fun `ruta med text`() {
+        assertEquals("Insiderköp", detailBannerFor("Insiderköp", null)!!.title)
     }
 }

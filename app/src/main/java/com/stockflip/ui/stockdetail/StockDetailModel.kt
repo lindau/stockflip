@@ -86,12 +86,48 @@ internal fun splitAlertsForDisplay(alerts: List<com.stockflip.WatchItemUiState>,
     return AlertGroups(triggered.sortedByDescending { triggerTimes[it.item.id] ?: 0L }, rest)
 }
 
-/** Banderoll högst upp när detaljen öppnats från en notis. [canAct] = bevakningen finns och är utlöst. */
-internal data class DetailBanner(val title: String?, val message: String?, val canAct: Boolean)
+/** Meddelanderuta (bara Stäng) för notiser som inte rör en utlöst bevakning, t.ex. insiderköp. */
+internal data class DetailBanner(val title: String?, val message: String?)
 
-internal fun detailBannerFor(title: String?, message: String?, watchTriggered: Boolean?): DetailBanner? =
-    if (title.isNullOrBlank() && message.isNullOrBlank()) null
-    else DetailBanner(title, message, canAct = watchTriggered == true)
+internal fun detailBannerFor(title: String?, message: String?): DetailBanner? =
+    if (title.isNullOrBlank() && message.isNullOrBlank()) null else DetailBanner(title, message)
+
+/** En utlöst bevakning i rutan överst; [position] av [total] visas som "1/3". */
+internal data class TriggeredCard(
+    val alert: com.stockflip.WatchItemUiState,
+    val title: String,
+    val message: String?,
+    val position: Int,
+    val total: Int,
+)
+
+/**
+ * Kön av utlösta bevakningar som inte stängts, nyast först. Bevakningen man kom från via en notis
+ * hamnar först och får notisens text om den finns. Samma urval som listan "Utlösta" (`splitAlertsForDisplay`).
+ */
+internal fun triggeredCardsFor(
+    alerts: List<com.stockflip.WatchItemUiState>,
+    triggerTimes: Map<Int, Long>,
+    dismissedIds: Set<Int>,
+    notifWatchId: Int?,
+    notifTitle: String?,
+    notifMessage: String?,
+    now: Long = System.currentTimeMillis(),
+): List<TriggeredCard> {
+    val queue = splitAlertsForDisplay(alerts, triggerTimes).triggered.filter { it.item.id !in dismissedIds }
+    val ordered = queue.sortedByDescending { it.item.id == notifWatchId } // stabil: behåller nyast först i övrigt
+    return ordered.mapIndexed { i, alert ->
+        val fromNotif = alert.item.id == notifWatchId && !(notifTitle.isNullOrBlank() && notifMessage.isNullOrBlank())
+        val (first, second) = alertLines(alert, triggerTimes[alert.item.id], now)
+        TriggeredCard(
+            alert = alert,
+            title = if (fromNotif) notifTitle?.takeIf { it.isNotBlank() } ?: first else first,
+            message = if (fromNotif) notifMessage?.takeIf { it.isNotBlank() } else second,
+            position = i + 1,
+            total = ordered.size,
+        )
+    }
+}
 
 private fun signedNumber(v: Double): String =
     (if (v > 0) "+" else if (v < 0) com.stockflip.ui.components.MINUS else "") + com.stockflip.ui.components.formatNumber(kotlin.math.abs(v))

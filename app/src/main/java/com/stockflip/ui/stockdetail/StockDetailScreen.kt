@@ -108,9 +108,11 @@ internal fun StockDetailScreen(
     onOpenAvanza: () -> Unit,
     onOpenNordnet: () -> Unit,
     banner: DetailBanner?,
+    triggeredCard: TriggeredCard?,
     highlightWatchId: Int?,
-    onBannerReactivate: () -> Unit,
-    onBannerDelete: () -> Unit,
+    onCardReactivate: (com.stockflip.WatchItemUiState) -> Unit,
+    onCardDelete: (com.stockflip.WatchItemUiState) -> Unit,
+    onCardDismiss: (com.stockflip.WatchItemUiState) -> Unit,
     onBannerDismiss: () -> Unit,
     note: String?,
     onEditNote: () -> Unit,
@@ -163,6 +165,28 @@ internal fun StockDetailScreen(
             }
             PullToRefreshBox(isRefreshing = isRefreshing, onRefresh = onRefresh, modifier = Modifier.fillMaxSize()) {
                 LazyColumn(Modifier.fillMaxSize()) {
+                    if (triggeredCard != null) item(key = "triggered-card") {
+                        val onColor = MaterialTheme.colorScheme.onPrimaryContainer
+                        Column(
+                            Modifier.fillMaxWidth().padding(horizontal = Space.screenH, vertical = Space.sm)
+                                .background(MaterialTheme.colorScheme.primaryContainer, MaterialTheme.shapes.small)
+                                .padding(Space.md),
+                            verticalArrangement = Arrangement.spacedBy(Space.xs),
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(triggeredCard.title, style = MaterialTheme.typography.titleMedium, color = onColor, modifier = Modifier.weight(1f))
+                                if (triggeredCard.total > 1) {
+                                    Text("${triggeredCard.position}/${triggeredCard.total}", style = MaterialTheme.typography.labelLarge, color = onColor)
+                                }
+                            }
+                            triggeredCard.message?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = onColor) }
+                            Row(horizontalArrangement = Arrangement.spacedBy(Space.sm)) {
+                                TextButton(onClick = { onCardReactivate(triggeredCard.alert) }) { Text("Återaktivera") }
+                                TextButton(onClick = { onCardDelete(triggeredCard.alert) }) { Text("Ta bort") }
+                                TextButton(onClick = { onCardDismiss(triggeredCard.alert) }) { Text("Stäng") }
+                            }
+                        }
+                    }
                     if (banner != null) item(key = "banner") {
                         Column(
                             Modifier.fillMaxWidth().padding(horizontal = Space.screenH, vertical = Space.sm)
@@ -172,13 +196,7 @@ internal fun StockDetailScreen(
                         ) {
                             banner.title?.let { Text(it, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onPrimaryContainer) }
                             banner.message?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onPrimaryContainer) }
-                            Row(horizontalArrangement = Arrangement.spacedBy(Space.sm)) {
-                                if (banner.canAct) {
-                                    TextButton(onClick = onBannerReactivate) { Text("Återaktivera") }
-                                    TextButton(onClick = onBannerDelete) { Text("Ta bort") }
-                                }
-                                TextButton(onClick = onBannerDismiss) { Text("Stäng") }
-                            }
+                            TextButton(onClick = onBannerDismiss) { Text("Stäng") }
                         }
                     }
                     item(key = "hero") {
