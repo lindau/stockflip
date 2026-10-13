@@ -15,6 +15,7 @@
 - Aktiedetaljen visar nu alltid utlösta bevakningar i en ruta överst, en i taget med räknare (`1/3`) och knapparna `Återaktivera`, `Ta bort` och `Stäng`; efter ditt val visas nästa. Tidigare visades rutan bara när du kom från en notis
 - Dra för att uppdatera: spinnern visas nu alltid tills uppdateringen är klar, i stället för att ibland bli en stillastående cirkel med en prick
 - Aktiesidans plusknapp är nu bara en ikon och öppnar samma meny som i `Bevakningar`: `Bevakning`, `Aktiepar` och `Kombinerad` (med aktien ifylld). Kombinerade bevakningar kan redigeras från aktiesidan precis som från `Bevakningar`
+- Rubrikerna `Bevakningar`, `Marknad` och `Inställningar` ligger nu på samma höjd
 
 ## 1.2
 

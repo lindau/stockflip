@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -96,7 +97,7 @@ internal fun WatchlistScreen(
 ) {
     Column(modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         Row(
-            Modifier.fillMaxWidth().padding(start = Space.screenH, end = Space.md, top = Space.md),
+            Modifier.fillMaxWidth().padding(start = Space.screenH, end = Space.md, top = Space.md).heightIn(min = com.stockflip.ui.components.TabHeaderHeight),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {

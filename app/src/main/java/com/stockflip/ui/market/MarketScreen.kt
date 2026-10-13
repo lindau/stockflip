@@ -78,11 +78,7 @@ internal fun MarketScreen(
     movers: MoversUi? = null,
 ) {
     Column(modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
-        Text(
-            stringResource(R.string.market_marknad),
-            style = MaterialTheme.typography.headlineMedium,
-            modifier = Modifier.padding(start = Space.screenH, end = Space.screenH, top = Space.md),
-        )
+        com.stockflip.ui.components.TabTitle(stringResource(R.string.market_marknad))
         TextField(
             value = query,
             onValueChange = onQueryChange,

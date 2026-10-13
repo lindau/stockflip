@@ -48,11 +48,7 @@ internal fun SettingsScreen(
             .background(MaterialTheme.colorScheme.background)
             .verticalScroll(rememberScrollState()),
     ) {
-        Text(
-            stringResource(R.string.settings_installningar),
-            style = MaterialTheme.typography.headlineMedium,
-            modifier = Modifier.padding(start = Space.screenH, end = Space.screenH, top = Space.md),
-        )
+        com.stockflip.ui.components.TabTitle(stringResource(R.string.settings_installningar))
         if (busy) LinearProgressIndicator(Modifier.fillMaxWidth().padding(top = Space.sm))
 
         SectionLabel(stringResource(R.string.settings_tema))
