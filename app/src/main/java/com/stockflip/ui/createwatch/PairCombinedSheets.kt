@@ -101,9 +101,10 @@ internal fun PairWatchSheet(
     existing: WatchItem?,
     onDismiss: () -> Unit,
     onSave: suspend (WatchItem) -> String?,
+    initialFirst: StockSearchResult? = null,
 ) {
     val pair = existing?.watchType as? WatchType.PricePair
-    var a by remember { mutableStateOf(existing?.ticker1?.let { StockSearchResult(it, existing.companyName1 ?: it) }) }
+    var a by remember { mutableStateOf(existing?.ticker1?.let { StockSearchResult(it, existing.companyName1 ?: it) } ?: initialFirst) }
     var b by remember { mutableStateOf(existing?.ticker2?.let { StockSearchResult(it, existing.companyName2 ?: it) }) }
     var spread by remember { mutableStateOf(pair?.priceDifference?.takeIf { it != 0.0 }?.let { com.stockflip.ui.components.formatNumber(it) }.orEmpty()) }
     var notifyEqual by remember { mutableStateOf(pair?.notifyWhenEqual ?: false) }
@@ -158,10 +159,11 @@ internal fun CombinedWatchSheet(
     existing: WatchItem?,
     onDismiss: () -> Unit,
     onSave: suspend (WatchItem) -> String?,
+    initialStock: StockSearchResult? = null,
 ) {
     val decomposed = (existing?.watchType as? WatchType.Combined)?.let { decomposeCombined(it.expression) }
     var stock by remember {
-        mutableStateOf(existing?.ticker?.let { StockSearchResult(it, existing.companyName ?: it) })
+        mutableStateOf(existing?.ticker?.let { StockSearchResult(it, existing.companyName ?: it) } ?: initialStock)
     }
     var conditions by remember { mutableStateOf(decomposed?.second ?: listOf(ConditionDraft())) }
     var error by remember { mutableStateOf<String?>(null) }

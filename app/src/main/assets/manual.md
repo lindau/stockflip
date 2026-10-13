@@ -139,7 +139,7 @@ Aktiedetaljsidan visar, uppifrån och ned:
 - **Dina bevakningar** — varje bevakning har två rader: villkoret, och en statusrad (`Utlöst idag 09:14`, `Nu −14,3 %` eller `Pausad`). Knappen till höger är `Återaktivera`, `Pausa` eller `Aktivera`. Tryck på raden för att redigera den. Utlösta bevakningar ligger överst under rubriken **Utlösta** (nyast först, med accentkant), och övriga under **Väntar och pausade**. Finns det utlösta bevakningar visas dessutom alltid en ruta längst upp på sidan med en av dem i taget (med räknare, till exempel `1/3`, när flera är utlösta). Välj **Återaktivera**, **Ta bort** eller **Stäng**, så visas nästa utlösta bevakning. **Stäng** döljer bara rutan för den bevakningen tills du lämnar sidan; bevakningen ligger kvar under **Utlösta**. Kommer du från en notis visas den bevakningen först, med notisens text.
 - **Anteckning** — tryck för att skriva eller ändra din anteckning. Töm texten för att ta bort den.
 
-Tryck på knappen **Ny bevakning** nere till höger för att skapa en bevakning. Dra nedåt för att uppdatera. Längre ned finns även analytikernas kursmål, de senaste insideraffärerna och poddomnämnanden (när det finns data), samt genvägar till Avanza och Nordnet. Knappen med fyra hörn uppe till höger öppnar grafen i helskärm. När du öppnar sidan från en notis markeras den bevakning eller insideraffär som notisen gällde, och rutan högst upp visar den utlösta bevakningen först så att du kan återaktivera eller ta bort den.
+Tryck på plusknappen (**+**) nere till höger för att skapa en bevakning. Menyn har samma val som **+** i **Bevakningar**: **Bevakning** (en enkel bevakning på aktien), **Aktiepar** och **Kombinerad**; de två sista öppnas med den här aktien ifylld. Dra nedåt för att uppdatera. Längre ned finns även analytikernas kursmål, de senaste insideraffärerna och poddomnämnanden (när det finns data), samt genvägar till Avanza och Nordnet. Knappen med fyra hörn uppe till höger öppnar grafen i helskärm. När du öppnar sidan från en notis markeras den bevakning eller insideraffär som notisen gällde, och rutan högst upp visar den utlösta bevakningen först så att du kan återaktivera eller ta bort den.
 
 ---
 
@@ -157,7 +157,7 @@ Tryck på knappen **Ny bevakning** nere till höger för att skapa en bevakning.
 
 **Skapa en prismålsbevakning:**
 1. Sök upp aktien i **Marknad** eller tryck på en aktie i **Bevakningar** för att öppna aktiedetaljvyn.
-2. Tryck på **Ny bevakning** nere till höger och välj **Målpris**.
+2. Tryck på **+** nere till höger, välj **Bevakning** och sedan **Målpris**.
 3. Ange målpriset.
 4. Tryck **Spara**.
 
@@ -185,7 +185,7 @@ Tryck på knappen **Ny bevakning** nere till höger för att skapa en bevakning.
 
 **Skapa en dagsrörelsebevakning:**
 1. Öppna aktiedetaljvyn.
-2. Tryck på **Ny bevakning** nere till höger och välj **Dagsrörelse**.
+2. Tryck på **+** nere till höger, välj **Bevakning** och sedan **Dagsrörelse**.
 3. Ange tröskelprocent (t.ex. 5).
 4. Välj riktning: Upp / Ned / Båda håll.
 5. Tryck **Spara**.
@@ -209,7 +209,7 @@ Tryck på knappen **Ny bevakning** nere till höger för att skapa en bevakning.
 
 **Skapa en drawdown-bevakning:**
 1. Öppna aktiedetaljvyn (visar aktuell drawdown i headern).
-2. Tryck på **Ny bevakning** nere till höger och välj **Drawdown**.
+2. Tryck på **+** nere till höger, välj **Bevakning** och sedan **Drawdown**.
 3. Välj Procent eller Kronor.
 4. Ange hur mycket nedgång som ska trigga larmet.
 5. Tryck **Spara**.
@@ -238,7 +238,7 @@ Tryck på knappen **Ny bevakning** nere till höger för att skapa en bevakning.
 
 **Skapa en nyckeltalbevakning:**
 1. Öppna aktiedetaljvyn.
-2. Tryck på **Ny bevakning** nere till höger och välj **Nyckeltal**.
+2. Tryck på **+** nere till höger, välj **Bevakning** och sedan **Nyckeltal**.
 3. Välj vilket nyckeltal (P/E, P/S, Direktavkastning, Vinst/aktie).
 4. Ange målvärdet.
 5. Tryck **Spara**.
@@ -259,7 +259,7 @@ Tryck på knappen **Ny bevakning** nere till höger för att skapa en bevakning.
 
 **Skapa en bevakning för insideraffärer:**
 1. Öppna aktiedetaljvyn för en aktie med insiderstöd.
-2. Tryck på **Ny bevakning** nere till höger och välj **Insideraffärer**.
+2. Tryck på **+** nere till höger, välj **Bevakning** och sedan **Insideraffärer**.
 3. Tryck **Spara**.
 
 **Vad händer när den utlöses:**
@@ -322,7 +322,7 @@ Tryck på knappen **Ny bevakning** nere till höger för att skapa en bevakning.
 - "Pris under 100 kr OCH P/E under 15" — köpsignal baserad på både pris och värdering
 - "Dagsrörelse ≥ 5 % ELLER Drawdown ≥ 10 %" — varning vid antingen stor rörelse eller stort fall
 
-**Viktigt i nuvarande version:** Kombinerade larm stöds fortfarande av appen och kan redigeras om de redan finns, men det finns ingen synlig skapa-väg för dem i dagens huvudflöde.
+**Viktigt i nuvarande version:** Kombinerade larm skapas via **+** i **Bevakningar** eller via **+** på aktiens detaljsida och valet **Kombinerad**.
 
 ---
 
@@ -345,7 +345,7 @@ Tryck på knappen **Ny bevakning** nere till höger för att skapa en bevakning.
 
 **Skapa en SMA-bevakning:**
 1. Öppna aktiedetaljvyn.
-2. Tryck på **Ny bevakning** nere till höger och välj **SMA-bevakning**.
+2. Tryck på **+** nere till höger, välj **Bevakning** och sedan **SMA-bevakning**.
 3. Ange antal dagar för det glidande medelvärdet, eller välj en snabbknapp (20, 50, 100 eller 200 dagar).
 4. Tryck **Spara**.
 
@@ -376,7 +376,7 @@ Vill du bevaka båda hållen (både nästa golden cross och nästa death cross) 
 
 **Skapa en SMA-korsningsbevakning:**
 1. Öppna aktiedetaljvyn.
-2. Tryck på **Ny bevakning** nere till höger och välj **SMA-korsning**.
+2. Tryck på **+** nere till höger, välj **Bevakning** och sedan **SMA-korsning**.
 3. Ange antal dagar för det korta SMA:t (t.ex. 20 eller 50) och det långa SMA:t (t.ex. 100 eller 200), eller använd snabbknapparna.
 4. Tryck **Spara**.
 
@@ -394,7 +394,7 @@ Situation: Du vill köpa Volvo B om den faller till 220 kr (nuvarande pris: 260 
 
 1. Gå till **Marknad**.
 2. Sök efter "VOLV-B" och öppna aktiedetaljvyn.
-3. Tryck på **Ny bevakning** nere till höger och välj **Målpris**.
+3. Tryck på **+** nere till höger, välj **Bevakning** och sedan **Målpris**.
 4. Ange `220` som målpris.
 5. Tryck **Spara**.
 6. Appen sätter automatiskt riktningen till "under 220 kr" och skickar en notis om priset faller till 220 kr eller lägre.
@@ -479,7 +479,7 @@ En manuell återaktivering gäller alltid direkt, för alla bevakningstyper: bev
 2. Ändra värdena i den nedre panelen.
 3. Tryck **Spara**.
 
-Kombinerade bevakningar med NOT, flera aktier, SMA eller prisintervall kan inte redigeras i byggaren, och prisintervall- och kombinerade bevakningar kan inte redigeras från aktiedetaljen: svep bort dem i **Bevakningar** och skapa en ny.
+Kombinerade bevakningar med NOT, flera aktier, SMA eller prisintervall kan inte redigeras i byggaren, och prisintervallbevakningar kan inte redigeras i byggaren: svep bort dem i **Bevakningar** och skapa en ny. Kombinerade bevakningar som byggaren klarar redigeras på samma sätt från aktiedetaljen som från **Bevakningar**.
 
 ### Ta bort en bevakning
 

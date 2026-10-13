@@ -509,6 +509,22 @@ class StockDetailViewModel(
             }
     }
 
+    /** Sparar en färdig [WatchItem] från aktiesidans par-/kombinerad-formulär. Returnerar felmeddelande eller `null`. */
+    suspend fun saveWatchItem(item: WatchItem): String? {
+        val ok = if (item.id == 0) {
+            try {
+                watchItemDao.insertWatchItem(item)
+                true
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Log.e(TAG, "Error saving watch item: ${e.message}", e)
+                false
+            }
+        } else updateWatchItem(item)
+        return if (ok) null else "Kunde inte spara bevakningen. Försök igen."
+    }
+
     /**
      * Skapar en ny alert för aktien.
      * Returnerar true om den sparades, så att dialogen bara bekräftar "Skapad" när det stämmer.

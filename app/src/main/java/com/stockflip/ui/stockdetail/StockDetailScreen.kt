@@ -92,6 +92,8 @@ internal fun StockDetailScreen(
     onRefresh: () -> Unit,
     onBack: () -> Unit,
     onAddWatch: () -> Unit,
+    onAddPair: () -> Unit,
+    onAddCombined: () -> Unit,
     onEditAlert: (WatchItemUiState) -> Unit,
     onAlertAction: (WatchItemUiState, AlertAction) -> Unit,
     onToggleAll: (active: Boolean) -> Unit,
@@ -343,12 +345,20 @@ internal fun StockDetailScreen(
                 }
             }
         }
-        ExtendedFloatingActionButton(
-            onClick = onAddWatch,
-            icon = { Icon(Icons.Outlined.Add, contentDescription = null) },
-            text = { Text(stringResource(R.string.stockdetail_ny_bevakning)) },
-            modifier = Modifier.align(Alignment.BottomEnd).padding(Space.md),
-        )
+        var addMenuOpen by remember { mutableStateOf(false) }
+        Box(Modifier.align(Alignment.BottomEnd).padding(Space.md)) {
+            androidx.compose.material3.FloatingActionButton(onClick = { addMenuOpen = true }) {
+                Icon(Icons.Outlined.Add, contentDescription = stringResource(R.string.stockdetail_ny_bevakning))
+            }
+            com.stockflip.ui.createwatch.AddWatchMenu(
+                expanded = addMenuOpen,
+                onDismiss = { addMenuOpen = false },
+                singleLabel = stringResource(R.string.stockdetail_bevakning),
+                onSingle = onAddWatch,
+                onPair = onAddPair,
+                onCombined = onAddCombined,
+            )
+        }
     }
     if (showFullscreen) {
         androidx.compose.ui.window.Dialog(

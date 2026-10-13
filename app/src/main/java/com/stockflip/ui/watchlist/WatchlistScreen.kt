@@ -151,11 +151,14 @@ internal fun WatchlistScreen(
                 var menuOpen by remember { mutableStateOf(false) }
                 Box {
                     IconButton(onClick = { menuOpen = true }) { Icon(Icons.Outlined.Add, contentDescription = stringResource(R.string.watchlist_ny_bevakning)) }
-                    DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
-                        DropdownMenuItem(text = { Text(stringResource(R.string.watchlist_aktie_sok_i_marknad)) }, onClick = { menuOpen = false; onAddWatch() })
-                        DropdownMenuItem(text = { Text(stringResource(R.string.watchlist_aktiepar)) }, onClick = { menuOpen = false; onAddPair() })
-                        DropdownMenuItem(text = { Text(stringResource(R.string.watchlist_kombinerad)) }, onClick = { menuOpen = false; onAddCombined() })
-                    }
+                    com.stockflip.ui.createwatch.AddWatchMenu(
+                        expanded = menuOpen,
+                        onDismiss = { menuOpen = false },
+                        singleLabel = stringResource(R.string.watchlist_aktie_sok_i_marknad),
+                        onSingle = onAddWatch,
+                        onPair = onAddPair,
+                        onCombined = onAddCombined,
+                    )
                 }
             }
         }

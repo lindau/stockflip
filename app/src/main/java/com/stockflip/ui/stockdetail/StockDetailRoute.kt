@@ -33,7 +33,10 @@ import com.stockflip.WatchItemUiState
 import com.stockflip.WatchType
 import com.stockflip.supportsIndicators
 import com.stockflip.ui.components.EmptyState
+import com.stockflip.ui.createwatch.CombinedWatchSheet
 import com.stockflip.ui.createwatch.CreateWatchSheet
+import com.stockflip.ui.createwatch.PairWatchSheet
+import com.stockflip.ui.createwatch.decomposeCombined
 import com.stockflip.ui.createwatch.draftFrom
 import com.stockflip.ui.components.SkeletonRow
 import androidx.compose.foundation.layout.Column
@@ -66,6 +69,8 @@ internal fun StockDetailRoute(
     var dismissedIds by rememberSaveable { mutableStateOf(emptyList<Int>()) }
     var sheetOpen by remember { mutableStateOf(false) }
     var editing by remember { mutableStateOf<WatchItemUiState?>(null) }
+    var otherSheet by remember { mutableStateOf<StockSheet?>(null) }
+    val stockRepository = remember { com.stockflip.repository.StockRepository() }
     val note by viewModel.noteState.collectAsState()
     val triggerHistory by viewModel.triggerHistoryState.collectAsState()
     val insiders by viewModel.insiderTransactionsState.collectAsState()
@@ -111,10 +116,15 @@ internal fun StockDetailRoute(
             onRefresh = viewModel::refresh,
             onBack = onBack,
             onAddWatch = { editing = null; sheetOpen = true },
+            onAddPair = { otherSheet = StockSheet.Pair(null) },
+            onAddCombined = { otherSheet = StockSheet.Combined(null) },
             onEditAlert = { alert ->
                 // Typer som sheeten inte kan redigera (t.ex. prisintervall, kombinerad) får inte öppna ett tomt
                 // "Ny bevakning"-formulär som sedan skulle skriva över den befintliga bevakningen.
-                if (draftFrom(alert.item.watchType) == null) {
+                val combined = alert.item.watchType as? com.stockflip.WatchType.Combined
+                if (combined != null && decomposeCombined(combined.expression) != null) {
+                    otherSheet = StockSheet.Combined(alert.item)
+                } else if (draftFrom(alert.item.watchType) == null) {
                     scope.launch { snackbarHostState.showSnackbar("Den här bevakningstypen kan inte redigeras här. Svep bort den i Bevakningar och skapa en ny.") }
                 } else {
                     editing = alert; sheetOpen = true
@@ -175,6 +185,17 @@ internal fun StockDetailRoute(
                 onDismiss = { noteOpen = false },
             )
         }
+        val thisStock = com.stockflip.StockSearchResult(state.data.symbol, state.data.companyName)
+        val saveItem: suspend (com.stockflip.WatchItem) -> String? = { item ->
+            val error = viewModel.saveWatchItem(item)
+            if (error == null) otherSheet = null
+            error
+        }
+        when (val s = otherSheet) {
+            is StockSheet.Pair -> PairWatchSheet(stockRepository, s.item, { otherSheet = null }, saveItem, initialFirst = thisStock)
+            is StockSheet.Combined -> CombinedWatchSheet(stockRepository, s.item, { otherSheet = null }, saveItem, initialStock = thisStock)
+            null -> Unit
+        }
         if (sheetOpen) {
             val target = editing
             CreateWatchSheet(
@@ -193,6 +214,11 @@ internal fun StockDetailRoute(
         is UiState.Error -> EmptyState(state.message, actionLabel = "Försök igen", onAction = viewModel::refresh, modifier = modifier)
         UiState.Loading -> Column(modifier) { repeat(6) { SkeletonRow() } }
     }
+}
+
+private sealed interface StockSheet {
+    data class Pair(val item: com.stockflip.WatchItem?) : StockSheet
+    data class Combined(val item: com.stockflip.WatchItem?) : StockSheet
 }
 
 private data class Indicators(
