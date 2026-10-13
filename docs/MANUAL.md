@@ -528,6 +528,7 @@ StockFlip distribueras inte via Play Store, så appen håller själv koll på om
 - **Sök efter uppdateringar** finns under **Inställningar** (under **Om StockFlip**, bredvid Hjälp och Ändringslogg) och kontrollerar direkt om en nyare version finns.
 - Kontrollen görs även tyst varje gång du startar appen, och därtill i bakgrunden ungefär en gång per dygn (kräver nätverksanslutning). Hittas ingen ny version, eller misslyckas kontrollen, händer inget synligt.
 - Hittas en ny version vid appstart visas bekräftelsedialogen direkt. Hittas den i stället i bakgrunden får du en notis, och trycker du på den öppnas samma bekräftelsedialog.
+- Länken till ändringarna i dialogen (till exempel `Full Changelog`) går att trycka på. Sidan öppnas i en inbyggd webbvy över appen, och finns ingen sådan på telefonen öppnas den i standardwebbläsaren. Tillbaka tar dig till dialogen igen.
 - Dialogen har tre val:
   - **Hämta och installera** — laddar ner filen och startar installationen.
   - **Avbryt** — gör inget just nu; du kan söka igen senare.

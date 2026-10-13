@@ -17,6 +17,7 @@
 - Aktiesidans plusknapp är nu bara en ikon och öppnar samma meny som i `Bevakningar`: `Bevakning`, `Aktiepar` och `Kombinerad` (med aktien ifylld). Kombinerade bevakningar kan redigeras från aktiesidan precis som från `Bevakningar`
 - Rubrikerna `Bevakningar`, `Marknad` och `Inställningar` ligger nu på samma höjd
 - Versionsnumret på `Inställningar` visas nu som liten, centrerad text längst ned. Ändringsloggen öppnas via raden `Ändringslogg`
+- Länken i uppdateringsdialogen (`Full Changelog`) är nu klickbar och öppnas i en inbyggd webbvy över appen, eller i standardwebbläsaren om ingen finns
 
 ## 1.2
 
