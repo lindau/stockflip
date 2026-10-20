@@ -125,6 +125,7 @@ object YahooFinanceService : MarketDataService, MarketMoversService {
     private const val FAILURE_COOLDOWN_MS = 60000L // 1 minute cooldown after failures
     private const val ALL_TIME_HIGH_CACHE_TTL_MS = 24L * 60L * 60L * 1000L
     private const val KEY_METRICS_CACHE_TTL_MS = 15L * 60L * 1000L
+    private const val EARNINGS_CACHE_TTL_MS = 24L * 60L * 60L * 1000L
     private data class CachedAllTimeHigh(val value: Double, val timestamp: Long)
     private val allTimeHighCache = mutableMapOf<String, CachedAllTimeHigh>()
 
@@ -385,7 +386,16 @@ object YahooFinanceService : MarketDataService, MarketMoversService {
         null
     }
 
-    override suspend fun getNextEarningsReport(symbol: String): NextEarningsInfo? = withContext(Dispatchers.IO) {
+    // Rapportdatum ändras sällan — en gång per dygn räcker. Cachar även "inget datum" (EarningsLookup
+    // med info = null) så bolag som Yahoo saknar datum för inte ger ett nytt anrop vid varje öppning.
+    // Misslyckade anrop (null) cachas inte.
+    private class EarningsLookup(val info: NextEarningsInfo?)
+    private val earningsCache = SingleFlightCache<String, EarningsLookup>()
+
+    override suspend fun getNextEarningsReport(symbol: String): NextEarningsInfo? =
+        earningsCache.getOrLoad(symbol, EARNINGS_CACHE_TTL_MS) { fetchNextEarningsReport(symbol) }?.info
+
+    private suspend fun fetchNextEarningsReport(symbol: String): EarningsLookup? = withContext(Dispatchers.IO) {
         try {
             if (consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {
                 val timeSinceLastFailure = System.currentTimeMillis() - lastFailureTime
@@ -397,7 +407,7 @@ object YahooFinanceService : MarketDataService, MarketMoversService {
             }
 
             ensureCrumb()
-            var url = "https://query2.finance.yahoo.com/v10/finance/quoteSummary/$symbol?modules=earnings"
+            var url = "https://query2.finance.yahoo.com/v10/finance/quoteSummary/$symbol?modules=calendarEvents,earnings"
             if (crumb != null) url += "&crumb=$crumb"
 
             val request = Request.Builder()
@@ -405,36 +415,21 @@ object YahooFinanceService : MarketDataService, MarketMoversService {
                 .addHeader("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
                 .build()
 
-            val response = client.newCall(request).execute()
-            if (response.isSuccessful) {
-                val body = response.body?.string()
-                if (body != null) {
-                    val earnings = JSONObject(body)
-                        .optJSONObject("quoteSummary")
-                        ?.optJSONArray("result")
-                        ?.optJSONObject(0)
-                        ?.optJSONObject("earnings")
-
-                    if (earnings != null) {
-                        val earningsChart = earnings.optJSONObject("earningsChart")
-                        val earningsDate = earningsChart?.optJSONArray("earningsDate")?.optJSONObject(0)?.optLong("raw")
-
-                        if (earningsDate != null && earningsDate > 0L) {
-                            val currentQuarter = earningsChart?.optString("currentQuarterEstimate", null)
-                            val isAnnualReport = currentQuarter?.equals("4q", ignoreCase = true) ?: false
-
-                            response.close()
-                            return@withContext NextEarningsInfo(
-                                reportDateMillis = earningsDate * 1000L,
-                                isAnnualReport = isAnnualReport
-                            )
-                        }
+            client.newCall(request).execute().use { response ->
+                if (response.isSuccessful) {
+                    val body = response.body?.string()
+                    if (body != null) {
+                        val result = JSONObject(body)
+                            .optJSONObject("quoteSummary")
+                            ?.optJSONArray("result")
+                            ?.optJSONObject(0)
+                        return@withContext EarningsLookup(parseNextEarnings(result, System.currentTimeMillis()))
                     }
+                } else if (response.code == 401) {
+                    crumb = null
                 }
-            } else if (response.code == 401) {
-                crumb = null
             }
-            response.close()
+            null
         } catch (e: Exception) {
             if (e.message != "Circuit breaker open") {
                 consecutiveFailures++
@@ -443,8 +438,6 @@ object YahooFinanceService : MarketDataService, MarketMoversService {
             Log.w(TAG, "Yahoo getNextEarningsReport failed: ${e.message}")
             null
         }
-
-        null
     }
 
     @JvmStatic

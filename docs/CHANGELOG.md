@@ -17,6 +17,7 @@
 - Aktiesidans plusknapp är nu bara en ikon och öppnar samma meny som i `Bevakningar`: `Bevakning`, `Aktiepar` och `Kombinerad` (med aktien ifylld). Kombinerade bevakningar kan redigeras från aktiesidan precis som från `Bevakningar`
 - Rubrikerna `Bevakningar`, `Marknad` och `Inställningar` ligger nu på samma höjd
 - Versionsnumret på `Inställningar` visas nu som liten, centrerad text längst ned. Ändringsloggen öppnas via raden `Ändringslogg`
+- Datum för nästa rapport hämtas nu från fler källor hos Yahoo och sparas i ett dygn, så fler aktier visar `Nästa rapport` under Nyckeltal. Saknar Yahoo datum för ett bolag visas ingen rad
 
 ## 1.2
 
