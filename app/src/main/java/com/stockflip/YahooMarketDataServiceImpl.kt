@@ -31,17 +31,39 @@ class YahooMarketDataServiceImpl(
 
     /**
      * Yahoos realtidsfeed kan fastna för enskilda svenska bolag (kursen står kvar på en tidigare handelsdag).
-     * Då hämtas senaste kursen från Avanza i stället. Om reserven saknas behålls Yahoos meta oförändrad.
+     * Då hämtas senaste kursen från Avanza i stället. Saknas den används Yahoos egen dagsserie
+     * (senaste stängning) – annars behålls Yahoos meta oförändrad.
      */
     private suspend fun withFreshQuote(symbol: String, meta: Meta): Meta {
         if (meta.isFromLatestSession(symbol) != false) return meta
-        val quote = avanza.latestQuote(symbol) ?: return meta
-        if (quote.epochSeconds <= (meta.regularMarketTime ?: 0L)) return meta
-        Log.w(TAG, "Yahoo quote is stale; using fallback quote")
+        val quote = avanza.latestQuote(symbol)
+        if (quote != null && quote.epochSeconds > (meta.regularMarketTime ?: 0L)) {
+            Log.w(TAG, "Yahoo quote is stale; using fallback quote")
+            return meta.copy(
+                regularMarketPrice = quote.price,
+                regularMarketTime = quote.epochSeconds,
+                regularMarketPreviousClose = quote.previousClose ?: meta.regularMarketPreviousClose,
+                regularMarketChangePercent = null
+            )
+        }
+        return withDailySeriesQuote(symbol, meta)
+    }
+
+    /**
+     * Yahoos quote-objekt kan vara veckor gammalt för illikvida aktier (t.ex. PLEJD.ST) medan
+     * dagsserien har aktuella stängningar. Använd då de två senaste stängningarna som kurs och
+     * föregående stängning.
+     */
+    private suspend fun withDailySeriesQuote(symbol: String, meta: Meta): Meta {
+        val closes = fetchDailyClosesWithTimestamps(symbol, DAILY_FALLBACK_BARS) ?: return meta
+        val (lastTs, lastClose) = closes.last()
+        if (lastTs <= (meta.regularMarketTime ?: 0L)) return meta
+        Log.w(TAG, "Yahoo quote is stale; using daily series close")
         return meta.copy(
-            regularMarketPrice = quote.price,
-            regularMarketTime = quote.epochSeconds,
-            regularMarketPreviousClose = quote.previousClose ?: meta.regularMarketPreviousClose,
+            regularMarketPrice = lastClose,
+            regularMarketTime = lastTs,
+            regularMarketPreviousClose = closes.getOrNull(closes.size - 2)?.second
+                ?: meta.regularMarketPreviousClose,
             regularMarketChangePercent = null
         )
     }
@@ -266,7 +288,7 @@ class YahooMarketDataServiceImpl(
                     else -> "Marknaden stängd"
                 }
                 Log.w(TAG, "Not enough data points for chart: ${paired.size} — $reason")
-                val fallbackPrice = result.meta?.regularMarketPrice
+                val fallbackPrice = (quoteMeta(symbol)?.regularMarketPrice ?: result.meta?.regularMarketPrice)
                     ?.takeIf { !it.isNaN() && it > 0.0 }
                     ?: previousClose
                 if (fallbackPrice != null) {
@@ -441,6 +463,7 @@ class YahooMarketDataServiceImpl(
     private companion object {
         private const val TAG: String = "YahooMarketDataService"
         private const val QUOTE_META_TTL_MS = 20_000L // 20 sekunder
+        private const val DAILY_FALLBACK_BARS = 250 // ger range 1y
         private const val SMA_TTL_MS = 15L * 60L * 1000L // 15 minuter — baseras på dagsstängningar
 
         /** Dagsgrafen ändras hela tiden under handel; längre perioder ändras långsamt. */

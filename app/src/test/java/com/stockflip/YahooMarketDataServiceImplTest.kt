@@ -378,7 +378,7 @@ class YahooMarketDataServiceImplTest {
     fun `concurrent price requests for the same symbol share one network call`() = kotlinx.coroutines.runBlocking {
         // Svaret fördröjs så att alla fem anropen hinner starta innan det första är klart.
         mockWebServer.enqueue(
-            okResponse(readResource("yahoo/chart_VOLV-B.ST.json")).setBodyDelay(300, TimeUnit.MILLISECONDS)
+            okResponse(readResource("yahoo/chart_VOLV-B.ST.json").replace("1700000000", (System.currentTimeMillis() / 1000).toString())).setBodyDelay(300, TimeUnit.MILLISECONDS)
         )
 
         val prices = coroutineScope {
@@ -392,7 +392,7 @@ class YahooMarketDataServiceImplTest {
     @Test
     fun `failed quote fetch is not cached so the next call retries`() = kotlinx.coroutines.runBlocking {
         mockWebServer.enqueue(MockResponse().setResponseCode(500))
-        mockWebServer.enqueue(okResponse(readResource("yahoo/chart_VOLV-B.ST.json")))
+        mockWebServer.enqueue(okResponse(readResource("yahoo/chart_VOLV-B.ST.json").replace("1700000000", (System.currentTimeMillis() / 1000).toString())))
 
         assertNull(service.getStockPrice("VOLV-B.ST"))
         assertEquals(300.12, service.getStockPrice("VOLV-B.ST")!!, 0.0001)
@@ -436,10 +436,30 @@ class YahooMarketDataServiceImplTest {
         val avanza = FakeAvanza(null)
         val svc = YahooMarketDataServiceImpl(api, avanza = avanza)
         mockWebServer.enqueue(okResponse(readResource("yahoo/chart_VOLV-B.ST.json")))
+        mockWebServer.enqueue(MockResponse().setResponseCode(500)) // dagsserie-reserven
         val snapshot = svc.getStockDetailSnapshot("VOLV-B.ST")!!
         assertEquals(300.12, snapshot.lastPrice!!, 0.0001)
         assertEquals(true, snapshot.quoteIsStale)
         assertEquals(1700000000L, snapshot.quoteEpochSeconds)
+        assertNull(snapshot.dailyChangePercent)
+    }
+
+    @Test
+    fun `stale Yahoo quote without Avanza quote falls back to daily series closes`() = kotlinx.coroutines.runBlocking {
+        val svc = YahooMarketDataServiceImpl(api, avanza = FakeAvanza(null))
+        // Plejd-liknande: gammal meta (935 / 967.5), dagsserie med färska stängningar och null i sista baren.
+        val staleMeta = readResource("yahoo/chart_VOLV-B.ST.json")
+        val dailyTs = 1700000000L + 86_400L
+        val daily = """
+            {"chart":{"result":[{"meta":{"currency":"SEK","symbol":"VOLV-B.ST","exchangeName":"STO","regularMarketPrice":300.12,"regularMarketTime":1700000000},
+            "timestamp":[${dailyTs},${dailyTs + 86_400L},${dailyTs + 172_800L}],
+            "indicators":{"quote":[{"close":[830.0,827.5,null]}]}}],"error":null}}
+        """.trimIndent()
+        mockWebServer.enqueue(okResponse(staleMeta))
+        mockWebServer.enqueue(okResponse(daily))
+        val snapshot = svc.getStockDetailSnapshot("VOLV-B.ST")!!
+        assertEquals(827.5, snapshot.lastPrice!!, 0.0001)
+        assertEquals(830.0, snapshot.previousClose!!, 0.0001)
         assertNull(snapshot.dailyChangePercent)
     }
 
