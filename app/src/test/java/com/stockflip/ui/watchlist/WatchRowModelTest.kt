@@ -123,7 +123,7 @@ class WatchRowModelTest {
     @Test
     fun `sortering efter närmast aktivering lägger närmast först och ej beräkningsbara sist`() {
         val pair = WatchItemUiState(
-            item = WatchItem(id = 4, watchType = WatchType.PricePair(10.0, false), ticker1 = "A", ticker2 = "B", companyName1 = "A", companyName2 = "B"),
+            item = WatchItem(id = 4, watchType = WatchType.PricePair(50.0, false), ticker1 = "A", ticker2 = "B", companyName1 = "A", companyName2 = "B"),
             live = LiveWatchData(currentPrice1 = 100.0, currentPrice2 = 90.0),
         )
         val items = listOf(
@@ -165,7 +165,7 @@ class WatchRowModelTest {
     @Test
     fun `närmast aktivering kan vändas och ej beräkningsbara ligger sist i båda riktningarna`() {
         val pair = WatchItemUiState(
-            item = WatchItem(id = 4, watchType = WatchType.PricePair(10.0, false), ticker1 = "A", ticker2 = "B", companyName1 = "A", companyName2 = "B"),
+            item = WatchItem(id = 4, watchType = WatchType.PricePair(50.0, false), ticker1 = "A", ticker2 = "B", companyName1 = "A", companyName2 = "B"),
             live = LiveWatchData(currentPrice1 = 100.0, currentPrice2 = 90.0),
         )
         val items = listOf(

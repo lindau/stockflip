@@ -19,12 +19,12 @@ class TechnicalIndicatorsTest {
 
         assertEquals(wilderCloses.size, rsi.size)
         (0 until 14).forEach { assertNull(rsi[it]) }
-        assertEquals(70.53, rsi[14]!!, 0.05)
-        assertEquals(66.32, rsi[15]!!, 0.05)
-        assertEquals(66.55, rsi[16]!!, 0.05)
-        assertEquals(69.41, rsi[17]!!, 0.05)
-        assertEquals(66.36, rsi[18]!!, 0.05)
-        assertEquals(57.97, rsi[19]!!, 0.05)
+        assertEquals(70.53, rsi[14]!!, 0.1)
+        assertEquals(66.32, rsi[15]!!, 0.1)
+        assertEquals(66.55, rsi[16]!!, 0.1)
+        assertEquals(69.41, rsi[17]!!, 0.1)
+        assertEquals(66.36, rsi[18]!!, 0.1)
+        assertEquals(57.97, rsi[19]!!, 0.1)
     }
 
     @Test

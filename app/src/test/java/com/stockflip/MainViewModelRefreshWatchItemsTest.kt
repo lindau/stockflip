@@ -543,7 +543,7 @@ class MainViewModelRefreshWatchItemsTest {
         )
         viewModel.loadWatchItems(forceShowStaleData = true)
 
-        val refresh = launch(Dispatchers.Default) { viewModel.refreshWatchItems(showLoading = false) }
+        val refresh = launch(Dispatchers.Default) { viewModel.refreshWatchItems(showLoading = false, userInitiated = true) }
 
         // Delresultat: FAST har ny kurs medan SLOW fortfarande väntar.
         val partial = withTimeout(5_000) {
