@@ -18,6 +18,7 @@
 - Rubrikerna `Bevakningar`, `Marknad` och `Inställningar` ligger nu på samma höjd
 - Versionsnumret på `Inställningar` visas nu som liten, centrerad text längst ned. Ändringsloggen öppnas via raden `Ändringslogg`
 - Datum för nästa rapport hämtas nu från fler källor hos Yahoo och sparas i ett dygn, så fler aktier visar `Nästa rapport` under Nyckeltal. Saknar Yahoo datum för ett bolag visas ingen rad
+- Aktier med gammal kurs hos Yahoo, t.ex. Plejd, visar nu senaste stängningskurs i stället för en månadsgammal kurs när reservkällan saknas
 - Länken i uppdateringsdialogen (`Full Changelog`) är nu klickbar och öppnas i en inbyggd webbvy över appen, eller i standardwebbläsaren om ingen finns
 
 ## 1.2
