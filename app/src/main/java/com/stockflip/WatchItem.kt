@@ -33,7 +33,10 @@ data class WatchItem(
     val isActive: Boolean = true, // Om alerten är aktiv (kan inaktiveras manuellt)
     // Epoch ms. Satt vid återaktivering när börsen är stängd: bevakningen får inte utlösas före
     // första färska kursen efter nästa öppning (gamla stängningskurser ska inte utlösa den).
-    val triggerBlockedUntil: Long? = null
+    val triggerBlockedUntil: Long? = null,
+    // Antal worker-kontroller som ska hoppas över innan bevakningen får utlösas. Sätts vid
+    // återaktivering av DailyMove så att den inte utlöses direkt igen (villkoret är oftast kvar).
+    val recheckSkipsRemaining: Int = 0
 ) {
     fun getDisplayName(): String {
         return when (watchType) {
@@ -140,7 +143,8 @@ data class WatchItem(
             lastPairTriggerSide = if (watchType is WatchType.PricePair) pairTriggerSide?.name else null,
             activePairTriggerSide = if (watchType is WatchType.PricePair) pairTriggerSide?.name else null,
             isTriggered = true,
-            triggerBlockedUntil = null
+            triggerBlockedUntil = null,
+            recheckSkipsRemaining = 0
         )
     }
 
@@ -195,7 +199,8 @@ data class WatchItem(
             lastPairTriggerSide = if (keepLastTriggeredDate) lastPairTriggerSide else null,
             activePairTriggerSide = if (keepLastTriggeredDate) activePairTriggerSide else null,
             isActive = true,
-            triggerBlockedUntil = triggerBlockedUntil
+            triggerBlockedUntil = triggerBlockedUntil,
+            recheckSkipsRemaining = if (watchType is WatchType.DailyMove) DAILY_MOVE_RECHECK_SKIPS else 0
         )
     }
 
@@ -210,6 +215,9 @@ data class WatchItem(
     }
 
     companion object {
+        /** Kontroller som hoppas över efter återaktivering av en dagsrörelse. */
+        const val DAILY_MOVE_RECHECK_SKIPS = 1
+
         /**
          * Hämtar dagens datum i format "YYYY-MM-DD".
          */

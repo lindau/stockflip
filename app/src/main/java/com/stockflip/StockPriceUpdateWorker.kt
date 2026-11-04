@@ -270,6 +270,11 @@ class StockPriceUpdateWorker(
                     Log.d(TAG, "Skipping watch item – ingen relevant marknad öppen")
                     continue
                 }
+                if (item.recheckSkipsRemaining > 0 && item.canTrigger(today)) {
+                    // Nyligen återaktiverad dagsrörelse: hoppa över denna kontroll (se reactivate()).
+                    watchItemDao.update(item.copy(recheckSkipsRemaining = item.recheckSkipsRemaining - 1))
+                    continue
+                }
                 val pairTriggerSide = if (item.watchType is WatchType.PricePair) {
                     evaluatePairTriggerSide(item, snapshots)
                 } else {
@@ -292,7 +297,7 @@ class StockPriceUpdateWorker(
                     // användaren ha hunnit återaktivera larmet (med datumspärr) – då ska vi inte
                     // skriva över den återaktiveringen med en ny markAsTriggered.
                     val fresh = watchItemDao.getWatchItemById(item.id) ?: continue
-                    if (!fresh.isActive) continue
+                    if (!fresh.isActive || fresh.recheckSkipsRemaining > 0) continue
                     val stillTriggerable = if (fresh.watchType is WatchType.PricePair) {
                         fresh.canTrigger(today, pairTriggerSide)
                     } else {

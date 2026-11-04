@@ -64,6 +64,25 @@ class WatchItemTest {
     }
 
     @Test
+    fun `reactivate of DailyMove skips next check and markAsTriggered clears it`() {
+        val daily = WatchItem(
+            watchType = WatchType.DailyMove(5.0, WatchType.DailyMoveDirection.BOTH),
+            ticker = "AAPL",
+            isTriggered = true
+        )
+        val reactivated = daily.reactivate()
+        assertEquals(WatchItem.DAILY_MOVE_RECHECK_SKIPS, reactivated.recheckSkipsRemaining)
+        assertEquals(0, reactivated.markAsTriggered("2024-01-01").recheckSkipsRemaining)
+
+        val target = WatchItem(
+            watchType = WatchType.PriceTarget(100.0, WatchType.PriceDirection.BELOW),
+            ticker = "AAPL",
+            isTriggered = true
+        )
+        assertEquals(0, target.reactivate().recheckSkipsRemaining)
+    }
+
+    @Test
     fun `reactivate clears triggered flag`() {
         val item = WatchItem(
             watchType = WatchType.PriceTarget(100.0, WatchType.PriceDirection.BELOW),

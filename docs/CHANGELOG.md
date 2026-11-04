@@ -95,3 +95,4 @@
 - Ny sortering i `Bevakningar`: närmast utlösning
 - Aktiedetaljen visar utlösta bevakningar i en egen sektion `Utlösta` överst i bevakningslistan, likadant oavsett om du kommer från en notis eller själv
 - Rättar bygget för 1.2.226 (saknad import av närhetsberäkningen för sorteringen)
+- Återaktiverad dagsrörelse utlöses inte längre direkt igen: den hoppar över nästa kontroll och kan utlösas först vid kontrollen efter det
