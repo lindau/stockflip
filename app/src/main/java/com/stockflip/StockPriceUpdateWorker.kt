@@ -275,6 +275,14 @@ class StockPriceUpdateWorker(
                     watchItemDao.update(item.copy(recheckSkipsRemaining = item.recheckSkipsRemaining - 1))
                     continue
                 }
+                if (item.awaitingCrossing) {
+                    // Återaktiverad SMA-bevakning/korsning: vänta tills villkoret varit falskt
+                    // minst en gång, så att nästa utlösning är en verklig korsning.
+                    if (evaluateWatchItem(item, snapshots) == false) {
+                        watchItemDao.update(item.copy(awaitingCrossing = false))
+                    }
+                    continue
+                }
                 val pairTriggerSide = if (item.watchType is WatchType.PricePair) {
                     evaluatePairTriggerSide(item, snapshots)
                 } else {
@@ -297,7 +305,7 @@ class StockPriceUpdateWorker(
                     // användaren ha hunnit återaktivera larmet (med datumspärr) – då ska vi inte
                     // skriva över den återaktiveringen med en ny markAsTriggered.
                     val fresh = watchItemDao.getWatchItemById(item.id) ?: continue
-                    if (!fresh.isActive || fresh.recheckSkipsRemaining > 0) continue
+                    if (!fresh.isActive || fresh.recheckSkipsRemaining > 0 || fresh.awaitingCrossing) continue
                     val stillTriggerable = if (fresh.watchType is WatchType.PricePair) {
                         fresh.canTrigger(today, pairTriggerSide)
                     } else {

@@ -83,6 +83,25 @@ class WatchItemTest {
     }
 
     @Test
+    fun `reactivate of SMA watches awaits crossing and markAsTriggered clears it`() {
+        val sma = WatchItem(
+            watchType = WatchType.PriceVsSma(50, WatchType.PriceDirection.BELOW),
+            ticker = "AAPL",
+            isTriggered = true
+        )
+        val reactivated = sma.reactivate()
+        assertEquals(true, reactivated.awaitingCrossing)
+        assertEquals(false, reactivated.markAsTriggered("2024-01-01").awaitingCrossing)
+
+        val target = WatchItem(
+            watchType = WatchType.PriceTarget(100.0, WatchType.PriceDirection.BELOW),
+            ticker = "AAPL",
+            isTriggered = true
+        )
+        assertEquals(false, target.reactivate().awaitingCrossing)
+    }
+
+    @Test
     fun `reactivate clears triggered flag`() {
         val item = WatchItem(
             watchType = WatchType.PriceTarget(100.0, WatchType.PriceDirection.BELOW),

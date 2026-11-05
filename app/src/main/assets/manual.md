@@ -457,7 +457,7 @@ I **Bevakningar** sveper du raden åt höger för att pausa en aktiv bevakning, 
 
 ### Återaktivera en triggad bevakning
 
-Engångslarm (Målpris och Drawdown) inaktiveras automatiskt efter utlösning och kräver alltid manuell återaktivering. Återkommande larm (Dagsrörelse, Nyckeltal, Aktiepar, Prisintervall, Kombinerat) återaktiveras normalt automatiskt nästa handelsdag, men du kan även återaktivera dem manuellt tidigare — till exempel för att slippa se "Triggad"-märket resten av dagen. En återaktiverad Dagsrörelse utlöses inte direkt igen: den hoppar över nästa kontroll och kan utlösas först vid kontrollen efter det (ungefär en till två minuter senare när börsen är öppen).
+Engångslarm (Målpris och Drawdown) inaktiveras automatiskt efter utlösning och kräver alltid manuell återaktivering. Återkommande larm (Dagsrörelse, Nyckeltal, Aktiepar, Prisintervall, Kombinerat) återaktiveras normalt automatiskt nästa handelsdag, men du kan även återaktivera dem manuellt tidigare — till exempel för att slippa se "Triggad"-märket resten av dagen. En återaktiverad Dagsrörelse utlöses inte direkt igen: den hoppar över nästa kontroll och kan utlösas först vid kontrollen efter det (ungefär en till två minuter senare när börsen är öppen). En återaktiverad SMA-bevakning eller SMA-korsning utlöses inte heller direkt igen: den väntar tills villkoret har varit ouppfyllt och utlöses först vid nästa verkliga korsning, och visas som väntande tills dess.
 
 - Hitta bevakningen under **Utlösta** i listan, eller i rutan högst upp på aktiens detaljsida.
 - Öppna aktiens detaljsida och tryck **Återaktivera** vid bevakningen (för ett aktiepar öppnar du pardetaljen och trycker **Återaktivera** där).

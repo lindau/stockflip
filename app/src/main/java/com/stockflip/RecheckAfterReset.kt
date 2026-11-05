@@ -17,7 +17,7 @@ object RecheckAfterReset {
     }
 
     /** Sant så länge bevakningen är nollställd och workern inte hunnit lösa ut den på nytt. */
-    fun isAwaiting(item: WatchItem): Boolean = (item.id in ids || item.recheckSkipsRemaining > 0) && item.isActive && !item.isTriggered
+    fun isAwaiting(item: WatchItem): Boolean = (item.id in ids || item.recheckSkipsRemaining > 0 || item.awaitingCrossing) && item.isActive && !item.isTriggered
 
     /** Släpper bevakningar som löst ut igen, pausats eller tagits bort. */
     fun prune(items: Collection<WatchItem>) {

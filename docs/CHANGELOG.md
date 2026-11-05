@@ -96,3 +96,4 @@
 - Aktiedetaljen visar utlösta bevakningar i en egen sektion `Utlösta` överst i bevakningslistan, likadant oavsett om du kommer från en notis eller själv
 - Rättar bygget för 1.2.226 (saknad import av närhetsberäkningen för sorteringen)
 - Återaktiverad dagsrörelse utlöses inte längre direkt igen: den hoppar över nästa kontroll och kan utlösas först vid kontrollen efter det
+- Återaktiverad SMA-bevakning och SMA-korsning utlöses inte längre direkt igen: de väntar tills villkoret har varit falskt och utlöses först vid nästa verkliga korsning

@@ -36,7 +36,10 @@ data class WatchItem(
     val triggerBlockedUntil: Long? = null,
     // Antal worker-kontroller som ska hoppas över innan bevakningen får utlösas. Sätts vid
     // återaktivering av DailyMove så att den inte utlöses direkt igen (villkoret är oftast kvar).
-    val recheckSkipsRemaining: Int = 0
+    val recheckSkipsRemaining: Int = 0,
+    // Sant efter återaktivering av SMA-bevakning/SMA-korsning: villkoret ignoreras tills det
+    // har varit falskt minst en gång, så att bevakningen utlöses först vid nästa verkliga korsning.
+    val awaitingCrossing: Boolean = false
 ) {
     fun getDisplayName(): String {
         return when (watchType) {
@@ -144,7 +147,8 @@ data class WatchItem(
             activePairTriggerSide = if (watchType is WatchType.PricePair) pairTriggerSide?.name else null,
             isTriggered = true,
             triggerBlockedUntil = null,
-            recheckSkipsRemaining = 0
+            recheckSkipsRemaining = 0,
+            awaitingCrossing = false
         )
     }
 
@@ -200,7 +204,8 @@ data class WatchItem(
             activePairTriggerSide = if (keepLastTriggeredDate) activePairTriggerSide else null,
             isActive = true,
             triggerBlockedUntil = triggerBlockedUntil,
-            recheckSkipsRemaining = if (watchType is WatchType.DailyMove) DAILY_MOVE_RECHECK_SKIPS else 0
+            recheckSkipsRemaining = if (watchType is WatchType.DailyMove) DAILY_MOVE_RECHECK_SKIPS else 0,
+            awaitingCrossing = watchType is WatchType.PriceVsSma || watchType is WatchType.SmaCrossover
         )
     }
 
