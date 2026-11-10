@@ -5,7 +5,7 @@ import com.stockflip.StockSearchResult
 
 /** Senast öppnade sökträffar, nyast först. Lagras som `symbol<TAB>namn` per rad i SharedPreferences. */
 internal object RecentSearches {
-    const val MAX = 10
+    const val MAX = 5
     private const val PREFS = "market"
     private const val KEY = "recent"
 
