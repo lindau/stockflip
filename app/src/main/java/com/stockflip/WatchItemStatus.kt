@@ -47,98 +47,10 @@ fun WatchItem.armedConditionDescription(currency: String? = null): String {
     }
 }
 
-fun WatchItem.triggerConditionText(
-    currency: String? = null,
-    decimalFormat: (Double) -> String = { CurrencyHelper.formatDecimal(it) }
-): String {
-    return when (val type = watchType) {
-        is WatchType.PriceTarget -> {
-            val operator = type.direction.comparisonOperator()
-            val target = CurrencyHelper.formatPrice(type.targetPrice, currency ?: CurrencyHelper.getCurrencyFromSymbol(ticker))
-            "Kurs $operator $target"
-        }
-        is WatchType.PricePair -> {
-            val spreadText = type.priceDifference.takeIf { it > 0.0 }?.let {
-                "Spread >= ${decimalFormat(it)}"
-            }
-            val equalText = if (type.notifyWhenEqual) "Lika pris" else null
-            listOfNotNull(spreadText, equalText).joinToString(" eller ").ifBlank { "Lika pris" }
-        }
-        is WatchType.KeyMetrics -> {
-            val metric = type.metricType.shortLabel()
-            val operator = type.direction.comparisonOperator()
-            "$metric $operator ${type.metricTargetText(decimalFormat)}"
-        }
-        is WatchType.ATHBased -> {
-            val target = when (type.dropType) {
-                WatchType.DropType.PERCENTAGE -> "${decimalFormat(type.dropValue)}%"
-                WatchType.DropType.ABSOLUTE -> {
-                    val code = currency ?: CurrencyHelper.getCurrencyFromSymbol(ticker)
-                    CurrencyHelper.formatPrice(type.dropValue, code)
-                }
-            }
-            "Drawdown >= $target från ${type.reference.shortLabel()}"
-        }
-        is WatchType.DailyMove -> {
-            val target = "${decimalFormat(type.percentThreshold)}%"
-            when (type.direction) {
-                WatchType.DailyMoveDirection.UP -> "Dagsrörelse >= $target"
-                WatchType.DailyMoveDirection.DOWN -> "Dagsrörelse <= -$target"
-                WatchType.DailyMoveDirection.BOTH -> "|Dagsrörelse| >= $target"
-            }
-        }
-        is WatchType.PriceRange -> {
-            val code = currency ?: CurrencyHelper.getCurrencyFromSymbol(ticker)
-            "Kurs mellan ${CurrencyHelper.formatPrice(type.minPrice, code)} och ${CurrencyHelper.formatPrice(type.maxPrice, code)}"
-        }
-        is WatchType.InsiderBuy -> "Ny insideraffär"
-        is WatchType.Combined -> type.expression.getDescription()
-        is WatchType.PriceVsSma -> {
-            val operator = type.direction.comparisonOperator()
-            "Pris $operator SMA(${type.period})"
-        }
-        is WatchType.SmaCrossover -> {
-            val operator = type.direction.comparisonOperator()
-            val crossLabel = if (type.direction == WatchType.PriceDirection.ABOVE) "Golden cross" else "Death cross"
-            "SMA(${type.shortPeriod}) $operator SMA(${type.longPeriod}) ($crossLabel)"
-        }
-    }
-}
-
 fun WatchType.PriceDirection.swedishDirectionLabel(): String {
     return when (this) {
         WatchType.PriceDirection.ABOVE -> "över"
         WatchType.PriceDirection.BELOW -> "under"
-    }
-}
-
-private fun WatchType.PriceDirection.comparisonOperator(): String {
-    return when (this) {
-        WatchType.PriceDirection.ABOVE -> ">="
-        WatchType.PriceDirection.BELOW -> "<="
-    }
-}
-
-private fun WatchType.MetricType.shortLabel(): String {
-    return when (this) {
-        WatchType.MetricType.PE_RATIO -> "P/E"
-        WatchType.MetricType.PS_RATIO -> "P/S"
-        WatchType.MetricType.DIVIDEND_YIELD -> "Direktavkastning"
-        WatchType.MetricType.EARNINGS_PER_SHARE -> "Vinst/aktie"
-    }
-}
-
-private fun WatchType.KeyMetrics.metricTargetText(decimalFormat: (Double) -> String): String {
-    return when (metricType) {
-        WatchType.MetricType.DIVIDEND_YIELD -> "${decimalFormat(targetValue)}%"
-        else -> decimalFormat(targetValue)
-    }
-}
-
-private fun WatchType.HighReference.shortLabel(): String {
-    return when (this) {
-        WatchType.HighReference.FIFTY_TWO_WEEK_HIGH -> "52v-topp"
-        WatchType.HighReference.ALL_TIME_HIGH -> "högsta pris"
     }
 }
 
