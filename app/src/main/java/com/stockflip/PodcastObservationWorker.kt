@@ -39,7 +39,7 @@ class PodcastObservationWorker(
          * One sync attempt against the podcast-analysis service, recording the
          * outcome via PodcastObservationSettings so the UI can show it. Shared
          * between the scheduled WorkManager job and a manual "Synka nu" tap in
-         * StockDetailFragment -- the manual path runs in the foreground while
+         * the stock detail screen -- the manual path runs in the foreground while
          * the user is looking at the screen, sidestepping any OEM background-job
          * restrictions that can otherwise leave the WorkManager job stuck pending.
          */

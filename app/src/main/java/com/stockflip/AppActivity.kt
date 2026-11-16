@@ -224,7 +224,7 @@ class AppActivity : ComponentActivity() {
     private fun saveThemeMode(mode: ThemeMode) {
         themeMode = mode
         getSharedPreferences("settings", MODE_PRIVATE).edit { putInt("night_mode", mode.prefValue) }
-        // Håller övriga AppCompat-aktiviteter (gamla skalet) i takt med valet.
+        // Synkar AppCompats globala nattläge med valet.
         AppCompatDelegate.setDefaultNightMode(mode.prefValue)
     }
 
@@ -312,9 +312,9 @@ class AppActivity : ComponentActivity() {
     }
 
     companion object {
-        /** Intent extra: watch item id to open in PairDetailFragment (from pair notification deep link) */
+        /** Intent extra: watch item id to open in the pair detail screen (from pair notification deep link) */
         const val EXTRA_OPEN_PAIR_WATCH_ID = "extra_open_pair_watch_id"
-        /** Intent extra: ticker to open in StockDetailFragment (from notification deep link) */
+        /** Intent extra: ticker to open in the stock detail screen (from notification deep link) */
         const val EXTRA_OPEN_TICKER = "extra_open_ticker"
         /** Intent extra: watch item id for the triggered stock alert */
         const val EXTRA_OPEN_WATCH_ID = "extra_open_watch_id"

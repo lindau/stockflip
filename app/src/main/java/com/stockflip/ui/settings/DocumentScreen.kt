@@ -31,7 +31,7 @@ import com.stockflip.BuildConfig
 import com.stockflip.ui.settings.markdownToHtml
 import com.stockflip.ui.theme.Space
 
-/** Tillåtna asset-namn; samma vitlista som `MarkdownAssetFragment`. */
+/** Tillåtna asset-namn; vitlista över dokument som får visas. */
 private val ALLOWED_DOCUMENTS = mapOf("manual.md" to "Hjälp", "changelog.md" to "Ändringslogg")
 
 /** Titel för ett dokument, eller `null` om assetnamnet inte är tillåtet. */
@@ -39,7 +39,7 @@ internal fun documentTitle(asset: String): String? = ALLOWED_DOCUMENTS[asset]
 
 /**
  * Visar manualen eller ändringsloggen som HTML i en låst WebView (ingen JS, inga nätverksanrop,
- * strikt CSP) — samma säkerhetsinställningar som `MarkdownAssetFragment`.
+ * strikt CSP).
  */
 @Composable
 internal fun DocumentScreen(asset: String, onBack: () -> Unit, modifier: Modifier = Modifier) {

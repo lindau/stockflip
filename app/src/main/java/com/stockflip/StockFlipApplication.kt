@@ -23,7 +23,7 @@ class StockFlipApplication : Application(), ImageLoaderFactory {
             )
             .build()
 
-        // WebView.setWebContentsDebuggingEnabled flyttad till MarkdownAssetFragment —
+        // WebView.setWebContentsDebuggingEnabled flyttad till DocumentScreen —
         // laddar WebView-providern (~50-150 ms) bara när manualen/ändringsloggen
         // faktiskt öppnas, i stället för vid varje kallstart.
         WorkManager.initialize(this, config)

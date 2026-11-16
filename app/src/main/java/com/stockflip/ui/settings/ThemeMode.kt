@@ -1,8 +1,8 @@
 package com.stockflip.ui.settings
 
 /**
- * Temaval i Inställningar. [prefValue] är samma heltal som `MainActivity` sparar under
- * `settings/night_mode` (`AppCompatDelegate.MODE_NIGHT_*`), så gamla och nya skalet delar val.
+ * Temaval i Inställningar. [prefValue] är samma heltal som sparas under
+ * `settings/night_mode` (`AppCompatDelegate.MODE_NIGHT_*`), så att valet läses likadant vid appstart.
  */
 enum class ThemeMode(val prefValue: Int, val label: String) {
     System(-1, "System"),

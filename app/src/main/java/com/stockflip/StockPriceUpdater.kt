@@ -95,18 +95,16 @@ object StockPriceUpdater {
     }
 
     fun requestBatteryOptimizationExemption(activity: Activity) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            val packageName = activity.packageName
-            val powerManager = activity.getSystemService(Context.POWER_SERVICE) as PowerManager
-            if (!powerManager.isIgnoringBatteryOptimizations(packageName)) {
-                try {
-                    val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
-                        data = Uri.parse("package:$packageName")
-                    }
-                    activity.startActivity(intent)
-                } catch (e: Exception) {
-                    Log.e(TAG, "Failed to request battery optimization exemption: ${e.message}")
+        val packageName = activity.packageName
+        val powerManager = activity.getSystemService(Context.POWER_SERVICE) as PowerManager
+        if (!powerManager.isIgnoringBatteryOptimizations(packageName)) {
+            try {
+                val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
+                    data = Uri.parse("package:$packageName")
                 }
+                activity.startActivity(intent)
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to request battery optimization exemption: ${e.message}")
             }
         }
     }

@@ -35,7 +35,7 @@ class MainViewModel(
     // True medan live-priser hämtas i bakgrunden. Driver en icke-blockerande spinner i UI:t,
     // till skillnad från UiState.Loading som ersätter hela skärmen.
     /**
-     * Valt filter i Bevakningar. Fragmentet skapas om vid varje flikbyte, så filtret sparas här
+     * Valt filter i Bevakningar. Skärmen komponeras om vid varje flikbyte, så filtret sparas här
      * för att användaren ska komma tillbaka till samma vy i stället för "Alla".
      */
     internal var selectedAlertsFilter: AlertsFilter = AlertsFilter.ALL
