@@ -31,7 +31,7 @@ Live/network tests in `YahooFinanceServiceTest.kt` are annotated with `@Ignore` 
 
 ### MVVM with Room + WorkManager
 
-- **`MainViewModel`** — central ViewModel managing two `StateFlow` states: `uiState` (list of `StockPair`) and `watchItemUiState` (list of `WatchItem`). Calls `MarketDataService` directly to refresh prices; updates Room then emits updated objects directly (not re-queried from DB) because `@Ignore` fields like `currentMetricValue` aren't persisted.
+- **`MainViewModel`** — central ViewModel with `watchItemUiState` (list of `WatchItemUiState`). Holds `StockPairDao` only for backup export/import. Calls `MarketDataService` directly to refresh prices; updates Room then emits updated objects directly (not re-queried from DB) because `@Ignore` fields like `currentMetricValue` aren't persisted.
 - **`StockDetailViewModel`** — ViewModel for the per-stock detail screen. Fetches all data via a single `getStockDetailSnapshot()` call to keep price and previousClose from the same response. Observes alerts via Room `Flow`.
 - **`StockSearchViewModel`** — search ViewModel backed by `StockRepository` with a 5-minute in-memory cache.
 
@@ -56,7 +56,7 @@ Live/network tests in `YahooFinanceServiceTest.kt` are annotated with `@Ignore` 
 
 ### Data Layer
 
-**`StockPairDatabase`** (Room, version 8) — three entities: `StockPair`, `WatchItem`, `MetricHistoryEntity`. `WatchType` is stored as a pipe-delimited string via `WatchTypeConverter`. Explicit migrations MIGRATION_4_5 through MIGRATION_7_8 are defined; schema files are exported to `app/schemas/`.
+**`StockPairDatabase`** (Room, version 17) — sju entiteter: `StockPair` (legacy), `WatchItem`, `MetricHistoryEntity`, `TriggerHistoryEntity`, `StockNote`, `InsiderTransactionEntity`, `PodcastObservationEntity`. `WatchType` is stored as a pipe-delimited string via `WatchTypeConverter`. Explicit migrations MIGRATION_4_5 through MIGRATION_16_17 are defined; schema files are exported to `app/schemas/`. `StockPair` är legacy: den visas inte i UI och prisuppdateras inte längre, utan finns kvar för backupformat och migrering (par skapas som `WatchItem` med `PricePair`).
 
 **`MarketDataService`** (interface) — abstraction over Yahoo Finance. Implemented by `YahooFinanceService` (singleton object using Retrofit + OkHttp with cookie jar). `YahooMarketDataServiceImpl` delegates to this. Inject the interface in ViewModels and use cases to enable fake implementations in tests.
 
@@ -66,7 +66,7 @@ Live/network tests in `YahooFinanceServiceTest.kt` are annotated with `@Ignore` 
 
 ### Background Updates
 
-**`StockPriceUpdateWorker`** (WorkManager `CoroutineWorker`) — scheduled periodic work that fetches prices for all `StockPair` entries, fires push notifications when alert conditions are met, then re-schedules itself via `StockMarketScheduler`.
+**`StockPriceUpdateWorker`** (WorkManager `CoroutineWorker`) — scheduled periodic work that evaluates all `WatchItem` alerts, fires push notifications when alert conditions are met, then re-schedules itself via `StockMarketScheduler`.
 
 **`MetricHistoryUpdateWorker`** (WorkManager `CoroutineWorker`, in `workers/`) — separate periodic worker that fetches and stores historical key metric values for trend tracking.
 
