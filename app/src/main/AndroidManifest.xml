@@ -60,10 +60,6 @@
                 android:value="androidx.startup"
                 tools:node="remove" />
         </provider>
-
-        <receiver 
-            android:name=".PriceUpdateReceiver"
-            android:exported="false" />
     </application>
 
 </manifest> 

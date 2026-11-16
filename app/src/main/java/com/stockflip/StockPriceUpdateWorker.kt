@@ -11,7 +11,6 @@ import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import kotlinx.coroutines.delay
 import com.stockflip.repository.TriggerHistoryRepository
-import com.stockflip.usecase.UpdateStockPairsPricesUseCase
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -33,22 +32,7 @@ class StockPriceUpdateWorker(
             try {
                 Log.d(TAG, "Starting price update (attempt $attempt)")
                 val database = StockPairDatabase.getDatabase(applicationContext)
-                val stockPairDao = database.stockPairDao()
                 val yahooFinanceService = YahooFinanceService
-                val useCase = UpdateStockPairsPricesUseCase(stockPairDao, yahooFinanceService)
-                val updatedPairs: List<StockPair> = useCase.executeUpdateStockPairsPrices()
-                val updatedCount: Int = updatedPairs.size
-
-                if (updatedCount > 0) {
-                    Log.d(TAG, "Broadcasting price update completion for $updatedCount pairs")
-                    val intent = Intent(ACTION_PRICES_UPDATED).apply {
-                        `package` = applicationContext.packageName
-                    }
-                    applicationContext.sendBroadcast(intent)
-                } else {
-                    Log.w(TAG, "No prices were updated")
-                }
-
                 evaluateWatchItemAlerts(database, yahooFinanceService)
 
                 return Result.success()
@@ -632,7 +616,6 @@ class StockPriceUpdateWorker(
 
     companion object {
         private const val TAG = "StockPriceUpdateWorker"
-        const val ACTION_PRICES_UPDATED = "com.stockflip.ACTION_PRICES_UPDATED"
 
         // En akties börs ändras aldrig i praktiken – cachea per process så vi inte
         // gör ett extra nätverksanrop varje worker-cykel för symboler vars börs

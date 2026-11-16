@@ -70,27 +70,4 @@ class StockPriceUpdateWorkerTest {
         assertFalse(workInfos.isEmpty())
         assertTrue(workInfos[0].state in listOf(WorkInfo.State.ENQUEUED, WorkInfo.State.RUNNING))
     }
-
-    @Test
-    fun testWorkerSendsBroadcast() = runBlocking {
-        var broadcastReceived = false
-        
-        // Register test broadcast receiver
-        val receiver = PriceUpdateReceiver()
-        context.registerReceiver(
-            receiver,
-            PriceUpdateReceiver.createIntentFilter(),
-            Context.RECEIVER_NOT_EXPORTED
-        )
-
-        // Create and run test worker
-        val worker = TestListenableWorkerBuilder<StockPriceUpdateWorker>(context).build()
-        worker.doWork()
-
-        // Verify broadcast was received
-        assertTrue(broadcastReceived)
-
-        // Cleanup
-        context.unregisterReceiver(receiver)
-    }
-} 
+}
