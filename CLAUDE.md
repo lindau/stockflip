@@ -56,7 +56,7 @@ Live/network tests in `YahooFinanceServiceTest.kt` are annotated with `@Ignore` 
 
 ### Data Layer
 
-**`StockPairDatabase`** (Room, version 17) — sju entiteter: `StockPair` (legacy), `WatchItem`, `MetricHistoryEntity`, `TriggerHistoryEntity`, `StockNote`, `InsiderTransactionEntity`, `PodcastObservationEntity`. `WatchType` is stored as a pipe-delimited string via `WatchTypeConverter`. Explicit migrations MIGRATION_4_5 through MIGRATION_16_17 are defined; schema files are exported to `app/schemas/`. `StockPair` är legacy: den visas inte i UI och prisuppdateras inte längre, utan finns kvar för backupformat och migrering (par skapas som `WatchItem` med `PricePair`).
+**`StockPairDatabase`** (Room, version 18) — sju entiteter: `StockPair` (legacy), `WatchItem`, `MetricHistoryEntity`, `TriggerHistoryEntity`, `StockNote`, `InsiderTransactionEntity`, `PodcastObservationEntity`. `WatchType` is stored as a pipe-delimited string via `WatchTypeConverter`. Explicit migrations MIGRATION_4_5 through MIGRATION_17_18 are defined; schema files are exported to `app/schemas/`. `StockPair` är legacy: den visas inte i UI och prisuppdateras inte längre, utan finns kvar för backupformat och migrering (par skapas som `WatchItem` med `PricePair`).
 
 **`MarketDataService`** (interface) — abstraction over Yahoo Finance. Implemented by `YahooFinanceService` (singleton object using Retrofit + OkHttp with cookie jar). `YahooMarketDataServiceImpl` delegates to this. Inject the interface in ViewModels and use cases to enable fake implementations in tests.
 
