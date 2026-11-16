@@ -30,3 +30,6 @@ app/StockFlip Google Services.json
 keystore.properties
 *.jks
 *.keystore
+
+# Kotlin compiler
+.kotlin/
