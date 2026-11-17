@@ -235,12 +235,14 @@ class MainViewModelRefreshWatchItemsTest {
 
     @Test
     fun `reactivateWatchItem arms a price target directly even when price equals target and it triggered today`() = runBlocking {
+        // Krypto räknas alltid som öppen marknad, så triggerBlockedUntil blir null och testet
+        // blir oberoende av klockslaget (en aktiesymbol spärras när börsen är stängd).
         val today = WatchItem.getTodayDateString()
         val triggeredItem = WatchItem(
             id = 1,
             watchType = WatchType.PriceTarget(targetPrice = 100.0, direction = WatchType.PriceDirection.ABOVE),
-            ticker = "VOLV-B.ST",
-            companyName = "Volvo B",
+            ticker = "BTC-USD",
+            companyName = "Bitcoin",
             isActive = false,
             isTriggered = true,
             lastTriggeredDate = today
@@ -249,7 +251,7 @@ class MainViewModelRefreshWatchItemsTest {
         val viewModel = MainViewModel(
             stockPairDao = InMemoryStockPairDao(emptyList()),
             watchItemDao = watchItemDao,
-            yahooFinanceService = FakeMarketDataService(pricesBySymbol = mapOf("VOLV-B.ST" to 100.0)),
+            yahooFinanceService = FakeMarketDataService(pricesBySymbol = mapOf("BTC-USD" to 100.0)),
             stockNoteDao = InMemoryStockNoteDao(),
             podcastObservationDao = InMemoryPodcastObservationDao()
         )
@@ -296,12 +298,14 @@ class MainViewModelRefreshWatchItemsTest {
 
     @Test
     fun `reactivateWatchItem clears lastTriggeredDate lock directly for DailyMove triggered today`() = runBlocking {
+        // Krypto räknas alltid som öppen marknad, så triggerBlockedUntil blir null och testet
+        // blir oberoende av klockslaget (en aktiesymbol spärras när börsen är stängd).
         val today = WatchItem.getTodayDateString()
         val triggeredItem = WatchItem(
             id = 1,
             watchType = WatchType.DailyMove(5.0, WatchType.DailyMoveDirection.UP),
-            ticker = "VOLV-B.ST",
-            companyName = "Volvo B",
+            ticker = "BTC-USD",
+            companyName = "Bitcoin",
             isActive = true,
             isTriggered = true,
             lastTriggeredDate = today
@@ -310,7 +314,7 @@ class MainViewModelRefreshWatchItemsTest {
         val viewModel = MainViewModel(
             stockPairDao = InMemoryStockPairDao(emptyList()),
             watchItemDao = watchItemDao,
-            yahooFinanceService = FakeMarketDataService(pricesBySymbol = mapOf("VOLV-B.ST" to 105.0)),
+            yahooFinanceService = FakeMarketDataService(pricesBySymbol = mapOf("BTC-USD" to 105.0)),
             stockNoteDao = InMemoryStockNoteDao(),
             podcastObservationDao = InMemoryPodcastObservationDao()
         )
@@ -361,12 +365,14 @@ class MainViewModelRefreshWatchItemsTest {
 
     @Test
     fun `reactivateWatchItem clears lastTriggeredDate lock directly for ATHBased triggered today`() = runBlocking {
+        // Krypto räknas alltid som öppen marknad, så triggerBlockedUntil blir null och testet
+        // blir oberoende av klockslaget (en aktiesymbol spärras när börsen är stängd).
         val today = WatchItem.getTodayDateString()
         val triggeredItem = WatchItem(
             id = 1,
             watchType = WatchType.ATHBased(dropType = WatchType.DropType.PERCENTAGE, dropValue = 20.0),
-            ticker = "VOLV-B.ST",
-            companyName = "Volvo B",
+            ticker = "BTC-USD",
+            companyName = "Bitcoin",
             isActive = false,
             isTriggered = true,
             lastTriggeredDate = today
@@ -375,7 +381,7 @@ class MainViewModelRefreshWatchItemsTest {
         val viewModel = MainViewModel(
             stockPairDao = InMemoryStockPairDao(emptyList()),
             watchItemDao = watchItemDao,
-            yahooFinanceService = FakeMarketDataService(pricesBySymbol = mapOf("VOLV-B.ST" to 105.0)),
+            yahooFinanceService = FakeMarketDataService(pricesBySymbol = mapOf("BTC-USD" to 105.0)),
             stockNoteDao = InMemoryStockNoteDao(),
             podcastObservationDao = InMemoryPodcastObservationDao()
         )
