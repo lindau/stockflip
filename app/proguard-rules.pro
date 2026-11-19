@@ -18,6 +18,9 @@
 -keep class com.stockflip.PodcastCompaniesResponse { <fields>; }
 -keep class com.stockflip.PodcastCompanyDto { <fields>; }
 -keep class com.stockflip.PodcastMentionDto { <fields>; }
+-keep class com.stockflip.PodcastSignalsResponse { <fields>; }
+-keep class com.stockflip.PodcastSignalDto { <fields>; }
+-keep class com.stockflip.PodcastSignalPriceDto { <fields>; }
 -keep interface com.stockflip.GithubReleaseApi { *; }
 -keep class com.stockflip.GithubReleaseDto { <fields>; }
 -keep class com.stockflip.GithubReleaseAssetDto { <fields>; }
