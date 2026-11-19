@@ -76,6 +76,7 @@ internal fun MarketScreen(
     onClearRecent: () -> Unit,
     modifier: Modifier = Modifier,
     movers: MoversUi? = null,
+    podcasts: PodcastTrendingUi? = null,
 ) {
     Column(modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         com.stockflip.ui.components.TabTitle(stringResource(R.string.market_marknad))
@@ -102,12 +103,12 @@ internal fun MarketScreen(
             modifier = Modifier.fillMaxWidth().padding(horizontal = Space.screenH, vertical = Space.sm),
         )
         when (content) {
-            MarketContent.Hint -> ResultsWithIndex(emptyList(), onResultClick, onClearRecent, movers)
+            MarketContent.Hint -> ResultsWithIndex(emptyList(), onResultClick, onClearRecent, movers, podcasts)
             MarketContent.Loading -> Column { repeat(5) { SkeletonRow() } }
             MarketContent.NoResults -> EmptyState("Inga träffar för \"${query.trim()}\".")
             is MarketContent.Failed -> EmptyState(content.message, actionLabel = stringResource(R.string.market_forsok_igen), onAction = onRetry)
             is MarketContent.Results -> ResultList(content.items, header = null, onResultClick, onAction = null)
-            is MarketContent.Recent -> ResultsWithIndex(content.items, onResultClick, onClearRecent, movers)
+            is MarketContent.Recent -> ResultsWithIndex(content.items, onResultClick, onClearRecent, movers, podcasts)
         }
     }
 }
@@ -189,6 +190,7 @@ private fun ResultsWithIndex(
     onClick: (StockSearchResult) -> Unit,
     onClearRecent: () -> Unit,
     movers: MoversUi? = null,
+    podcasts: PodcastTrendingUi? = null,
 ) {
     LazyColumn(Modifier.fillMaxSize()) {
         if (recent.isNotEmpty()) {
@@ -205,6 +207,10 @@ private fun ResultsWithIndex(
         if (movers != null) {
             item(key = "movers-h") { SectionLabel(stringResource(R.string.market_heta_just_nu)) }
             item(key = "movers") { MoversContent(movers) }
+        }
+        if (podcasts != null && podcasts.items.isNotEmpty()) {
+            item(key = "podcasts-h") { SectionLabel("Poddar just nu") }
+            item(key = "podcasts") { PodcastTrendingContent(podcasts) }
         }
         item(key = "index-h") { SectionLabel("Index") }
         itemsIndexed(INDEX_SHORTCUTS, key = { _, it -> "i-" + it.symbol }) { index, result ->

@@ -101,6 +101,7 @@ internal fun StockDetailScreen(
     insiderTransactions: List<com.stockflip.InsiderTransactionEntity>,
     insiderHighlightId: String?,
     podcastObservations: List<com.stockflip.PodcastObservationEntity>,
+    podcastSignal: com.stockflip.PodcastSignalDto? = null,
     podcastConfigured: Boolean,
     podcastEnabled: Boolean,
     podcastSyncSummary: String?,
@@ -131,6 +132,9 @@ internal fun StockDetailScreen(
         else -> LocalPriceDown.current
     }
     val levels = watchLevelsFor(alerts, data)
+    val mentionMarkers = remember(podcastObservations, podcastEnabled) {
+        if (podcastEnabled) com.stockflip.ui.components.mentionMarkersFrom(podcastObservations) else emptyList()
+    }
 
     Box(modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         Column(Modifier.fillMaxSize()) {
@@ -265,6 +269,7 @@ internal fun StockDetailScreen(
                             rsiPoints = rsiPoints,
                             chartHeight = 200.dp,
                             watchLevels = levels.map { it.price },
+                            mentionMarkers = mentionMarkers,
                             modifier = Modifier.padding(horizontal = Space.screenH, vertical = Space.md).semantics {
                                 contentDescription = "Kursgraf, ${periodWord(selectedPeriod)}" +
                                     (changePercent?.let { ", ${formatSignedPercent(it)}" } ?: "")
@@ -326,7 +331,7 @@ internal fun StockDetailScreen(
                     item(key = "analyst") { AnalystSection(data) }
                     item(key = "insider") { InsiderSection(insiderTransactions, insiderHighlightId) }
                     item(key = "podcast") {
-                        PodcastSection(podcastConfigured, podcastEnabled, podcastObservations, podcastSyncSummary, podcastSyncing, onPodcastToggle, onPodcastSync)
+                        PodcastSection(podcastConfigured, podcastEnabled, podcastObservations, podcastSyncSummary, podcastSyncing, onPodcastToggle, onPodcastSync, podcastSignal)
                     }
                     item(key = "note") {
                         Column(Modifier.padding(top = Space.lg)) {

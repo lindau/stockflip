@@ -81,7 +81,6 @@ internal fun StockDetailRoute(
     var podcastSummary by remember { mutableStateOf(com.stockflip.PodcastObservationSettings.lastSyncSummary(context)) }
     var podcastSyncing by remember { mutableStateOf(false) }
     var noteOpen by remember { mutableStateOf(false) }
-
     val alerts: List<WatchItemUiState> = (alertsState as? UiState.Success)?.data.orEmpty()
     val chartData = (chartState as? UiState.Success)?.data
 
@@ -102,6 +101,10 @@ internal fun StockDetailRoute(
 
     when (val state = stockState) {
         is UiState.Success -> {
+        val podcastSignal by androidx.compose.runtime.produceState<com.stockflip.PodcastSignalDto?>(null, state.data.symbol, podcastEnabled, podcastSyncing) {
+            value = if (podcastEnabled && com.stockflip.BuildConfig.PODCAST_ANALYSIS_BASE_URL.isNotBlank())
+                com.stockflip.PodcastSignalsRepository.shared.forTicker(state.data.symbol) else null
+        }
         StockDetailScreen(
             data = state.data,
             chartData = chartData,
@@ -139,6 +142,7 @@ internal fun StockDetailRoute(
             insiderTransactions = insiders,
             insiderHighlightId = launch.insiderId,
             podcastObservations = podcasts,
+            podcastSignal = podcastSignal,
             podcastConfigured = com.stockflip.BuildConfig.PODCAST_ANALYSIS_BASE_URL.isNotBlank(),
             podcastEnabled = podcastEnabled,
             podcastSyncSummary = podcastSummary,

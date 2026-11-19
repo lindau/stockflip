@@ -71,11 +71,14 @@ class PodcastObservationWorker(
 
                 val byTicker = PodcastAnalysisService().getObservationsByTicker()
                 val matchedTickers = watchedTickers.filter { byTicker.containsKey(it) }
+                // Ogranskade observationer (needs_review) döljs: hälften av dem är osäkra och
+                // felkopplingar förekommer. Per ticker ersätts gamla rader helt vid varje synk.
                 val entities = matchedTickers
                     .mapNotNull { ticker -> byTicker[ticker]?.let { ticker to it } }
                     .flatMap { (ticker, mentions) ->
-                        mentions.mapNotNull { it.toEntity(ticker, companyName = null) }
+                        mentions.filter { it.needs_review != true }.mapNotNull { it.toEntity(ticker, companyName = null) }
                     }
+                matchedTickers.forEach { observationDao.deleteForTicker(it) }
                 if (entities.isNotEmpty()) {
                     observationDao.insertAll(entities)
                     Log.d(TAG, "Stored ${entities.size} podcast observation(s) for ${watchedTickers.size} watched ticker(s)")

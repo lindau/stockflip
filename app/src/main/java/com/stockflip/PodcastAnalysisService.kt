@@ -6,6 +6,7 @@ import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.GET
+import retrofit2.http.Query
 import java.text.SimpleDateFormat
 import java.util.Locale
 import java.util.concurrent.TimeUnit
@@ -33,13 +34,48 @@ data class PodcastMentionDto(
     val recommendation: String? = null,
     val stance: String? = null,
     val stance_raw: String? = null,
+    val needs_review: Boolean? = null,
     val thesis: List<String> = emptyList(),
     val risks: List<String> = emptyList()
+)
+
+/** Delmängd av `/api/signals` (podcast-analysis signals.build_company_row) som appen använder. */
+data class PodcastSignalsResponse(
+    val companies: List<PodcastSignalDto> = emptyList()
+)
+
+data class PodcastSignalPriceDto(
+    val pct: Double? = null,
+    val first_date: String? = null
+)
+
+data class PodcastSignalDto(
+    val ticker: String? = null,
+    val name: String? = null,
+    val market: String? = null,
+    val pods: Int = 0,
+    val episodes: Int = 0,
+    val net: Double? = null,
+    val pos_pods: Int = 0,
+    val neg_pods: Int = 0,
+    val flags: List<String> = emptyList(),
+    val price: PodcastSignalPriceDto? = null,
+    val score: Double = 0.0,
+    val last_mentioned: String? = null
 )
 
 interface PodcastAnalysisApi {
     @GET("api/companies")
     suspend fun getCompanies(): PodcastCompaniesResponse
+
+    @GET("api/signals")
+    suspend fun getSignals(
+        @Query("days") days: Int = 14,
+        @Query("limit") limit: Int = 500,
+        @Query("min_confidence") minConfidence: Double = 0.8,
+        @Query("hide_review") hideReview: Int = 1,
+        @Query("market") market: String = "all"
+    ): PodcastSignalsResponse
 }
 
 /**
@@ -87,6 +123,12 @@ class PodcastAnalysisService(
      * fine, no matches" -- exactly the ambiguity that made an earlier
      * "no observations showing" report hard to diagnose.
      */
+    /** Signaler (14 dagar, endast granskade observationer). Kastar vid nätverksfel; se [PodcastSignalsRepository]. */
+    suspend fun getSignals(): List<PodcastSignalDto> = withContext(Dispatchers.IO) {
+        val service = api ?: return@withContext emptyList()
+        service.getSignals().companies.filter { !it.ticker.isNullOrBlank() }
+    }
+
     suspend fun getObservationsByTicker(): Map<String, List<PodcastMentionDto>> = withContext(Dispatchers.IO) {
         val service = api ?: return@withContext emptyMap()
         val response = service.getCompanies()

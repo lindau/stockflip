@@ -475,6 +475,7 @@ private fun ClaritySparkChart(
     smaLevels: List<SmaChartLevel> = emptyList(),
     bollingerPoints: List<BollingerPoint> = emptyList(),
     watchLevels: List<Double> = emptyList(),
+    mentionMarkers: List<com.stockflip.ui.components.MentionMarker> = emptyList(),
     touchIndex: Int? = null,
     onTouchIndexChange: (Int?) -> Unit = {},
 ) {
@@ -504,6 +505,9 @@ private fun ClaritySparkChart(
     val bollingerColor = MaterialTheme.colorScheme.primary
     val watchLevelColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)
     val textMeasurer = rememberTextMeasurer()
+    val mentionUpColor = LocalPriceUp.current
+    val mentionDownColor = LocalPriceDown.current
+    val mentionNeutralColor = MaterialTheme.colorScheme.onSurfaceVariant
 
     Canvas(
         modifier = modifier.pointerInput(prices.size) {
@@ -683,6 +687,16 @@ private fun ClaritySparkChart(
             center = Offset(xFor(prices.lastIndex), yFor(prices.last())),
         )
 
+        // Poddomnämnanden: små prickar längs nederkanten (grön/röd/grå efter ton).
+        mentionMarkers.forEach { m ->
+            val idx = com.stockflip.ui.components.chartIndexFor(timestamps, m.timestamp) ?: return@forEach
+            drawCircle(
+                color = when (m.tone) { 1 -> mentionUpColor; -1 -> mentionDownColor; else -> mentionNeutralColor },
+                radius = 3.dp.toPx(),
+                center = Offset(xFor(idx), size.height - 5.dp.toPx()),
+            )
+        }
+
         // SMA är ett dagsstängningsbaserat mått: varje graf-punkt tilldelas den senaste kända
         // SMA-punkten vid eller före sin egen tidsstämpel ("carry forward"), så linjen rör sig
         // dag för dag i takt med priset i stället för att ritas som en enda vågrät linje.
@@ -844,6 +858,7 @@ private fun ColumnScope.ClarityChartWithIndicatorsBody(
     rsiPoints: List<RsiPoint>,
     chartHeight: androidx.compose.ui.unit.Dp?,
     watchLevels: List<Double> = emptyList(),
+    mentionMarkers: List<com.stockflip.ui.components.MentionMarker> = emptyList(),
 ) {
     var touchIndex by remember { mutableStateOf<Int?>(null) }
     LaunchedEffect(chartData, selectedPeriod) { touchIndex = null }
@@ -859,6 +874,7 @@ private fun ColumnScope.ClarityChartWithIndicatorsBody(
         smaLevels = smaLevels,
         bollingerPoints = bands,
         watchLevels = watchLevels,
+        mentionMarkers = mentionMarkers,
         touchIndex = touchIndex,
         onTouchIndexChange = { touchIndex = it },
         modifier = if (chartHeight != null) {
@@ -893,6 +909,7 @@ internal fun ClarityChartWithIndicators(
     modifier: Modifier = Modifier,
     chartHeight: androidx.compose.ui.unit.Dp? = null,
     watchLevels: List<Double> = emptyList(),
+    mentionMarkers: List<com.stockflip.ui.components.MentionMarker> = emptyList(),
 ) {
     Column(modifier = modifier) {
         ClarityChartWithIndicatorsBody(
@@ -906,6 +923,7 @@ internal fun ClarityChartWithIndicators(
             rsiPoints = rsiPoints,
             chartHeight = chartHeight,
             watchLevels = watchLevels,
+            mentionMarkers = mentionMarkers,
         )
     }
 }

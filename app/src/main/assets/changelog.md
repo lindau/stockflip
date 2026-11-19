@@ -2,6 +2,7 @@
 
 ## 1.3
 
+- Poddar: aktiesidan får ett signalkort (antal poddar, stämning, flaggor som konsensus och poddvärd köper), kursgrafen markerar dagar då aktien nämnts, och `Marknad` har en ny sektion `Poddar just nu`. Osäkra, ogranskade omnämnanden döljs
 - Bakgrundsjobbet slutar uppdatera gamla aktiepar som inte längre visas i appen, vilket ger färre nätanrop under börstid
 - På aktiens sida öppnar ett tryck på en aktieparsbevakning nu parsidans bevakning
 - `Marknad` visar nu de 5 senaste sökningarna i stället för 10

@@ -48,6 +48,14 @@ internal fun MarketRoute(
         moversViewModel.load(moverMarket, moverList)
     }
 
+    val podcastEnabled = com.stockflip.BuildConfig.PODCAST_ANALYSIS_BASE_URL.isNotBlank() &&
+        com.stockflip.PodcastObservationSettings.isEnabled(context)
+    val podcastItems by androidx.compose.runtime.produceState(emptyList<com.stockflip.PodcastSignalDto>(), moverMarket, podcastEnabled) {
+        value = if (podcastEnabled) {
+            com.stockflip.PodcastSignalsRepository.shared.top(if (moverMarket == MoverMarket.SWEDEN) "se" else "us", 10)
+        } else emptyList()
+    }
+
     LaunchedEffect(query) {
         delay(SEARCH_DEBOUNCE_MS)
         viewModel.search(query.trim())
@@ -84,6 +92,12 @@ internal fun MarketRoute(
             },
             onRetry = { moversViewModel.retry() },
         ),
+        podcasts = if (podcastItems.isEmpty()) null else PodcastTrendingUi(podcastItems) { signal ->
+            val symbol = signal.ticker ?: return@PodcastTrendingUi
+            recent = RecentSearches.add(recent, StockSearchResult(symbol = symbol, name = signal.name ?: symbol, isSwedish = symbol.endsWith(".ST")))
+                .also { RecentSearches.save(context, it) }
+            onOpenStock(symbol)
+        },
         onClearRecent = {
             recent = emptyList()
             RecentSearches.save(context, recent)

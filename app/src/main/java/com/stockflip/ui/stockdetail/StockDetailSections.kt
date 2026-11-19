@@ -107,6 +107,7 @@ internal fun PodcastSection(
     syncing: Boolean,
     onToggle: (Boolean) -> Unit,
     onSync: () -> Unit,
+    signal: com.stockflip.PodcastSignalDto? = null,
 ) {
     if (!configured) return
     Row(Modifier.fillMaxWidth(), verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
@@ -118,6 +119,7 @@ internal fun PodcastSection(
         )
     }
     if (!enabled) return
+    signal?.let { com.stockflip.ui.components.PodcastSignalCard(it) }
     if (observations.isEmpty()) {
         Text(
             podcastEmptyText(syncSummary),
