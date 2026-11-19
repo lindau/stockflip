@@ -2,6 +2,7 @@
 
 ## 1.3
 
+- Kursgrafen visar vilken podd som sagt vad när hårkorset förs nära en poddprick
 - Laga: signalkortet och `Poddar just nu` visades inte i den installerade appen (släppbygget döpte om fälten i poddsignalerna)
 - Poddar: aktiesidan får ett signalkort (antal poddar, stämning, flaggor som konsensus och poddvärd köper), kursgrafen markerar dagar då aktien nämnts, och `Marknad` har en ny sektion `Poddar just nu`. Osäkra, ogranskade omnämnanden döljs
 - Bakgrundsjobbet slutar uppdatera gamla aktiepar som inte längre visas i appen, vilket ger färre nätanrop under börstid

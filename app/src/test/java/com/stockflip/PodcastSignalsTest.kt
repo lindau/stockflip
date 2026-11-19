@@ -80,6 +80,7 @@ class PodcastSignalsTest {
         )
         assertEquals(2, markers.size)
         assertEquals(0, markers[0].tone)
+        assertEquals(listOf("p · Positiv", "p · Negativ"), markers[0].notes)
         assertEquals(1, markers[1].tone)
     }
 

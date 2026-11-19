@@ -776,11 +776,26 @@ private fun ClaritySparkChart(
             val dateMeasured = textMeasurer.measure(dateText, dateStyle)
             val priceMeasured = textMeasurer.measure(priceText, priceStyle)
 
+            // Poddomnämnanden: ligger korshåret nära en plupp (ca 12 dp) läggs podd, ton och rekommendation
+            // till under priset. Högst tre rader, resten sammanfattas som "+N till".
+            val step = size.width / prices.lastIndex.coerceAtLeast(1).toFloat()
+            val maxIndexDelta = (12.dp.toPx() / step).toInt()
+            val nearMarker = mentionMarkers
+                .mapNotNull { m -> com.stockflip.ui.components.chartIndexFor(timestamps, m.timestamp)?.let { i -> m to i } }
+                .filter { (m, i) -> m.notes.isNotEmpty() && kotlin.math.abs(i - idx) <= maxIndexDelta }
+                .minByOrNull { (_, i) -> kotlin.math.abs(i - idx) }?.first
+            val noteStyle = TextStyle(fontSize = 10.sp, color = tooltipPriceColor)
+            val noteTexts = nearMarker?.notes.orEmpty().let { notes ->
+                if (notes.size > 3) notes.take(3) + "+${notes.size - 3} till" else notes
+            }
+            val noteMeasured = noteTexts.map { textMeasurer.measure(it, noteStyle) }
+
             val paddingX = 8.dp.toPx()
             val paddingY = 6.dp.toPx()
             val lineGap = 2.dp.toPx()
-            val tooltipWidth = maxOf(dateMeasured.size.width, priceMeasured.size.width) + paddingX * 2
-            val tooltipHeight = dateMeasured.size.height + priceMeasured.size.height + lineGap + paddingY * 2
+            val notesHeight = noteMeasured.sumOf { it.size.height + lineGap.toInt() }.toFloat()
+            val tooltipWidth = maxOf(dateMeasured.size.width, priceMeasured.size.width, noteMeasured.maxOfOrNull { it.size.width } ?: 0) + paddingX * 2
+            val tooltipHeight = dateMeasured.size.height + priceMeasured.size.height + lineGap + notesHeight + paddingY * 2
 
             val gap = 10.dp.toPx()
             val preferredLeft = crosshairX + gap
@@ -812,6 +827,16 @@ private fun ClaritySparkChart(
                     y = tooltipTop + paddingY + dateMeasured.size.height + lineGap,
                 ),
             )
+            var noteY = tooltipTop + paddingY + dateMeasured.size.height + lineGap + priceMeasured.size.height + lineGap
+            noteTexts.forEachIndexed { i, text ->
+                drawText(
+                    textMeasurer = textMeasurer,
+                    text = text,
+                    style = noteStyle,
+                    topLeft = Offset(tooltipLeft + paddingX, noteY),
+                )
+                noteY += noteMeasured[i].size.height + lineGap
+            }
         }
     }
 }

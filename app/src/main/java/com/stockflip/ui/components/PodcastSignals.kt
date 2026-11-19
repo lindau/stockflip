@@ -87,7 +87,7 @@ fun PodcastSignalCard(signal: PodcastSignalDto) {
 }
 
 /** En markör i kursgrafen: [timestamp] i epoch-sekunder (som grafens egna), [tone] +1 positiv, -1 negativ, 0 neutral/blandad. */
-data class MentionMarker(val timestamp: Long, val tone: Int)
+data class MentionMarker(val timestamp: Long, val tone: Int, val notes: List<String> = emptyList())
 
 internal fun stanceTone(stance: String?): Int {
     val s = stance?.lowercase(Locale.ROOT) ?: return 0
@@ -98,15 +98,19 @@ internal fun stanceTone(stance: String?): Int {
     }
 }
 
+/** "Kort & Lång · Positiv · Köp": podd, ton och rekommendation (tomma delar utelämnas). */
+internal fun mentionNote(o: com.stockflip.PodcastObservationEntity): String =
+    listOfNotNull(o.podcast, o.stance, o.recommendation).filter { it.isNotBlank() }.joinToString(" · ")
+
 private const val DAY_SECONDS = 86_400L
 
 /** Slår ihop omnämnanden per dag (UTC); om tonen skiljer sig inom en dag blir markören neutral (grå). */
 fun mentionMarkersFrom(observations: List<com.stockflip.PodcastObservationEntity>): List<MentionMarker> =
-    observations.mapNotNull { o -> o.publishedAtMillis?.let { (it / 1000L) to stanceTone(o.stance) } }
-        .groupBy { (ts, _) -> ts / DAY_SECONDS }
+    observations.mapNotNull { o -> o.publishedAtMillis?.let { Triple(it / 1000L, stanceTone(o.stance), mentionNote(o)) } }
+        .groupBy { (ts, _, _) -> ts / DAY_SECONDS }
         .map { (day, items) ->
             val tones = items.map { it.second }.toSet()
-            MentionMarker(day * DAY_SECONDS + DAY_SECONDS / 2, if (tones.size == 1) tones.first() else 0)
+            MentionMarker(day * DAY_SECONDS + DAY_SECONDS / 2, if (tones.size == 1) tones.first() else 0, items.map { it.third }.distinct())
         }
         .sortedBy { it.timestamp }
 

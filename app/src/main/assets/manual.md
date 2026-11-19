@@ -500,7 +500,7 @@ Poddomnämnanden visas på aktiedetaljen under rubriken Poddomnämnanden, med en
 - När den är på listas omnämnandena med podd, datum, ett kort sammandrag/citat och eventuell rekommendation. Finns fler än ett omnämnande visas bara det senaste, med texten "Visar 1 av X omnämnanden · tryck för att visa X till" — tryck på rubriken eller texten för att fälla ut resten. Utfällda rader visar även eventuella risker.
 - Överst i sektionen visas ett **signalkort**: hur många poddar och avsnitt som nämnt aktien de senaste 14 dagarna, om stämningen är positiv, negativ eller blandad, kursrörelsen sedan första omnämnandet och flaggor som *Konsensus positiv*, *Diskuteras mer*, *Poddvärd köper/säljer*, *Insyn köper/säljer*, *Blankad* och *Sent ute*. Signalerna är bara underlag att titta närmare på, inte köp- eller säljråd.
 - Bara granskade omnämnanden visas; osäkra tolkningar döljs.
-- I kursgrafen markeras de dagar aktien nämndes med små prickar längst ned (grön positiv, röd negativ, grå neutral eller blandad).
+- I kursgrafen markeras de dagar aktien nämndes med små prickar längst ned (grön positiv, röd negativ, grå neutral eller blandad). För hårkorset nära en prick visar rutan även vilken podd som sagt vad den dagen (podd, ton och rekommendation; högst tre rader).
 - Under fliken **Marknad** finns sektionen **Poddar just nu** med de mest diskuterade aktierna för vald marknad (Sverige/USA). Tryck på en rad för att öppna aktien.
 - Finns inga omnämnanden ännu visas en **Synka nu**-knapp som kör en synk direkt i förgrunden och visar antingen träffar eller en tydlig felmeddelandetext, istället för att bara vänta på nästa bakgrundskörning.
 
