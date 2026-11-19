@@ -176,6 +176,7 @@ class AppActivity : ComponentActivity() {
                             snackbarHostState = snackbar,
                             launch = launch,
                             onBack = onBack,
+                            onOpenPair = { navController.navigate(Routes.pairDetail(it)) },
                         )
                     },
                 )

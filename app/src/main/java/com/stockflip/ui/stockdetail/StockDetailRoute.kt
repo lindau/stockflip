@@ -55,6 +55,7 @@ internal fun StockDetailRoute(
     snackbarHostState: SnackbarHostState,
     launch: DetailLaunch = DetailLaunch(),
     onBack: () -> Unit,
+    onOpenPair: (Int) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -119,6 +120,11 @@ internal fun StockDetailRoute(
             onAddPair = { otherSheet = StockSheet.Pair(null) },
             onAddCombined = { otherSheet = StockSheet.Combined(null) },
             onEditAlert = { alert ->
+                // Aktiepar redigeras på parsidan – öppna den i stället för en redigeringsruta här.
+                if (alert.item.watchType is com.stockflip.WatchType.PricePair) {
+                    onOpenPair(alert.item.id)
+                    return@StockDetailScreen
+                }
                 // Typer som sheeten inte kan redigera (t.ex. prisintervall, kombinerad) får inte öppna ett tomt
                 // "Ny bevakning"-formulär som sedan skulle skriva över den befintliga bevakningen.
                 val combined = alert.item.watchType as? com.stockflip.WatchType.Combined

@@ -3,6 +3,7 @@
 ## 1.3
 
 - Bakgrundsjobbet slutar uppdatera gamla aktiepar som inte längre visas i appen, vilket ger färre nätanrop under börstid
+- På aktiens sida öppnar ett tryck på en aktieparsbevakning nu parsidans bevakning
 - `Marknad` visar nu de 5 senaste sökningarna i stället för 10
 - `Marknad` har en ny sektion `Börsen idag` (när sökfältet är tomt): växla mellan Sverige och USA och välj `Uppgång`, `Nedgång` eller `Omsatta`. För USA finns även `Trendar`, aktier som många tittar på just nu
 - Börshandlade fonder (ETF) går nu att söka fram och bevaka, och markeras med `ETF`
